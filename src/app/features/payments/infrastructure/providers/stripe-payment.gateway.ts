@@ -30,8 +30,8 @@ export class StripePaymentGateway extends PaymentGateway {
         if (err && typeof err === 'object' && 'error' in err) {
             const stripeError = (err as any).error;
             return {
-                code: stripeError.code || 'stripe_error',
-                message: stripeError.message || 'Stripe payment error',
+                code: stripeError.code || 'provider_error',
+                message: stripeError.message || 'Stripe provider error',
                 raw: err
             }
         }
