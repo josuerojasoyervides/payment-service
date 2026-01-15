@@ -1,0 +1,59 @@
+payment-service
+├─ .editorconfig
+├─ .gitignore
+├─ .vscode
+│  ├─ extensions.json
+│  ├─ launch.json
+│  ├─ mcp.json
+│  └─ tasks.json
+├─ README.md
+├─ angular.json
+├─ bun.lock
+├─ package.json
+├─ src
+│  ├─ app
+│  │  ├─ app.config.ts
+│  │  ├─ app.html
+│  │  ├─ app.routes.ts
+│  │  ├─ app.scss
+│  │  ├─ app.spec.ts
+│  │  ├─ app.ts
+│  │  ├─ core
+│  │  ├─ features
+│  │  │  └─ payments
+│  │  │     ├─ application
+│  │  │     │  ├─ factories
+│  │  │     │  │  ├─ payment-gateway.factory.ts
+│  │  │     │  │  └─ payment-strategy.factory.ts
+│  │  │     │  └─ use-cases
+│  │  │     │     └─ start-payment.use-case.ts
+│  │  │     ├─ domain
+│  │  │     │  ├─ models
+│  │  │     │  │  ├─ payment.errors.ts
+│  │  │     │  │  └─ payment.types.ts
+│  │  │     │  └─ ports
+│  │  │     │     ├─ payment-gateway.port.ts
+│  │  │     │     └─ payment-strategy.port.ts
+│  │  │     ├─ infrastructure
+│  │  │     │  ├─ providers
+│  │  │     │  │  ├─ payments.token.ts
+│  │  │     │  │  └─ stripe-payment.gateway.ts
+│  │  │     │  └─ strategies
+│  │  │     │     ├─ card-strategy.ts
+│  │  │     │     └─ spei-strategy.ts
+│  │  │     └─ ui
+│  │  │        ├─ components
+│  │  │        │  ├─ payment-method-selector
+│  │  │        │  ├─ payment-status
+│  │  │        │  └─ payment-summary
+│  │  │        └─ pages
+│  │  │           └─ payments
+│  │  │              ├─ payments.component.html
+│  │  │              └─ payments.component.ts
+│  │  └─ shared
+│  ├─ index.html
+│  ├─ main.ts
+│  └─ styles.scss
+├─ tsconfig.app.json
+├─ tsconfig.json
+└─ tsconfig.spec.json

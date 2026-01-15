@@ -1,6 +1,5 @@
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
-import { HttpClient } from "@angular/common/http";
 import { CreatePaymentRequest, PaymentIntent } from "../../domain/models/payment.types";
 import { PaymentError } from "../../domain/models/payment.errors";
 import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
@@ -8,10 +7,6 @@ import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
 @Injectable()
 export class StripePaymentGateway extends PaymentGateway {
     readonly providerId = 'stripe' as const;
-
-    constructor(httpClient: HttpClient) {
-        super(httpClient);
-    }
 
     protected createIntentRaw(req: CreatePaymentRequest): Observable<any> {
         return this.http.post('/api/payments/stripe/intents', req);

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { PaymentGatewayFactory } from './payment-gateway.factory';
 import { PaymentMethodType, PaymentProviderId } from '../../domain/models/payment.types';
 import { PaymentStrategy } from '../../domain/ports/payment-strategy.port';
@@ -7,8 +7,9 @@ import { SpeiStrategy } from '../../infrastructure/strategies/spei-strategy';
 
 @Injectable({providedIn: 'root'})
 export class PaymentStrategyFactory {
-    constructor(private readonly gatewayFactory: PaymentGatewayFactory) { }
-    
+
+    private readonly gatewayFactory = inject(PaymentGatewayFactory);
+
     create(provider: PaymentProviderId, type: PaymentMethodType): PaymentStrategy  {
         const gateway = this.gatewayFactory.get(provider);
 

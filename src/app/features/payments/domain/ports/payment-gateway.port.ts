@@ -2,12 +2,13 @@ import { HttpClient } from "@angular/common/http";
 import { catchError, map, Observable, throwError } from "rxjs";
 import { CreatePaymentRequest, PaymentIntent, PaymentProviderId } from "../models/payment.types";
 import { PaymentError } from "../models/payment.errors";
+import { inject } from "@angular/core";
 
 export abstract class PaymentGateway { 
     abstract readonly providerId: PaymentProviderId;
 
-    constructor(protected http: HttpClient) { }
-    
+    protected readonly http = inject(HttpClient);
+
     // Método público que usa el resto del sistema
     createIntent(req: CreatePaymentRequest): Observable<PaymentIntent> {
         this.validateCreate(req);

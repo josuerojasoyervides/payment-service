@@ -1,11 +1,11 @@
-import { Inject, Injectable } from "@angular/core";
+import { inject, Inject, Injectable } from "@angular/core";
 import { PAYMENT_GATEWAYS } from "../../infrastructure/providers/payments.token";
 import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
 import { PaymentProviderId } from "../../domain/models/payment.types";
 
 @Injectable({ providedIn: 'root' })
 export class PaymentGatewayFactory { 
-    constructor(@Inject(PAYMENT_GATEWAYS) private gateways: PaymentGateway[]) { }
+    private readonly gateways = inject<PaymentGateway[]>(PAYMENT_GATEWAYS);
 
     get(providerId: PaymentProviderId): PaymentGateway {
         const gateway = this.gateways.find(g => g.providerId === providerId);
