@@ -4,10 +4,12 @@ import { StripeProviderFactory } from "../infrastructure/stripe/factories/stripe
 import { StripePaymentGateway } from "../infrastructure/stripe/gateways/stripe-payment.gateway";
 import { PaypalProviderFactory } from "../infrastructure/paypal/factories/paypal-provider.factory";
 import { PaypalPaymentGateway } from "../infrastructure/paypal/gateways/paypal-payment.gateway";
+import { FakeStripePaymentGateway } from "../infrastructure/fake/gateway/fake-payment.gateway";
 
 const PAYMENT_PROVIDER_FACTORY_PROVIDERS: Provider[] = [
     { provide: PAYMENT_PROVIDER_FACTORIES, useClass: StripeProviderFactory, multi: true },
     { provide: PAYMENT_PROVIDER_FACTORIES, useClass: PaypalProviderFactory, multi: true },
+    { provide: StripePaymentGateway, useClass: FakeStripePaymentGateway } // Remove this, only for testing purposes
 ];
 
 export default function providePayments(): (Provider | EnvironmentProviders)[] {
