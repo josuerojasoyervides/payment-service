@@ -27,7 +27,8 @@ module.exports = {
           '(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$',                  // dot files
           '[.]d[.]ts$',                                                       // TypeScript declaration files
           '(^|/)tsconfig[.]json$',                                            // TypeScript config
-          '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$' // other configs
+          '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$', // other configs
+          '^src/app/features/payments/domain/',
         ]
       },
       to: {},
@@ -124,7 +125,7 @@ module.exports = {
     },
 
     // rules you might want to tweak for your specific situation:
-    
+
     {
       name: 'not-to-spec',
       comment:
@@ -193,6 +194,36 @@ module.exports = {
           'npm-peer'
         ]
       }
+    },
+    {
+      name: 'domain-no-external-deps',
+      severity: 'error',
+      from: { path: '^src/app/features/payments/domain' },
+      to: { path: '^src/app/features/payments/(application|infrastructure|ui|config|shared)' }
+    },
+    {
+      name: 'application-no-infra',
+      severity: 'error',
+      from: { path: '^src/app/features/payments/application' },
+      to: { path: '^src/app/features/payments/infrastructure' }
+    },
+    {
+      name: 'ui-no-infra',
+      severity: 'error',
+      from: { path: '^src/app/features/payments/ui' },
+      to: { path: '^src/app/features/payments/infrastructure' }
+    },
+    {
+      name: 'infra-no-ui',
+      severity: 'error',
+      from: { path: '^src/app/features/payments/infrastructure' },
+      to: { path: '^src/app/features/payments/ui' }
+    },
+    {
+      name: 'domain-no-shared',
+      severity: 'error',
+      from: { path: '^src/app/features/payments/domain' },
+      to: { path: '^src/app/features/payments/shared' }
     }
   ],
   options: {
@@ -203,10 +234,12 @@ module.exports = {
     },
 
     // Which modules to exclude
-    // exclude : {
-    //   // path: an array of regular expressions in strings to match against
-    //   path: '',
-    // },
+    exclude: {
+      // path: an array of regular expressions in strings to match against
+      path: [
+        '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$'
+      ],
+    },
 
     // Which modules to exclusively include (array of regular expressions in strings)
     // dependency-cruiser will skip everything that doesn't match this pattern
@@ -243,8 +276,8 @@ module.exports = {
     // false (the default): ignore dependencies that only exist before typescript-to-javascript compilation
     // true: also detect dependencies that only exist before typescript-to-javascript compilation
     // 'specify': for each dependency identify whether it only exists before compilation or also after
-    tsPreCompilationDeps: true,
-    
+    // tsPreCompilationDeps: false,
+
     // list of extensions to scan that aren't javascript or compile-to-javascript.
     // Empty by default. Only put extensions in here that you want to take into
     // account that are _not_ parsable.
@@ -295,7 +328,7 @@ module.exports = {
     // re-declared require, use a require-wrapper or use window.require as
     // a hack.
     // exoticRequireStrings: [],
-    
+
     // options to pass on to enhanced-resolve, the package dependency-cruiser
     // uses to resolve module references to disk. The values below should be
     // suitable for most situations
@@ -305,25 +338,25 @@ module.exports = {
     enhancedResolveOptions: {
       // What to consider as an 'exports' field in package.jsons
       exportsFields: ['exports'],
-      
+
       // List of conditions to check for in the exports field.
       // Only works when the 'exportsFields' array is non-empty.
       conditionNames: ['import', 'require', 'node', 'default', 'types'],
-      
+
       // The extensions, by default are the same as the ones dependency-cruiser
       // can access (run `npx depcruise --info` to see which ones that are in
       // _your_ environment). If that list is larger than you need you can pass
       // the extensions you actually use (e.g. ['.js', '.jsx']). This can speed
       // up module resolution, which is the most expensive step.
       // extensions: [".js", ".jsx", ".ts", ".tsx", ".d.ts"],
-      
+
       // What to consider a 'main' field in package.json
-      
+
       // if you migrate to ESM (or are in an ESM environment already) you will want to
       // have "module" in the list of mainFields, like so:
       // mainFields: ["module", "main", "types", "typings"],
       mainFields: ["main", "types", "typings"],
-      
+
       // A list of alias fields in package.jsons
       // See https://github.com/defunctzombie/package-browser-field-spec and
       // the webpack [resolve.alias](https://webpack.js.org/configuration/resolve/#resolvealiasfields)
@@ -336,13 +369,13 @@ module.exports = {
     // analysis strictly necessary for checking the rule set only. 
     // See https://github.com/sverweij/dependency-cruiser/blob/main/doc/options-reference.md#skipanalysisnotinrules
     skipAnalysisNotInRules: true,
-    
+
     /* List of built-in modules to use on top of the ones node declares.
 
        See https://github.com/sverweij/dependency-cruiser/blob/main/doc/options-reference.md#builtinmodules-influencing-what-to-consider-built-in--core-modules
        for details
     */
-    builtInModules: { 
+    builtInModules: {
       add: [
         "bun",
         "bun:ffi",
@@ -389,4 +422,4 @@ module.exports = {
     }
   }
 };
-// generated: dependency-cruiser@17.3.6 on 2026-01-16T19:46:43.358Z
+// generated: dependency-cruiser@17.3.6 on 2026-01-16T20:05:08.379Z
