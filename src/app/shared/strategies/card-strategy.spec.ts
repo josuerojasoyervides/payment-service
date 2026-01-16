@@ -1,6 +1,6 @@
+import { CreatePaymentRequest } from "../../features/payments/domain/models/payment.types";
+import { PaymentGateway } from "../../features/payments/domain/ports/payment-gateway.port";
 import { CardStrategy } from "./card-strategy"
-import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
-import { CreatePaymentRequest } from "../../domain/models/payment.types";
 import { firstValueFrom, of } from "rxjs";
 
 describe('CardStrategy', () => {

@@ -2,8 +2,9 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
-import { StripePaymentGateway } from './features/payments/infrastructure/providers/stripe-payment.gateway';
-import { PAYMENT_GATEWAYS } from './features/payments/infrastructure/providers/payments.token';
+import { StripeProviderFactory } from './features/payments/infrastructure/stripe/factories/stripe-provider.factory';
+import { PAYMENT_PROVIDER_FACTORIES } from './features/payments/infrastructure/providers.token';
+import { StripePaymentGateway } from './features/payments/infrastructure/stripe/gateways/stripe-payment.gateway';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -11,6 +12,10 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
 
     StripePaymentGateway,
-    {provide: PAYMENT_GATEWAYS, useExisting: StripePaymentGateway, multi: true},
+    {
+      provide: PAYMENT_PROVIDER_FACTORIES,
+      useClass: StripeProviderFactory,
+      multi: true,
+    }
   ]
 };
