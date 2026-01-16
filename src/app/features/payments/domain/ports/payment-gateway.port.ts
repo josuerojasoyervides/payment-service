@@ -1,10 +1,11 @@
 import { HttpClient } from "@angular/common/http";
 import { catchError, map, Observable, throwError } from "rxjs";
-import { CreatePaymentRequest, PaymentIntent, PaymentProviderId } from "../models/payment.types";
+import { PaymentIntent, PaymentProviderId } from "../models/payment.types";
+import { CreatePaymentRequest } from "../models/payment.requests";
 import { PaymentError } from "../models/payment.errors";
 import { inject } from "@angular/core";
 
-export abstract class PaymentGateway { 
+export abstract class PaymentGateway {
     abstract readonly providerId: PaymentProviderId;
 
     protected readonly http = inject(HttpClient);
@@ -19,7 +20,7 @@ export abstract class PaymentGateway {
     }
 
     // ------- Helpers compartidos -------
-    protected validateCreate(req: CreatePaymentRequest) { 
+    protected validateCreate(req: CreatePaymentRequest) {
         if (!req.orderId) throw new Error("orderId is required");
         if (!req.currency) throw new Error("currency is required");
         if (!Number.isFinite(req.amount) || req.amount <= 0) throw new Error("amount is invalid");

@@ -3,7 +3,7 @@ import { StripePaymentGateway } from './stripe-payment.gateway';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { CreatePaymentRequest } from '../../../domain/models/payment.types';
+import { CreatePaymentRequest } from '../../../domain/models/payment.requests';
 import { PaymentError } from '../../../domain/models/payment.errors';
 
 describe('StripePaymentGateway', () => {

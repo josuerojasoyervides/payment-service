@@ -1,5 +1,7 @@
 import { firstValueFrom, Observable, of, throwError } from 'rxjs';
-import { PaymentProviderId, CreatePaymentRequest, PaymentIntent, PaymentStatus } from '../models/payment.types';
+import { PaymentProviderId, PaymentIntent } from '../models/payment.types';
+import { PaymentStatus } from '../models/payment.types';
+import { CreatePaymentRequest } from '../models/payment.requests';
 import { PaymentGateway } from './payment-gateway.port'
 import { PaymentError } from '../models/payment.errors';
 import { TestBed } from '@angular/core/testing';

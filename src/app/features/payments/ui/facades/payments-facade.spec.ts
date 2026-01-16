@@ -4,7 +4,8 @@ import { of, throwError } from 'rxjs';
 
 import { PaymentsFacade } from './payments-facade';
 import { StartPaymentUseCase } from '../../application/use-cases/start-payment.use-case';
-import { CreatePaymentRequest, PaymentIntent } from '../../domain/models/payment.types';
+import { PaymentIntent } from '../../domain/models/payment.types';
+import { CreatePaymentRequest } from '../../domain/models/payment.requests';
 
 describe('PaymentsFacade', () => {
     let facade: PaymentsFacade;

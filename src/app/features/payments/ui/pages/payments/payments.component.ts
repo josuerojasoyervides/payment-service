@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from "@angular/core";
-import { CreatePaymentRequest, PaymentMethodType, PaymentProviderId } from "../../../domain/models/payment.types";
+import { PaymentMethodType, PaymentProviderId } from "../../../domain/models/payment.types";
+import { CreatePaymentRequest } from "../../../domain/models/payment.requests";
 import { PaymentsFacade } from "../../facades/payments-facade";
 import { ProviderFactory } from "../../../domain/ports/provider-factory.port";
 import { PAYMENT_PROVIDER_FACTORIES } from "../../../application/tokens/payment-provider-factories.token";

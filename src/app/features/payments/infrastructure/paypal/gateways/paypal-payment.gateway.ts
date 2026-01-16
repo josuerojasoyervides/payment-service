@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { CreatePaymentRequest, PaymentIntent } from '../../../domain/models/payment.types';
+import { PaymentIntent } from '../../../domain/models/payment.types';
+import { CreatePaymentRequest } from '../../../domain/models/payment.requests';
 import { PaymentGateway } from '../../../domain/ports/payment-gateway.port';
 import { Observable } from 'rxjs';
 import { PaymentError } from '../../../domain/models/payment.errors';

@@ -8,19 +8,10 @@ export type PaymentStatus =
     | 'requires_action'
     | 'succeeded'
     | 'failed'
-    | 'canceled';
+    | 'canceled'
+    | 'processing';
 
 export type CurrencyCode = 'MXN' | 'USD';
-
-export interface CreatePaymentRequest {
-    orderId: string;
-    amount: number;
-    currency: string;
-    method: {
-        type: PaymentMethodType;
-        token?: string;
-    }
-}
 
 export interface PaymentIntent {
     id: string;
@@ -33,3 +24,4 @@ export interface PaymentIntent {
     redirectUrl?: string;
     raw?: unknown;
 }
+

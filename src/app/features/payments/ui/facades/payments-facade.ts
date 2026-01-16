@@ -1,5 +1,6 @@
 import { computed, inject, Injectable, signal } from "@angular/core";
-import { CreatePaymentRequest, PaymentIntent, PaymentProviderId } from "../../domain/models/payment.types";
+import { PaymentIntent, PaymentProviderId } from "../../domain/models/payment.types";
+import { CreatePaymentRequest } from "../../domain/models/payment.requests";
 import { StartPaymentUseCase } from "../../application/use-cases/start-payment.use-case";
 
 type PaymentsUiState =

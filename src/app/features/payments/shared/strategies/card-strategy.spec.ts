@@ -1,4 +1,4 @@
-import { CreatePaymentRequest } from "../../domain/models/payment.types";
+import { CreatePaymentRequest } from "../../domain/models/payment.requests";
 import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
 import { CardStrategy } from "./card-strategy"
 import { firstValueFrom, of } from "rxjs";

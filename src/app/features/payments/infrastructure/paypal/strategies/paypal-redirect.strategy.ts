@@ -1,5 +1,6 @@
 import { Observable } from "rxjs";
-import { CreatePaymentRequest, PaymentIntent } from "../../../domain/models/payment.types";
+import { PaymentIntent } from "../../../domain/models/payment.types";
+import { CreatePaymentRequest } from "../../../domain/models/payment.requests";
 import { PaymentStrategy } from "../../../domain/ports/payment-strategy.port";
 import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
 
