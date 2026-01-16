@@ -5,11 +5,15 @@ import { StripePaymentGateway } from "../infrastructure/stripe/gateways/stripe-p
 import { PaypalProviderFactory } from "../infrastructure/paypal/factories/paypal-provider.factory";
 import { PaypalPaymentGateway } from "../infrastructure/paypal/gateways/paypal-payment.gateway";
 
+const PAYMENT_PROVIDER_FACTORY_PROVIDERS: Provider[] = [
+    { provide: PAYMENT_PROVIDER_FACTORIES, useClass: StripeProviderFactory, multi: true },
+    { provide: PAYMENT_PROVIDER_FACTORIES, useClass: PaypalProviderFactory, multi: true },
+];
+
 export default function providePayments(): (Provider | EnvironmentProviders)[] {
     return [
         StripePaymentGateway,
         PaypalPaymentGateway,
-        { provide: PAYMENT_PROVIDER_FACTORIES, useClass: StripeProviderFactory, multi: true },
-        { provide: PAYMENT_PROVIDER_FACTORIES, useClass: PaypalProviderFactory, multi: true },
+        ...PAYMENT_PROVIDER_FACTORY_PROVIDERS
     ];
 }
