@@ -2,15 +2,12 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
-import { StripePaymentGateway } from './features/payments/infrastructure/providers/stripe-payment.gateway';
-import { PAYMENT_GATEWAYS } from './features/payments/infrastructure/providers/payments.token';
+import providePayments from './features/payments/config/payment.providers';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-
-    StripePaymentGateway,
-    {provide: PAYMENT_GATEWAYS, useExisting: StripePaymentGateway, multi: true},
+    ...providePayments(),
   ]
 };

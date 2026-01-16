@@ -25,7 +25,7 @@ class PaymentGatewayTest extends PaymentGateway {
     protected mapIntent(dto: any): PaymentIntent {
         return {
             id: dto.id,
-            provider: this.providerId, // 'paypal'
+            provider: this.providerId,
             status: dto.status as PaymentStatus,
             amount: dto.amount,
             currency: dto.currency,
@@ -41,6 +41,18 @@ class PaymentGatewayTest extends PaymentGateway {
             message: 'Test normalized error',
             raw: err
         }
+    }
+}
+
+class PaymentGatewayBaseErrorTest extends PaymentGateway {
+    providerId: PaymentProviderId = 'paypal';
+
+    protected createIntentRaw(req: CreatePaymentRequest): Observable<unknown> {
+        return throwError(() => ({ kind: 'RAW_ERROR', detail: 'boom' }));
+    }
+
+    protected mapIntent(dto: any): PaymentIntent {
+        return dto as any;
     }
 }
 
@@ -73,7 +85,7 @@ describe('PaymentGateway (abstract class) - createIntent', () => {
         })
 
         it('throws if currency is missing (validCreate)', () => {
-            expect(() => gateway.createIntent(validReq({ currency: '' })))
+            expect(() => gateway.createIntent(validReq({ currency: '' as any })))
                 .toThrowError('currency is required')
         })
 
@@ -83,7 +95,7 @@ describe('PaymentGateway (abstract class) - createIntent', () => {
         })
 
         it('throws if method type is missing', () => {
-            expect(() => gateway.createIntent(validReq({ method: {} as any })))
+            expect(() => gateway.createIntent(validReq({ method: undefined as any })))
                 .toThrowError('payment method type is required')
         })
 
@@ -141,5 +153,16 @@ describe('PaymentGateway (abstract class) - createIntent', () => {
                     raw: { kind: 'RAW_ERROR', detail: 'boom' }
                 })
         })
+
+        it('uses base normalizeError when subclass does not override it', async () => {
+            const gateway = TestBed.runInInjectionContext(() => new PaymentGatewayBaseErrorTest());
+
+            await expect(firstValueFrom(gateway.createIntent(validReq())))
+                .rejects.toMatchObject({
+                    code: 'provider_error',
+                    message: 'Payment provider error',
+                    raw: { kind: 'RAW_ERROR', detail: 'boom' },
+                });
+        });
     })
 });

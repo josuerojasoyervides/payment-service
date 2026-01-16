@@ -1,10 +1,10 @@
-import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
 import { CreatePaymentRequest } from "../../domain/models/payment.types";
+import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
+import { CardStrategy } from "./card-strategy"
 import { firstValueFrom, of } from "rxjs";
-import { SpeiStrategy } from "./spei-strategy";
 
-describe('SpeiStrategy', () => {
-    let strategy: SpeiStrategy;
+describe('CardStrategy', () => {
+    let strategy: CardStrategy;
 
     let gatewayMock: Pick<PaymentGateway, 'createIntent' | 'providerId'>;
 
@@ -12,7 +12,7 @@ describe('SpeiStrategy', () => {
         orderId: 'order_1',
         amount: 100,
         currency: 'MXN',
-        method: { type: 'spei' },
+        method: { type: 'card', token: 'tok_123' },
     };
 
     beforeEach(() => {
@@ -29,7 +29,7 @@ describe('SpeiStrategy', () => {
             )
         } as any;
 
-        strategy = new SpeiStrategy(gatewayMock as any);
+        strategy = new CardStrategy(gatewayMock as any);
     })
 
     it('delegates to gateway.createIntent(req)', async () => {

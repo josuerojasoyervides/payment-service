@@ -1,17 +1,17 @@
 import { inject, Injectable } from '@angular/core';
-import { CreatePaymentRequest, PaymentIntent } from '../../domain/models/payment.types';
+import { CreatePaymentRequest, PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
 import { defer, Observable } from 'rxjs';
-import { PaymentStrategyFactory } from '../factories/payment-strategy.factory';
+import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 
-@Injectable({providedIn: 'root'})
+@Injectable({ providedIn: 'root' })
 export class StartPaymentUseCase {
     private readonly defaultProvider = 'stripe' as const;
-    
-    private readonly strategyFactory = inject(PaymentStrategyFactory);
+    private readonly registry = inject(ProviderFactoryRegistry);
 
-    execute(req: CreatePaymentRequest): Observable<PaymentIntent> {
+    execute(req: CreatePaymentRequest, providerId: PaymentProviderId = this.defaultProvider): Observable<PaymentIntent> {
         return defer(() => {
-            const strategy = this.strategyFactory.create(this.defaultProvider, req.method.type)
+            const providerFactory = this.registry.get(providerId);
+            const strategy = providerFactory.createStrategy(req.method.type);
             return strategy.start(req);
         })
     }

@@ -1,8 +1,8 @@
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
-import { CreatePaymentRequest, PaymentIntent } from "../../domain/models/payment.types";
-import { PaymentError } from "../../domain/models/payment.errors";
-import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
+import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
+import { CreatePaymentRequest, PaymentIntent } from "../../../domain/models/payment.types";
+import { PaymentError } from "../../../domain/models/payment.errors";
 
 @Injectable()
 export class StripePaymentGateway extends PaymentGateway {

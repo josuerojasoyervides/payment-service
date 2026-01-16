@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { StripePaymentGateway } from './stripe-payment.gateway';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { CreatePaymentRequest, PaymentIntent } from '../../domain/models/payment.types';
 import { provideHttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { PaymentError } from '../../domain/models/payment.errors';
+import { CreatePaymentRequest } from '../../../domain/models/payment.types';
+import { PaymentError } from '../../../domain/models/payment.errors';
 
 describe('StripePaymentGateway', () => {
     let gateway: StripePaymentGateway;
@@ -97,10 +97,10 @@ describe('StripePaymentGateway', () => {
             const promise = firstValueFrom(gateway.createIntent(req));
             const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
 
-            httpReq.flush(
-                { some: 'weird payload' },
-                { status: 500, statusText: 'Server Error' }
-            );
+            httpReq.error(new ProgressEvent('error'), {
+                status: 0,
+                statusText: 'Unknown Error'
+            });
 
             try {
                 await promise;

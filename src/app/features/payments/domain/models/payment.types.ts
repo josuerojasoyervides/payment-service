@@ -1,14 +1,16 @@
-export type PaymentProviderId = 'stripe' | 'paypal' | 'square';
+export type PaymentProviderId = 'stripe' | 'paypal';
 
 export type PaymentMethodType = 'card' | 'spei';
 
-export type PaymentStatus = 
+export type PaymentStatus =
     | 'requires_payment_method'
     | 'requires_confirmation'
     | 'requires_action'
     | 'succeeded'
     | 'failed'
     | 'canceled';
+
+export type CurrencyCode = 'MXN' | 'USD';
 
 export interface CreatePaymentRequest {
     orderId: string;
@@ -25,8 +27,8 @@ export interface PaymentIntent {
     provider: PaymentProviderId;
     status: PaymentStatus;
     amount: number;
-    currency: string;
-    
+    currency: CurrencyCode;
+
     clientSecret?: string;
     redirectUrl?: string;
     raw?: unknown;
