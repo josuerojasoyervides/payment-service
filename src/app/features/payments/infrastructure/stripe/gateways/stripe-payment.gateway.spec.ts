@@ -97,10 +97,10 @@ describe('StripePaymentGateway', () => {
             const promise = firstValueFrom(gateway.createIntent(req));
             const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
 
-            httpReq.flush(
-                { some: 'weird payload' },
-                { status: 500, statusText: 'Server Error' }
-            );
+            httpReq.error(new ProgressEvent('error'), {
+                status: 0,
+                statusText: 'Unknown Error'
+            });
 
             try {
                 await promise;

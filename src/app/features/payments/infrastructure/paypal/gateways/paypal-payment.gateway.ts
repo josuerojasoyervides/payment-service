@@ -9,7 +9,7 @@ export class PaypalPaymentGateway extends PaymentGateway {
     readonly providerId = 'paypal' as const;
 
     protected createIntentRaw(req: CreatePaymentRequest): Observable<any> {
-        return this.http.post('/api/payments/stripe/intents', req);
+        return this.http.post('/api/payments/paypal/intents', req);
     }
 
     protected mapIntent(dto: any): PaymentIntent {
@@ -26,12 +26,12 @@ export class PaypalPaymentGateway extends PaymentGateway {
     }
 
     protected override normalizeError(err: unknown): PaymentError {
-        // Ejemplo de normalización específica para Stripe
+        // Ejemplo de normalización específica para PayPal
         if (err && typeof err === 'object' && 'error' in err) {
-            const stripeError = (err as any).error;
+            const paypalError = (err as any).error;
             return {
-                code: stripeError.code || 'provider_error',
-                message: stripeError.message || 'Stripe provider error',
+                code: paypalError.code || 'provider_error',
+                message: paypalError.message || 'PayPal provider error',
                 raw: err
             }
         }
