@@ -1,4 +1,4 @@
-export type PaymentProviderId = 'stripe' | 'paypal' | 'square';
+export type PaymentProviderId = 'stripe' | 'paypal';
 
 export type PaymentMethodType = 'card' | 'spei';
 

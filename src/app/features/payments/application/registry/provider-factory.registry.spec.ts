@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ProviderFactory } from '../../domain/ports/provider-factory.port';
 import { ProviderFactoryRegistry } from './provider-factory.registry';
-import { PAYMENT_PROVIDER_FACTORIES } from '../tokens/providers.token';
+import { PAYMENT_PROVIDER_FACTORIES } from '../tokens/payment-provider-factories.token';
 describe('ProviderFactoryRegistry', () => {
     let registry: ProviderFactoryRegistry;
     const mockFactories = [
