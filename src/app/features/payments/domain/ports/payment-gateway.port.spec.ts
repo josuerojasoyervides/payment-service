@@ -85,7 +85,7 @@ describe('PaymentGateway (abstract class) - createIntent', () => {
         })
 
         it('throws if currency is missing (validCreate)', () => {
-            expect(() => gateway.createIntent(validReq({ currency: '' })))
+            expect(() => gateway.createIntent(validReq({ currency: '' as any })))
                 .toThrowError('currency is required')
         })
 

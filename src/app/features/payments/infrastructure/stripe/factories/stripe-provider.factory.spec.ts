@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { StripeProviderFactory } from './stripe-provider.factory';
 import { StripePaymentGateway } from '../gateways/stripe-payment.gateway';
-import { CardStrategy } from '../../../../../shared/strategies/card-strategy';
-import { SpeiStrategy } from '../../../../../shared/strategies/spei-strategy';
 import { firstValueFrom, of } from 'rxjs';
+import { CardStrategy } from '../../../shared/strategies/card-strategy';
+import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
 
 describe('StripeProviderFactory', () => {
     let factory: StripeProviderFactory;

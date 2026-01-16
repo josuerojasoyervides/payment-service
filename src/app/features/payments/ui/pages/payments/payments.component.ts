@@ -21,9 +21,9 @@ export class PaymentsComponent implements OnInit {
         };
 
         this.startPaymentUseCase.execute(createPaymentRequest).pipe(
-            tap(paymentIntent => { 
+            tap(paymentIntent => {
                 console.log('Payment Intent:', paymentIntent);
             }
-        )).subscribe();
+            )).subscribe();
     }
 }

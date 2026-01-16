@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { PaymentProviderId } from '../../domain/models/payment.types';
 import { ProviderFactory } from '../../domain/ports/provider-factory.port';
-import { PAYMENT_PROVIDER_FACTORIES } from '../../infrastructure/providers.token';
+import { PAYMENT_PROVIDER_FACTORIES } from '../tokens/providers.token';
 
 @Injectable({ providedIn: 'root' })
 export class ProviderFactoryRegistry {
