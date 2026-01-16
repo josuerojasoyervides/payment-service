@@ -1,13 +1,14 @@
 import { Observable } from "rxjs";
 import { PaymentMethodType, CreatePaymentRequest, PaymentIntent } from "../../../domain/models/payment.types";
 import { PaymentStrategy } from "../../../domain/ports/payment-strategy.port";
-import { PaypalPaymentGateway } from "../gateways/paypal-payment.gateway";
+import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
 
 export class PaypalRedirectStrategy implements PaymentStrategy {
-    type: PaymentMethodType = 'card';
+    readonly type = 'card' as const;
 
-    constructor(private gateway: PaypalPaymentGateway) { }
+    constructor(private readonly gateway: PaymentGateway) { }
+
     start(req: CreatePaymentRequest): Observable<PaymentIntent> {
-        throw new Error("Method not implemented.");
+        return this.gateway.createIntent(req);
     }
 }

@@ -7,7 +7,7 @@ import { PaymentStrategy } from "../../../domain/ports/payment-strategy.port";
 
 @Injectable()
 export class PaypalProviderFactory implements ProviderFactory {
-    providerId = 'paypal' as const;
+    readonly providerId = 'paypal' as const;
 
     private readonly gateway = inject(PaypalPaymentGateway)
 
