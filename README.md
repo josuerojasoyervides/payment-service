@@ -1,59 +1,89 @@
-# PaymentService
+# Payment Service (demo)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.0.
+Demo avanzado en Angular 21 (standalone) para diseñar un módulo de pagos con arquitectura clean-ish: `domain / application / infrastructure / ui`. No integra procesadores reales; simula flujos de Stripe/PayPal con un fake backend.
 
-## Development server
+## Objetivo
+Aprender a construir un sistema de pagos escalable, extensible y testeable:
+- múltiples proveedores (Stripe, PayPal, futuro Square)
+- múltiples métodos (card, spei)
+- flujos por combinación proveedor/método
+- UI desacoplada de detalles de infraestructura
 
-To start a local development server, run:
+## Estado actual (resumen)
+- Domain con modelos y contratos claros.
+- Application con `StartPaymentUseCase` y use cases nuevos (`Confirm/Cancel/GetStatus`).
+- Registry con multi DI.
+- Gateways por proveedor con `create/confirm/cancel/get`.
+- Fake backend intercepta endpoints de create/confirm/cancel/get.
+- UI con panel de runtime y acciones sobre intent.
 
-```bash
-ng serve
+## Estructura relevante
+```
+src/app/features/payments/
+  domain/
+    models/
+    ports/
+  application/
+    registry/
+    use-cases/
+  infrastructure/
+    stripe/
+    paypal/
+    fake/
+  shared/
+    strategies/
+  ui/
+    facades/
+    pages/
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
+## Cómo ejecutar
+Instalar dependencias:
 ```bash
-ng generate component component-name
+bun install
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
+Levantar el proyecto:
 ```bash
-ng generate --help
+bun run start
 ```
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
+Abrir:
+```
+http://localhost:4200/
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
+## Tests
 ```bash
-ng test
+bun run test
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
+Cobertura:
 ```bash
-ng e2e
+bun run test:coverage
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Fake backend
+Se usa un `HttpInterceptor` para simular:
+- `POST /api/payments/{provider}/intents`
+- `POST /api/payments/{provider}/intents/confirm`
+- `POST /api/payments/{provider}/intents/cancel`
+- `GET /api/payments/{provider}/intents/:id`
 
-## Additional Resources
+Archivo:
+- `src/app/core/interceptors/fake-backend.interceptor.ts`
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## UI runtime
+Pantalla principal:
+- `src/app/features/payments/ui/pages/payments/`
+
+Incluye:
+- panel de providers y métodos
+- self-test de wiring
+- ejecución del pipeline completo
+- acciones sobre intent (confirm/cancel/get)
+
+## Notas de diseño
+- Clean-ish pragmático: el domain usa Angular mínimo para IO.
+- Strategy solo para selección por método en `start`.
+- Use cases de `confirm/cancel/get` usan gateway directo por provider.
