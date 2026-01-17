@@ -199,12 +199,8 @@
 
     <label>
         Intent ID:
-        <input
-            type="text"
-            [value]="intentIdInput()"
-            (input)="onIntentIdInput($any($event.target).value)"
-            placeholder="pi_123"
-        />
+        <input type="text" [value]="intentIdInput()" (input)="onIntentIdInput($any($event.target).value)"
+            placeholder="pi_123" />
     </label>
 
     <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
@@ -234,17 +230,13 @@
     <h3>Intent actions (Confirm / Cancel / Get status)</h3>
 
     <p style="opacity: 0.8;">
-        Intent actual (si existe): {{ facade.intent()?.id ?? '-' }}
+        Intent actual (si existe): {{ intent()?.id ?? '-' }}
     </p>
 
     <label>
         Intent ID:
-        <input
-            type="text"
-            [value]="intentIdInput()"
-            (input)="onIntentIdInput($any($event.target).value)"
-            placeholder="pi_123"
-        />
+        <input type="text" [value]="intentIdInput()" (input)="onIntentIdInput($any($event.target).value)"
+            placeholder="pi_123" />
     </label>
 
     <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
