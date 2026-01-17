@@ -4,12 +4,17 @@ import { ProviderFactory } from "../../../domain/ports/provider-factory.port";
 import { PaypalPaymentGateway } from "../gateways/paypal-payment.gateway";
 import { PaypalRedirectStrategy } from "../strategies/paypal-redirect.strategy";
 import { PaymentStrategy } from "../../../domain/ports/payment-strategy.port";
+import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
 
 @Injectable()
 export class PaypalProviderFactory implements ProviderFactory {
     readonly providerId = 'paypal' as const;
 
     private readonly gateway = inject(PaypalPaymentGateway)
+
+    getGateway(): PaymentGateway {
+        return this.gateway;
+    }
 
     createStrategy(type: PaymentMethodType): PaymentStrategy {
         switch (type) {

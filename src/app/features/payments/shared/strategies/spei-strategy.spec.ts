@@ -1,7 +1,7 @@
 import { firstValueFrom, of } from "rxjs";
 import { SpeiStrategy } from './spei-strategy';
 import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
-import { CreatePaymentRequest } from "../../domain/models/payment.types";
+import { CreatePaymentRequest } from "../../domain/models/payment.requests";
 
 describe('SpeiStrategy', () => {
     let strategy: SpeiStrategy;

@@ -2,7 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { ProviderFactory } from '../../domain/ports/provider-factory.port';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { StartPaymentUseCase } from './start-payment.use-case'
-import { CreatePaymentRequest, PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
+import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
+import { CreatePaymentRequest } from '../../domain/models/payment.requests';
 import { PaymentStrategy } from '../../domain/ports/payment-strategy.port';
 import { firstValueFrom, of, throwError } from 'rxjs';
 
@@ -34,8 +35,13 @@ describe('StartPaymentUseCase', () => {
         createStrategy: vi.fn(() => strategyMock),
     }
 
+    const providerFactoryWithGetGatewayMock = {
+        ...providerFactoryMock,
+        getGateway: vi.fn(),
+    };
+
     const registryMock = {
-        get: vi.fn((providerId: PaymentProviderId) => providerFactoryMock),
+        get: vi.fn((providerId: PaymentProviderId) => providerFactoryWithGetGatewayMock),
     } satisfies Pick<ProviderFactoryRegistry, 'get'>;
 
     beforeEach(() => {
@@ -51,7 +57,7 @@ describe('StartPaymentUseCase', () => {
     })
 
     it('uses default provider when providerId is not provided', async () => {
-        const result = await firstValueFrom(useCase.execute(req));
+        const result = await firstValueFrom(useCase.execute(req, 'stripe'));
 
         expect(registryMock.get).toHaveBeenCalledTimes(1);
         expect(registryMock.get).toHaveBeenCalledWith('stripe');
@@ -78,7 +84,7 @@ describe('StartPaymentUseCase', () => {
                 throw new Error('Registry failed');
             })
 
-            await expect(firstValueFrom(useCase.execute(req)))
+            await expect(firstValueFrom(useCase.execute(req, 'stripe')))
                 .rejects.toThrowError('Registry failed');
         })
 
@@ -86,7 +92,7 @@ describe('StartPaymentUseCase', () => {
             (providerFactoryMock.createStrategy as any).mockImplementationOnce(() => {
                 throw new Error('Strategy creation failed');
             })
-            await expect(firstValueFrom(useCase.execute(req, 'stripe')))
+            await expect(firstValueFrom(useCase.execute(req, 'paypal')))
                 .rejects.toThrowError('Strategy creation failed');
         })
 

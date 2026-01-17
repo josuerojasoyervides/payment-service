@@ -1,0 +1,189 @@
+<h2>Payments Runtime Check</h2>
+
+<section style="display: flex; gap: 24px; flex-wrap: wrap;">
+    <!-- Providers -->
+    <div style="min-width: 260px;">
+        <h3>Providers (desde multi token)</h3>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            @for (p of providerIds(); track p) {
+            <button (click)="onSelectProvider(p)" [disabled]="selectedProviderId() === p">
+                {{ p }}
+            </button>
+            }
+        </div>
+
+        <p style="margin-top: 12px;">
+            <strong>Seleccionado:</strong> {{ selectedProviderId() }}
+        </p>
+    </div>
+
+    <!-- Methods -->
+    <div style="min-width: 260px;">
+        <h3>Method</h3>
+
+        <div style="display: flex; gap: 8px;">
+            <button (click)="onSelectMethod('card')" [disabled]="selectedMethodType() === 'card'">
+                card
+            </button>
+
+            <button (click)="onSelectMethod('spei')" [disabled]="selectedMethodType() === 'spei'">
+                spei
+            </button>
+        </div>
+
+        <p style="margin-top: 12px;">
+            <strong>Seleccionado:</strong> {{ selectedMethodType() }}
+        </p>
+    </div>
+</section>
+
+<hr />
+
+<section style="margin-top: 16px;">
+    <h3>Multi DI wiring debug (PAYMENT_PROVIDER_FACTORIES)</h3>
+
+    <p>
+        <strong>Total factories inyectadas:</strong> {{ factoriesCount() }}
+    </p>
+
+    @if (duplicates().length > 0) {
+    <p style="color: red;">
+        <strong>⚠️ Duplicados detectados:</strong>
+        @for (d of duplicates(); track d) {
+        <span style="margin-right: 8px;">{{ d }}</span>
+        }
+    </p>
+    } @else {
+    <p style="color: green;">✅ No hay duplicados</p>
+    }
+
+    <ul>
+        @for (f of factoriesDebug(); track f.providerId + f.className) {
+        <li>
+            <strong>{{ f.providerId }}</strong> → {{ f.className }}
+        </li>
+        }
+    </ul>
+</section>
+
+<hr />
+
+<section style="margin-top: 16px;">
+    <h3>💀 Self Test Nivel Dios</h3>
+
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button (click)="runSelfTest()" [disabled]="selfTestRunning()">
+            Run self test (safe)
+        </button>
+
+        <button (click)="runSelfTest({ smokeStart: true })" [disabled]="selfTestRunning()">
+            Run self test + smoke start (hits pipeline)
+        </button>
+    </div>
+
+    @if (selfTestRunning()) {
+    <p>⏳ Running self test…</p>
+    }
+
+    @if (selfTestRows().length > 0) {
+    <p style="margin-top: 12px;">
+        <strong>Summary:</strong>
+        total={{ selfTestSummary().total }},
+        supported={{ selfTestSummary().supported }},
+        notSupported={{ selfTestSummary().notSupported }},
+        smokeOk={{ selfTestSummary().smokeOk }},
+        smokeErr={{ selfTestSummary().smokeErr }}
+    </p>
+
+    <table border="1" cellpadding="6" style="border-collapse: collapse; margin-top: 8px;">
+        <thead>
+            <tr>
+                <th>Provider</th>
+                <th>Factory</th>
+                <th>Method</th>
+                <th>Supported</th>
+                <th>Strategy</th>
+                <th>Smoke</th>
+                <th>Error</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @for (r of selfTestRows(); track r.providerId + '-' + r.method) {
+            <tr>
+                <td>{{ r.providerId }}</td>
+                <td>{{ r.factoryClass }}</td>
+                <td>{{ r.method }}</td>
+                <td>
+                    @if (r.supported) { ✅ } @else { ❌ }
+                </td>
+                <td>{{ r.strategyClass ?? '-' }}</td>
+                <td>{{ r.smokeStart ?? '-' }}</td>
+                <td style="color: red;">{{ r.error ?? '' }}</td>
+            </tr>
+            }
+        </tbody>
+    </table>
+
+    <p style="margin-top: 8px; opacity: 0.8;">
+        Tip: también mira la consola — hay un <code>console.table</code> más detallado 🤝
+    </p>
+    }
+</section>
+
+<hr />
+
+
+<section style="margin-top: 16px;">
+    <h3>Registry + Factory resolution</h3>
+
+    <p>
+        <strong>Factory class:</strong> {{ factoryClassName() }}
+    </p>
+
+    @if (hasFactoryError()) {
+    <p style="color: red;">
+        <strong>Error:</strong> {{ $any(resolvedFactory()).message }}
+    </p>
+    } @else {
+    <h4>Supported methods (probando createStrategy)</h4>
+
+    <ul>
+        @for (item of supportedMethods(); track item.method) {
+        <li>
+            <strong>{{ item.method }}</strong> →
+            @if (item.supported) {
+            ✅ supported (strategy: {{ item.strategyClassName }})
+            } @else {
+            ❌ not supported ({{ item.error }})
+            }
+        </li>
+        }
+    </ul>
+    }
+</section>
+
+<hr />
+
+<section style="margin-top: 16px;">
+    <h3>Full pipeline test (Facade → UseCase → Registry → Factory → Strategy)</h3>
+
+    <button (click)="startTestPayment()" [disabled]="facade.isLoading()">
+        Start test payment
+    </button>
+
+    @if (facade.isLoading()) {
+    <p>⏳ Loading…</p>
+    }
+
+    @if (facade.intent(); as intent) {
+    <p>✅ Payment Intent:</p>
+    <pre>{{ intent | json }}</pre>
+    }
+
+    @if (facade.error(); as err) {
+    <p style="color: red;">❌ Error:</p>
+    <pre>{{ err | json }}</pre>
+    }
+</section>

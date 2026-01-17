@@ -1,10 +1,12 @@
-import { CreatePaymentRequest } from "../../domain/models/payment.requests";
-import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
-import { CardStrategy } from "./card-strategy"
+import { TestBed } from "@angular/core/testing";
+import { PaypalRedirectStrategy } from "./paypal-redirect.strategy";
+import { PaypalPaymentGateway } from "../gateways/paypal-payment.gateway";
+import { CreatePaymentRequest } from "../../../domain/models/payment.requests";
 import { firstValueFrom, of } from "rxjs";
+import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
 
-describe('CardStrategy', () => {
-    let strategy: CardStrategy;
+describe('PaypalRedirectStrategy', () => {
+    let strategy: PaypalRedirectStrategy;
 
     let gatewayMock: Pick<PaymentGateway, 'createIntent' | 'providerId'>;
 
@@ -14,6 +16,7 @@ describe('CardStrategy', () => {
         currency: 'MXN',
         method: { type: 'card', token: 'tok_123' },
     };
+
 
     beforeEach(() => {
         gatewayMock = {
@@ -29,7 +32,14 @@ describe('CardStrategy', () => {
             )
         } as any;
 
-        strategy = new CardStrategy(gatewayMock as any);
+        TestBed.configureTestingModule({
+            providers: [
+                PaypalRedirectStrategy,
+                { provide: PaypalPaymentGateway, useValue: gatewayMock }
+            ]
+        })
+
+        strategy = new PaypalRedirectStrategy(gatewayMock as any);
     })
 
     it('delegates to gateway.createIntent(req)', async () => {

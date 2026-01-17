@@ -7,11 +7,13 @@ describe('ProviderFactoryRegistry', () => {
 
     const stripeFactoryMock: ProviderFactory = {
         providerId: 'stripe',
+        getGateway: vi.fn(),
         createStrategy: vi.fn(),
     };
 
     const paypalFactoryMock: ProviderFactory = {
         providerId: 'paypal',
+        getGateway: vi.fn(),
         createStrategy: vi.fn(),
     };
 
@@ -58,8 +60,8 @@ describe('ProviderFactoryRegistry', () => {
         TestBed.configureTestingModule({
             providers: [
                 ProviderFactoryRegistry,
-                { provide: PAYMENT_PROVIDER_FACTORIES, useValue: { providerId: 'stripe', createStrategy: vi.fn() }, multi: true },
-                { provide: PAYMENT_PROVIDER_FACTORIES, useValue: { providerId: 'stripe', createStrategy: vi.fn() }, multi: true },
+                { provide: PAYMENT_PROVIDER_FACTORIES, useValue: { providerId: 'stripe', getGateway: vi.fn(), createStrategy: vi.fn() }, multi: true },
+                { provide: PAYMENT_PROVIDER_FACTORIES, useValue: { providerId: 'stripe', getGateway: vi.fn(), createStrategy: vi.fn() }, multi: true },
             ],
         });
 

@@ -5,12 +5,18 @@ import { PaymentStrategy } from '../../../domain/ports/payment-strategy.port';
 import { StripePaymentGateway } from '../gateways/stripe-payment.gateway';
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
+import { PaymentGateway } from '../../../domain/ports/payment-gateway.port';
 
 @Injectable()
 export class StripeProviderFactory implements ProviderFactory {
     readonly providerId = 'stripe' as const;
 
     private readonly gateway = inject(StripePaymentGateway);
+
+
+    getGateway(): PaymentGateway {
+        return this.gateway;
+    }
 
     createStrategy(type: PaymentMethodType): PaymentStrategy {
         switch (type) {
