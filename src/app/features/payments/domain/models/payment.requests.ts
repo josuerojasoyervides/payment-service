@@ -1,4 +1,4 @@
-import { PaymentMethodType, PaymentProviderId, CurrencyCode } from './payment.types';
+import { PaymentMethodType, CurrencyCode } from './payment.types';
 
 export interface CreatePaymentRequest {
     orderId: string;
@@ -12,16 +12,13 @@ export interface CreatePaymentRequest {
 
 export interface ConfirmPaymentRequest {
     intentId: string;
-    providerId: PaymentProviderId;
     returnUrl?: string;
 }
 
 export interface CancelPaymentRequest {
     intentId: string;
-    providerId: PaymentProviderId;
 }
 
 export interface GetPaymentStatusRequest {
     intentId: string;
-    providerId: PaymentProviderId;
 }

@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 
 import { PaymentsFacade } from './payments-facade';
 import { StartPaymentUseCase } from '../../application/use-cases/start-payment.use-case';
-import { PaymentIntent } from '../../domain/models/payment.types';
+import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
 import { CreatePaymentRequest } from '../../domain/models/payment.requests';
 
 describe('PaymentsFacade', () => {
@@ -17,9 +17,11 @@ describe('PaymentsFacade', () => {
         method: { type: 'card', token: 'tok_123' },
     };
 
+    const providerId: PaymentProviderId = 'stripe' as const;
+
     const intent: PaymentIntent = {
         id: 'pi_1',
-        provider: 'stripe',
+        provider: providerId,
         status: 'requires_payment_method',
         amount: 100,
         currency: 'MXN',
@@ -55,7 +57,7 @@ describe('PaymentsFacade', () => {
             subscribe: vi.fn(), // hack mínimo para simular "no emite"
         } as any);
 
-        facade.start(req);
+        facade.start(req, providerId);
 
         expect(facade.state()).toEqual({ status: 'loading' });
         expect(facade.isLoading()).toBe(true);
@@ -63,28 +65,28 @@ describe('PaymentsFacade', () => {
         expect(facade.error()).toBeNull();
 
         expect(startPaymentUseCaseMock.execute).toHaveBeenCalledTimes(1);
-        expect(startPaymentUseCaseMock.execute).toHaveBeenCalledWith(req, undefined);
+        expect(startPaymentUseCaseMock.execute).toHaveBeenCalledWith(req, providerId);
     });
 
     it('transitions to success when StartPaymentUseCase emits PaymentIntent', () => {
         startPaymentUseCaseMock.execute.mockReturnValueOnce(of(intent));
 
-        facade.start(req);
+        facade.start(req, providerId);
 
         expect(facade.state()).toEqual({ status: 'success', intent });
         expect(facade.isLoading()).toBe(false);
         expect(facade.intent()).toEqual(intent);
         expect(facade.error()).toBeNull();
 
-        expect(startPaymentUseCaseMock.execute).toHaveBeenCalledWith(req, undefined);
+        expect(startPaymentUseCaseMock.execute).toHaveBeenCalledWith(req, providerId);
     });
 
     it('passes providerId to StartPaymentUseCase when provided', () => {
         startPaymentUseCaseMock.execute.mockReturnValueOnce(of(intent));
 
-        facade.start(req, 'paypal');
+        facade.start(req, providerId);
 
-        expect(startPaymentUseCaseMock.execute).toHaveBeenCalledWith(req, 'paypal');
+        expect(startPaymentUseCaseMock.execute).toHaveBeenCalledWith(req, providerId);
         expect(facade.state().status).toBe('success');
     });
 
@@ -94,7 +96,7 @@ describe('PaymentsFacade', () => {
             throwError(() => boom)
         );
 
-        facade.start(req);
+        facade.start(req, providerId);
 
         expect(facade.state()).toEqual({ status: 'error', error: boom });
         expect(facade.isLoading()).toBe(false);
@@ -105,7 +107,7 @@ describe('PaymentsFacade', () => {
     it('reset() returns to idle state', () => {
         startPaymentUseCaseMock.execute.mockReturnValueOnce(of(intent));
 
-        facade.start(req);
+        facade.start(req, providerId);
         expect(facade.state().status).toBe('success');
 
         facade.reset();
@@ -119,13 +121,13 @@ describe('PaymentsFacade', () => {
     it('start() overrides previous success state', () => {
         startPaymentUseCaseMock.execute.mockReturnValueOnce(of(intent));
 
-        facade.start(req);
+        facade.start(req, providerId);
         expect(facade.state().status).toBe('success');
 
         const intent2: PaymentIntent = { ...intent, id: 'pi_2' };
         startPaymentUseCaseMock.execute.mockReturnValueOnce(of(intent2));
 
-        facade.start(req);
+        facade.start(req, providerId);
 
         expect(facade.state()).toEqual({ status: 'success', intent: intent2 });
         expect(facade.intent()?.id).toBe('pi_2');
@@ -136,12 +138,12 @@ describe('PaymentsFacade', () => {
             throwError(() => new Error('first'))
         );
 
-        facade.start(req);
+        facade.start(req, providerId);
         expect(facade.state().status).toBe('error');
 
         startPaymentUseCaseMock.execute.mockReturnValueOnce(of(intent));
 
-        facade.start(req);
+        facade.start(req, providerId);
 
         expect(facade.state().status).toBe('success');
         expect(facade.intent()?.id).toBe('pi_1');

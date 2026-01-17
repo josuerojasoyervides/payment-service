@@ -1,18 +1,18 @@
 import { inject, Injectable } from '@angular/core';
+import { ConfirmPaymentRequest } from '../../domain/models/payment.requests';
 import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
-import { CreatePaymentRequest } from '../../domain/models/payment.requests';
 import { defer, Observable } from 'rxjs';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 
 @Injectable({ providedIn: 'root' })
-export class StartPaymentUseCase {
+export class ConfirmPaymentUseCase {
+
     private readonly registry = inject(ProviderFactoryRegistry);
 
-    execute(req: CreatePaymentRequest, providerId: PaymentProviderId): Observable<PaymentIntent> {
+    execute(req: ConfirmPaymentRequest, providerId: PaymentProviderId): Observable<PaymentIntent> {
         return defer(() => {
-            const providerFactory = this.registry.get(providerId);
-            const strategy = providerFactory.createStrategy(req.method.type);
-            return strategy.start(req);
+            const gateway = this.registry.get(providerId).getGateway();
+            return gateway.confirmIntent(req);
         })
     }
 }

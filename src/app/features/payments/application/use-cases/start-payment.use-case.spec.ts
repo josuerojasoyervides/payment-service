@@ -35,8 +35,13 @@ describe('StartPaymentUseCase', () => {
         createStrategy: vi.fn(() => strategyMock),
     }
 
+    const providerFactoryWithGetGatewayMock = {
+        ...providerFactoryMock,
+        getGateway: vi.fn(),
+    };
+
     const registryMock = {
-        get: vi.fn((providerId: PaymentProviderId) => providerFactoryMock),
+        get: vi.fn((providerId: PaymentProviderId) => providerFactoryWithGetGatewayMock),
     } satisfies Pick<ProviderFactoryRegistry, 'get'>;
 
     beforeEach(() => {
@@ -52,7 +57,7 @@ describe('StartPaymentUseCase', () => {
     })
 
     it('uses default provider when providerId is not provided', async () => {
-        const result = await firstValueFrom(useCase.execute(req));
+        const result = await firstValueFrom(useCase.execute(req, 'stripe'));
 
         expect(registryMock.get).toHaveBeenCalledTimes(1);
         expect(registryMock.get).toHaveBeenCalledWith('stripe');
@@ -79,7 +84,7 @@ describe('StartPaymentUseCase', () => {
                 throw new Error('Registry failed');
             })
 
-            await expect(firstValueFrom(useCase.execute(req)))
+            await expect(firstValueFrom(useCase.execute(req, 'stripe')))
                 .rejects.toThrowError('Registry failed');
         })
 
@@ -87,7 +92,7 @@ describe('StartPaymentUseCase', () => {
             (providerFactoryMock.createStrategy as any).mockImplementationOnce(() => {
                 throw new Error('Strategy creation failed');
             })
-            await expect(firstValueFrom(useCase.execute(req, 'stripe')))
+            await expect(firstValueFrom(useCase.execute(req, 'paypal')))
                 .rejects.toThrowError('Strategy creation failed');
         })
 

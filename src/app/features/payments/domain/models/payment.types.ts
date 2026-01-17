@@ -1,5 +1,6 @@
-export type PaymentProviderId = 'stripe' | 'paypal';
+import { NextAction } from "./payment.actions";
 
+export type PaymentProviderId = 'stripe' | 'paypal';
 export type PaymentMethodType = 'card' | 'spei';
 
 export type PaymentStatus =
@@ -22,6 +23,7 @@ export interface PaymentIntent {
 
     clientSecret?: string;
     redirectUrl?: string;
+    nextAction?: NextAction;
     raw?: unknown;
 }
 

@@ -1,7 +1,6 @@
 import { firstValueFrom, Observable, of, throwError } from 'rxjs';
-import { PaymentProviderId, PaymentIntent } from '../models/payment.types';
-import { PaymentStatus } from '../models/payment.types';
-import { CreatePaymentRequest } from '../models/payment.requests';
+import { PaymentProviderId, PaymentIntent, PaymentStatus } from '../models/payment.types';
+import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from '../models/payment.requests';
 import { PaymentGateway } from './payment-gateway.port'
 import { PaymentError } from '../models/payment.errors';
 import { TestBed } from '@angular/core/testing';
@@ -9,7 +8,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 class PaymentGatewayTest extends PaymentGateway {
-    providerId: PaymentProviderId = 'paypal'
+    readonly providerId = 'paypal' as const;
 
     public mode: 'ok' | 'raw-error' = 'ok';
 
@@ -22,9 +21,58 @@ class PaymentGatewayTest extends PaymentGateway {
             currency: req.currency,
             clientSecret: 'sec_test',
             redirectUrl: undefined,
-        })
+        });
     }
     protected mapIntent(dto: any): PaymentIntent {
+        return this.mapBase(dto);
+    }
+
+    protected confirmIntentRaw(req: ConfirmPaymentRequest): Observable<unknown> {
+        if (this.mode === 'raw-error') return throwError(() => ({ kind: 'RAW_ERROR', detail: 'boom' }));
+        return of({
+            id: req.intentId,
+            status: 'processing',
+            amount: 100,
+            currency: 'MXN',
+            clientSecret: 'sec_test',
+            redirectUrl: undefined,
+        });
+    }
+    protected mapConfirmIntent(dto: any): PaymentIntent {
+        return this.mapBase(dto);
+    }
+
+    protected cancelIntentRaw(req: CancelPaymentRequest): Observable<unknown> {
+        if (this.mode === 'raw-error') return throwError(() => ({ kind: 'RAW_ERROR', detail: 'boom' }));
+        return of({
+            id: req.intentId,
+            status: 'canceled',
+            amount: 100,
+            currency: 'MXN',
+            clientSecret: undefined,
+            redirectUrl: undefined,
+        });
+    }
+    protected mapCancelIntent(dto: any): PaymentIntent {
+        return this.mapBase(dto);
+    }
+
+    protected getIntentRaw(req: GetPaymentStatusRequest): Observable<unknown> {
+        if (this.mode === 'raw-error') return throwError(() => ({ kind: 'RAW_ERROR', detail: 'boom' }));
+        return of({
+            id: req.intentId,
+            status: 'requires_action',
+            amount: 100,
+            currency: 'MXN',
+            clientSecret: 'sec_test',
+            redirectUrl: 'https://example.com/redirect',
+        });
+    }
+    protected mapGetIntent(dto: any): PaymentIntent {
+        return this.mapBase(dto);
+    }
+
+    private mapBase(dto: any): PaymentIntent {
         return {
             id: dto.id,
             provider: this.providerId,
@@ -56,6 +104,27 @@ class PaymentGatewayBaseErrorTest extends PaymentGateway {
     protected mapIntent(dto: any): PaymentIntent {
         return dto as any;
     }
+
+    protected confirmIntentRaw(): Observable<unknown> {
+        return throwError(() => ({ kind: 'RAW_ERROR', detail: 'boom' }));
+    }
+    protected mapConfirmIntent(dto: any): PaymentIntent {
+        return dto as any;
+    }
+
+    protected cancelIntentRaw(): Observable<unknown> {
+        return throwError(() => ({ kind: 'RAW_ERROR', detail: 'boom' }));
+    }
+    protected mapCancelIntent(dto: any): PaymentIntent {
+        return dto as any;
+    }
+
+    protected getIntentRaw(): Observable<unknown> {
+        return throwError(() => ({ kind: 'RAW_ERROR', detail: 'boom' }));
+    }
+    protected mapGetIntent(dto: any): PaymentIntent {
+        return dto as any;
+    }
 }
 
 function validReq(overrides: Partial<CreatePaymentRequest> = {}): CreatePaymentRequest {
@@ -68,8 +137,28 @@ function validReq(overrides: Partial<CreatePaymentRequest> = {}): CreatePaymentR
     };
 }
 
-describe('PaymentGateway (abstract class) - createIntent', () => {
+function validConfirmReq(overrides: Partial<ConfirmPaymentRequest> = {}): ConfirmPaymentRequest {
+    return {
+        intentId: 'pi_123',
+        ...overrides,
+    };
+}
 
+function validCancelReq(overrides: Partial<CancelPaymentRequest> = {}): CancelPaymentRequest {
+    return {
+        intentId: 'pi_123',
+        ...overrides,
+    };
+}
+
+function validGetStatusReq(overrides: Partial<GetPaymentStatusRequest> = {}): GetPaymentStatusRequest {
+    return {
+        intentId: 'pi_123',
+        ...overrides,
+    };
+}
+
+describe('PaymentGateway (abstract class)', () => {
     let gateway: PaymentGatewayTest;
 
     beforeEach(() => {
@@ -77,94 +166,231 @@ describe('PaymentGateway (abstract class) - createIntent', () => {
             providers: [provideHttpClient(), provideHttpClientTesting()],
         });
 
-        gateway = TestBed.runInInjectionContext(() => new PaymentGatewayTest())
+        gateway = TestBed.runInInjectionContext(() => new PaymentGatewayTest());
     });
 
-    describe('validations', () => {
-        it('throws if orderId is missing (validateCreate)', () => {
-            expect(() => gateway.createIntent(validReq({ orderId: '' })))
-                .toThrowError('orderId is required')
+    describe('createIntent', () => {
+        describe('validations', () => {
+            it('throws if orderId is missing (validateCreate)', () => {
+                expect(() => gateway.createIntent(validReq({ orderId: '' })))
+                    .toThrowError('orderId is required')
+            })
+
+            it('throws if currency is missing (validCreate)', () => {
+                expect(() => gateway.createIntent(validReq({ currency: '' as any })))
+                    .toThrowError('currency is required')
+            })
+
+            it('throws if amount is not valid (validCreate)', () => {
+                expect(() => gateway.createIntent(validReq({ amount: 0 })))
+                    .toThrowError('amount is invalid')
+            })
+
+            it('throws if method type is missing', () => {
+                expect(() => gateway.createIntent(validReq({ method: undefined as any })))
+                    .toThrowError('payment method type is required')
+            })
+
+            it('throws if method type is card but token is missing', () => {
+                expect(() => gateway.createIntent(validReq({ method: { type: 'card' } } as any)))
+                    .toThrowError('card token is required')
+            })
+
+            it('does not require token when method type is spei', async () => {
+                const req = validReq({ method: { type: 'spei' } as any });
+                const res = await firstValueFrom(gateway.createIntent(req));
+                expect(res.provider).toBe('paypal');
+            });
         })
 
-        it('throws if currency is missing (validCreate)', () => {
-            expect(() => gateway.createIntent(validReq({ currency: '' as any })))
-                .toThrowError('currency is required')
+        describe('happy path', () => {
+            it('should execute createIntentRaw', async () => {
+                const spy = vi.spyOn(gateway as any, 'createIntentRaw');
+                await firstValueFrom(gateway.createIntent(validReq()));
+                expect(spy).toHaveBeenCalledTimes(1);
+            })
+
+            it('should execute mapIntent', async () => {
+                const spy = vi.spyOn(gateway as any, 'mapIntent');
+                await firstValueFrom(gateway.createIntent(validReq()));
+                expect(spy).toHaveBeenCalledTimes(1);
+            });
+
+            it('maps dto -> PaymentIntent when raw call succeeds', async () => {
+                const res = await firstValueFrom(gateway.createIntent(validReq({ amount: 250 })))
+
+                expect(res).toEqual(
+                    expect.objectContaining({
+                        id: 'pi_123',
+                        provider: 'paypal',
+                        status: 'requires_payment_method',
+                        amount: 250,
+                        currency: 'MXN',
+                        clientSecret: 'sec_test'
+                    })
+                )
+
+                expect(res.raw).toBeTruthy()
+            })
         })
 
-        it('throws if amount is not valid (validCreate)', () => {
-            expect(() => gateway.createIntent(validReq({ amount: 0 })))
-                .toThrowError('amount is invalid')
-        })
+        describe('error handling', () => {
+            it('normalizes error when raw call fails', async () => {
+                gateway.mode = 'raw-error';
 
-        it('throws if method type is missing', () => {
-            expect(() => gateway.createIntent(validReq({ method: undefined as any })))
-                .toThrowError('payment method type is required')
-        })
+                await expect(firstValueFrom(gateway.createIntent(validReq())))
+                    .rejects.toMatchObject({
+                        code: 'provider_error',
+                        message: 'Test normalized error',
+                        raw: { kind: 'RAW_ERROR', detail: 'boom' }
+                    })
+            })
 
-        it('throws if method type is card but token is missing', () => {
-            expect(() => gateway.createIntent(validReq({ method: { type: 'card' } } as any)))
-                .toThrowError('card token is required')
-        })
+            it('uses base normalizeError when subclass does not override it', async () => {
+                const gateway = TestBed.runInInjectionContext(() => new PaymentGatewayBaseErrorTest());
 
-        it('does not require token when method type is spei', async () => {
-            const req = validReq({ method: { type: 'spei' } as any });
-            const res = await firstValueFrom(gateway.createIntent(req));
-            expect(res.provider).toBe('paypal');
+                await expect(firstValueFrom(gateway.createIntent(validReq())))
+                    .rejects.toMatchObject({
+                        code: 'provider_error',
+                        message: 'Payment provider error',
+                        raw: { kind: 'RAW_ERROR', detail: 'boom' },
+                    });
+            });
+        })
+    });
+
+    describe('confirm', () => {
+        describe('validations', () => {
+            it('throws if intentId is missing (validateConfirm)', () => {
+                expect(() => gateway.confirmIntent(validConfirmReq({ intentId: '' })))
+                    .toThrowError('intentId is required');
+            });
         });
-    })
 
-    describe('createIntent flow', () => {
-        it('should execute createIntentRaw', async () => {
-            const spy = vi.spyOn(gateway as any, 'createIntentRaw');
-            await firstValueFrom(gateway.createIntent(validReq()));
-            expect(spy).toHaveBeenCalledTimes(1);
-        })
+        describe('happy path', () => {
+            it('executes confirmIntentRaw and mapConfirmIntent', async () => {
+                const rawSpy = vi.spyOn(gateway as any, 'confirmIntentRaw');
+                const mapSpy = vi.spyOn(gateway as any, 'mapConfirmIntent');
 
-        it('should execute mapIntent', async () => {
-            const spy = vi.spyOn(gateway as any, 'mapIntent');
-            await firstValueFrom(gateway.createIntent(validReq()));
-            expect(spy).toHaveBeenCalledTimes(1);
+                await firstValueFrom(gateway.confirmIntent(validConfirmReq()));
+
+                expect(rawSpy).toHaveBeenCalledTimes(1);
+                expect(mapSpy).toHaveBeenCalledTimes(1);
+            });
         });
 
-        it('maps dto -> PaymentIntent when raw call succeeds', async () => {
-            const res = await firstValueFrom(gateway.createIntent(validReq({ amount: 250 })))
+        describe('error handling', () => {
+            it('normalizes error when raw call fails', async () => {
+                gateway.mode = 'raw-error';
 
-            expect(res).toEqual(
-                expect.objectContaining({
-                    id: 'pi_123',
-                    provider: 'paypal',
-                    status: 'requires_payment_method',
-                    amount: 250,
-                    currency: 'MXN',
-                    clientSecret: 'sec_test'
-                })
-            )
+                await expect(firstValueFrom(gateway.confirmIntent(validConfirmReq())))
+                    .rejects.toMatchObject({
+                        code: 'provider_error',
+                        message: 'Test normalized error',
+                        raw: { kind: 'RAW_ERROR', detail: 'boom' }
+                    })
+            })
 
-            expect(res.raw).toBeTruthy()
-        })
-    })
+            it('uses base normalizeError when subclass does not override it', async () => {
+                const gateway = TestBed.runInInjectionContext(() => new PaymentGatewayBaseErrorTest());
 
-    describe('error handling', () => {
-        it('normalizes error when raw call fails', async () => {
-            gateway.mode = 'raw-error';
-
-            await expect(firstValueFrom(gateway.createIntent(validReq())))
-                .rejects.toMatchObject({
-                    code: 'provider_error',
-                    message: 'Test normalized error',
-                    raw: { kind: 'RAW_ERROR', detail: 'boom' }
-                })
-        })
-
-        it('uses base normalizeError when subclass does not override it', async () => {
-            const gateway = TestBed.runInInjectionContext(() => new PaymentGatewayBaseErrorTest());
-
-            await expect(firstValueFrom(gateway.createIntent(validReq())))
-                .rejects.toMatchObject({
-                    code: 'provider_error',
-                    message: 'Payment provider error',
-                    raw: { kind: 'RAW_ERROR', detail: 'boom' },
-                });
+                await expect(firstValueFrom(gateway.confirmIntent(validConfirmReq())))
+                    .rejects.toMatchObject({
+                        code: 'provider_error',
+                        message: 'Payment provider error',
+                        raw: { kind: 'RAW_ERROR', detail: 'boom' },
+                    });
+            });
         });
-    })
+    });
+
+    describe('cancel', () => {
+        describe('validations', () => {
+            it('throws if intentId is missing (validateCancel)', () => {
+                expect(() => gateway.cancelIntent(validCancelReq({ intentId: '' })))
+                    .toThrowError('intentId is required');
+            });
+        });
+
+        describe('happy path', () => {
+            it('executes cancelIntentRaw and mapCancelIntent', async () => {
+                const rawSpy = vi.spyOn(gateway as any, 'cancelIntentRaw');
+                const mapSpy = vi.spyOn(gateway as any, 'mapCancelIntent');
+
+                await firstValueFrom(gateway.cancelIntent(validCancelReq()));
+
+                expect(rawSpy).toHaveBeenCalledTimes(1);
+                expect(mapSpy).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        describe('error handling', () => {
+            it('normalizes error when raw call fails', async () => {
+                gateway.mode = 'raw-error';
+
+                await expect(firstValueFrom(gateway.cancelIntent(validCancelReq())))
+                    .rejects.toMatchObject({
+                        code: 'provider_error',
+                        message: 'Test normalized error',
+                        raw: { kind: 'RAW_ERROR', detail: 'boom' }
+                    })
+            })
+
+            it('uses base normalizeError when subclass does not override it', async () => {
+                const gateway = TestBed.runInInjectionContext(() => new PaymentGatewayBaseErrorTest());
+
+                await expect(firstValueFrom(gateway.cancelIntent(validCancelReq())))
+                    .rejects.toMatchObject({
+                        code: 'provider_error',
+                        message: 'Payment provider error',
+                        raw: { kind: 'RAW_ERROR', detail: 'boom' },
+                    });
+            });
+        });
+    });
+
+    describe('get', () => {
+        describe('validations', () => {
+            it('throws if intentId is missing (validateGetStatus)', () => {
+                expect(() => gateway.getIntent(validGetStatusReq({ intentId: '' })))
+                    .toThrowError('intentId is required');
+            });
+        });
+
+        describe('happy path', () => {
+            it('executes getIntentRaw and mapGetIntent', async () => {
+                const rawSpy = vi.spyOn(gateway as any, 'getIntentRaw');
+                const mapSpy = vi.spyOn(gateway as any, 'mapGetIntent');
+
+                await firstValueFrom(gateway.getIntent(validGetStatusReq()));
+
+                expect(rawSpy).toHaveBeenCalledTimes(1);
+                expect(mapSpy).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        describe('error handling', () => {
+            it('normalizes error when raw call fails', async () => {
+                gateway.mode = 'raw-error';
+
+                await expect(firstValueFrom(gateway.getIntent(validGetStatusReq())))
+                    .rejects.toMatchObject({
+                        code: 'provider_error',
+                        message: 'Test normalized error',
+                        raw: { kind: 'RAW_ERROR', detail: 'boom' }
+                    })
+            })
+
+            it('uses base normalizeError when subclass does not override it', async () => {
+                const gateway = TestBed.runInInjectionContext(() => new PaymentGatewayBaseErrorTest());
+
+                await expect(firstValueFrom(gateway.getIntent(validGetStatusReq())))
+                    .rejects.toMatchObject({
+                        code: 'provider_error',
+                        message: 'Payment provider error',
+                        raw: { kind: 'RAW_ERROR', detail: 'boom' },
+                    });
+            });
+        });
+    });
 });
