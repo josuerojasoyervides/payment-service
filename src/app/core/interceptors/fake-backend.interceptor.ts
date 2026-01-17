@@ -10,8 +10,32 @@ export class FakePaymentsBackendInterceptor implements HttpInterceptor {
             return this.fakeStripeIntent(req.body);
         }
 
+        if (req.method === 'POST' && req.url === '/api/payments/stripe/intents/confirm') {
+            return this.fakeStripeConfirm(req.body);
+        }
+
+        if (req.method === 'POST' && req.url === '/api/payments/stripe/intents/cancel') {
+            return this.fakeStripeCancel(req.body);
+        }
+
+        if (req.method === 'GET' && req.url.startsWith('/api/payments/stripe/intents/')) {
+            return this.fakeStripeStatus(req.url);
+        }
+
         if (req.method === 'POST' && req.url === '/api/payments/paypal/intents') {
             return this.fakePaypalIntent(req.body);
+        }
+
+        if (req.method === 'POST' && req.url === '/api/payments/paypal/intents/confirm') {
+            return this.fakePaypalConfirm(req.body);
+        }
+
+        if (req.method === 'POST' && req.url === '/api/payments/paypal/intents/cancel') {
+            return this.fakePaypalCancel(req.body);
+        }
+
+        if (req.method === 'GET' && req.url.startsWith('/api/payments/paypal/intents/')) {
+            return this.fakePaypalStatus(req.url);
         }
 
         // lo demás pasa normal
@@ -42,6 +66,46 @@ export class FakePaymentsBackendInterceptor implements HttpInterceptor {
         return of(new HttpResponse({ status: 200, body: response })).pipe(delay(250));
     }
 
+    private fakeStripeConfirm(body: any): Observable<HttpEvent<any>> {
+        const response = {
+            id: body.intentId ?? 'pi_fake_stripe_1',
+            status: 'processing',
+            amount: 100,
+            currency: 'MXN',
+            clientSecret: 'sec_fake_stripe',
+            redirectUrl: null,
+        };
+
+        return of(new HttpResponse({ status: 200, body: response })).pipe(delay(200));
+    }
+
+    private fakeStripeCancel(body: any): Observable<HttpEvent<any>> {
+        const response = {
+            id: body.intentId ?? 'pi_fake_stripe_1',
+            status: 'canceled',
+            amount: 100,
+            currency: 'MXN',
+            clientSecret: null,
+            redirectUrl: null,
+        };
+
+        return of(new HttpResponse({ status: 200, body: response })).pipe(delay(200));
+    }
+
+    private fakeStripeStatus(url: string): Observable<HttpEvent<any>> {
+        const intentId = url.split('/').pop() || 'pi_fake_stripe_1';
+        const response = {
+            id: intentId,
+            status: 'requires_action',
+            amount: 100,
+            currency: 'MXN',
+            clientSecret: 'sec_fake_stripe',
+            redirectUrl: 'https://fake-bank/redirect',
+        };
+
+        return of(new HttpResponse({ status: 200, body: response })).pipe(delay(200));
+    }
+
     private fakePaypalIntent(body: any): Observable<HttpEvent<any>> {
         const method = body?.method?.type;
 
@@ -64,5 +128,45 @@ export class FakePaymentsBackendInterceptor implements HttpInterceptor {
         }
 
         return of(new HttpResponse({ status: 200, body: response })).pipe(delay(250));
+    }
+
+    private fakePaypalConfirm(body: any): Observable<HttpEvent<any>> {
+        const response = {
+            id: body.intentId ?? 'pi_fake_paypal_1',
+            status: 'processing',
+            amount: 100,
+            currency: 'MXN',
+            clientSecret: null,
+            redirectUrl: null,
+        };
+
+        return of(new HttpResponse({ status: 200, body: response })).pipe(delay(200));
+    }
+
+    private fakePaypalCancel(body: any): Observable<HttpEvent<any>> {
+        const response = {
+            id: body.intentId ?? 'pi_fake_paypal_1',
+            status: 'canceled',
+            amount: 100,
+            currency: 'MXN',
+            clientSecret: null,
+            redirectUrl: null,
+        };
+
+        return of(new HttpResponse({ status: 200, body: response })).pipe(delay(200));
+    }
+
+    private fakePaypalStatus(url: string): Observable<HttpEvent<any>> {
+        const intentId = url.split('/').pop() || 'pi_fake_paypal_1';
+        const response = {
+            id: intentId,
+            status: 'requires_action',
+            amount: 100,
+            currency: 'MXN',
+            clientSecret: null,
+            redirectUrl: 'https://paypal.fake/approve',
+        };
+
+        return of(new HttpResponse({ status: 200, body: response })).pipe(delay(200));
     }
 }

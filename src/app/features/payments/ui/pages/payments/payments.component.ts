@@ -1,11 +1,11 @@
-import { Component, computed, inject, signal } from "@angular/core";
-import { PaymentMethodType, PaymentProviderId } from "../../../domain/models/payment.types";
+import { Component, OnDestroy, computed, inject, signal } from "@angular/core";
+import { PaymentIntent, PaymentMethodType, PaymentProviderId } from "../../../domain/models/payment.types";
 import { CreatePaymentRequest } from "../../../domain/models/payment.requests";
-import { PaymentsFacade } from "../../facades/payments-facade";
 import { ProviderFactory } from "../../../domain/ports/provider-factory.port";
 import { PAYMENT_PROVIDER_FACTORIES } from "../../../application/tokens/payment-provider-factories.token";
 import { ProviderFactoryRegistry } from "../../../application/registry/provider-factory.registry";
 import { CommonModule } from "@angular/common";
+import { PAYMENTS_STATE } from "../../../application/tokens/payment-state.token";
 
 type SelfTestRow = {
     providerId: PaymentProviderId | string;
@@ -24,14 +24,41 @@ type SelfTestRow = {
 @Component({
     selector: 'app-payments',
     templateUrl: './payments.component.html',
-    imports: [CommonModule]
+    imports: [CommonModule],
 })
-export class PaymentsComponent {
+export class PaymentsComponent implements OnDestroy {
     private readonly factories = inject<ProviderFactory[]>(PAYMENT_PROVIDER_FACTORIES);
     private readonly registry = inject(ProviderFactoryRegistry);
+    private readonly paymentState = inject(PAYMENTS_STATE);
 
-    // ✅ Opcional: para probar flujo completo StartPaymentUseCase → Registry → Factory → Strategy → Gateway
-    readonly facade = inject(PaymentsFacade);
+    // UI state local (derivado del port)
+    private readonly _state = signal(this.paymentState.getSnapshot());
+    private readonly unsubscribe = this.paymentState.subscribe(() => {
+        const snapshot = this.paymentState.getSnapshot();
+        this._state.set(snapshot);
+
+        if (this.actionLoading() && snapshot.status !== 'loading') {
+            if (snapshot.status === 'ready') {
+                this.actionResult.set(snapshot.intent);
+            }
+            if (snapshot.status === 'error') {
+                this.actionError.set(snapshot.error);
+            }
+            this.actionLoading.set(false);
+        }
+    });
+
+    readonly isLoading = computed(() => this._state().status === 'loading');
+    readonly intent = computed(() => {
+        const state = this._state();
+        if (state.status === 'ready') return state.intent;
+        return null;
+    });
+    readonly error = computed(() => {
+        const state = this._state();
+        if (state.status === 'error') return state.error;
+        return null;
+    });
 
     // Providers disponibles (del multi token)
     readonly providerIds = computed<PaymentProviderId[]>(() => {
@@ -42,6 +69,12 @@ export class PaymentsComponent {
     // UI state
     readonly selectedProviderId = signal<PaymentProviderId>('stripe');
     readonly selectedMethodType = signal<PaymentMethodType>('card');
+
+    // Intent actions UI state
+    readonly intentIdInput = signal('');
+    readonly actionLoading = signal(false);
+    readonly actionResult = signal<PaymentIntent | null>(null);
+    readonly actionError = signal<unknown | null>(null);
 
     // Info calculada (para debug/validación)
     readonly resolvedFactory = computed(() => {
@@ -103,12 +136,14 @@ export class PaymentsComponent {
 
     onSelectProvider(providerId: PaymentProviderId) {
         this.selectedProviderId.set(providerId);
-        this.facade.reset(); // opcional: limpiar estado de pago si cambias provider
+        this.paymentState.reset();
+        this.resetActionState();
     }
 
     onSelectMethod(method: PaymentMethodType) {
         this.selectedMethodType.set(method);
-        this.facade.reset();
+        this.paymentState.reset();
+        this.resetActionState();
     }
 
     // ✅ Prueba de pipeline completo (StartPaymentUseCase etc.)
@@ -120,13 +155,14 @@ export class PaymentsComponent {
             orderId: 'order_demo',
             amount: 100,
             currency: 'MXN',
-            method:
-                method === 'card'
-                    ? { type: 'card', token: 'tok_demo' } // 👈 requerido por validateCreate()
-                    : { type: 'spei' },
+            method: method === 'card' ? { type: 'card', token: 'tok_demo' } : { type: 'spei' },
         };
 
-        this.facade.start(req, providerId);
+        this.paymentState.start(req, providerId);
+    }
+
+    onIntentIdInput(value: string) {
+        this.intentIdInput.set(value.trim());
     }
 
     readonly selfTestRunning = signal(false);
@@ -258,19 +294,19 @@ export class PaymentsComponent {
             try {
                 // Usamos el Facade para probar la cadena completa:
                 // Facade → UseCase → Registry → Factory → Strategy → Gateway
-                this.facade.reset();
-                this.facade.start(req, row.providerId as any);
+                this.paymentState.reset();
+                this.paymentState.start(req, row.providerId as any);
 
                 // esperamos un poquito a que actualice state (por si hay async real)
                 // Nota: si tu backend no existe, caerá en error y también es válido
                 await new Promise(resolve => setTimeout(resolve, 150));
 
-                if (this.facade.intent()) {
+                if (this.intent()) {
                     row.smokeStart = 'ok';
-                    row.smokeResult = this.facade.intent();
-                } else if (this.facade.error()) {
+                    row.smokeResult = this.intent();
+                } else if (this.error()) {
                     row.smokeStart = 'error';
-                    row.smokeResult = this.facade.error();
+                    row.smokeResult = this.error();
                 } else {
                     // Si quedó loading o nada pasó, lo marcamos como error “inconcluso”
                     row.smokeStart = 'error';
@@ -298,4 +334,59 @@ export class PaymentsComponent {
         console.groupEnd();
     }
 
+
+    confirmIntent() {
+        const intentId = this.getIntentIdForActions();
+        if (!intentId) return;
+
+        this.actionLoading.set(true);
+        this.actionError.set(null);
+        this.actionResult.set(null);
+
+        this.paymentState.confirm({ intentId }, this.selectedProviderId());
+    }
+
+    cancelIntent() {
+        const intentId = this.getIntentIdForActions();
+        if (!intentId) return;
+
+        this.actionLoading.set(true);
+        this.actionError.set(null);
+        this.actionResult.set(null);
+
+        this.paymentState.cancel({ intentId }, this.selectedProviderId());
+    }
+
+    refreshStatus() {
+        const intentId = this.getIntentIdForActions();
+        if (!intentId) return;
+
+        this.actionLoading.set(true);
+        this.actionError.set(null);
+        this.actionResult.set(null);
+
+        this.paymentState.refresh({ intentId }, this.selectedProviderId());
+    }
+
+    private getIntentIdForActions(): string | null {
+        const fromInput = this.intentIdInput();
+        const fromState = this.intent()?.id ?? '';
+        const intentId = fromInput || fromState;
+
+        if (!intentId) {
+            this.actionError.set({ message: 'No intent id available' });
+            return null;
+        }
+        return intentId;
+    }
+
+    private resetActionState() {
+        this.actionLoading.set(false);
+        this.actionResult.set(null);
+        this.actionError.set(null);
+    }
+
+    ngOnDestroy() {
+        this.unsubscribe();
+    }
 }
