@@ -1,7 +1,11 @@
 import { Component, computed, inject, signal } from "@angular/core";
-import { PaymentMethodType, PaymentProviderId } from "../../../domain/models/payment.types";
+import { Observable } from "rxjs";
+import { PaymentIntent, PaymentMethodType, PaymentProviderId } from "../../../domain/models/payment.types";
 import { CreatePaymentRequest } from "../../../domain/models/payment.requests";
 import { PaymentsFacade } from "../../facades/payments-facade";
+import { ConfirmPaymentUseCase } from "../../../application/use-cases/confirm-payment.use-case";
+import { CancelPaymentUseCase } from "../../../application/use-cases/cancel-payment.use-case";
+import { GetPaymentStatusUseCase } from "../../../application/use-cases/get-payment-status.use-case";
 import { ProviderFactory } from "../../../domain/ports/provider-factory.port";
 import { PAYMENT_PROVIDER_FACTORIES } from "../../../application/tokens/payment-provider-factories.token";
 import { ProviderFactoryRegistry } from "../../../application/registry/provider-factory.registry";
@@ -32,6 +36,9 @@ export class PaymentsComponent {
 
     // ✅ Opcional: para probar flujo completo StartPaymentUseCase → Registry → Factory → Strategy → Gateway
     readonly facade = inject(PaymentsFacade);
+    private readonly confirmPayment = inject(ConfirmPaymentUseCase);
+    private readonly cancelPayment = inject(CancelPaymentUseCase);
+    private readonly getPaymentStatus = inject(GetPaymentStatusUseCase);
 
     // Providers disponibles (del multi token)
     readonly providerIds = computed<PaymentProviderId[]>(() => {
@@ -42,6 +49,12 @@ export class PaymentsComponent {
     // UI state
     readonly selectedProviderId = signal<PaymentProviderId>('stripe');
     readonly selectedMethodType = signal<PaymentMethodType>('card');
+
+    // UI state for post-create actions
+    readonly intentIdInput = signal('');
+    readonly actionLoading = signal(false);
+    readonly actionResult = signal<PaymentIntent | null>(null);
+    readonly actionError = signal<unknown | null>(null);
 
     // Info calculada (para debug/validación)
     readonly resolvedFactory = computed(() => {
@@ -104,11 +117,13 @@ export class PaymentsComponent {
     onSelectProvider(providerId: PaymentProviderId) {
         this.selectedProviderId.set(providerId);
         this.facade.reset(); // opcional: limpiar estado de pago si cambias provider
+        this.resetActionState();
     }
 
     onSelectMethod(method: PaymentMethodType) {
         this.selectedMethodType.set(method);
         this.facade.reset();
+        this.resetActionState();
     }
 
     // ✅ Prueba de pipeline completo (StartPaymentUseCase etc.)
@@ -127,6 +142,66 @@ export class PaymentsComponent {
         };
 
         this.facade.start(req, providerId);
+    }
+
+    onIntentIdInput(value: string) {
+        this.intentIdInput.set(value.trim());
+    }
+
+    confirmIntent() {
+        const intentId = this.getIntentIdForActions();
+        if (!intentId) return;
+
+        this.runAction(() => this.confirmPayment.execute({ intentId }, this.selectedProviderId()));
+    }
+
+    cancelIntent() {
+        const intentId = this.getIntentIdForActions();
+        if (!intentId) return;
+
+        this.runAction(() => this.cancelPayment.execute({ intentId }, this.selectedProviderId()));
+    }
+
+    refreshStatus() {
+        const intentId = this.getIntentIdForActions();
+        if (!intentId) return;
+
+        this.runAction(() => this.getPaymentStatus.execute({ intentId }, this.selectedProviderId()));
+    }
+
+    private runAction(factory: () => Observable<PaymentIntent>) {
+        this.actionLoading.set(true);
+        this.actionError.set(null);
+
+        factory().subscribe({
+            next: (intent) => {
+                this.actionResult.set(intent);
+                this.actionLoading.set(false);
+            },
+            error: (err) => {
+                this.actionError.set(err);
+                this.actionLoading.set(false);
+            },
+        });
+    }
+
+    private getIntentIdForActions(): string | null {
+        const fromInput = this.intentIdInput();
+        const fromFacade = this.facade.intent()?.id ?? '';
+        const intentId = fromInput || fromFacade;
+
+        if (!intentId) {
+            this.actionError.set({ message: 'No intent id available' });
+            return null;
+        }
+
+        return intentId;
+    }
+
+    private resetActionState() {
+        this.actionLoading.set(false);
+        this.actionResult.set(null);
+        this.actionError.set(null);
     }
 
     readonly selfTestRunning = signal(false);

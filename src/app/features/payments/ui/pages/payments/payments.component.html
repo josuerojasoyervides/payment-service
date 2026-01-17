@@ -187,3 +187,43 @@
     <pre>{{ err | json }}</pre>
     }
 </section>
+
+<hr />
+
+<section style="margin-top: 16px;">
+    <h3>Intent actions (Confirm / Cancel / Get status)</h3>
+
+    <p style="opacity: 0.8;">
+        Intent actual (si existe): {{ facade.intent()?.id ?? '-' }}
+    </p>
+
+    <label>
+        Intent ID:
+        <input
+            type="text"
+            [value]="intentIdInput()"
+            (input)="onIntentIdInput($any($event.target).value)"
+            placeholder="pi_123"
+        />
+    </label>
+
+    <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button (click)="confirmIntent()" [disabled]="actionLoading()">Confirm</button>
+        <button (click)="cancelIntent()" [disabled]="actionLoading()">Cancel</button>
+        <button (click)="refreshStatus()" [disabled]="actionLoading()">Get status</button>
+    </div>
+
+    @if (actionLoading()) {
+    <p>⏳ Ejecutando acción…</p>
+    }
+
+    @if (actionResult(); as result) {
+    <p>✅ Resultado:</p>
+    <pre>{{ result | json }}</pre>
+    }
+
+    @if (actionError(); as err) {
+    <p style="color: red;">❌ Error:</p>
+    <pre>{{ err | json }}</pre>
+    }
+</section>

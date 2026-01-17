@@ -38,6 +38,7 @@ Estado de tipos destacados:
 
 ### Infra actual
 - Gateways para Stripe/PayPal con endpoints de create/confirm/cancel/get.
+- Fake backend intercepta create/confirm/cancel/get para Stripe y PayPal.
 - Strategies compartidas (card/spei) y strategy específica de PayPal (redirect).
 
 ## Decisiones de diseño (clean-ish pragmático)
@@ -58,9 +59,8 @@ Estado de tipos destacados:
 - [x] Modelos de dominio separados y tipados.
 
 ## Pendientes inmediatos (corto plazo)
-1) Actualizar fake backend con endpoints de confirm/cancel/status.
-2) Añadir tests de gateways Stripe/PayPal para confirm/cancel/get.
-3) Definir si se incluye `square` en `PaymentProviderId` ahora o en una fase posterior.
+1) Añadir tests de gateways Stripe/PayPal para confirm/cancel/get.
+2) Definir si se incluye `square` en `PaymentProviderId` ahora o en una fase posterior.
 
 ## Plan a corto plazo (1-2 iteraciones)
 - Extender Domain + Ports para flujo completo.
