@@ -27,7 +27,7 @@ export class PaymentsFacade {
         return state.status === 'error' ? state.error : null;
     });
 
-    start(req: CreatePaymentRequest, providerId: PaymentProviderId) {
+    start(req: CreatePaymentRequest, providerId: PaymentProviderId): void {
         this._state.set({ status: 'loading' });
 
         this.startPayment.execute(req, providerId).subscribe({
@@ -36,7 +36,7 @@ export class PaymentsFacade {
         });
     }
 
-    reset() {
+    reset(): void {
         this._state.set({ status: 'idle' });
     }
 }
