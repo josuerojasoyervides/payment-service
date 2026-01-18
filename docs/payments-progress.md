@@ -16,8 +16,8 @@ Principios clave:
 - Registry con validaciones de duplicados y providers faltantes.
 - Factories por proveedor y selección de strategy por método.
 - Gateways con validación y normalización de errores.
-- Interceptor fake para simular backend.
-- UI con facade basado en signals.
+- Interceptor fake para simular backend (actualmente solo create intent).
+- UI consume un `PaymentStatePort` vía token (`PAYMENTS_STATE`).
 
 ### Domain (modelos actuales)
 Separación ya aplicada en `domain/models/`:
@@ -38,8 +38,13 @@ Estado de tipos destacados:
 
 ### Infra actual
 - Gateways para Stripe/PayPal con endpoints de create/confirm/cancel/get.
-- Fake backend intercepta create/confirm/cancel/get para Stripe y PayPal.
+- Fake backend intercepta solo create intent (Stripe/PayPal).
 - Strategies compartidas (card/spei) y strategy específica de PayPal (redirect).
+
+### UI State (port + implementación)
+- `PaymentStatePort` vive en `application/state`.
+- Token `PAYMENTS_STATE` vive en `application/tokens`.
+- Implementación `PaymentState` usa signals y orquesta use cases.
 
 ## Decisiones de diseño (clean-ish pragmático)
 - Se acepta acoplamiento mínimo a Angular en Domain para IO básico.
@@ -51,7 +56,7 @@ Estado de tipos destacados:
 - [x] Multi DI y Registry.
 - [x] Gateways por proveedor (create/confirm/cancel/get).
 - [x] Strategies y factories.
-- [x] Facade UI con signals.
+- [x] Port de estado (`PaymentStatePort`) + implementación con signals.
 - [x] Fake backend interceptor.
 - [x] Tests base para registry y gateway abstracto.
 - [x] Tests para nuevos use cases (confirm/cancel/get).
@@ -59,8 +64,9 @@ Estado de tipos destacados:
 - [x] Modelos de dominio separados y tipados.
 
 ## Pendientes inmediatos (corto plazo)
-1) Añadir tests de gateways Stripe/PayPal para confirm/cancel/get.
-2) Definir si se incluye `square` en `PaymentProviderId` ahora o en una fase posterior.
+1) Actualizar fake backend para confirm/cancel/get.
+2) Añadir tests de gateways Stripe/PayPal para confirm/cancel/get.
+3) Definir si se incluye `square` en `PaymentProviderId` ahora o en una fase posterior.
 
 ## Plan a corto plazo (1-2 iteraciones)
 - Extender Domain + Ports para flujo completo.

@@ -46,7 +46,15 @@ describe('PaypalRedirectStrategy', () => {
         const result = await firstValueFrom(strategy.start(req));
 
         expect(gatewayMock.createIntent).toHaveBeenCalledTimes(1);
-        expect(gatewayMock.createIntent).toHaveBeenCalledWith(req);
+        // PayPal strategy removes token from request
+        expect(gatewayMock.createIntent).toHaveBeenCalledWith(
+            expect.objectContaining({
+                orderId: req.orderId,
+                amount: req.amount,
+                currency: req.currency,
+                method: { type: 'card' }, // Token removed
+            })
+        );
 
         expect(result.id).toBe('pi_1');
     });

@@ -40,20 +40,24 @@ describe('StripePaymentGateway', () => {
     });
 
     describe('createIntent', () => {
-        it('POSTs to /api/payments/stripe/intents and maps the response to PaymentIntent', async () => {
+        it('POSTs to /api/payments/stripe/intents with transformed body', async () => {
             const promise = firstValueFrom(gateway.createIntent(req));
 
             const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
             expect(httpReq.request.method).toBe('POST');
-            expect(httpReq.request.body).toEqual(req);
+            // Body is transformed to Stripe format (centavos, lowercase currency, etc.)
+            expect(httpReq.request.body.amount).toBe(10000); // 100 * 100 centavos
+            expect(httpReq.request.body.currency).toBe('mxn');
+            expect(httpReq.request.body.payment_method).toBe('tok_123');
 
+            // Respond with Stripe-like DTO
             httpReq.flush({
                 id: 'pi_123',
+                object: 'payment_intent',
                 status: 'requires_payment_method',
-                amount: 100,
-                currency: 'MXN',
-                clientSecret: 'sec_test',
-                redirectUrl: null,
+                amount: 10000,
+                currency: 'mxn',
+                client_secret: 'pi_123_secret_test',
             });
 
             const result = await promise;
@@ -63,21 +67,21 @@ describe('StripePaymentGateway', () => {
                     id: 'pi_123',
                     provider: 'stripe',
                     status: 'requires_payment_method',
-                    amount: 100,
+                    amount: 100, // Converted back from centavos
                     currency: 'MXN',
-                    clientSecret: 'sec_test',
+                    clientSecret: 'pi_123_secret_test',
                 })
             );
 
             expect(result.raw).toBeTruthy();
         });
 
-        it('normalizes Stripe-like errors when HttpClient errors (err.error has code/message)', async () => {
+        it('normalizes Stripe-like errors with human-readable messages', async () => {
             const promise = firstValueFrom(gateway.createIntent(req));
             const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
 
             httpReq.flush(
-                { code: 'card_declined', message: 'Card declined' },
+                { error: { type: 'card_error', code: 'card_declined', message: 'Card declined' } },
                 { status: 402, statusText: 'Payment Required' }
             );
 
@@ -88,12 +92,12 @@ describe('StripePaymentGateway', () => {
                 const paymentError = error as PaymentError;
 
                 expect(paymentError.code).toBe('card_declined');
-                expect(paymentError.message).toBe('Card declined');
-                expect((paymentError.raw as any).error.code).toBe('card_declined');
+                // Message is humanized in Spanish
+                expect(paymentError.message).toContain('rechazado');
             }
         });
 
-        it('falls back to base normalizeError when error shape is not Stripe-like', async () => {
+        it('falls back to generic error message when error shape is not Stripe-like', async () => {
             const promise = firstValueFrom(gateway.createIntent(req));
             const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
 
@@ -109,7 +113,8 @@ describe('StripePaymentGateway', () => {
                 const paymentErr = error as PaymentError;
 
                 expect(paymentErr.code).toBe('provider_error');
-                expect(paymentErr.message).toBe('Stripe provider error');
+                // Generic Spanish message
+                expect(paymentErr.message).toContain('Stripe');
                 expect(paymentErr.raw).toBeTruthy();
             }
         });

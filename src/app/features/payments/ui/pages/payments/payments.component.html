@@ -7,7 +7,9 @@
 
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             @for (p of providerIds(); track p) {
-            <button (click)="onSelectProvider(p)" [disabled]="selectedProviderId() === p">
+            <button (click)="onSelectProvider(p)" [disabled]="selectedProviderId() === p"
+                [style.background-color]="selectedProviderId() === p ? '#4CAF50' : ''"
+                [style.color]="selectedProviderId() === p ? 'white' : ''">
                 {{ p }}
             </button>
             }
@@ -23,11 +25,15 @@
         <h3>Method</h3>
 
         <div style="display: flex; gap: 8px;">
-            <button (click)="onSelectMethod('card')" [disabled]="selectedMethodType() === 'card'">
+            <button (click)="onSelectMethod('card')" [disabled]="selectedMethodType() === 'card'"
+                [style.background-color]="selectedMethodType() === 'card' ? '#2196F3' : ''"
+                [style.color]="selectedMethodType() === 'card' ? 'white' : ''">
                 card
             </button>
 
-            <button (click)="onSelectMethod('spei')" [disabled]="selectedMethodType() === 'spei'">
+            <button (click)="onSelectMethod('spei')" [disabled]="selectedMethodType() === 'spei'"
+                [style.background-color]="selectedMethodType() === 'spei' ? '#2196F3' : ''"
+                [style.color]="selectedMethodType() === 'spei' ? 'white' : ''">
                 spei
             </button>
         </div>
@@ -40,6 +46,7 @@
 
 <hr />
 
+<!-- Multi DI Debug -->
 <section style="margin-top: 16px;">
     <h3>Multi DI wiring debug (PAYMENT_PROVIDER_FACTORIES)</h3>
 
@@ -49,13 +56,13 @@
 
     @if (duplicates().length > 0) {
     <p style="color: red;">
-        <strong>⚠️ Duplicados detectados:</strong>
+        <strong>Duplicados detectados:</strong>
         @for (d of duplicates(); track d) {
         <span style="margin-right: 8px;">{{ d }}</span>
         }
     </p>
     } @else {
-    <p style="color: green;">✅ No hay duplicados</p>
+    <p style="color: green;">No hay duplicados</p>
     }
 
     <ul>
@@ -69,8 +76,13 @@
 
 <hr />
 
+<!-- Self Test -->
 <section style="margin-top: 16px;">
-    <h3>💀 Self Test Nivel Dios</h3>
+    <h3>Self Test - Validación de Arquitectura</h3>
+
+    <p style="opacity: 0.7; font-size: 0.9em; margin-bottom: 12px;">
+        Valida el multi-token DI, factories, estrategias y el pipeline completo.
+    </p>
 
     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <button (click)="runSelfTest()" [disabled]="selfTestRunning()">
@@ -83,7 +95,7 @@
     </div>
 
     @if (selfTestRunning()) {
-    <p>⏳ Running self test…</p>
+    <p>Running self test...</p>
     }
 
     @if (selfTestRows().length > 0) {
@@ -96,8 +108,8 @@
         smokeErr={{ selfTestSummary().smokeErr }}
     </p>
 
-    <table border="1" cellpadding="6" style="border-collapse: collapse; margin-top: 8px;">
-        <thead>
+    <table border="1" cellpadding="6" style="border-collapse: collapse; margin-top: 8px; font-size: 0.9em;">
+        <thead style="background-color: #f5f5f5;">
             <tr>
                 <th>Provider</th>
                 <th>Factory</th>
@@ -115,26 +127,40 @@
                 <td>{{ r.providerId }}</td>
                 <td>{{ r.factoryClass }}</td>
                 <td>{{ r.method }}</td>
-                <td>
-                    @if (r.supported) { ✅ } @else { ❌ }
+                <td style="text-align: center;">
+                    @if (r.supported) {
+                    <span style="color: green;">Supported</span>
+                    } @else {
+                    <span style="color: red;">Not supported</span>
+                    }
                 </td>
                 <td>{{ r.strategyClass ?? '-' }}</td>
-                <td>{{ r.smokeStart ?? '-' }}</td>
-                <td style="color: red;">{{ r.error ?? '' }}</td>
+                <td style="text-align: center;">
+                    @if (r.smokeStart === 'ok') {
+                    <span style="color: green;">OK</span>
+                    } @else if (r.smokeStart === 'error') {
+                    <span style="color: red;">Error</span>
+                    } @else {
+                    <span style="opacity: 0.5;">-</span>
+                    }
+                </td>
+                <td style="color: red; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
+                    {{ r.error ?? '' }}
+                </td>
             </tr>
             }
         </tbody>
     </table>
 
-    <p style="margin-top: 8px; opacity: 0.8;">
-        Tip: también mira la consola — hay un <code>console.table</code> más detallado 🤝
+    <p style="margin-top: 8px; opacity: 0.6; font-size: 0.85em;">
+        Tip: revisa la consola para ver <code>console.table</code> con mas detalles
     </p>
     }
 </section>
 
 <hr />
 
-
+<!-- Registry + Factory Resolution -->
 <section style="margin-top: 16px;">
     <h3>Registry + Factory resolution</h3>
 
@@ -151,12 +177,20 @@
 
     <ul>
         @for (item of supportedMethods(); track item.method) {
-        <li>
-            <strong>{{ item.method }}</strong> →
+        <li style="margin-bottom: 8px;">
+            <strong>{{ item.method }}</strong>:
             @if (item.supported) {
-            ✅ supported (strategy: {{ item.strategyClassName }})
+            <span style="color: green;">Supported</span>
+            <br />
+            <span style="opacity: 0.7; font-size: 0.9em; margin-left: 16px;">
+                Strategy: {{ item.strategyClassName }}
+            </span>
             } @else {
-            ❌ not supported ({{ item.error }})
+            <span style="color: red;">Not supported</span>
+            <br />
+            <span style="color: #cc0000; font-size: 0.9em; margin-left: 16px;">
+                {{ item.error }}
+            </span>
             }
         </li>
         }
@@ -166,96 +200,200 @@
 
 <hr />
 
+<!-- Full Pipeline Test -->
 <section style="margin-top: 16px;">
-    <h3>Full pipeline test (Facade → UseCase → Registry → Factory → Strategy)</h3>
+    <h3>Full pipeline test</h3>
+    <p style="opacity: 0.7; font-size: 0.9em; margin-bottom: 12px;">
+        State → UseCase → Registry → Factory → Strategy → Gateway
+    </p>
 
-    <button (click)="startTestPayment()" [disabled]="isLoading()">
-        Start test payment
+    <button (click)="startTestPayment()" [disabled]="isLoading()"
+        style="padding: 8px 16px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">
+        Start test payment ({{ selectedProviderId() }} / {{ selectedMethodType() }})
     </button>
 
     @if (isLoading()) {
-    <p>⏳ Loading…</p>
+    <p style="margin-top: 12px;">Loading...</p>
     }
 
     @if (intent(); as intent) {
-    <p>✅ Payment Intent:</p>
-    <pre>{{ intent | json }}</pre>
+    <div style="margin-top: 12px; padding: 12px; background-color: #e8f5e9; border-radius: 4px;">
+        <p style="color: green; margin: 0 0 8px 0;"><strong>Payment Intent Created</strong></p>
+
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 0.9em;">
+            <strong>ID:</strong> <span>{{ intent.id }}</span>
+            <strong>Provider:</strong> <span>{{ intent.provider }}</span>
+            <strong>Status:</strong>
+            <span [style.color]="intent.status === 'succeeded' ? 'green' : intent.status === 'failed' ? 'red' : 'orange'">
+                {{ intent.status }}
+            </span>
+            <strong>Amount:</strong> <span>{{ intent.amount | number:'1.2-2' }} {{ intent.currency }}</span>
+        </div>
+
+        @if (intent.nextAction) {
+        <div style="margin-top: 12px; padding: 8px; background-color: #fff3e0; border-radius: 4px;">
+            <strong>Next Action Required:</strong> {{ intent.nextAction.type }}
+
+            @if (intent.nextAction.type === '3ds') {
+            <p style="margin: 8px 0 0 0; font-size: 0.85em;">
+                3D Secure authentication needed. Client would redirect to bank.
+            </p>
+            }
+
+            @if (intent.nextAction.type === 'spei') {
+            <div style="margin-top: 8px; font-size: 0.85em;">
+                <p><strong>CLABE:</strong> {{ $any(intent.nextAction).clabe }}</p>
+                <p><strong>Reference:</strong> {{ $any(intent.nextAction).reference }}</p>
+                <p><strong>Bank:</strong> {{ $any(intent.nextAction).bank }}</p>
+                <p><strong>Expires:</strong> {{ $any(intent.nextAction).expiresAt | date:'medium' }}</p>
+            </div>
+            }
+
+            @if (intent.nextAction.type === 'paypal_approve') {
+            <div style="margin-top: 8px; font-size: 0.85em;">
+                <p>User would be redirected to PayPal to approve payment.</p>
+                <p><strong>Approve URL:</strong>
+                    <a [href]="$any(intent.nextAction).approveUrl" target="_blank">
+                        {{ $any(intent.nextAction).approveUrl }}
+                    </a>
+                </p>
+            </div>
+            }
+        </div>
+        }
+
+        <details style="margin-top: 12px;">
+            <summary style="cursor: pointer; font-size: 0.9em;">Raw response</summary>
+            <pre style="font-size: 0.8em; overflow: auto; max-height: 300px;">{{ intent | json }}</pre>
+        </details>
+    </div>
     }
 
     @if (error(); as err) {
-    <p style="color: red;">❌ Error:</p>
-    <pre>{{ err | json }}</pre>
+    <div style="margin-top: 12px; padding: 12px; background-color: #ffebee; border-radius: 4px;">
+        <p style="color: red; margin: 0;"><strong>Error:</strong></p>
+        <pre style="font-size: 0.85em; margin: 8px 0 0 0;">{{ err | json }}</pre>
+    </div>
     }
 </section>
 
 <hr />
 
+<!-- Intent Actions -->
 <section style="margin-top: 16px;">
     <h3>Intent actions (Confirm / Cancel / Get status)</h3>
 
-    <p style="opacity: 0.8;">
-        Intent actual (si existe): {{ intent()?.id ?? '-' }}
+    <p style="opacity: 0.7; font-size: 0.9em;">
+        Intent actual (si existe): <strong>{{ intent()?.id ?? 'ninguno' }}</strong>
     </p>
 
-    <label>
-        Intent ID:
-        <input type="text" [value]="intentIdInput()" (input)="onIntentIdInput($any($event.target).value)"
-            placeholder="pi_123" />
-    </label>
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <label>
+            Intent ID:
+            <input type="text" [value]="intentIdInput()" (input)="onIntentIdInput($any($event.target).value)"
+                placeholder="pi_123 o ID de PayPal" style="padding: 4px 8px; width: 200px;" />
+        </label>
+    </div>
 
-    <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
-        <button (click)="confirmIntent()" [disabled]="actionLoading()">Confirm</button>
-        <button (click)="cancelIntent()" [disabled]="actionLoading()">Cancel</button>
-        <button (click)="refreshStatus()" [disabled]="actionLoading()">Get status</button>
+    <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <button (click)="confirmIntent()" [disabled]="actionLoading()"
+            style="padding: 6px 12px; background-color: #2196F3; color: white; border: none; cursor: pointer;">
+            Confirm
+        </button>
+        <button (click)="cancelIntent()" [disabled]="actionLoading()"
+            style="padding: 6px 12px; background-color: #f44336; color: white; border: none; cursor: pointer;">
+            Cancel
+        </button>
+        <button (click)="refreshStatus()" [disabled]="actionLoading()"
+            style="padding: 6px 12px; background-color: #9E9E9E; color: white; border: none; cursor: pointer;">
+            Get status
+        </button>
     </div>
 
     @if (actionLoading()) {
-    <p>⏳ Ejecutando acción…</p>
+    <p style="margin-top: 12px;">Ejecutando accion...</p>
     }
 
     @if (actionResult(); as result) {
-    <p>✅ Resultado:</p>
-    <pre>{{ result | json }}</pre>
+    <div style="margin-top: 12px; padding: 12px; background-color: #e3f2fd; border-radius: 4px;">
+        <p style="color: #1976D2; margin: 0 0 8px 0;"><strong>Action Result</strong></p>
+        <div style="font-size: 0.9em;">
+            <p><strong>Status:</strong> {{ result.status }}</p>
+        </div>
+        <details>
+            <summary style="cursor: pointer; font-size: 0.9em;">Full response</summary>
+            <pre style="font-size: 0.8em;">{{ result | json }}</pre>
+        </details>
+    </div>
     }
 
     @if (actionError(); as err) {
-    <p style="color: red;">❌ Error:</p>
-    <pre>{{ err | json }}</pre>
+    <div style="margin-top: 12px; padding: 12px; background-color: #ffebee; border-radius: 4px;">
+        <p style="color: red; margin: 0;"><strong>Action Error:</strong></p>
+        <pre style="font-size: 0.85em; margin: 8px 0 0 0;">{{ err | json }}</pre>
+    </div>
     }
 </section>
 
 <hr />
 
-<section style="margin-top: 16px;">
-    <h3>Intent actions (Confirm / Cancel / Get status)</h3>
+<!-- Architecture Info -->
+<section style="margin-top: 16px; margin-bottom: 32px;">
+    <h3>Arquitectura</h3>
 
-    <p style="opacity: 0.8;">
-        Intent actual (si existe): {{ intent()?.id ?? '-' }}
-    </p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+        <div style="padding: 12px; background-color: #f5f5f5; border-radius: 4px;">
+            <h4 style="margin: 0 0 8px 0;">Patrones implementados</h4>
+            <ul style="margin: 0; padding-left: 20px; font-size: 0.9em;">
+                <li><strong>Abstract Factory:</strong> ProviderFactory</li>
+                <li><strong>Strategy:</strong> PaymentStrategy</li>
+                <li><strong>Template Method:</strong> PaymentGateway</li>
+                <li><strong>Registry:</strong> ProviderFactoryRegistry</li>
+                <li><strong>Port/Adapter:</strong> Domain ports + Infrastructure adapters</li>
+            </ul>
+        </div>
 
-    <label>
-        Intent ID:
-        <input type="text" [value]="intentIdInput()" (input)="onIntentIdInput($any($event.target).value)"
-            placeholder="pi_123" />
-    </label>
+        <div style="padding: 12px; background-color: #f5f5f5; border-radius: 4px;">
+            <h4 style="margin: 0 0 8px 0;">Flujo de datos</h4>
+            <ol style="margin: 0; padding-left: 20px; font-size: 0.9em;">
+                <li>UI Component</li>
+                <li>PaymentState (Adapter)</li>
+                <li>Use Case</li>
+                <li>Registry → Factory</li>
+                <li>Strategy (validate → prepare)</li>
+                <li>Gateway (HTTP)</li>
+            </ol>
+        </div>
 
-    <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
-        <button (click)="confirmIntent()" [disabled]="actionLoading()">Confirm</button>
-        <button (click)="cancelIntent()" [disabled]="actionLoading()">Cancel</button>
-        <button (click)="refreshStatus()" [disabled]="actionLoading()">Get status</button>
+        <div style="padding: 12px; background-color: #f5f5f5; border-radius: 4px;">
+            <h4 style="margin: 0 0 8px 0;">Diferencias clave</h4>
+            <table style="font-size: 0.85em; width: 100%;">
+                <tr>
+                    <td></td>
+                    <td><strong>Stripe</strong></td>
+                    <td><strong>PayPal</strong></td>
+                </tr>
+                <tr>
+                    <td>Modelo</td>
+                    <td>PaymentIntent</td>
+                    <td>Order</td>
+                </tr>
+                <tr>
+                    <td>Montos</td>
+                    <td>Centavos (int)</td>
+                    <td>String "100.00"</td>
+                </tr>
+                <tr>
+                    <td>Auth</td>
+                    <td>client_secret</td>
+                    <td>Redirect + cookies</td>
+                </tr>
+                <tr>
+                    <td>SPEI</td>
+                    <td>Soportado</td>
+                    <td>No soportado</td>
+                </tr>
+            </table>
+        </div>
     </div>
-
-    @if (actionLoading()) {
-    <p>⏳ Ejecutando acción…</p>
-    }
-
-    @if (actionResult(); as result) {
-    <p>✅ Resultado:</p>
-    <pre>{{ result | json }}</pre>
-    }
-
-    @if (actionError(); as err) {
-    <p style="color: red;">❌ Error:</p>
-    <pre>{{ err | json }}</pre>
-    }
 </section>

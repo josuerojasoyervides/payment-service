@@ -39,7 +39,7 @@ describe('StripeProviderFactory', () => {
     it('throws for unsupported payment method type', () => {
         expect(() =>
             factory.createStrategy('unsupported' as any)
-        ).toThrow('Payment method type unsupported is not supported for Stripe.');
+        ).toThrow(/Payment method "unsupported" is not supported by Stripe/);
     })
 
     it('creates a strategy that delegates to the injected gateway', async () => {
@@ -58,7 +58,7 @@ describe('StripeProviderFactory', () => {
             orderId: 'o1',
             amount: 100,
             currency: 'MXN',
-            method: { type: 'card', token: 'tok' },
+            method: { type: 'card', token: 'tok_valid123' }, // Token válido
         }));
 
         expect(gatewayStub.createIntent).toHaveBeenCalledTimes(1);

@@ -8,7 +8,13 @@ import { CancelPaymentUseCase } from '../../application/use-cases/cancel-payment
 import { GetPaymentStatusUseCase } from '../../application/use-cases/get-payment-status.use-case';
 import { Subscription } from 'rxjs';
 
-@Injectable({ providedIn: 'root' })
+/**
+ * Implementación del estado de pagos para la UI.
+ *
+ * Coordina los use cases y mantiene el estado reactivo usando signals.
+ * Implementa el patrón "Adapter" del port PaymentStatePort.
+ */
+@Injectable()
 export class PaymentState implements PaymentStatePort {
     private readonly startPayment = inject(StartPaymentUseCase);
     private readonly confirmPayment = inject(ConfirmPaymentUseCase);

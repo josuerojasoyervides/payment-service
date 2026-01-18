@@ -31,7 +31,7 @@ describe('PaypalProviderFactory', () => {
     it('throws for unsupported payment method type', () => {
         expect(() =>
             factory.createStrategy('spei' as any)
-        ).toThrow('Unsupported payment method type: spei');
+        ).toThrow(/Payment method "spei" is not supported by PayPal/);
     })
 
     it('creates a strategy that delegates to the injected gateway', async () => {

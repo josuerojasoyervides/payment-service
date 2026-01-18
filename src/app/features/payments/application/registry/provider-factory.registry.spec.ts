@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { ProviderFactory } from '../../domain/ports/provider-factory.port';
 import { ProviderFactoryRegistry } from './provider-factory.registry';
 import { PAYMENT_PROVIDER_FACTORIES } from '../tokens/payment-provider-factories.token';
+import { PaymentMethodType } from '../../domain/models/payment.types';
+
 describe('ProviderFactoryRegistry', () => {
     let registry: ProviderFactoryRegistry;
 
@@ -9,64 +11,111 @@ describe('ProviderFactoryRegistry', () => {
         providerId: 'stripe',
         getGateway: vi.fn(),
         createStrategy: vi.fn(),
+        supportsMethod: vi.fn(() => true),
+        getSupportedMethods: vi.fn((): PaymentMethodType[] => ['card', 'spei']),
     };
 
     const paypalFactoryMock: ProviderFactory = {
         providerId: 'paypal',
         getGateway: vi.fn(),
         createStrategy: vi.fn(),
+        supportsMethod: vi.fn((type) => type === 'card'),
+        getSupportedMethods: vi.fn((): PaymentMethodType[] => ['card']),
     };
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 ProviderFactoryRegistry,
-
-                // ✅ Multi DI real, pero con mocks
                 { provide: PAYMENT_PROVIDER_FACTORIES, useValue: stripeFactoryMock, multi: true },
                 { provide: PAYMENT_PROVIDER_FACTORIES, useValue: paypalFactoryMock, multi: true },
             ],
-        })
-
-        registry = TestBed.inject(ProviderFactoryRegistry);
-    })
-
-    it('should retrieve the correct provider factory', () => {
-        const factory = registry.get('paypal');
-        expect(factory.providerId).toBe('paypal');
-    })
-
-    it('should throw an error if provider factory is not found', () => {
-        expect(() =>
-            registry.get('unknown' as any)
-        ).toThrowError('Provider factory for unknown not found.');
-    })
-
-    it('injects factories as an array (multi provider)', () => {
-        // si esto pasa, tu wiring es correcto
-        const stripe = registry.get('stripe');
-        const paypal = registry.get('paypal');
-
-        expect(stripe).toBe(stripeFactoryMock);
-        expect(paypal).toBe(paypalFactoryMock);
-    });
-
-    it('throws if provider is not registered', () => {
-        expect(() => registry.get('square' as any)).toThrowError('Provider factory for square not found.');
-    });
-
-    it('throws when duplicate factories for same providerId exist', () => {
-        TestBed.resetTestingModule();
-        TestBed.configureTestingModule({
-            providers: [
-                ProviderFactoryRegistry,
-                { provide: PAYMENT_PROVIDER_FACTORIES, useValue: { providerId: 'stripe', getGateway: vi.fn(), createStrategy: vi.fn() }, multi: true },
-                { provide: PAYMENT_PROVIDER_FACTORIES, useValue: { providerId: 'stripe', getGateway: vi.fn(), createStrategy: vi.fn() }, multi: true },
-            ],
         });
 
-        const registry = TestBed.inject(ProviderFactoryRegistry);
-
-        expect(() => registry.get('stripe')).toThrowError('Duplicate provider factories for stripe.');
+        registry = TestBed.inject(ProviderFactoryRegistry);
     });
-})
+
+    describe('get()', () => {
+        it('should retrieve the correct provider factory', () => {
+            const factory = registry.get('paypal');
+            expect(factory.providerId).toBe('paypal');
+        });
+
+        it('should throw an error if provider factory is not found', () => {
+            expect(() => registry.get('unknown' as any))
+                .toThrowError(/Provider factory for "unknown" not found/);
+        });
+
+        it('injects factories as an array (multi provider)', () => {
+            const stripe = registry.get('stripe');
+            const paypal = registry.get('paypal');
+
+            expect(stripe).toBe(stripeFactoryMock);
+            expect(paypal).toBe(paypalFactoryMock);
+        });
+    });
+
+    describe('has()', () => {
+        it('returns true for registered providers', () => {
+            expect(registry.has('stripe')).toBe(true);
+            expect(registry.has('paypal')).toBe(true);
+        });
+
+        it('returns false for unregistered providers', () => {
+            expect(registry.has('square' as any)).toBe(false);
+        });
+    });
+
+    describe('getAvailableProviders()', () => {
+        it('returns all registered provider IDs', () => {
+            const providers = registry.getAvailableProviders();
+            expect(providers).toContain('stripe');
+            expect(providers).toContain('paypal');
+            expect(providers).toHaveLength(2);
+        });
+    });
+
+    describe('getProvidersForMethod()', () => {
+        it('returns providers that support a given method', () => {
+            const cardProviders = registry.getProvidersForMethod('card');
+            expect(cardProviders).toContain('stripe');
+            expect(cardProviders).toContain('paypal');
+        });
+
+        it('filters providers that do not support a method', () => {
+            // Mock PayPal to not support SPEI
+            (paypalFactoryMock.supportsMethod as any).mockImplementation((type: string) => type === 'card');
+
+            const speiProviders = registry.getProvidersForMethod('spei');
+            expect(speiProviders).toContain('stripe');
+            expect(speiProviders).not.toContain('paypal');
+        });
+    });
+
+    describe('duplicate detection', () => {
+        it('throws when duplicate factories for same providerId exist during construction', () => {
+            TestBed.resetTestingModule();
+
+            expect(() => {
+                TestBed.configureTestingModule({
+                    providers: [
+                        ProviderFactoryRegistry,
+                        {
+                            provide: PAYMENT_PROVIDER_FACTORIES,
+                            useValue: { providerId: 'stripe', getGateway: vi.fn(), createStrategy: vi.fn() },
+                            multi: true
+                        },
+                        {
+                            provide: PAYMENT_PROVIDER_FACTORIES,
+                            useValue: { providerId: 'stripe', getGateway: vi.fn(), createStrategy: vi.fn() },
+                            multi: true
+                        },
+                    ],
+                });
+
+                // Registry constructor throws on duplicate
+                TestBed.inject(ProviderFactoryRegistry);
+            }).toThrowError(/Duplicate provider factory for "stripe"/);
+        });
+    });
+});
