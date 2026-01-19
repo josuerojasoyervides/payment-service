@@ -1,59 +1,134 @@
-# PaymentService
+# Payment Service
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.0.
+Servicio de pagos multi-proveedor para Angular, diseñado con arquitectura limpia y extensible.
 
-## Development server
+## Objetivo
 
-To start a local development server, run:
+Demostrar cómo construir un módulo de pagos realista que soporte múltiples proveedores (Stripe, PayPal, futuro Square) sin acoplamiento a APIs externas reales. El enfoque es aprender diseño escalable, testeable y mantenible.
+
+## Arquitectura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                           UI                                │
+│  (PaymentsComponent consume PaymentStatePort vía signals)   │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│                      Application                            │
+│  UseCases: Start, Confirm, Cancel, GetStatus                │
+│  Registry: resuelve ProviderFactory por providerId          │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│                    Infrastructure                           │
+│                                                             │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
+│  │   Stripe    │    │   PayPal    │    │   (Square)  │     │
+│  ├─────────────┤    ├─────────────┤    ├─────────────┤     │
+│  │ Factory     │    │ Factory     │    │ Factory     │     │
+│  │ Gateway     │    │ Gateway     │    │ Gateway     │     │
+│  │ (centavos)  │    │ (Orders v2) │    │ (futuro)    │     │
+│  └─────────────┘    └─────────────┘    └─────────────┘     │
+│                                                             │
+│  Shared Strategies: CardStrategy, SpeiStrategy              │
+└─────────────────────────────────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│                        Domain                               │
+│  Ports: PaymentGateway, PaymentStrategy, ProviderFactory    │
+│  Models: PaymentIntent, PaymentError, NextAction            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Flujo de un Pago
+
+```
+Usuario → StartPaymentUseCase → Registry.get(provider)
+                                    ↓
+                              Factory.createStrategy(method)
+                                    ↓
+                              Strategy.validate() → prepare() → start()
+                                    ↓
+                              Gateway.createIntent() → API transform → response map
+                                    ↓
+                              PaymentIntent (modelo unificado)
+```
+
+## Estructura del Proyecto
+
+```
+src/app/features/payments/
+├── application/
+│   ├── registry/          # ProviderFactoryRegistry
+│   ├── use-cases/         # Start, Confirm, Cancel, GetStatus
+│   ├── state/             # PaymentStatePort
+│   └── tokens/            # DI tokens
+├── config/
+│   └── payment.providers.ts  # Configuración de DI
+├── domain/
+│   ├── models/            # PaymentIntent, PaymentError, NextAction
+│   └── ports/             # Interfaces: Gateway, Strategy, Factory
+├── infrastructure/
+│   ├── stripe/            # Factory, Gateway, DTOs
+│   ├── paypal/            # Factory, Gateway, Strategy (redirect)
+│   ├── fake/              # FakePaymentGateway para desarrollo
+│   └── shared/strategies/ # CardStrategy, SpeiStrategy
+└── ui/
+    ├── pages/             # PaymentsComponent
+    └── state/             # Implementación de PaymentStatePort
+```
+
+## Ejecución
 
 ```bash
+# Instalar dependencias
+bun install
+
+# Servidor de desarrollo
+bun start
+# o
 ng serve
-```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
+# Tests (105 tests)
+bun run test
+# o
 ng test
+
+# Build
+bun run build
 ```
 
-## Running end-to-end tests
+## Características Implementadas
 
-For end-to-end (e2e) testing, run:
+### Gateways con Transformación Real
 
-```bash
-ng e2e
-```
+- **Stripe**: Convierte montos a centavos, formatea requests según Stripe API
+- **PayPal**: Usa Orders API v2, montos como strings, maneja links HATEOAS
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### Estrategias con Validación
 
-## Additional Resources
+- **CardStrategy**: Valida tokens (`tok_*`, `pm_*`), montos mínimos, detecta 3DS
+- **SpeiStrategy**: Valida MXN, montos min/max, calcula expiración 72h
+- **PaypalRedirectStrategy**: Prepara flujo de redirección
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+### Manejo de Errores
+
+- Humanización de errores de cada proveedor a mensajes en español
+- Mapeo de códigos de error a tipos internos (`card_declined`, `provider_error`)
+
+### Testing
+
+- 105 tests unitarios con Vitest + Angular TestBed
+- Tests para gateways, strategies, factories, use cases y registry
+
+## Tecnologías
+
+- Angular 19+ (standalone components, signals)
+- TypeScript 5.x
+- Vitest (testing)
+- Bun (package manager)
+
+## Documentación Adicional
+
+- [Progreso del módulo](/docs/payments-progress.md)

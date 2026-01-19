@@ -1,97 +1,176 @@
 # Progreso del módulo Payments (demo)
 
 ## Objetivo del demo
+
 Construir un módulo de pagos realista y extensible (Stripe/PayPal/futuro Square) sin integrar procesadores reales. El enfoque es aprender diseño escalable, testeable y mantenible en Angular con una arquitectura clean-ish: `domain / application / infrastructure / ui`.
 
 Principios clave:
-- Domain con contratos y validaciones base; uso mínimo de Angular (por ejemplo `inject(HttpClient)` en gateways).
+- Domain con contratos y validaciones base; uso mínimo de Angular.
 - Application con use cases pequeños y claros.
 - Infrastructure pluginable por proveedor.
-- UI consume una API simple (facade), sin conocer factories ni strategies.
+- UI consume una API simple (port), sin conocer factories ni strategies.
 - Tests unitarios rápidos con Vitest + TestBed.
 
+---
+
 ## Estado actual
+
 ### Arquitectura y wiring
 - Multi DI de providers configurado.
 - Registry con validaciones de duplicados y providers faltantes.
 - Factories por proveedor y selección de strategy por método.
-- Gateways con validación y normalización de errores.
-- Interceptor fake para simular backend (actualmente solo create intent).
+- Gateways con validación, transformación y normalización de errores.
+- Interceptor fake para simular backend.
 - UI consume un `PaymentStatePort` vía token (`PAYMENTS_STATE`).
 
 ### Domain (modelos actuales)
-Separación ya aplicada en `domain/models/`:
+
+Separación aplicada en `domain/models/`:
 - `payment.types.ts`: tipos core (`PaymentIntent`, `PaymentStatus`, etc.).
-- `payment.actions.ts`: `NextAction` (redirect, spei, 3ds).
+- `payment.actions.ts`: `NextAction` (redirect, spei, 3ds, paypal_approve).
 - `payment.requests.ts`: `Create/Confirm/Cancel/GetStatus`.
 - `payment.methods.ts`: `PaymentMethod`.
 - `payment.errors.ts`: `PaymentError`.
 
-Estado de tipos destacados:
-- `PaymentStatus` incluye `processing`.
-- `CreatePaymentRequest.currency` tipado como `CurrencyCode`.
-- `PaymentIntent` incluye `nextAction`.
-
 ### Use cases
-- `StartPaymentUseCase` funcionando y testeado.
-- `ConfirmPaymentUseCase`, `CancelPaymentUseCase`, `GetPaymentStatusUseCase` conectados a gateway vía `ProviderFactory.getGateway()`.
 
-### Infra actual
-- Gateways para Stripe/PayPal con endpoints de create/confirm/cancel/get.
-- Fake backend intercepta solo create intent (Stripe/PayPal).
-- Strategies compartidas (card/spei) y strategy específica de PayPal (redirect).
+| Use Case | Estado | Tests |
+|----------|--------|-------|
+| `StartPaymentUseCase` | ✅ Completo | ✅ 11 tests |
+| `ConfirmPaymentUseCase` | ✅ Completo | ✅ 3 tests |
+| `CancelPaymentUseCase` | ✅ Completo | ✅ 3 tests |
+| `GetPaymentStatusUseCase` | ✅ Completo | ✅ 3 tests |
 
-### UI State (port + implementación)
-- `PaymentStatePort` vive en `application/state`.
-- Token `PAYMENTS_STATE` vive en `application/tokens`.
-- Implementación `PaymentState` usa signals y orquesta use cases.
+### Gateways
 
-## Decisiones de diseño (clean-ish pragmático)
-- Se acepta acoplamiento mínimo a Angular en Domain para IO básico.
-- No se permite lógica de UI ni composición avanzada de Angular en Domain.
-- El flujo se modela con `PaymentIntent.status` y `nextAction` para evitar condicionales por proveedor en UI.
+| Gateway | Transformación | Errores | Tests |
+|---------|---------------|---------|-------|
+| `StripePaymentGateway` | ✅ Centavos, formato Stripe | ✅ Humanizados ES | ✅ 4 tests |
+| `PaypalPaymentGateway` | ✅ Orders API v2, strings | ✅ Humanizados ES | ✅ 4 tests |
+| `PaymentGateway` (base) | ✅ Validación base | ✅ Normalización | ✅ 23 tests |
 
-## Checklist de lo ya hecho
-- [x] Estructura clean-ish con capas definidas.
-- [x] Multi DI y Registry.
-- [x] Gateways por proveedor (create/confirm/cancel/get).
-- [x] Strategies y factories.
-- [x] Port de estado (`PaymentStatePort`) + implementación con signals.
-- [x] Fake backend interceptor.
-- [x] Tests base para registry y gateway abstracto.
-- [x] Tests para nuevos use cases (confirm/cancel/get).
-- [x] Tests verdes después de la conexión use case → gateway.
-- [x] Modelos de dominio separados y tipados.
+### Estrategias
 
-## Pendientes inmediatos (corto plazo)
-1) Actualizar fake backend para confirm/cancel/get.
-2) Añadir tests de gateways Stripe/PayPal para confirm/cancel/get.
-3) Definir si se incluye `square` en `PaymentProviderId` ahora o en una fase posterior.
+| Strategy | Validación | Preparación | Tests |
+|----------|-----------|-------------|-------|
+| `CardStrategy` | ✅ Token, monto mínimo | ✅ Metadata 3DS | ✅ 16 tests |
+| `SpeiStrategy` | ✅ MXN, min/max | ✅ Expiración 72h | ✅ 16 tests |
+| `PaypalRedirectStrategy` | ✅ Solo card | ✅ URLs retorno | ✅ 1 test |
 
-## Plan a corto plazo (1-2 iteraciones)
-- Extender Domain + Ports para flujo completo.
-- Implementar use cases nuevos con tests unitarios.
-- Simular flujos en fake backend:
-  - Card: `requires_confirmation -> processing -> succeeded`
-  - PayPal redirect: `requires_action -> succeeded`
-  - Spei: `requires_action -> processing -> succeeded`
+### Factories
 
-## Plan a mediano plazo
-- Actualizar `PaymentsFacade` a una state machine basada en `PaymentIntent.status`.
-- UI reacciona a `nextAction` sin lógica por provider.
-- Agregar `SquareProviderFactory` para validar extensibilidad sin cambios en Application/UI.
+| Factory | Strategies soportadas | Tests |
+|---------|----------------------|-------|
+| `StripeProviderFactory` | card, spei | ✅ 4 tests |
+| `PaypalProviderFactory` | card (redirect) | ✅ 3 tests |
 
-## Plan a largo plazo
-- Use cases opcionales:
-  - `HandleRedirectReturnUseCase`
-  - `HandleWebhookUseCase`
-- Extender escenarios de error y reintentos.
-- Añadir documentación de flujo y diagramas.
+### Cobertura de Tests
 
-## Riesgos y mitigaciones
-- **Acoplamiento UI a providers**: mitigado con `nextAction` y `PaymentIntent.status`.
-- **Crecimiento de Domain**: mitigado con separación en archivos por intención.
-- **Duplicidad de lógica en strategies**: mantener estrategias compartidas y solo especializar cuando sea necesario.
+```
+Test Files  16 passed
+     Tests  105 passed
+```
+
+---
+
+## Checklist de lo completado
+
+### Fase 1: Arquitectura base
+- [x] Estructura clean-ish con capas definidas
+- [x] Multi DI y Registry
+- [x] Ports definidos (Gateway, Strategy, Factory)
+- [x] Modelos de dominio separados y tipados
+
+### Fase 2: Implementación de Gateways
+- [x] Gateway base con template method pattern
+- [x] StripePaymentGateway con transformación a centavos
+- [x] PaypalPaymentGateway con Orders API v2
+- [x] Humanización de errores en español
+- [x] Tests de gateways
+
+### Fase 3: Implementación de Strategies
+- [x] CardStrategy con validación de tokens y 3DS
+- [x] SpeiStrategy con validación MXN y expiración
+- [x] PaypalRedirectStrategy para flujo OAuth
+- [x] Tests de strategies
+
+### Fase 4: Factories y Registry
+- [x] StripeProviderFactory (card, spei)
+- [x] PaypalProviderFactory (card vía redirect)
+- [x] ProviderFactoryRegistry con validaciones
+- [x] Tests de factories y registry
+
+### Fase 5: Use Cases
+- [x] StartPaymentUseCase
+- [x] ConfirmPaymentUseCase
+- [x] CancelPaymentUseCase
+- [x] GetPaymentStatusUseCase
+- [x] Tests de use cases
+
+### Fase 6: UI State
+- [x] PaymentStatePort definido
+- [x] Implementación con signals
+- [x] Tests de state
+
+---
+
+## Decisiones de diseño
+
+### Patrón Strategy + Gateway + Factory
+
+```
+UseCase → Registry → Factory → Strategy → Gateway → API
+```
+
+Cada capa tiene una responsabilidad:
+- **UseCase**: Orquesta el flujo de negocio
+- **Registry**: Encuentra la factory por provider
+- **Factory**: Crea la strategy por método de pago
+- **Strategy**: Valida, prepara y enriquece
+- **Gateway**: Transforma al formato de la API externa
+
+### Transformación en Gateway, no en Strategy
+
+El gateway conoce el formato exacto de la API externa:
+- Stripe: centavos, `payment_method`, `payment_method_types`
+- PayPal: strings con decimales, `purchase_units`, links HATEOAS
+
+La strategy prepara datos genéricos; el gateway los transforma.
+
+### Errores humanizados por proveedor
+
+Cada gateway traduce errores específicos a mensajes legibles:
+```typescript
+// Stripe
+'card_declined' → 'El pago fue rechazado. Por favor verifica los datos de tu tarjeta.'
+
+// PayPal  
+'INSTRUMENT_DECLINED' → 'El método de pago fue rechazado por PayPal.'
+```
+
+---
+
+## Pendientes
+
+### Corto plazo
+- [ ] Extender fake backend para confirm/cancel/get
+- [ ] Simular flujos completos:
+  - Card: `requires_confirmation → processing → succeeded`
+  - PayPal: `requires_action → succeeded`
+  - SPEI: `requires_action → processing → succeeded`
+
+### Mediano plazo
+- [ ] UI reacciona a `nextAction` sin lógica por provider
+- [ ] SquareProviderFactory para validar extensibilidad
+- [ ] Documentación de flujos con diagramas
+
+### Largo plazo
+- [ ] `HandleRedirectReturnUseCase`
+- [ ] `HandleWebhookUseCase`
+- [ ] Escenarios de error y reintentos
+
+---
 
 ## Próximo paso sugerido
-Actualizar fake backend para confirm/cancel/get y añadir tests de gateways por proveedor.
+
+Implementar el flujo completo de UI: el componente de pagos debe usar `PaymentStatePort` para iniciar pagos, mostrar estados intermedios (`requires_action`, `processing`) y reaccionar a `nextAction` para redirecciones o instrucciones SPEI.
