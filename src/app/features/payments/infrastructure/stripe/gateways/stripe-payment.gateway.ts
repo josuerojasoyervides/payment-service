@@ -10,9 +10,11 @@ import {
     StripeCreateIntentRequest,
     StripeConfirmIntentRequest,
     StripeErrorResponse,
-    StripeSpeiSourceDto
+    StripeSpeiSourceDto,
+    StripeCreateResponseDto
 } from "../dto/stripe.dto";
 import { NextActionSpei, NextActionThreeDs } from "../../../domain/models/payment.actions";
+
 
 /**
  * Gateway de Stripe.
@@ -26,7 +28,7 @@ import { NextActionSpei, NextActionThreeDs } from "../../../domain/models/paymen
  * - Idempotency keys para operaciones seguras
  */
 @Injectable()
-export class StripePaymentGateway extends PaymentGateway {
+export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto, StripePaymentIntentDto> {
     readonly providerId = 'stripe' as const;
 
     private static readonly API_BASE = '/api/payments/stripe';

@@ -4,7 +4,9 @@ import { ProviderFactory } from "../../../domain/ports/provider-factory.port";
 import { PaypalPaymentGateway } from "../gateways/paypal-payment.gateway";
 import { PaypalRedirectStrategy } from "../strategies/paypal-redirect.strategy";
 import { PaymentStrategy } from "../../../domain/ports/payment-strategy.port";
+import { PaymentRequestBuilder, FieldRequirements } from "../../../domain/ports/payment-request-builder.port";
 import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
+import { PaypalRedirectRequestBuilder } from "../builders/paypal-redirect-request.builder";
 
 /**
  * Factory de PayPal.
@@ -13,12 +15,10 @@ import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
  * - PayPal maneja tarjetas a través de su checkout (redirect)
  * - No soporta SPEI (solo métodos de pago de PayPal)
  * - Todos los métodos usan flujo de redirección
+ * - SIEMPRE requiere returnUrl y cancelUrl
  *
  * Métodos soportados:
  * - card: Tarjetas vía PayPal checkout (con redirección)
- *
- * Nota: PayPal también soporta PayPal balance, PayPal Credit,
- * Venmo, etc., pero todos usan el mismo flujo de redirección.
  */
 @Injectable()
 export class PaypalProviderFactory implements ProviderFactory {
@@ -33,9 +33,6 @@ export class PaypalProviderFactory implements ProviderFactory {
 
     /**
      * Métodos de pago soportados por PayPal.
-     *
-     * Nota: PayPal maneja tarjetas a través de su checkout,
-     * no directamente como Stripe.
      */
     static readonly SUPPORTED_METHODS: PaymentMethodType[] = ['card'];
 
@@ -43,20 +40,8 @@ export class PaypalProviderFactory implements ProviderFactory {
         return this.gateway;
     }
 
-    /**
-     * Crea o retorna una estrategia cacheada.
-     *
-     * PayPal usa PaypalRedirectStrategy para todo,
-     * ya que su flujo siempre involucra redirección.
-     */
     createStrategy(type: PaymentMethodType): PaymentStrategy {
-        if (!PaypalProviderFactory.SUPPORTED_METHODS.includes(type)) {
-            throw new Error(
-                `Payment method "${type}" is not supported by PayPal. ` +
-                `PayPal processes cards through its checkout flow. ` +
-                `Supported methods: ${PaypalProviderFactory.SUPPORTED_METHODS.join(', ')}`
-            );
-        }
+        this.assertSupported(type);
 
         const cached = this.strategyCache.get(type);
         if (cached) {
@@ -69,29 +54,60 @@ export class PaypalProviderFactory implements ProviderFactory {
         return strategy;
     }
 
-    /**
-     * Verifica si un método de pago está soportado.
-     */
     supportsMethod(type: PaymentMethodType): boolean {
         return PaypalProviderFactory.SUPPORTED_METHODS.includes(type);
     }
 
-    /**
-     * Retorna los métodos soportados.
-     */
     getSupportedMethods(): PaymentMethodType[] {
         return [...PaypalProviderFactory.SUPPORTED_METHODS];
     }
 
+    // ============================================================
+    // NUEVOS MÉTODOS PARA BUILDERS
+    // ============================================================
+
     /**
-     * Instancia la estrategia correspondiente.
-     *
-     * Las estrategias reciben el gateway como dependencia manual.
+     * Crea un builder específico para PayPal.
+     * 
+     * PayPal SIEMPRE usa redirect flow, así que todos los métodos
+     * usan el mismo builder que requiere returnUrl.
      */
+    createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilder {
+        this.assertSupported(type);
+
+        // PayPal usa el mismo builder para todo (redirect flow)
+        return new PaypalRedirectRequestBuilder();
+    }
+
+    /**
+     * Retorna los requisitos de campos para PayPal.
+     * 
+     * PayPal siempre necesita URLs de redirect.
+     */
+    getFieldRequirements(type: PaymentMethodType): FieldRequirements {
+        this.assertSupported(type);
+
+        // PayPal usa los mismos requisitos para todos los métodos
+        return PaypalRedirectRequestBuilder.FIELD_REQUIREMENTS;
+    }
+
+    // ============================================================
+    // PRIVATE HELPERS
+    // ============================================================
+
+    private assertSupported(type: PaymentMethodType): void {
+        if (!this.supportsMethod(type)) {
+            throw new Error(
+                `Payment method "${type}" is not supported by PayPal. ` +
+                `PayPal processes cards through its checkout flow. ` +
+                `Supported methods: ${PaypalProviderFactory.SUPPORTED_METHODS.join(', ')}`
+            );
+        }
+    }
+
     private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
         switch (type) {
             case 'card':
-                // PayPal procesa tarjetas a través de su checkout
                 return new PaypalRedirectStrategy(this.gateway);
             default:
                 throw new Error(`Unexpected payment method type: ${type}`);

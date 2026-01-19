@@ -36,6 +36,8 @@ export interface StripePaymentIntentDto {
     receipt_email?: string | null;
 }
 
+export type StripeCreateResponseDto = StripePaymentIntentDto | StripeSpeiSourceDto;
+
 export type StripePaymentIntentStatus =
     | 'requires_payment_method'
     | 'requires_confirmation'

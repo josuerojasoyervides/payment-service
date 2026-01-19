@@ -5,7 +5,7 @@ import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetP
 import { PaymentError } from "../models/payment.errors";
 import { inject } from "@angular/core";
 
-export abstract class PaymentGateway {
+export abstract class PaymentGateway<TCreateDto = unknown, TConfirmDto = unknown> {
     abstract readonly providerId: PaymentProviderId;
 
     protected readonly http = inject(HttpClient);
@@ -74,15 +74,15 @@ export abstract class PaymentGateway {
     }
 
     // ------- “enchufes” para cada provider -------
-    protected abstract createIntentRaw(req: CreatePaymentRequest): Observable<any>;
-    protected abstract mapIntent(dto: any): PaymentIntent
+    protected abstract createIntentRaw(req: CreatePaymentRequest): Observable<TCreateDto>;
+    protected abstract mapIntent(dto: TCreateDto): PaymentIntent
 
-    protected abstract confirmIntentRaw(req: ConfirmPaymentRequest): Observable<any>;
-    protected abstract mapConfirmIntent(dto: any): PaymentIntent;
+    protected abstract confirmIntentRaw(req: ConfirmPaymentRequest): Observable<TConfirmDto>;
+    protected abstract mapConfirmIntent(dto: TConfirmDto): PaymentIntent;
 
-    protected abstract cancelIntentRaw(req: CancelPaymentRequest): Observable<any>;
-    protected abstract mapCancelIntent(dto: any): PaymentIntent;
+    protected abstract cancelIntentRaw(req: CancelPaymentRequest): Observable<TConfirmDto>;
+    protected abstract mapCancelIntent(dto: TConfirmDto): PaymentIntent;
 
-    protected abstract getIntentRaw(req: GetPaymentStatusRequest): Observable<any>;
-    protected abstract mapGetIntent(dto: any): PaymentIntent;
+    protected abstract getIntentRaw(req: GetPaymentStatusRequest): Observable<TConfirmDto>;
+    protected abstract mapGetIntent(dto: TConfirmDto): PaymentIntent;
 }

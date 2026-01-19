@@ -24,7 +24,7 @@ import { NextActionPaypalApprove } from '../../../domain/models/payment.actions'
  * - Sin client_secret, usa cookies de sesión
  */
 @Injectable()
-export class PaypalPaymentGateway extends PaymentGateway {
+export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalOrderDto> {
     readonly providerId = 'paypal' as const;
 
     private static readonly API_BASE = '/api/payments/paypal';

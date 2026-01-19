@@ -1,0 +1,169 @@
+<h1>Checkout con Builders</h1>
+<p class="subtitle">Demo del sistema de builders específicos por provider</p>
+
+<!-- RESUMEN DE ORDEN -->
+<div class="order-summary">
+    <h4>Resumen de Orden</h4>
+    <div class="order-line">
+        <span>Order ID</span>
+        <span>{{ orderId() }}</span>
+    </div>
+    <div class="order-line">
+        <span>Subtotal</span>
+        <span>{{ amount() | currency: currency() }}</span>
+    </div>
+    <div class="order-line">
+        <span>Total</span>
+        <span>{{ amount() | currency: currency() }}</span>
+    </div>
+</div>
+
+<!-- PASO 1: SELECCIONAR PROVIDER -->
+<section>
+    <h3>1. Selecciona el proveedor de pago</h3>
+    <div class="provider-buttons">
+        @for (provider of availableProviders(); track provider) {
+            <button 
+                class="provider-btn"
+                [class.active]="selectedProvider() === provider"
+                [disabled]="isLoading()"
+                (click)="selectProvider(provider)">
+                {{ provider | titlecase }}
+            </button>
+        }
+    </div>
+    <p style="margin-top: 12px; color: #666; font-size: 0.9rem;">
+        Provider seleccionado: <strong>{{ selectedProvider() }}</strong>
+    </p>
+</section>
+
+<!-- PASO 2: SELECCIONAR MÉTODO -->
+<section>
+    <h3>2. Selecciona el método de pago</h3>
+    
+    @if (availableMethods().length === 0) {
+        <p style="color: #dc3545;">No hay métodos disponibles para este provider</p>
+    } @else {
+        <div class="method-buttons">
+            @for (method of availableMethods(); track method) {
+                <button 
+                    class="method-btn"
+                    [class.active]="selectedMethod() === method"
+                    [disabled]="isLoading()"
+                    (click)="selectMethod(method)">
+                    {{ method | titlecase }}
+                </button>
+            }
+        </div>
+        <p style="margin-top: 12px; color: #666; font-size: 0.9rem;">
+            Método seleccionado: <strong>{{ selectedMethod() }}</strong>
+        </p>
+    }
+</section>
+
+<!-- PASO 3: FORMULARIO DINÁMICO -->
+@if (fieldRequirements(); as requirements) {
+    <section>
+        <h3>3. Completa los datos de pago</h3>
+        
+        @if (requirements.description) {
+            <p class="form-description">{{ requirements.description }}</p>
+        }
+        
+        @if (requirements.instructions) {
+            <div class="form-instructions">
+                💡 {{ requirements.instructions }}
+            </div>
+        }
+        
+        <form [formGroup]="paymentForm">
+            @for (field of requirements.fields; track field.name) {
+                @if (isFieldVisible(field)) {
+                    <div class="field">
+                        <label>
+                            {{ field.label }}
+                            @if (field.required) {
+                                <span class="required">*</span>
+                            }
+                        </label>
+                        <input 
+                            [type]="getFieldType(field)"
+                            [formControlName]="field.name"
+                            [placeholder]="field.placeholder ?? ''" />
+                    </div>
+                } @else {
+                    <!-- Campo hidden - mostrar como info -->
+                    <div class="field" style="background: #f0f0f0; padding: 8px; border-radius: 4px; font-size: 0.85rem;">
+                        <strong>{{ field.label }}:</strong> 
+                        <code>{{ paymentForm.get(field.name)?.value || '(auto)' }}</code>
+                        <span style="color: #666;"> (campo automático)</span>
+                    </div>
+                }
+            }
+        </form>
+        
+        @if (requirements.fields.length === 0) {
+            <p style="color: #666;">Este método no requiere datos adicionales.</p>
+        }
+    </section>
+}
+
+<!-- ERROR DE BUILD -->
+@if (buildError(); as error) {
+    <div class="result error">
+        <strong>❌ Error al construir el request:</strong>
+        <p>{{ error }}</p>
+    </div>
+}
+
+<!-- BOTÓN DE PAGO -->
+<button 
+    class="pay-button"
+    [disabled]="isLoading()"
+    (click)="processPayment()">
+    @if (isLoading()) {
+        ⏳ Procesando...
+    } @else {
+        Pagar {{ amount() | currency: currency() }} con {{ selectedProvider() | titlecase }}
+    }
+</button>
+
+<!-- RESULTADO -->
+@if (paymentResult(); as result) {
+    <div class="result" [class.success]="result.type === 'success'" 
+                        [class.error]="result.type === 'error'"
+                        [class.loading]="result.type === 'loading'">
+        @switch (result.type) {
+            @case ('loading') {
+                <strong>⏳ Procesando pago...</strong>
+            }
+            @case ('success') {
+                <strong>✅ Pago iniciado correctamente</strong>
+                <pre>{{ result.data | json }}</pre>
+            }
+            @case ('error') {
+                <strong>❌ Error en el pago</strong>
+                <pre>{{ result.data | json }}</pre>
+            }
+        }
+    </div>
+}
+
+<!-- DEBUG: Request construido -->
+<div class="debug-section">
+    <h3>🔍 Debug: Request Construido</h3>
+    
+    @if (lastBuiltRequest(); as request) {
+        <p>Este es el <code>CreatePaymentRequest</code> que el builder generó:</p>
+        <pre>{{ request | json }}</pre>
+    } @else {
+        <p style="color: #666;">Haz clic en "Pagar" para ver el request generado.</p>
+    }
+    
+    <h3 style="margin-top: 24px;">📋 Field Requirements Actuales</h3>
+    @if (fieldRequirements(); as req) {
+        <pre>{{ req | json }}</pre>
+    } @else {
+        <p style="color: #666;">No hay requisitos disponibles.</p>
+    }
+</div>
