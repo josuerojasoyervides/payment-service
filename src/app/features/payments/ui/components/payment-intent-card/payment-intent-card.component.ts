@@ -1,6 +1,7 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { PaymentIntent, STATUS_BADGE_MAP, STATUS_TEXT_MAP } from '../../shared';
+import { PaymentIntent, STATUS_BADGE_MAP, getStatusText } from '../../shared';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Componente card para mostrar un PaymentIntent.
@@ -27,6 +28,8 @@ import { PaymentIntent, STATUS_BADGE_MAP, STATUS_TEXT_MAP } from '../../shared';
     templateUrl: './payment-intent-card.component.html',
 })
 export class PaymentIntentCardComponent {
+    private readonly i18n = inject(I18nService);
+    
     /** Intent a mostrar */
     readonly intent = input.required<PaymentIntent>();
     
@@ -76,11 +79,47 @@ export class PaymentIntentCardComponent {
 
     /** Texto del estado */
     readonly statusText = computed(() => {
-        return STATUS_TEXT_MAP[this.intent().status] || this.intent().status;
+        return getStatusText(this.i18n, this.intent().status);
     });
 
     toggleExpanded(): void {
         this._expanded = !this._expanded;
         this.expandedChange.emit(this._expanded);
+    }
+
+    get providerLabel(): string {
+        return this.i18n.t(I18nKeys.ui.payment_provider);
+    }
+
+    get statusLabel(): string {
+        return this.i18n.t(I18nKeys.ui.status_label);
+    }
+
+    get amountLabel(): string {
+        return this.i18n.t(I18nKeys.ui.amount_label);
+    }
+
+    get actionRequiredLabel(): string {
+        return this.i18n.t(I18nKeys.ui.action_required_label);
+    }
+
+    get confirmButtonText(): string {
+        return this.i18n.t(I18nKeys.ui.confirm_button);
+    }
+
+    get cancelButtonText(): string {
+        return this.i18n.t(I18nKeys.ui.cancel_button);
+    }
+
+    get idLabel(): string {
+        return this.i18n.t(I18nKeys.ui.id_label);
+    }
+
+    get clientSecretLabel(): string {
+        return this.i18n.t(I18nKeys.ui.client_secret);
+    }
+
+    get redirectUrlLabel(): string {
+        return this.i18n.t(I18nKeys.ui.redirect_url);
     }
 }

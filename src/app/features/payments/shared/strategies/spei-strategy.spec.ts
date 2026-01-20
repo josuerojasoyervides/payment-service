@@ -2,10 +2,12 @@ import { firstValueFrom, of } from "rxjs";
 import { SpeiStrategy } from './spei-strategy';
 import { PaymentGateway } from "../../domain/ports";
 import { CreatePaymentRequest, PaymentIntent, NextActionSpei } from "../../domain/models";
+import { I18nService } from "@core/i18n";
 
 describe('SpeiStrategy', () => {
     let strategy: SpeiStrategy;
     let gatewayMock: Pick<PaymentGateway, 'createIntent' | 'providerId'>;
+    let i18nMock: I18nService;
 
     const validReq: CreatePaymentRequest = {
         orderId: 'order_1',
@@ -35,7 +37,31 @@ describe('SpeiStrategy', () => {
             createIntent: vi.fn(() => of(intentResponse))
         } as any;
 
-        strategy = new SpeiStrategy(gatewayMock as any);
+        i18nMock = {
+            t: vi.fn((key: string, params?: Record<string, string | number>) => {
+                const translations: Record<string, string> = {
+                    'errors.invalid_request': 'Invalid request',
+                    'errors.min_amount': params ? `Minimum amount for card payments is ${params['amount']} ${params['currency']}` : 'Minimum amount for card payments',
+                    'messages.spei_instructions': 'Realiza una transferencia SPEI con los siguientes datos:',
+                    'ui.spei_instructions_title': 'Para completar tu pago de',
+                    'ui.spei_step_1': 'Abre tu app bancaria o banca en línea',
+                    'ui.spei_step_2': 'Selecciona "Transferencia SPEI"',
+                    'ui.spei_step_3': 'Ingresa la CLABE:',
+                    'ui.spei_step_4': 'Monto exacto:',
+                    'ui.spei_step_5': 'Referencia:',
+                    'ui.spei_step_6': 'Beneficiario:',
+                    'ui.spei_deadline': 'Fecha límite:',
+                    'ui.spei_processing_time': 'El pago puede tardar de 5 minutos a 24 horas en reflejarse.',
+                };
+                return translations[key] || key;
+            }),
+            setLanguage: vi.fn(),
+            getLanguage: vi.fn(() => 'es'),
+            has: vi.fn(() => true),
+            currentLang: { asReadonly: vi.fn() } as any,
+        } as any;
+
+        strategy = new SpeiStrategy(gatewayMock as any, i18nMock);
     });
 
     describe('validate()', () => {

@@ -1,5 +1,5 @@
 <div class="space-y-3">
-    <label class="label">Proveedor de pago</label>
+    <label class="label">{{ providerLabel }}</label>
     <div class="grid grid-cols-2 gap-3">
         @for (provider of providerOptions(); track provider.id) {
             <button

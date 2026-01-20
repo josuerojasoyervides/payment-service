@@ -1,3 +1,4 @@
+import { inject } from "@angular/core";
 import { map, Observable, tap } from "rxjs";
 import { 
     PaymentStrategy, 
@@ -8,6 +9,7 @@ import {
     NullTokenValidator,
 } from "../../domain/ports";
 import { PaymentIntent, PaymentMethodType, CreatePaymentRequest } from "../../domain/models";
+import { I18nService, I18nKeys } from "@core/i18n";
 
 /**
  * Estrategia para pagos con tarjeta de crédito/débito.
@@ -29,7 +31,8 @@ export class CardStrategy implements PaymentStrategy {
 
     constructor(
         private readonly gateway: PaymentGateway,
-        private readonly tokenValidator: TokenValidator = new NullTokenValidator()
+        private readonly tokenValidator: TokenValidator = new NullTokenValidator(),
+        private readonly i18n: I18nService = inject(I18nService)
     ) { }
 
     /**
@@ -43,14 +46,14 @@ export class CardStrategy implements PaymentStrategy {
         // Delegar validación de token al validador del proveedor
         if (this.tokenValidator.requiresToken()) {
             if (!req.method.token) {
-                throw new Error('Card token is required for card payments');
+                throw new Error(this.i18n.t(I18nKeys.errors.card_token_required));
             }
             this.tokenValidator.validate(req.method.token);
         }
 
         const minAmount = req.currency === 'MXN' ? 10 : 1;
         if (req.amount < minAmount) {
-            throw new Error(`Minimum amount for card payments is ${minAmount} ${req.currency}`);
+            throw new Error(this.i18n.t(I18nKeys.errors.min_amount, { amount: minAmount, currency: req.currency }));
         }
     }
 
@@ -147,8 +150,7 @@ export class CardStrategy implements PaymentStrategy {
             return null;
         }
 
-        return 'Tu banco requiere verificación adicional. ' +
-            'Serás redirigido a una página segura para completar la autenticación.';
+        return this.i18n.t(I18nKeys.messages.bank_verification_required);
     }
 
     /**

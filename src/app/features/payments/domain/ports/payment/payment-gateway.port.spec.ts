@@ -6,6 +6,7 @@ import { PaymentError } from '../../models/payment/payment-error.types';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { I18nService } from '@core/i18n';
 
 class PaymentGatewayTest extends PaymentGateway {
     readonly providerId = 'paypal' as const;
@@ -162,8 +163,31 @@ describe('PaymentGateway (abstract class)', () => {
     let gateway: PaymentGatewayTest;
 
     beforeEach(() => {
+        const i18nMock = {
+            t: vi.fn((key: string) => {
+                const translations: Record<string, string> = {
+                    'errors.order_id_required': 'orderId is required',
+                    'errors.currency_required': 'currency is required',
+                    'errors.amount_invalid': 'amount is invalid',
+                    'errors.method_type_required': 'payment method type is required',
+                    'errors.card_token_required': 'card token is required',
+                    'errors.intent_id_required': 'intentId is required',
+                    'errors.provider_error': 'Payment provider error',
+                };
+                return translations[key] || key;
+            }),
+            setLanguage: vi.fn(),
+            getLanguage: vi.fn(() => 'es'),
+            has: vi.fn(() => true),
+            currentLang: { asReadonly: vi.fn() } as any,
+        } as any;
+
         TestBed.configureTestingModule({
-            providers: [provideHttpClient(), provideHttpClientTesting()],
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                { provide: I18nService, useValue: i18nMock },
+            ],
         });
 
         gateway = TestBed.runInInjectionContext(() => new PaymentGatewayTest());

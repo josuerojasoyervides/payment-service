@@ -2,19 +2,19 @@
     <div class="max-w-2xl mx-auto px-4">
         <!-- Header -->
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Checkout</h1>
-            <p class="text-gray-600 mt-2">Sistema de pagos con arquitectura empresarial</p>
+            <h1 class="text-3xl font-bold text-gray-900">{{ checkoutTitle }}</h1>
+            <p class="text-gray-600 mt-2">{{ paymentSystemSubtitle }}</p>
             
             <!-- Navigation -->
             <div class="flex justify-center gap-4 mt-4 text-sm">
                 <a routerLink="/payments/history" class="text-blue-600 hover:underline">
-                    Ver historial
+                    {{ viewHistoryLabel }}
                 </a>
                 <a routerLink="/payments/status" class="text-blue-600 hover:underline">
-                    Consultar estado
+                    {{ checkStatusLabel }}
                 </a>
                 <a routerLink="/payments/showcase" class="text-blue-600 hover:underline">
-                    Showcase
+                    {{ showcaseLabel }}
                 </a>
             </div>
         </div>
@@ -50,7 +50,7 @@
                 <div class="card">
                     <div class="flex items-center gap-3 mb-4">
                         <span class="step-number">1</span>
-                        <h2 class="text-lg font-semibold">Proveedor de pago</h2>
+                        <h2 class="text-lg font-semibold">{{ paymentProviderLabel }}</h2>
                     </div>
                     <app-provider-selector
                         [providers]="availableProviders()"
@@ -64,7 +64,7 @@
                 <div class="card">
                     <div class="flex items-center gap-3 mb-4">
                         <span [class]="selectedProvider() ? 'step-number' : 'step-number-inactive'">2</span>
-                        <h2 class="text-lg font-semibold">Método de pago</h2>
+                        <h2 class="text-lg font-semibold">{{ paymentMethodLabel }}</h2>
                     </div>
                     <app-method-selector
                         [methods]="availableMethods()"
@@ -79,7 +79,7 @@
                     <div class="card">
                         <div class="flex items-center gap-3 mb-4">
                             <span class="step-number">3</span>
-                            <h2 class="text-lg font-semibold">Datos de pago</h2>
+                            <h2 class="text-lg font-semibold">{{ paymentDataLabel }}</h2>
                         </div>
                         <app-payment-form
                             [requirements]="fieldRequirements()"
@@ -109,13 +109,13 @@
             <div class="mt-8 p-4 bg-gray-100 rounded-lg">
                 <details>
                     <summary class="cursor-pointer text-sm text-gray-600 font-medium">
-                        🔍 Debug Info
+                        {{ debugInfoLabel }}
                     </summary>
                     <div class="mt-4 space-y-2 text-xs font-mono">
-                        <p><strong>Provider:</strong> {{ selectedProvider() }}</p>
-                        <p><strong>Method:</strong> {{ selectedMethod() }}</p>
-                        <p><strong>Form Valid:</strong> {{ isFormValid() }}</p>
-                        <p><strong>Loading:</strong> {{ isLoading() }}</p>
+                        <p><strong>{{ providerDebugLabel }}:</strong> {{ selectedProvider() }}</p>
+                        <p><strong>{{ methodDebugLabel }}:</strong> {{ selectedMethod() }}</p>
+                        <p><strong>{{ formValidLabel }}:</strong> {{ isFormValid() }}</p>
+                        <p><strong>{{ loadingDebugLabel }}:</strong> {{ isLoading() }}</p>
                         <pre class="bg-white p-2 rounded mt-2 overflow-auto">{{ debugInfo() | json }}</pre>
                     </div>
                 </details>

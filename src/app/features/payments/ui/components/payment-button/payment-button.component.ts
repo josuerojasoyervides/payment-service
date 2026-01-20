@@ -1,6 +1,7 @@
-import { Component, input, output, computed } from '@angular/core';
+import { Component, input, output, computed, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { PaymentProviderId, CurrencyCode, PaymentButtonState } from '../../shared';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Componente de botón de pago con estados visuales.
@@ -27,6 +28,8 @@ import { PaymentProviderId, CurrencyCode, PaymentButtonState } from '../../share
     templateUrl: './payment-button.component.html',
 })
 export class PaymentButtonComponent {
+    private readonly i18n = inject(I18nService);
+    
     /** Monto a pagar */
     readonly amount = input.required<number>();
     
@@ -58,8 +61,31 @@ export class PaymentButtonComponent {
     readonly providerName = computed(() => {
         const p = this.provider();
         if (!p) return '';
-        return p.charAt(0).toUpperCase() + p.slice(1);
+        if (p === 'stripe') return this.i18n.t(I18nKeys.ui.provider_stripe);
+        if (p === 'paypal') return this.i18n.t(I18nKeys.ui.provider_paypal);
+        const providerStr = String(p);
+        return providerStr.charAt(0).toUpperCase() + providerStr.slice(1);
     });
+
+    get processingText(): string {
+        return this.i18n.t(I18nKeys.ui.processing);
+    }
+
+    get paymentSuccessfulText(): string {
+        return this.i18n.t(I18nKeys.ui.payment_successful);
+    }
+
+    get paymentErrorText(): string {
+        return this.i18n.t(I18nKeys.ui.payment_error_text);
+    }
+
+    get payWithText(): string {
+        return this.i18n.t(I18nKeys.ui.pay_with);
+    }
+
+    get withText(): string {
+        return this.i18n.t(I18nKeys.ui.with);
+    }
 
     /** Clases CSS del botón según estado */
     readonly buttonClasses = computed(() => {

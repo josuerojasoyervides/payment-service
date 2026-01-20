@@ -22,24 +22,27 @@ export class StripeCardRequestBuilder implements PaymentRequestBuilder {
 
     /**
      * Requisitos de campos para Stripe Card.
-     * La Factory expone esto a la UI.
+     * 
+     * @deprecated Este campo estático ya no se usa. 
+     * Las factories ahora generan FieldRequirements dinámicamente usando i18n.
+     * Ver: StripeProviderFactory.getFieldRequirements()
      */
     static readonly FIELD_REQUIREMENTS: FieldRequirements = {
-        description: 'Pago con tarjeta de crédito o débito',
-        instructions: 'Ingresa los datos de tu tarjeta de forma segura',
+        description: 'Pago con tarjeta de crédito o débito', // Deprecated: usar i18n
+        instructions: 'Ingresa los datos de tu tarjeta de forma segura', // Deprecated: usar i18n
         fields: [
             {
                 name: 'token',
-                label: 'Token de tarjeta',
+                label: 'Token de tarjeta', // Deprecated: usar i18n
                 required: true,
-                type: 'hidden',  // La UI usa Stripe Elements, no input directo
+                type: 'hidden',
                 placeholder: '',
             },
             {
                 name: 'saveForFuture',
-                label: 'Guardar tarjeta para futuras compras',
+                label: 'Guardar tarjeta para futuras compras', // Deprecated: usar i18n
                 required: false,
-                type: 'text',  // En realidad sería checkbox
+                type: 'text',
                 defaultValue: 'false',
             },
         ],

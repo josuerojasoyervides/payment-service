@@ -1,5 +1,6 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, input, signal, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Componente que muestra instrucciones para pago SPEI.
@@ -27,30 +28,82 @@ import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
     templateUrl: './spei-instructions.component.html',
 })
 export class SpeiInstructionsComponent {
+    private readonly i18n = inject(I18nService);
+
     /** CLABE interbancaria */
     readonly clabe = input.required<string>();
-    
+
     /** Número de referencia */
     readonly reference = input.required<string>();
-    
+
     /** Nombre del banco */
     readonly bank = input.required<string>();
-    
+
     /** Nombre del beneficiario */
     readonly beneficiary = input<string>();
-    
+
     /** Monto a transferir */
     readonly amount = input.required<number>();
-    
+
     /** Código de moneda */
     readonly currency = input<string>('MXN');
-    
+
     /** Fecha de expiración */
     readonly expiresAt = input<string>();
 
     /** Campo que acaba de ser copiado */
     readonly copiedField = signal<string | null>(null);
 
+    // ===== Textos para el template =====
+    get speiTransferTitle(): string {
+        return this.i18n.t(I18nKeys.ui.spei_transfer);
+    }
+
+    get makeTransferText(): string {
+        return this.i18n.t(I18nKeys.ui.make_transfer_with_data);
+    }
+
+    get copiedLabel(): string {
+        return this.i18n.t(I18nKeys.ui.copied);
+    }
+
+    get copyLabel(): string {
+        return this.i18n.t(I18nKeys.ui.copy);
+    }
+
+    get referenceLabel(): string {
+        return this.i18n.t(I18nKeys.ui.reference);
+    }
+
+    get exactAmountLabel(): string {
+        return this.i18n.t(I18nKeys.ui.exact_amount);
+    }
+
+    get destinationBankLabel(): string {
+        return this.i18n.t(I18nKeys.ui.destination_bank);
+    }
+
+    get beneficiaryLabel(): string {
+        return this.i18n.t(I18nKeys.ui.beneficiary);
+    }
+
+    get referenceExpiresText(): string {
+        return this.i18n.t(I18nKeys.ui.reference_expires);
+    }
+
+    get transferExactAmountText(): string {
+        return this.i18n.t(I18nKeys.ui.transfer_exact_amount);
+    }
+
+    get paymentMayTakeText(): string {
+        return this.i18n.t(I18nKeys.ui.payment_may_take);
+    }
+
+    get keepReceiptText(): string {
+        return this.i18n.t(I18nKeys.ui.keep_receipt);
+    }
+
+    // TODO: Extract this into a decorator or utility function or a pipe
     /** Formatea la CLABE con espacios para mejor legibilidad */
     formatClabe(clabe: string): string {
         // Formato: XXX XXX XXXXXXXXXXX X
@@ -62,7 +115,7 @@ export class SpeiInstructionsComponent {
         try {
             await navigator.clipboard.writeText(text);
             this.copiedField.set(field);
-            
+
             // Resetear después de 2 segundos
             setTimeout(() => {
                 if (this.copiedField() === field) {

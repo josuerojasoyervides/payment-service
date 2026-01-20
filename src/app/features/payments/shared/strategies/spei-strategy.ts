@@ -1,3 +1,4 @@
+import { inject } from "@angular/core";
 import { map, Observable, tap } from "rxjs";
 import { 
     PaymentStrategy, 
@@ -6,6 +7,7 @@ import {
     PaymentGateway,
 } from "../../domain/ports";
 import { PaymentIntent, PaymentMethodType, CreatePaymentRequest, NextActionSpei } from "../../domain/models";
+import { I18nService, I18nKeys } from "@core/i18n";
 
 /**
  * Estrategia para pagos via SPEI (Sistema de Pagos Electrónicos Interbancarios).
@@ -32,7 +34,10 @@ export class SpeiStrategy implements PaymentStrategy {
         'openpay': 'BBVA México',
     };
 
-    constructor(private readonly gateway: PaymentGateway) { }
+    constructor(
+        private readonly gateway: PaymentGateway,
+        private readonly i18n: I18nService = inject(I18nService)
+    ) { }
 
     /**
      * Valida el request para pagos SPEI.
@@ -44,11 +49,11 @@ export class SpeiStrategy implements PaymentStrategy {
      */
     validate(req: CreatePaymentRequest): void {
         if (req.currency !== 'MXN') {
-            throw new Error(`SPEI only supports MXN currency. Received: ${req.currency}`);
+            throw new Error(this.i18n.t(I18nKeys.errors.invalid_request) + `: SPEI only supports MXN currency. Received: ${req.currency}`);
         }
 
         if (req.amount < SpeiStrategy.MIN_AMOUNT_MXN) {
-            throw new Error(`Minimum amount for SPEI is ${SpeiStrategy.MIN_AMOUNT_MXN} MXN`);
+            throw new Error(this.i18n.t(I18nKeys.errors.min_amount, { amount: SpeiStrategy.MIN_AMOUNT_MXN, currency: 'MXN' }));
         }
 
         if (req.amount > SpeiStrategy.MAX_AMOUNT_MXN) {
@@ -150,18 +155,18 @@ export class SpeiStrategy implements PaymentStrategy {
         const speiAction = intent.nextAction as NextActionSpei;
 
         return [
-            `Para completar tu pago de $${intent.amount.toLocaleString()} ${intent.currency}:`,
+            `${this.i18n.t(I18nKeys.ui.spei_instructions_title)} $${intent.amount.toLocaleString()} ${intent.currency}:`,
             '',
-            `1. Abre tu app bancaria o banca en línea`,
-            `2. Selecciona "Transferencia SPEI"`,
-            `3. Ingresa la CLABE: ${speiAction.clabe}`,
-            `4. Monto exacto: $${speiAction.amount.toLocaleString()} ${speiAction.currency}`,
-            `5. Referencia: ${speiAction.reference}`,
-            `6. Beneficiario: ${speiAction.beneficiary}`,
+            `1. ${this.i18n.t(I18nKeys.ui.spei_step_1)}`,
+            `2. ${this.i18n.t(I18nKeys.ui.spei_step_2)}`,
+            `3. ${this.i18n.t(I18nKeys.ui.spei_step_3)} ${speiAction.clabe}`,
+            `4. ${this.i18n.t(I18nKeys.ui.spei_step_4)} $${speiAction.amount.toLocaleString()} ${speiAction.currency}`,
+            `5. ${this.i18n.t(I18nKeys.ui.spei_step_5)} ${speiAction.reference}`,
+            `6. ${this.i18n.t(I18nKeys.ui.spei_step_6)} ${speiAction.beneficiary}`,
             '',
-            `⚠️ Fecha límite: ${new Date(speiAction.expiresAt).toLocaleString('es-MX')}`,
+            `⚠️ ${this.i18n.t(I18nKeys.ui.spei_deadline)} ${new Date(speiAction.expiresAt).toLocaleString('es-MX')}`,
             '',
-            `El pago puede tardar de 5 minutos a 24 horas en reflejarse.`,
+            this.i18n.t(I18nKeys.ui.spei_processing_time),
         ].join('\n');
     }
 
@@ -181,7 +186,7 @@ export class SpeiStrategy implements PaymentStrategy {
 
         const speiAction: NextActionSpei = {
             type: 'spei',
-            instructions: this.getUserInstructions(intent) ?? 'Realiza la transferencia SPEI',
+            instructions: this.getUserInstructions(intent) ?? this.i18n.t(I18nKeys.messages.spei_instructions),
             clabe: existingSpei?.clabe ?? this.extractClabeFromRaw(intent),
             reference: existingSpei?.reference ?? this.generateReference(req.orderId),
             bank: existingSpei?.bank ?? SpeiStrategy.RECEIVING_BANKS[intent.provider] ?? 'STP',

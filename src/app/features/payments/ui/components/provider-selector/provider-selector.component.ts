@@ -1,6 +1,7 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PaymentProviderId, DEFAULT_PROVIDERS, ProviderOption } from '../../shared';
+import { PaymentProviderId, getDefaultProviders, ProviderOption } from '../../shared';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Componente selector de proveedor de pago.
@@ -24,6 +25,8 @@ import { PaymentProviderId, DEFAULT_PROVIDERS, ProviderOption } from '../../shar
     templateUrl: './provider-selector.component.html',
 })
 export class ProviderSelectorComponent {
+    private readonly i18n = inject(I18nService);
+    
     /** Lista de IDs de proveedores disponibles */
     readonly providers = input.required<PaymentProviderId[]>();
     
@@ -38,8 +41,9 @@ export class ProviderSelectorComponent {
 
     /** Opciones de proveedores con metadata */
     providerOptions(): ProviderOption[] {
+        const defaultProviders = getDefaultProviders(this.i18n);
         return this.providers()
-            .map(id => DEFAULT_PROVIDERS.find(p => p.id === id))
+            .map(id => defaultProviders.find(p => p.id === id))
             .filter((p): p is ProviderOption => p !== undefined);
     }
 
@@ -47,5 +51,9 @@ export class ProviderSelectorComponent {
         if (!this.disabled() && providerId !== this.selected()) {
             this.providerChange.emit(providerId);
         }
+    }
+
+    get providerLabel(): string {
+        return this.i18n.t(I18nKeys.ui.provider_label);
     }
 }

@@ -1,6 +1,7 @@
-import { Component, input, computed } from '@angular/core';
+import { Component, input, computed, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { CurrencyCode, OrderItem } from '../../shared';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Componente que muestra el resumen de una orden.
@@ -25,6 +26,8 @@ import { CurrencyCode, OrderItem } from '../../shared';
     templateUrl: './order-summary.component.html',
 })
 export class OrderSummaryComponent {
+    private readonly i18n = inject(I18nService);
+    
     /** ID único de la orden */
     readonly orderId = input.required<string>();
     
@@ -43,4 +46,16 @@ export class OrderSummaryComponent {
         if (!itemsList || itemsList.length === 0) return this.amount();
         return itemsList.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     });
+
+    get orderSummaryLabel(): string {
+        return this.i18n.t(I18nKeys.ui.order_summary);
+    }
+
+    get subtotalLabel(): string {
+        return this.i18n.t(I18nKeys.ui.subtotal);
+    }
+
+    get totalLabel(): string {
+        return this.i18n.t(I18nKeys.ui.total);
+    }
 }

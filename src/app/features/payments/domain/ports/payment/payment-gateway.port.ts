@@ -5,12 +5,14 @@ import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetP
 import { PaymentError } from "../../models/payment/payment-error.types";
 import { inject } from "@angular/core";
 import { LoggerService } from "@core/logging";
+import { I18nService, I18nKeys } from "@core/i18n";
 
 export abstract class PaymentGateway<TCreateDto = unknown, TConfirmDto = unknown> {
     abstract readonly providerId: PaymentProviderId;
 
     protected readonly http = inject(HttpClient);
     protected readonly logger = inject(LoggerService);
+    protected readonly i18n = inject(I18nService);
 
     /** Contexto para logging */
     protected get logContext(): string {
@@ -108,30 +110,30 @@ export abstract class PaymentGateway<TCreateDto = unknown, TConfirmDto = unknown
 
     // ------- Helpers compartidos -------
     protected validateCreate(req: CreatePaymentRequest) {
-        if (!req.orderId) throw new Error("orderId is required");
-        if (!req.currency) throw new Error("currency is required");
-        if (!Number.isFinite(req.amount) || req.amount <= 0) throw new Error("amount is invalid");
-        if (!req.method?.type) throw new Error("payment method type is required");
-        if (req.method.type === "card" && !req.method.token) throw new Error("card token is required");
+        if (!req.orderId) throw new Error(this.i18n.t(I18nKeys.errors.order_id_required));
+        if (!req.currency) throw new Error(this.i18n.t(I18nKeys.errors.currency_required));
+        if (!Number.isFinite(req.amount) || req.amount <= 0) throw new Error(this.i18n.t(I18nKeys.errors.amount_invalid));
+        if (!req.method?.type) throw new Error(this.i18n.t(I18nKeys.errors.method_type_required));
+        if (req.method.type === "card" && !req.method.token) throw new Error(this.i18n.t(I18nKeys.errors.card_token_required));
     }
 
     protected validateConfirm(req: ConfirmPaymentRequest) {
-        if (!req.intentId) throw new Error("intentId is required");
+        if (!req.intentId) throw new Error(this.i18n.t(I18nKeys.errors.intent_id_required));
     }
 
     protected validateCancel(req: CancelPaymentRequest) {
-        if (!req.intentId) throw new Error("intentId is required");
+        if (!req.intentId) throw new Error(this.i18n.t(I18nKeys.errors.intent_id_required));
     }
 
     protected validateGetStatus(req: GetPaymentStatusRequest) {
-        if (!req.intentId) throw new Error("intentId is required");
+        if (!req.intentId) throw new Error(this.i18n.t(I18nKeys.errors.intent_id_required));
     }
 
     protected normalizeError(err: unknown): PaymentError {
         // base genérico (cada provider puede override)
         return {
             code: "provider_error",
-            message: "Payment provider error",
+            message: this.i18n.t(I18nKeys.errors.provider_error),
             raw: err
         }
     }

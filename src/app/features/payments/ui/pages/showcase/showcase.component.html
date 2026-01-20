@@ -2,13 +2,13 @@
     <div class="max-w-6xl mx-auto px-4">
         <!-- Header -->
         <div class="text-center mb-12">
-            <h1 class="text-3xl font-bold text-gray-900">Component Showcase</h1>
+            <h1 class="text-3xl font-bold text-gray-900">{{ componentShowcaseTitle }}</h1>
             <p class="text-gray-600 mt-2">
-                Galería interactiva de componentes de pago reutilizables
+                {{ componentShowcaseDescription }}
             </p>
             <div class="flex justify-center gap-4 mt-4 text-sm">
                 <a routerLink="/payments/checkout" class="text-blue-600 hover:underline">
-                    Ir al Checkout
+                    {{ goToCheckoutLabel }}
                 </a>
             </div>
         </div>
@@ -21,7 +21,7 @@
                 <h2 class="text-xl font-bold mb-4 pb-4 border-b">OrderSummaryComponent</h2>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <h3 class="font-medium mb-3">Preview</h3>
+                        <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
                         <app-order-summary
                             [orderId]="orderSummary.orderId"
                             [amount]="orderSummary.amount"
@@ -30,14 +30,14 @@
                         />
                     </div>
                     <div>
-                        <h3 class="font-medium mb-3">Controls</h3>
+                        <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
                         <div class="space-y-3 text-sm">
                             <div>
-                                <label class="label">Amount</label>
+                                <label class="label">{{ amountLabelShort }}</label>
                                 <input type="number" class="input" [(ngModel)]="orderSummary.amount" />
                             </div>
                             <div>
-                                <label class="label">Currency</label>
+                                <label class="label">{{ currencyLabel }}</label>
                                 <select class="input" [(ngModel)]="orderSummary.currency">
                                     <option value="MXN">MXN</option>
                                     <option value="USD">USD</option>
@@ -45,7 +45,7 @@
                             </div>
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" [(ngModel)]="orderSummary.showItems" />
-                                Show items breakdown
+                                {{ showItemsBreakdownLabel }}
                             </label>
                         </div>
                     </div>
@@ -57,7 +57,7 @@
                 <h2 class="text-xl font-bold mb-4 pb-4 border-b">ProviderSelectorComponent</h2>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <h3 class="font-medium mb-3">Preview</h3>
+                        <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
                         <app-provider-selector
                             [providers]="providerSelector.providers"
                             [selected]="providerSelector.selected"
@@ -66,12 +66,12 @@
                         />
                     </div>
                     <div>
-                        <h3 class="font-medium mb-3">Controls</h3>
+                        <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
                         <div class="space-y-3 text-sm">
-                            <p>Selected: <code class="bg-gray-100 px-2 py-1 rounded">{{ providerSelector.selected }}</code></p>
+                            <p>{{ selectedLabel }}: <code class="bg-gray-100 px-2 py-1 rounded">{{ providerSelector.selected }}</code></p>
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" [(ngModel)]="providerSelector.disabled" />
-                                Disabled
+                                {{ disabledLabel }}
                             </label>
                         </div>
                     </div>
@@ -83,7 +83,7 @@
                 <h2 class="text-xl font-bold mb-4 pb-4 border-b">MethodSelectorComponent</h2>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <h3 class="font-medium mb-3">Preview</h3>
+                        <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
                         <app-method-selector
                             [methods]="methodSelector.methods"
                             [selected]="methodSelector.selected"
@@ -92,12 +92,12 @@
                         />
                     </div>
                     <div>
-                        <h3 class="font-medium mb-3">Controls</h3>
+                        <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
                         <div class="space-y-3 text-sm">
-                            <p>Selected: <code class="bg-gray-100 px-2 py-1 rounded">{{ methodSelector.selected }}</code></p>
+                            <p>{{ selectedLabel }}: <code class="bg-gray-100 px-2 py-1 rounded">{{ methodSelector.selected }}</code></p>
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" [(ngModel)]="methodSelector.disabled" />
-                                Disabled
+                                {{ disabledLabel }}
                             </label>
                         </div>
                     </div>
@@ -109,7 +109,7 @@
                 <h2 class="text-xl font-bold mb-4 pb-4 border-b">PaymentButtonComponent</h2>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <h3 class="font-medium mb-3">Preview</h3>
+                        <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
                         <app-payment-button
                             [amount]="paymentButton.amount"
                             [currency]="paymentButton.currency"
@@ -121,27 +121,27 @@
                         />
                     </div>
                     <div>
-                        <h3 class="font-medium mb-3">Controls</h3>
+                        <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
                         <div class="space-y-3 text-sm">
                             <div>
-                                <label class="label">Provider</label>
+                                <label class="label">{{ providerLabel }}</label>
                                 <select class="input" [(ngModel)]="paymentButton.provider">
-                                    <option value="stripe">Stripe</option>
-                                    <option value="paypal">PayPal</option>
+                                    <option value="stripe">{{ stripeProviderLabel }}</option>
+                                    <option value="paypal">{{ paypalProviderLabel }}</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="label">State</label>
+                                <label class="label">{{ statusLabelShort }}</label>
                                 <select class="input" [(ngModel)]="paymentButton.state">
                                     <option value="idle">Idle</option>
-                                    <option value="loading">Loading</option>
-                                    <option value="success">Success</option>
-                                    <option value="error">Error</option>
+                                    <option value="loading">{{ loadingLabel }}</option>
+                                    <option value="success">{{ successLabel }}</option>
+                                    <option value="error">{{ errorLabel }}</option>
                                 </select>
                             </div>
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" [(ngModel)]="paymentButton.disabled" />
-                                Disabled
+                                {{ disabledLabel }}
                             </label>
                         </div>
                     </div>
@@ -153,7 +153,7 @@
                 <h2 class="text-xl font-bold mb-4 pb-4 border-b">PaymentResultComponent</h2>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <h3 class="font-medium mb-3">Preview</h3>
+                        <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
                         @if (paymentResult.showSuccess) {
                             <app-payment-result
                                 [intent]="sampleIntent"
@@ -171,11 +171,11 @@
                         }
                     </div>
                     <div>
-                        <h3 class="font-medium mb-3">Controls</h3>
+                        <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
                         <div class="space-y-3 text-sm">
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" [(ngModel)]="paymentResult.showSuccess" />
-                                Show success state
+                                {{ showSuccessStateLabel }}
                             </label>
                         </div>
                     </div>
@@ -187,7 +187,7 @@
                 <h2 class="text-xl font-bold mb-4 pb-4 border-b">SpeiInstructionsComponent</h2>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <h3 class="font-medium mb-3">Preview</h3>
+                        <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
                         <app-spei-instructions
                             [clabe]="speiInstructions.clabe"
                             [reference]="speiInstructions.reference"
@@ -199,14 +199,14 @@
                         />
                     </div>
                     <div>
-                        <h3 class="font-medium mb-3">Controls</h3>
+                        <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
                         <div class="space-y-3 text-sm">
                             <div>
-                                <label class="label">Amount</label>
+                                <label class="label">{{ amountLabelShort }}</label>
                                 <input type="number" class="input" [(ngModel)]="speiInstructions.amount" />
                             </div>
                             <div>
-                                <label class="label">CLABE</label>
+                                <label class="label">{{ clabeLabel }}</label>
                                 <input type="text" class="input font-mono" [(ngModel)]="speiInstructions.clabe" />
                             </div>
                         </div>
@@ -219,7 +219,7 @@
                 <h2 class="text-xl font-bold mb-4 pb-4 border-b">PaymentIntentCardComponent</h2>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <h3 class="font-medium mb-3">Preview</h3>
+                        <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
                         <app-payment-intent-card
                             [intent]="intentCard.intent"
                             [showActions]="intentCard.showActions"
@@ -230,26 +230,26 @@
                         />
                     </div>
                     <div>
-                        <h3 class="font-medium mb-3">Controls</h3>
+                        <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
                         <div class="space-y-3 text-sm">
                             <div>
-                                <label class="label">Status</label>
+                                <label class="label">{{ statusLabelShort }}</label>
                                 <select class="input" [(ngModel)]="intentCard.intent.status">
-                                    <option value="requires_confirmation">Requires Confirmation</option>
-                                    <option value="requires_action">Requires Action</option>
-                                    <option value="processing">Processing</option>
-                                    <option value="succeeded">Succeeded</option>
-                                    <option value="failed">Failed</option>
-                                    <option value="canceled">Canceled</option>
+                                    <option value="requires_confirmation">{{ statusRequiresConfirmationLabel }}</option>
+                                    <option value="requires_action">{{ statusRequiresActionLabel }}</option>
+                                    <option value="processing">{{ processingLabel }}</option>
+                                    <option value="succeeded">{{ statusSucceededLabel }}</option>
+                                    <option value="failed">{{ statusFailedLabel }}</option>
+                                    <option value="canceled">{{ canceledLabel }}</option>
                                 </select>
                             </div>
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" [(ngModel)]="intentCard.showActions" />
-                                Show actions
+                                {{ showActionsLabel }}
                             </label>
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" [(ngModel)]="intentCard.expanded" />
-                                Expanded
+                                {{ expandedLabel }}
                             </label>
                         </div>
                     </div>
@@ -261,9 +261,9 @@
                 <h2 class="text-xl font-bold mb-4 pb-4 border-b">FallbackModalComponent</h2>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <h3 class="font-medium mb-3">Preview</h3>
+                        <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
                         <button class="btn-primary" (click)="fallbackModal.open = true">
-                            Open Fallback Modal
+                            {{ openFallbackModalLabel }}
                         </button>
                         <app-fallback-modal
                             [event]="fallbackModal.event"
@@ -273,10 +273,9 @@
                         />
                     </div>
                     <div>
-                        <h3 class="font-medium mb-3">Info</h3>
+                        <h3 class="font-medium mb-3">{{ infoLabel }}</h3>
                         <p class="text-sm text-gray-600">
-                            Este modal aparece cuando un proveedor falla y hay alternativas disponibles.
-                            Permite al usuario seleccionar otro proveedor para reintentar el pago.
+                            {{ fallbackModalInfoLabel }}
                         </p>
                     </div>
                 </div>

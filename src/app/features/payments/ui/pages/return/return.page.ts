@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { PaymentIntent, PaymentProviderId } from '../../../domain/models';
 import { PaymentIntentCardComponent } from '../../components';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Página de retorno para callbacks de 3DS y PayPal.
@@ -24,6 +25,7 @@ import { PaymentIntentCardComponent } from '../../components';
 export class ReturnComponent implements OnInit {
     private readonly route = inject(ActivatedRoute);
     private readonly paymentState = inject(PAYMENT_STATE);
+    private readonly i18n = inject(I18nService);
 
     // Query params
     readonly intentId = signal<string | null>(null);
@@ -96,5 +98,85 @@ export class ReturnComponent implements OnInit {
         if (this.paypalToken()) return 'paypal';
         // Por defecto, asumir Stripe
         return 'stripe';
+    }
+
+    get newPaymentButtonText(): string {
+        return this.i18n.t(I18nKeys.ui.new_payment_button);
+    }
+
+    get retryPaymentText(): string {
+        return this.i18n.t(I18nKeys.ui.retry_payment);
+    }
+
+    get viewHistoryText(): string {
+        return this.i18n.t(I18nKeys.ui.view_history);
+    }
+
+    get paymentCanceledText(): string {
+        return this.i18n.t(I18nKeys.ui.payment_canceled);
+    }
+
+    get paymentCanceledMessageText(): string {
+        return this.i18n.t(I18nKeys.ui.payment_canceled_message);
+    }
+
+    get paymentCompletedText(): string {
+        return this.i18n.t(I18nKeys.ui.payment_completed); // Ya existe en línea 95
+    }
+
+    get paymentCompletedMessageText(): string {
+        return this.i18n.t(I18nKeys.ui.payment_completed_message);
+    }
+
+    get verifyingPaymentText(): string {
+        return this.i18n.t(I18nKeys.ui.verifying_payment);
+    }
+
+    get verifyingPaymentMessageText(): string {
+        return this.i18n.t(I18nKeys.ui.verifying_payment_message);
+    }
+
+    get returnInformationText(): string {
+        return this.i18n.t(I18nKeys.ui.return_information);
+    }
+
+    get paymentStatusText(): string {
+        return this.i18n.t(I18nKeys.ui.payment_status);
+    }
+
+    get viewAllParamsText(): string {
+        return this.i18n.t(I18nKeys.ui.view_all_params);
+    }
+
+    get flowTypeText(): string {
+        return this.i18n.t(I18nKeys.ui.flow_type);
+    }
+
+    get statusLabelText(): string {
+        return this.i18n.t(I18nKeys.ui.status_label);
+    }
+
+    get canceledText(): string {
+        return this.i18n.t(I18nKeys.ui.canceled);
+    }
+
+    get completedText(): string {
+        return this.i18n.t(I18nKeys.ui.completed);
+    }
+
+    get processingText(): string {
+        return this.i18n.t(I18nKeys.ui.processing);
+    }
+
+    get intentIdLabel(): string {
+        return this.i18n.t(I18nKeys.ui.intent_id);
+    }
+
+    get paypalTokenLabel(): string {
+        return this.i18n.t(I18nKeys.ui.paypal_token);
+    }
+
+    get paypalPayerIdLabel(): string {
+        return this.i18n.t(I18nKeys.ui.paypal_payer_id);
     }
 }

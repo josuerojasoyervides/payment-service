@@ -7,7 +7,6 @@ import { FakePaymentsBackendInterceptor } from './core/testing';
 import { cacheInterceptor } from './core/caching';
 import { retryInterceptor, resilienceInterceptor } from './core/resilience';
 import { loggingInterceptor } from './core/logging';
-
 /**
  * Configuración principal de la aplicación.
  * 
@@ -40,5 +39,5 @@ export const appConfig: ApplicationConfig = {
 
     // Fake backend para desarrollo
     { provide: HTTP_INTERCEPTORS, useClass: FakePaymentsBackendInterceptor, multi: true },
-  ]
+  ],
 };

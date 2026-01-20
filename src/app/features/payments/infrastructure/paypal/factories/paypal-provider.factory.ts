@@ -11,6 +11,7 @@ import { PaypalPaymentGateway } from "../gateways/paypal-payment.gateway";
 import { PaypalRedirectStrategy } from "../strategies/paypal-redirect.strategy";
 import { PaypalRedirectRequestBuilder } from "../builders/paypal-redirect-request.builder";
 import { PaypalTokenValidator } from "../validators/paypal-token.validator";
+import { I18nService, I18nKeys } from "@core/i18n";
 
 /**
  * Factory de PayPal.
@@ -29,6 +30,7 @@ export class PaypalProviderFactory implements ProviderFactory {
     readonly providerId = 'paypal' as const;
 
     private readonly gateway = inject(PaypalPaymentGateway);
+    private readonly i18n = inject(I18nService);
 
     /**
      * Cache de estrategias.
@@ -92,7 +94,28 @@ export class PaypalProviderFactory implements ProviderFactory {
         this.assertSupported(type);
 
         // PayPal usa los mismos requisitos para todos los métodos
-        return PaypalRedirectRequestBuilder.FIELD_REQUIREMENTS;
+        return {
+            description: this.i18n.t(I18nKeys.ui.pay_with_paypal),
+            instructions: this.i18n.t(I18nKeys.ui.paypal_redirect_secure_message),
+            fields: [
+                {
+                    name: 'returnUrl',
+                    label: this.i18n.t(I18nKeys.ui.return_url_label),
+                    required: true,
+                    type: 'hidden',
+                    autoFill: 'currentUrl',
+                    placeholder: '',
+                },
+                {
+                    name: 'cancelUrl',
+                    label: this.i18n.t(I18nKeys.ui.cancel_url_label),
+                    required: false,
+                    type: 'hidden',
+                    autoFill: 'currentUrl',
+                    placeholder: '',
+                },
+            ],
+        };
     }
 
     // ============================================================
@@ -112,7 +135,7 @@ export class PaypalProviderFactory implements ProviderFactory {
     private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
         switch (type) {
             case 'card':
-                return new PaypalRedirectStrategy(this.gateway);
+                return new PaypalRedirectStrategy(this.gateway, this.i18n);
             default:
                 throw new Error(`Unexpected payment method type: ${type}`);
         }

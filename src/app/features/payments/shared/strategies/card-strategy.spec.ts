@@ -2,11 +2,13 @@ import { CreatePaymentRequest, PaymentIntent } from "../../domain/models";
 import { PaymentGateway, TokenValidator } from "../../domain/ports";
 import { CardStrategy } from "./card-strategy"
 import { firstValueFrom, of } from "rxjs";
+import { I18nService } from "@core/i18n";
 
 describe('CardStrategy', () => {
     let strategy: CardStrategy;
     let gatewayMock: Pick<PaymentGateway, 'createIntent' | 'providerId'>;
     let tokenValidatorMock: TokenValidator;
+    let i18nMock: I18nService;
 
     // Token válido con formato correcto (14+ caracteres después del prefijo)
     const validToken = 'tok_test1234567890abc';
@@ -45,7 +47,22 @@ describe('CardStrategy', () => {
             getAcceptedPatterns: vi.fn(() => ['tok_*', 'pm_*', 'card_*']),
         };
 
-        strategy = new CardStrategy(gatewayMock as any, tokenValidatorMock);
+        i18nMock = {
+            t: vi.fn((key: string, params?: Record<string, string | number>) => {
+                const translations: Record<string, string> = {
+                    'errors.card_token_required': 'Card token is required for card payments',
+                    'errors.min_amount': params ? `Minimum amount for card payments is ${params['amount']} ${params['currency']}` : 'Minimum amount for card payments',
+                    'messages.bank_verification_required': 'Tu banco requiere verificación adicional. Serás redirigido a una página segura para completar la autenticación.',
+                };
+                return translations[key] || key;
+            }),
+            setLanguage: vi.fn(),
+            getLanguage: vi.fn(() => 'es'),
+            has: vi.fn(() => true),
+            currentLang: { asReadonly: vi.fn() } as any,
+        } as any;
+
+        strategy = new CardStrategy(gatewayMock as any, tokenValidatorMock, i18nMock);
     });
 
     describe('validate()', () => {

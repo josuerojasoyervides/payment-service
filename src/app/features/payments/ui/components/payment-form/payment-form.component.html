@@ -1,13 +1,13 @@
 <div class="space-y-4">
     @if (requirements(); as reqs) {
         @if (reqs.description) {
-            <p class="text-sm text-gray-600">{{ reqs.description }}</p>
+            <p class="text-sm text-gray-600">{{ translateDescription(reqs.description) }}</p>
         }
         
         @if (reqs.instructions) {
             <div class="alert-info flex items-start gap-2">
                 <span class="text-lg">💡</span>
-                <span class="text-sm">{{ reqs.instructions }}</span>
+                <span class="text-sm">{{ translateInstructions(reqs.instructions) }}</span>
             </div>
         }
 
@@ -29,7 +29,7 @@
                     } @else {
                         <!-- Input normal para otros campos -->
                         <label [for]="field.name" class="label">
-                            {{ field.label }}
+                            {{ translateFieldLabel(field) }}
                             @if (field.required) {
                                 <span class="text-red-500 ml-0.5">*</span>
                             }
@@ -46,7 +46,7 @@
                         
                         @if (isFieldInvalid(field.name)) {
                             <p class="text-sm text-red-500">
-                                Este campo es requerido
+                                {{ fieldRequiredText }}
                             </p>
                         }
                     }
@@ -69,12 +69,12 @@
 
         @if (reqs.fields.length === 0) {
             <p class="text-sm text-gray-500 italic">
-                Este método no requiere datos adicionales.
+                {{ methodNoAdditionalDataText }}
             </p>
         }
     } @else {
         <p class="text-sm text-gray-500 italic">
-            Selecciona un proveedor y método de pago.
+            {{ selectProviderMethodText }}
         </p>
     }
 </div>

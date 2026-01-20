@@ -1,16 +1,17 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { Observable } from "rxjs";
 import { PaymentGateway } from "../../../domain/ports";
-import { 
-    PaymentIntent, 
+import { I18nService, I18nKeys } from "@core/i18n";
+import {
+    PaymentIntent,
     PaymentIntentStatus,
-    CancelPaymentRequest, 
-    ConfirmPaymentRequest, 
-    CreatePaymentRequest, 
+    CancelPaymentRequest,
+    ConfirmPaymentRequest,
+    CreatePaymentRequest,
     GetPaymentStatusRequest,
-    PaymentError, 
+    PaymentError,
     PaymentErrorCode,
-    NextActionSpei, 
+    NextActionSpei,
     NextActionThreeDs,
 } from "../../../domain/models";
 import {
@@ -145,10 +146,29 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
      * Normaliza errores de Stripe a nuestro formato.
      */
     protected override normalizeError(err: unknown): PaymentError {
-        // Stripe retorna errores en formato { error: { ... } }
-        if (this.isStripeErrorResponse(err)) {
-            const stripeError = err.error;
+        // Stripe retorna errores en formato { error: { type, code, message } }
+        // Cuando viene de HttpErrorResponse, el body está en err.error
+        let stripeError: any = null;
 
+        if (err && typeof err === 'object') {
+            // Caso 1: Error viene directamente como { error: { type, code, ... } }
+            if (this.isStripeErrorResponse(err)) {
+                stripeError = (err as any).error;
+            }
+            // Caso 2: Error viene envuelto en HttpErrorResponse (err.error contiene el body)
+            else if ('error' in err && (err as any).error) {
+                const errorBody = (err as any).error;
+                // El body puede ser { error: { ... } } (estructura de Stripe)
+                if (errorBody && typeof errorBody === 'object' && 'error' in errorBody) {
+                    const innerError = errorBody.error;
+                    if (innerError && typeof innerError === 'object' && 'type' in innerError && 'code' in innerError) {
+                        stripeError = innerError;
+                    }
+                }
+            }
+        }
+
+        if (stripeError && typeof stripeError === 'object' && 'code' in stripeError) {
             return {
                 code: StripePaymentGateway.ERROR_CODE_MAP[stripeError.code] ?? 'provider_error',
                 message: this.humanizeStripeError(stripeError),
@@ -163,7 +183,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
             if (httpError.status === 402) {
                 return {
                     code: 'card_declined',
-                    message: 'El pago fue rechazado. Por favor verifica los datos de tu tarjeta.',
+                    message: this.i18n.t(I18nKeys.errors.card_declined),
                     raw: err,
                 };
             }
@@ -171,13 +191,18 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
             if (httpError.status >= 500) {
                 return {
                     code: 'provider_unavailable',
-                    message: 'Stripe no está disponible en este momento. Intenta más tarde.',
+                    message: this.i18n.t(I18nKeys.errors.stripe_unavailable),
                     raw: err,
                 };
             }
         }
 
-        return super.normalizeError(err);
+        // Fallback: usar mensaje genérico de Stripe
+        return {
+            code: 'provider_error',
+            message: this.i18n.t(I18nKeys.errors.stripe_error),
+            raw: err,
+        };
     }
 
     // ============ MAPEO PRIVADO ============
@@ -213,11 +238,11 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     private mapSpeiSource(dto: StripeSpeiSourceDto): PaymentIntent {
         const speiAction: NextActionSpei = {
             type: 'spei',
-            instructions: 'Realiza una transferencia SPEI con los siguientes datos:',
+            instructions: this.i18n.t(I18nKeys.messages.spei_instructions),
             clabe: dto.spei.clabe,
             reference: dto.spei.reference,
             bank: dto.spei.bank,
-            beneficiary: 'Stripe Payments Mexico',
+            beneficiary: this.i18n.t(I18nKeys.ui.stripe_beneficiary),
             amount: dto.amount / 100,
             currency: dto.currency.toUpperCase(),
             expiresAt: new Date(dto.expires_at * 1000).toISOString(),
@@ -321,15 +346,20 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
      * Convierte errores técnicos de Stripe a mensajes legibles.
      */
     private humanizeStripeError(error: StripeErrorResponse['error']): string {
-        const messages: Record<string, string> = {
-            'card_declined': 'Tu tarjeta fue rechazada. Contacta a tu banco o usa otra tarjeta.',
-            'expired_card': 'Tu tarjeta ha expirado. Por favor usa otra tarjeta.',
-            'incorrect_cvc': 'El código de seguridad (CVC) es incorrecto.',
-            'processing_error': 'Hubo un error procesando tu pago. Intenta de nuevo.',
-            'incorrect_number': 'El número de tarjeta es incorrecto.',
-            'authentication_required': 'Tu banco requiere verificación adicional.',
+        const errorKeyMap: Partial<Record<string, string>> = {
+            'card_declined': I18nKeys.errors.card_declined,
+            'expired_card': I18nKeys.errors.expired_card,
+            'incorrect_cvc': I18nKeys.errors.incorrect_cvc,
+            'processing_error': I18nKeys.errors.processing_error,
+            'incorrect_number': I18nKeys.errors.incorrect_number,
+            'authentication_required': I18nKeys.errors.authentication_required,
         };
 
-        return messages[error.code] ?? error.message ?? 'Error procesando el pago con Stripe.';
+        const translationKey = errorKeyMap[error.code];
+        if (translationKey) {
+            return this.i18n.t(translationKey);
+        }
+
+        return error.message ?? this.i18n.t(I18nKeys.errors.stripe_error);
     }
 }

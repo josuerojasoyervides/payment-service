@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -22,6 +22,7 @@ import {
     PaymentIntentCardComponent,
 } from '../../components';
 import { OrderItem, PaymentButtonState } from '../../shared';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Página de showcase para demostrar todos los componentes de UI.
@@ -48,6 +49,8 @@ import { OrderItem, PaymentButtonState } from '../../shared';
     templateUrl: './showcase.component.html',
 })
 export class ShowcaseComponent {
+    private readonly i18n = inject(I18nService);
+
     // Order Summary state
     orderSummary = {
         orderId: 'order_demo_123',
@@ -167,5 +170,126 @@ export class ShowcaseComponent {
     onFallbackConfirm(provider: PaymentProviderId): void {
         console.log(`[Showcase] Fallback confirmed with: ${provider}`);
         this.fallbackModal.open = false;
+    }
+
+    // ===== Textos para el template =====
+    get componentShowcaseTitle(): string {
+        return this.i18n.t(I18nKeys.ui.component_showcase);
+    }
+
+    get componentShowcaseDescription(): string {
+        return this.i18n.t(I18nKeys.ui.component_showcase_description);
+    }
+
+    get goToCheckoutLabel(): string {
+        return this.i18n.t(I18nKeys.ui.go_to_checkout);
+    }
+
+    get previewLabel(): string {
+        return this.i18n.t(I18nKeys.ui.preview);
+    }
+
+    get controlsLabel(): string {
+        return this.i18n.t(I18nKeys.ui.controls);
+    }
+
+    get amountLabelShort(): string {
+        return this.i18n.t(I18nKeys.ui.amount_label_short);
+    }
+
+    get currencyLabel(): string {
+        return this.i18n.t(I18nKeys.ui.currency_label);
+    }
+
+    get showItemsBreakdownLabel(): string {
+        return this.i18n.t(I18nKeys.ui.show_items_breakdown);
+    }
+
+    get selectedLabel(): string {
+        return this.i18n.t(I18nKeys.ui.selected);
+    }
+
+    get disabledLabel(): string {
+        return this.i18n.t(I18nKeys.ui.disabled);
+    }
+
+    get providerLabel(): string {
+        return this.i18n.t(I18nKeys.ui.provider);
+    }
+
+    get stripeProviderLabel(): string {
+        return this.i18n.t(I18nKeys.ui.provider_stripe);
+    }
+
+    get paypalProviderLabel(): string {
+        return this.i18n.t(I18nKeys.ui.provider_paypal);
+    }
+
+    get statusLabelShort(): string {
+        return this.i18n.t(I18nKeys.ui.status_label_short);
+    }
+
+    get loadingLabel(): string {
+        return this.i18n.t(I18nKeys.ui.loading);
+    }
+
+    get successLabel(): string {
+        return this.i18n.t(I18nKeys.ui.success);
+    }
+
+    get errorLabel(): string {
+        return this.i18n.t(I18nKeys.ui.error);
+    }
+
+    get showSuccessStateLabel(): string {
+        return this.i18n.t(I18nKeys.ui.show_success_state);
+    }
+
+    get clabeLabel(): string {
+        return this.i18n.t(I18nKeys.ui.clabe_label);
+    }
+
+    get statusRequiresConfirmationLabel(): string {
+        return this.i18n.t(I18nKeys.messages.status_requires_confirmation);
+    }
+
+    get statusRequiresActionLabel(): string {
+        return this.i18n.t(I18nKeys.messages.status_requires_action);
+    }
+
+    get processingLabel(): string {
+        return this.i18n.t(I18nKeys.ui.processing);
+    }
+
+    get statusSucceededLabel(): string {
+        return this.i18n.t(I18nKeys.messages.status_succeeded);
+    }
+
+    get statusFailedLabel(): string {
+        return this.i18n.t(I18nKeys.messages.status_failed);
+    }
+
+    get canceledLabel(): string {
+        return this.i18n.t(I18nKeys.ui.canceled);
+    }
+
+    get showActionsLabel(): string {
+        return this.i18n.t(I18nKeys.ui.show_actions);
+    }
+
+    get expandedLabel(): string {
+        return this.i18n.t(I18nKeys.ui.expanded);
+    }
+
+    get openFallbackModalLabel(): string {
+        return this.i18n.t(I18nKeys.ui.open_fallback_modal);
+    }
+
+    get infoLabel(): string {
+        return this.i18n.t(I18nKeys.ui.info);
+    }
+
+    get fallbackModalInfoLabel(): string {
+        return this.i18n.t(I18nKeys.ui.fallback_modal_info);
     }
 }

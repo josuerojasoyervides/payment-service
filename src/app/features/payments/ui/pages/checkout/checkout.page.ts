@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { LoggerService } from '@core/logging';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 // Domain types
 import { PaymentProviderId, PaymentMethodType, CurrencyCode } from '../../../domain/models';
@@ -59,6 +60,7 @@ export class CheckoutComponent {
     private readonly paymentState = inject(PAYMENT_STATE);
     private readonly registry = inject(ProviderFactoryRegistry);
     private readonly logger = inject(LoggerService);
+    private readonly i18n = inject(I18nService);
 
     // === Datos de la orden (simulados) ===
     readonly orderId = signal('order_' + Math.random().toString(36).substring(7));
@@ -247,5 +249,58 @@ export class CheckoutComponent {
         this.orderId.set('order_' + Math.random().toString(36).substring(7));
         this.isFormValid.set(false);
         this.logger.info('Payment reset', 'CheckoutPage');
+    }
+
+    // ===== Textos para el template =====
+    get checkoutTitle(): string {
+        return this.i18n.t(I18nKeys.ui.checkout);
+    }
+
+    get paymentSystemSubtitle(): string {
+        return this.i18n.t(I18nKeys.ui.payment_system);
+    }
+
+    get viewHistoryLabel(): string {
+        return this.i18n.t(I18nKeys.ui.view_history);
+    }
+
+    get checkStatusLabel(): string {
+        return this.i18n.t(I18nKeys.ui.check_status);
+    }
+
+    get showcaseLabel(): string {
+        return this.i18n.t(I18nKeys.ui.showcase);
+    }
+
+    get paymentProviderLabel(): string {
+        return this.i18n.t(I18nKeys.ui.payment_provider);
+    }
+
+    get paymentMethodLabel(): string {
+        return this.i18n.t(I18nKeys.ui.payment_method);
+    }
+
+    get paymentDataLabel(): string {
+        return this.i18n.t(I18nKeys.ui.payment_data);
+    }
+
+    get debugInfoLabel(): string {
+        return this.i18n.t(I18nKeys.ui.debug_info);
+    }
+
+    get providerDebugLabel(): string {
+        return this.i18n.t(I18nKeys.ui.provider_debug);
+    }
+
+    get methodDebugLabel(): string {
+        return this.i18n.t(I18nKeys.ui.method_debug);
+    }
+
+    get formValidLabel(): string {
+        return this.i18n.t(I18nKeys.ui.form_valid);
+    }
+
+    get loadingDebugLabel(): string {
+        return this.i18n.t(I18nKeys.ui.loading_debug);
     }
 }
