@@ -1,6 +1,6 @@
 import { Observable } from "rxjs";
-import { PaymentIntent, PaymentMethodType } from "../models/payment.types";
-import { CreatePaymentRequest } from "../models/payment.requests";
+import { PaymentIntent, PaymentMethodType } from "../../models/payment/payment-intent.types";
+import { CreatePaymentRequest } from "../../models/payment/payment-request.types";
 
 /**
  * Resultado de preparación de una estrategia.

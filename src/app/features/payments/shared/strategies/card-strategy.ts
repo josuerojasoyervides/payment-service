@@ -1,9 +1,13 @@
 import { map, Observable, tap } from "rxjs";
-import { PaymentStrategy, StrategyContext, StrategyPrepareResult } from "../../domain/ports/payment-strategy.port";
-import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
-import { TokenValidator, NullTokenValidator } from "../../domain/ports/token-validator.port";
-import { PaymentIntent, PaymentMethodType } from "../../domain/models/payment.types";
-import { CreatePaymentRequest } from "../../domain/models/payment.requests";
+import { 
+    PaymentStrategy, 
+    StrategyContext, 
+    StrategyPrepareResult,
+    PaymentGateway,
+    TokenValidator, 
+    NullTokenValidator,
+} from "../../domain/ports";
+import { PaymentIntent, PaymentMethodType, CreatePaymentRequest } from "../../domain/models";
 
 /**
  * Estrategia para pagos con tarjeta de crédito/débito.

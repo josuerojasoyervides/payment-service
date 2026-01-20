@@ -14,13 +14,19 @@ import {
     initialPaymentsState, 
     PaymentHistoryEntry,
     HISTORY_MAX_ENTRIES,
-} from './payments.models';
-import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
-import { PaymentError } from '../../domain/models/payment.errors';
-import { CreatePaymentRequest, ConfirmPaymentRequest, CancelPaymentRequest, GetPaymentStatusRequest } from '../../domain/models/payment.requests';
+} from './payment.models';
+import { 
+    PaymentIntent, 
+    PaymentProviderId, 
+    PaymentError,
+    CreatePaymentRequest, 
+    ConfirmPaymentRequest, 
+    CancelPaymentRequest, 
+    GetPaymentStatusRequest,
+    INITIAL_FALLBACK_STATE,
+} from '../../domain/models';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
-import { INITIAL_FALLBACK_STATE } from '../../domain/models/fallback.types';
 
 /**
  * Signal Store para el módulo de pagos.

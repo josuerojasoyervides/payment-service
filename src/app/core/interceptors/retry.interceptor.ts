@@ -5,7 +5,7 @@ import { catchError, mergeMap, tap } from 'rxjs/operators';
 import { RetryService } from '../services/retry.service';
 import { LoggerService } from '../services/logger.service';
 import { CircuitBreakerService } from '../services/circuit-breaker.service';
-import { CircuitOpenError } from '../models/resilience.types';
+import { CircuitOpenError } from '../models';
 
 /**
  * Patrones de URL a excluir del retry automático.

@@ -1,4 +1,4 @@
-import { BaseTokenValidator } from '../../../domain/ports/token-validator.port';
+import { BaseTokenValidator } from '../../../domain/ports';
 
 /**
  * Validador de tokens para Stripe.

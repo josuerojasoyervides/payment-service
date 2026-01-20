@@ -2,10 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { ConfirmPaymentUseCase } from './confirm-payment.use-case';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { ProviderFactory } from '../../domain/ports/provider-factory.port';
-import { PaymentGateway } from '../../domain/ports/payment-gateway.port';
-import { ConfirmPaymentRequest } from '../../domain/models/payment.requests';
-import { PaymentIntent, PaymentMethodType, PaymentProviderId } from '../../domain/models/payment.types';
+import { ProviderFactory, PaymentGateway } from '../../domain/ports';
+import { ConfirmPaymentRequest, PaymentIntent, PaymentMethodType, PaymentProviderId } from '../../domain/models';
 
 describe('ConfirmPaymentUseCase', () => {
     let useCase: ConfirmPaymentUseCase;

@@ -1,9 +1,18 @@
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
-import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
-import { PaymentIntent, PaymentStatus } from "../../../domain/models/payment.types";
-import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from "../../../domain/models/payment.requests";
-import { PaymentError, PaymentErrorCode } from "../../../domain/models/payment.errors";
+import { PaymentGateway } from "../../../domain/ports";
+import { 
+    PaymentIntent, 
+    PaymentIntentStatus,
+    CancelPaymentRequest, 
+    ConfirmPaymentRequest, 
+    CreatePaymentRequest, 
+    GetPaymentStatusRequest,
+    PaymentError, 
+    PaymentErrorCode,
+    NextActionSpei, 
+    NextActionThreeDs,
+} from "../../../domain/models";
 import {
     StripePaymentIntentDto,
     StripePaymentIntentStatus,
@@ -13,7 +22,6 @@ import {
     StripeSpeiSourceDto,
     StripeCreateResponseDto
 } from "../dto/stripe.dto";
-import { NextActionSpei, NextActionThreeDs } from "../../../domain/models/payment.actions";
 
 
 /**
@@ -34,7 +42,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     private static readonly API_BASE = '/api/payments/stripe';
 
     // Mapeo de estados Stripe → estados internos
-    private static readonly STATUS_MAP: Record<StripePaymentIntentStatus, PaymentStatus> = {
+    private static readonly STATUS_MAP: Record<StripePaymentIntentStatus, PaymentIntentStatus> = {
         'requires_payment_method': 'requires_payment_method',
         'requires_confirmation': 'requires_confirmation',
         'requires_action': 'requires_action',
@@ -258,8 +266,8 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     /**
      * Mapea estados de SPEI Source a nuestros estados.
      */
-    private mapSpeiStatus(status: StripeSpeiSourceDto['status']): PaymentStatus {
-        const map: Record<StripeSpeiSourceDto['status'], PaymentStatus> = {
+    private mapSpeiStatus(status: StripeSpeiSourceDto['status']): PaymentIntentStatus {
+        const map: Record<StripeSpeiSourceDto['status'], PaymentIntentStatus> = {
             'pending': 'requires_action',
             'chargeable': 'requires_confirmation',
             'consumed': 'succeeded',

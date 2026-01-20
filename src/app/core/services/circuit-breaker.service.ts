@@ -5,7 +5,7 @@ import {
     CircuitBreakerConfig,
     CircuitOpenError,
     DEFAULT_CIRCUIT_BREAKER_CONFIG,
-} from '../models/resilience.types';
+} from '../models';
 import { LoggerService } from './logger.service';
 
 /**

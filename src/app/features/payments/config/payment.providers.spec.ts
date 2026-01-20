@@ -1,6 +1,6 @@
 import providePayments from './payment.providers';
 import { PAYMENT_PROVIDER_FACTORIES } from '../application/tokens/payment-provider-factories.token';
-import { PAYMENTS_STATE } from '../application/tokens/payment-state.token';
+import { PAYMENT_STATE } from '../application/tokens/payment-state.token';
 import { StripeProviderFactory } from '../infrastructure/stripe/factories/stripe-provider.factory';
 import { PaypalProviderFactory } from '../infrastructure/paypal/factories/paypal-provider.factory';
 import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
@@ -13,7 +13,7 @@ describe('providePayments', () => {
             .map((p: any) => p.provide);
 
         expect(tokens).toContain(PAYMENT_PROVIDER_FACTORIES);
-        expect(tokens).toContain(PAYMENTS_STATE);
+        expect(tokens).toContain(PAYMENT_STATE);
 
         const factories = providers.filter((p: any) => p?.useClass);
         const factoryClasses = factories.map((p: any) => p.useClass);

@@ -5,7 +5,7 @@ import { retryInterceptor } from './retry.interceptor';
 import { RetryService, RETRY_CONFIG } from '../services/retry.service';
 import { LoggerService } from '../services/logger.service';
 import { CircuitBreakerService } from '../services/circuit-breaker.service';
-import { CircuitOpenError } from '../models/resilience.types';
+import { CircuitOpenError } from '../models';
 
 describe('retryInterceptor', () => {
     let httpClient: HttpClient;

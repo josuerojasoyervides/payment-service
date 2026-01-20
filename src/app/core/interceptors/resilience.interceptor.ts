@@ -8,7 +8,7 @@ import {
     CircuitOpenError, 
     RateLimitExceededError,
     DEFAULT_RESILIENCE_CONFIG,
-} from '../models/resilience.types';
+} from '../models';
 
 /**
  * Patrones de URL a excluir del circuit breaker y rate limiting.

@@ -4,7 +4,7 @@ import {
     RateLimiterConfig,
     RateLimitExceededError,
     DEFAULT_RATE_LIMITER_CONFIG,
-} from '../models/resilience.types';
+} from '../models';
 import { LoggerService } from './logger.service';
 
 /**

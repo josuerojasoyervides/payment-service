@@ -1,11 +1,10 @@
 import { Component, OnDestroy, computed, inject, signal } from "@angular/core";
-import { PaymentIntent, PaymentMethodType, PaymentProviderId } from "../../../domain/models/payment.types";
-import { CreatePaymentRequest } from "../../../domain/models/payment.requests";
-import { ProviderFactory } from "../../../domain/ports/provider-factory.port";
+import { PaymentIntent, PaymentMethodType, PaymentProviderId, CreatePaymentRequest } from "../../../domain/models";
+import { ProviderFactory } from "../../../domain/ports";
 import { PAYMENT_PROVIDER_FACTORIES } from "../../../application/tokens/payment-provider-factories.token";
 import { ProviderFactoryRegistry } from "../../../application/registry/provider-factory.registry";
 import { CommonModule } from "@angular/common";
-import { PAYMENTS_STATE } from "../../../application/tokens/payment-state.token";
+import { PAYMENT_STATE } from "../../../application/tokens/payment-state.token";
 
 type SelfTestRow = {
     providerId: PaymentProviderId | string;
@@ -24,7 +23,7 @@ type SelfTestRow = {
  * Componente de estado de pagos y testing.
  * 
  * Este componente está desacoplado de la implementación del estado
- * gracias al uso del token PAYMENTS_STATE.
+ * gracias al uso del token PAYMENT_STATE.
  */
 @Component({
     selector: 'app-payments',
@@ -34,7 +33,7 @@ type SelfTestRow = {
 export class PaymentsComponent implements OnDestroy {
     private readonly factories = inject<ProviderFactory[]>(PAYMENT_PROVIDER_FACTORIES);
     private readonly registry = inject(ProviderFactoryRegistry);
-    private readonly paymentState = inject(PAYMENTS_STATE);
+    private readonly paymentState = inject(PAYMENT_STATE);
 
     // UI state derivado del port (usando signals directamente)
     readonly isLoading = this.paymentState.isLoading;

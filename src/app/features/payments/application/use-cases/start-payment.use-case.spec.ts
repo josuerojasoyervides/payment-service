@@ -1,9 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { StartPaymentUseCase } from './start-payment.use-case'
-import { PaymentIntent, PaymentMethodType, PaymentProviderId } from '../../domain/models/payment.types';
-import { CreatePaymentRequest } from '../../domain/models/payment.requests';
-import { PaymentStrategy, StrategyContext } from '../../domain/ports/payment-strategy.port';
+import { PaymentIntent, PaymentMethodType, PaymentProviderId, CreatePaymentRequest } from '../../domain/models';
+import { PaymentStrategy, StrategyContext } from '../../domain/ports';
 import { firstValueFrom, of, throwError } from 'rxjs';
 
 describe('StartPaymentUseCase', () => {

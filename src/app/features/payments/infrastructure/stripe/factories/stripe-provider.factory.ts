@@ -1,12 +1,15 @@
 import { inject, Injectable } from '@angular/core';
-import { ProviderFactory } from '../../../domain/ports/provider-factory.port';
-import { PaymentMethodType } from '../../../domain/models/payment.types';
-import { PaymentStrategy } from '../../../domain/ports/payment-strategy.port';
-import { PaymentRequestBuilder, FieldRequirements } from '../../../domain/ports/payment-request-builder.port';
+import { 
+    ProviderFactory, 
+    PaymentStrategy, 
+    PaymentRequestBuilder, 
+    FieldRequirements,
+    PaymentGateway,
+} from '../../../domain/ports';
+import { PaymentMethodType } from '../../../domain/models';
 import { StripePaymentGateway } from '../gateways/stripe-payment.gateway';
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
-import { PaymentGateway } from '../../../domain/ports/payment-gateway.port';
 import { StripeCardRequestBuilder } from '../builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '../builders/stripe-spei-request.builder';
 import { StripeTokenValidator } from '../validators/stripe-token.validator';

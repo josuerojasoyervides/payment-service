@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { NgRxSignalsStateAdapter } from './ngrx-signals-state.adapter';
-import { PaymentsStore } from '../store/payments.store';
-import { INITIAL_FALLBACK_STATE } from '../../domain/models/fallback.types';
+import { PaymentsStore } from '../store/payment.store';
+import { INITIAL_FALLBACK_STATE } from '../../domain/models';
 
 describe('NgRxSignalsStateAdapter', () => {
     let adapter: NgRxSignalsStateAdapter;
