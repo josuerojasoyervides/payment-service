@@ -48,13 +48,13 @@
                 <dt class="text-gray-500">ID</dt>
                 <dd class="font-mono text-gray-900">{{ intent().id }}</dd>
                 
-                <dt class="text-gray-500">Proveedor</dt>
+                <dt class="text-gray-500">{{ providerLabel }}</dt>
                 <dd class="capitalize text-gray-900">{{ intent().provider }}</dd>
                 
-                <dt class="text-gray-500">Estado</dt>
+                <dt class="text-gray-500">{{ statusLabel }}</dt>
                 <dd class="text-gray-900">{{ intent().status }}</dd>
                 
-                <dt class="text-gray-500">Monto</dt>
+                <dt class="text-gray-500">{{ amountLabel }}</dt>
                 <dd class="text-gray-900">{{ intent().amount | currency: intent().currency }}</dd>
                 
                 @if (intent().clientSecret) {
@@ -73,7 +73,7 @@
             @if (intent().nextAction) {
                 <div class="mt-4 p-3 bg-amber-50 rounded-lg">
                     <p class="text-sm font-medium text-amber-800">
-                        Acción requerida: {{ intent().nextAction!.type }}
+                        {{ actionRequiredLabel }} {{ intent().nextAction!.type }}
                     </p>
                 </div>
             }
@@ -88,7 +88,7 @@
                     class="btn-primary text-sm flex-1"
                     (click)="confirm.emit(intent().id)"
                 >
-                    Confirmar
+                    {{ confirmButtonText }}
                 </button>
             }
             
@@ -97,7 +97,7 @@
                     class="btn-danger text-sm flex-1"
                     (click)="cancel.emit(intent().id)"
                 >
-                    Cancelar
+                    {{ cancelButtonText }}
                 </button>
             }
             

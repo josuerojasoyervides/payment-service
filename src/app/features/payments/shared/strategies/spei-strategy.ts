@@ -155,18 +155,18 @@ export class SpeiStrategy implements PaymentStrategy {
         const speiAction = intent.nextAction as NextActionSpei;
 
         return [
-            `Para completar tu pago de $${intent.amount.toLocaleString()} ${intent.currency}:`,
+            `${this.i18n.t(I18nKeys.ui.spei_instructions_title)} $${intent.amount.toLocaleString()} ${intent.currency}:`,
             '',
-            `1. Abre tu app bancaria o banca en línea`,
-            `2. Selecciona "Transferencia SPEI"`,
-            `3. Ingresa la CLABE: ${speiAction.clabe}`,
-            `4. Monto exacto: $${speiAction.amount.toLocaleString()} ${speiAction.currency}`,
-            `5. Referencia: ${speiAction.reference}`,
-            `6. Beneficiario: ${speiAction.beneficiary}`,
+            `1. ${this.i18n.t(I18nKeys.ui.spei_step_1)}`,
+            `2. ${this.i18n.t(I18nKeys.ui.spei_step_2)}`,
+            `3. ${this.i18n.t(I18nKeys.ui.spei_step_3)} ${speiAction.clabe}`,
+            `4. ${this.i18n.t(I18nKeys.ui.spei_step_4)} $${speiAction.amount.toLocaleString()} ${speiAction.currency}`,
+            `5. ${this.i18n.t(I18nKeys.ui.spei_step_5)} ${speiAction.reference}`,
+            `6. ${this.i18n.t(I18nKeys.ui.spei_step_6)} ${speiAction.beneficiary}`,
             '',
-            `⚠️ Fecha límite: ${new Date(speiAction.expiresAt).toLocaleString('es-MX')}`,
+            `⚠️ ${this.i18n.t(I18nKeys.ui.spei_deadline)} ${new Date(speiAction.expiresAt).toLocaleString('es-MX')}`,
             '',
-            `El pago puede tardar de 5 minutos a 24 horas en reflejarse.`,
+            this.i18n.t(I18nKeys.ui.spei_processing_time),
         ].join('\n');
     }
 

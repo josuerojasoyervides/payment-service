@@ -238,11 +238,11 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     private mapSpeiSource(dto: StripeSpeiSourceDto): PaymentIntent {
         const speiAction: NextActionSpei = {
             type: 'spei',
-            instructions: 'Realiza una transferencia SPEI con los siguientes datos:',
+            instructions: this.i18n.t(I18nKeys.messages.spei_instructions),
             clabe: dto.spei.clabe,
             reference: dto.spei.reference,
             bank: dto.spei.bank,
-            beneficiary: 'Stripe Payments Mexico',
+            beneficiary: this.i18n.t(I18nKeys.ui.stripe_beneficiary),
             amount: dto.amount / 100,
             currency: dto.currency.toUpperCase(),
             expiresAt: new Date(dto.expires_at * 1000).toISOString(),

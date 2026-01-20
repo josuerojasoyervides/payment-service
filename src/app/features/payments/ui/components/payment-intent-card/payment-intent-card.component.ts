@@ -1,7 +1,7 @@
 import { Component, input, output, computed, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { PaymentIntent, STATUS_BADGE_MAP, getStatusText } from '../../shared';
-import { I18nService } from '@core/i18n';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Componente card para mostrar un PaymentIntent.
@@ -85,5 +85,29 @@ export class PaymentIntentCardComponent {
     toggleExpanded(): void {
         this._expanded = !this._expanded;
         this.expandedChange.emit(this._expanded);
+    }
+
+    get providerLabel(): string {
+        return this.i18n.t(I18nKeys.ui.payment_provider);
+    }
+
+    get statusLabel(): string {
+        return this.i18n.t(I18nKeys.ui.status_label);
+    }
+
+    get amountLabel(): string {
+        return this.i18n.t(I18nKeys.ui.amount_label);
+    }
+
+    get actionRequiredLabel(): string {
+        return this.i18n.t(I18nKeys.ui.action_required_label);
+    }
+
+    get confirmButtonText(): string {
+        return this.i18n.t(I18nKeys.ui.confirm_button);
+    }
+
+    get cancelButtonText(): string {
+        return this.i18n.t(I18nKeys.ui.cancel_button);
     }
 }

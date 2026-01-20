@@ -1,7 +1,7 @@
 import { Component, input, output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PaymentProviderId, getDefaultProviders, ProviderOption } from '../../shared';
-import { I18nService } from '@core/i18n';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Componente selector de proveedor de pago.
@@ -51,5 +51,9 @@ export class ProviderSelectorComponent {
         if (!this.disabled() && providerId !== this.selected()) {
             this.providerChange.emit(providerId);
         }
+    }
+
+    get providerLabel(): string {
+        return this.i18n.t(I18nKeys.ui.provider_label);
     }
 }

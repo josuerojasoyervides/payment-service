@@ -43,6 +43,15 @@ describe('SpeiStrategy', () => {
                     'errors.invalid_request': 'Invalid request',
                     'errors.min_amount': params ? `Minimum amount for card payments is ${params['amount']} ${params['currency']}` : 'Minimum amount for card payments',
                     'messages.spei_instructions': 'Realiza una transferencia SPEI con los siguientes datos:',
+                    'ui.spei_instructions_title': 'Para completar tu pago de',
+                    'ui.spei_step_1': 'Abre tu app bancaria o banca en línea',
+                    'ui.spei_step_2': 'Selecciona "Transferencia SPEI"',
+                    'ui.spei_step_3': 'Ingresa la CLABE:',
+                    'ui.spei_step_4': 'Monto exacto:',
+                    'ui.spei_step_5': 'Referencia:',
+                    'ui.spei_step_6': 'Beneficiario:',
+                    'ui.spei_deadline': 'Fecha límite:',
+                    'ui.spei_processing_time': 'El pago puede tardar de 5 minutos a 24 horas en reflejarse.',
                 };
                 return translations[key] || key;
             }),

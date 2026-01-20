@@ -180,5 +180,32 @@ export interface Translations {
         spanish: string;
         english: string;
         app_name: string;
+
+        // Estados de botones y acciones
+        processing: string;
+        payment_successful: string;
+        payment_error_text: string;
+        pay_with: string;
+        with: string;
+
+        // Labels de formularios
+        provider_label: string;
+        status_label: string;
+        amount_label: string;
+        action_required_label: string;
+        confirm_button: string;
+        cancel_button: string;
+
+        // Instrucciones SPEI
+        spei_instructions_title: string;
+        spei_step_1: string;
+        spei_step_2: string;
+        spei_step_3: string;
+        spei_step_4: string;
+        spei_step_5: string;
+        spei_step_6: string;
+        spei_deadline: string;
+        spei_processing_time: string;
+        stripe_beneficiary: string;
     };
 }
