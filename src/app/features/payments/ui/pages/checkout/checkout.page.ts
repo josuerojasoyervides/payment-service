@@ -54,7 +54,7 @@ import {
 })
 export class CheckoutComponent {
     readonly isDevMode = isDevMode();
-    
+
     // Servicios
     private readonly paymentState = inject(PAYMENT_STATE);
     private readonly registry = inject(ProviderFactoryRegistry);
@@ -183,7 +183,7 @@ export class CheckoutComponent {
     processPayment(): void {
         const provider = this.selectedProvider();
         const method = this.selectedMethod();
-        
+
         if (!provider || !method) return;
 
         const correlationCtx = this.logger.startCorrelation('payment-flow', {
@@ -198,11 +198,12 @@ export class CheckoutComponent {
 
             // Obtener opciones del formulario
             let options = this.formOptions();
-            
+
             // En desarrollo, auto-generar token si es requerido y no existe
-            // El token debe cumplir el formato de Stripe: tok_ seguido de al menos 14 caracteres alfanuméricos
-            if (isDevMode() && method === 'card' && !options.token) {
-                options = { ...options, token: 'tok_visa_1234567890abcdef' };
+            // El token debe cumplir el formato de Stripe: tok_ seguido de al menos 14 caracteres alfanuméricos (sin guiones bajos)
+            // PayPal no requiere token (usa flujo de redirección)
+            if (isDevMode() && method === 'card' && provider === 'stripe' && !options.token) {
+                options = { ...options, token: 'tok_visa1234567890abcdef' };
                 this.logger.debug('Auto-generated dev token', 'CheckoutPage');
             }
 

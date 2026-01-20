@@ -84,8 +84,17 @@ const FAKE_ERRORS: Record<string, PaymentError> = {
  */
 @Injectable()
 export class FakePaymentGateway extends PaymentGateway {
-    // Este campo será sobrescrito por la factory que lo use
+    // Este campo será configurado por la factory
     readonly providerId: PaymentProviderId = 'stripe';
+    
+    /**
+     * Factory method para crear instancias con el providerId correcto.
+     */
+    static create(providerId: PaymentProviderId): FakePaymentGateway {
+        const instance = new FakePaymentGateway();
+        (instance as any).providerId = providerId;
+        return instance;
+    }
 
     private static counter = 0;
 
@@ -115,6 +124,22 @@ export class FakePaymentGateway extends PaymentGateway {
             delay(delayMs),
             () => throwError(() => error)
         );
+    }
+
+    /**
+     * Override de validación: PayPal no requiere token para métodos card.
+     */
+    protected override validateCreate(req: CreatePaymentRequest) {
+        if (!req.orderId) throw new Error("orderId is required");
+        if (!req.currency) throw new Error("currency is required");
+        if (!Number.isFinite(req.amount) || req.amount <= 0) throw new Error("amount is invalid");
+        if (!req.method?.type) throw new Error("payment method type is required");
+        // PayPal no requiere token - usa flujo de redirección
+        if (this.providerId === 'paypal') {
+            return; // PayPal no requiere token
+        }
+        // Para Stripe, validar token si es método card
+        if (req.method.type === "card" && !req.method.token) throw new Error("card token is required");
     }
 
     /**
@@ -182,7 +207,7 @@ export class FakePaymentGateway extends PaymentGateway {
         } else {
             // En modo desarrollo, si el token es el token de desarrollo, retornar succeeded directamente
             // para facilitar el testing sin necesidad de confirmar manualmente
-            if (req.method.token === 'tok_visa_1234567890abcdef') {
+            if (req.method.token === 'tok_visa1234567890abcdef') {
                 status = 'succeeded';
             }
         }

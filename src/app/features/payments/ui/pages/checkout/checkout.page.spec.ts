@@ -311,7 +311,7 @@ describe('CheckoutComponent', () => {
         it('debe auto-generar token en modo desarrollo para card', () => {
             component.onFormChange({}); // Sin token
             component.processPayment();
-            expect(mockBuilder.withOptions).toHaveBeenCalledWith(expect.objectContaining({ token: 'tok_visa_1234567890abcdef' }));
+            expect(mockBuilder.withOptions).toHaveBeenCalledWith(expect.objectContaining({ token: 'tok_visa1234567890abcdef' }));
             expect(mockLogger.debug).toHaveBeenCalledWith('Auto-generated dev token', 'CheckoutPage');
         });
 

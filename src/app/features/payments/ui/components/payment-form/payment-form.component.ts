@@ -112,9 +112,9 @@ export class PaymentFormComponent implements OnDestroy {
             }
 
             // En modo desarrollo, auto-rellenar token si es requerido y está vacío
-            // El token debe cumplir el formato de Stripe: tok_ seguido de al menos 14 caracteres alfanuméricos
+            // El token debe cumplir el formato de Stripe: tok_ seguido de al menos 14 caracteres alfanuméricos (sin guiones bajos)
             if (isDevMode() && field.name === 'token' && field.required && !defaultValue) {
-                defaultValue = 'tok_visa_1234567890abcdef';
+                defaultValue = 'tok_visa1234567890abcdef';
             }
 
             // Para saveForFuture, usar boolean false como default

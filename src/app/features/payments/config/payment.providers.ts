@@ -23,8 +23,14 @@ import { PaymentsStore } from "../application/store/payment.store";
 const GATEWAY_PROVIDERS: Provider[] = [
     // Para desarrollo: usar fake gateway que simula respuestas
     // En producción: quitar esta línea y usar el gateway real
-    { provide: StripePaymentGateway, useClass: FakePaymentGateway },
-    { provide: PaypalPaymentGateway, useClass: FakePaymentGateway },
+    { 
+        provide: StripePaymentGateway, 
+        useFactory: () => FakePaymentGateway.create('stripe')
+    },
+    { 
+        provide: PaypalPaymentGateway, 
+        useFactory: () => FakePaymentGateway.create('paypal')
+    },
 
     // Gateways reales (comentados para desarrollo)
     // StripePaymentGateway,

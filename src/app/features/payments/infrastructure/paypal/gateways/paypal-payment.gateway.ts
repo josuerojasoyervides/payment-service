@@ -138,6 +138,18 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
     }
 
     /**
+     * Override de validación: PayPal no requiere token para métodos card.
+     * PayPal usa su propio flujo de redirección.
+     */
+    protected override validateCreate(req: CreatePaymentRequest) {
+        if (!req.orderId) throw new Error("orderId is required");
+        if (!req.currency) throw new Error("currency is required");
+        if (!Number.isFinite(req.amount) || req.amount <= 0) throw new Error("amount is invalid");
+        if (!req.method?.type) throw new Error("payment method type is required");
+        // PayPal no requiere token - usa flujo de redirección
+    }
+
+    /**
      * Normaliza errores de PayPal a nuestro formato.
      */
     protected override normalizeError(err: unknown): PaymentError {
