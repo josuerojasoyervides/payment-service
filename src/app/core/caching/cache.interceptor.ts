@@ -1,20 +1,18 @@
 import {
     HttpInterceptorFn,
     HttpResponse,
-    HttpEvent,
     HttpRequest,
-    HttpHeaders,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { tap, map } from 'rxjs/operators';
-import { CacheService } from '../services/cache.service';
-import { LoggerService } from '../services/logger.service';
+import { CacheService } from './cache.service';
+import { LoggerService } from '../logging/logger.service';
 import {
     generateCacheKey,
     parseCacheControlMaxAge,
     shouldSkipCache,
-} from '../models/cache.types';
+} from './cache.types';
 
 /**
  * Interceptor HTTP que implementa caching de respuestas.
@@ -180,7 +178,6 @@ function invalidateRelatedCache(
     const confirmCancelMatch = url.match(/\/intents\/([^/]+)\/(confirm|cancel)$/);
     if (confirmCancelMatch) {
         const intentId = confirmCancelMatch[1];
-        const baseUrl = url.replace(/\/(confirm|cancel)$/, '');
 
         const invalidated = cacheService.invalidatePattern(new RegExp(`/intents/${intentId}`));
         if (invalidated > 0) {

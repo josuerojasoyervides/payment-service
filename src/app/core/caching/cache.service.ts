@@ -13,8 +13,8 @@ import {
     isExcludedFromCache,
     getTTLForUrl,
     estimateSizeInBytes,
-} from '../models/cache.types';
-import { LoggerService } from './logger.service';
+} from './cache.types';
+import { LoggerService } from '../logging/logger.service';
 
 /**
  * Token para inyectar configuración del Cache.

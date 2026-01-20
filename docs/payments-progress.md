@@ -1,176 +1,289 @@
-# Progreso del módulo Payments (demo)
+# Progreso del Módulo Payments
 
-## Objetivo del demo
+## Objetivo del Proyecto
 
-Construir un módulo de pagos realista y extensible (Stripe/PayPal/futuro Square) sin integrar procesadores reales. El enfoque es aprender diseño escalable, testeable y mantenible en Angular con una arquitectura clean-ish: `domain / application / infrastructure / ui`.
+Construir un módulo de pagos **enterprise-grade** y extensible (Stripe/PayPal/futuro MercadoPago, Conekta) con arquitectura hexagonal. El enfoque es diseño escalable, testeable y mantenible en Angular.
 
-Principios clave:
-- Domain con contratos y validaciones base; uso mínimo de Angular.
-- Application con use cases pequeños y claros.
-- Infrastructure pluginable por proveedor.
-- UI consume una API simple (port), sin conocer factories ni strategies.
-- Tests unitarios rápidos con Vitest + TestBed.
+**Arquitectura:** Hexagonal (Ports & Adapters) + Clean Architecture + DDD
+
+**Principios clave:**
+- Domain con contratos (ports) y modelos; cero dependencias de Angular
+- Application con use cases, orquestación y estado reactivo
+- Infrastructure pluginable por proveedor
+- UI consume abstracciones, sin conocer implementaciones
+- Resiliencia integrada (Circuit Breaker, Rate Limiting, Retry, Fallback)
 
 ---
 
-## Estado actual
+## Estado Actual
 
-### Arquitectura y wiring
-- Multi DI de providers configurado.
-- Registry con validaciones de duplicados y providers faltantes.
-- Factories por proveedor y selección de strategy por método.
-- Gateways con validación, transformación y normalización de errores.
-- Interceptor fake para simular backend.
-- UI consume un `PaymentStatePort` vía token (`PAYMENTS_STATE`).
+### Arquitectura y Wiring
 
-### Domain (modelos actuales)
+| Componente | Estado | Descripción |
+|------------|--------|-------------|
+| Multi DI de providers | ✅ | Token con `multi: true` para factories |
+| Registry con validaciones | ✅ | Detecta duplicados y providers faltantes |
+| Factories por proveedor | ✅ | Stripe, PayPal implementados |
+| Gateways con Template Method | ✅ | Validación, logging, normalización de errores |
+| NgRx Signals Store | ✅ | Estado reactivo con computed properties |
+| FallbackOrchestrator | ✅ | Modo manual y automático |
+| Path aliases configurados | ✅ | `@core/*`, `@payments/*`, etc. |
 
-Separación aplicada en `domain/models/`:
-- `payment.types.ts`: tipos core (`PaymentIntent`, `PaymentStatus`, etc.).
-- `payment.actions.ts`: `NextAction` (redirect, spei, 3ds, paypal_approve).
-- `payment.requests.ts`: `Create/Confirm/Cancel/GetStatus`.
-- `payment.methods.ts`: `PaymentMethod`.
-- `payment.errors.ts`: `PaymentError`.
+### Domain Layer
 
-### Use cases
+#### Models (`domain/models/`)
+
+| Modelo | Archivo | Descripción |
+|--------|---------|-------------|
+| PaymentIntent | `payment/payment-intent.types.ts` | Intent normalizado de cualquier provider |
+| PaymentError | `payment/payment-error.types.ts` | Errores normalizados |
+| PaymentMethod | `payment/payment-method.types.ts` | card, spei, etc. |
+| CreatePaymentRequest | `payment/payment-request.types.ts` | Request genérico |
+| NextAction | `payment/payment-action.types.ts` | 3DS, redirect, SPEI clabe |
+| FallbackConfig | `fallback/fallback-config.types.ts` | Configuración de fallback |
+| FallbackState | `fallback/fallback-state.types.ts` | Estado del orquestador |
+| FallbackEvent | `fallback/fallback-event.types.ts` | Eventos de fallback |
+
+#### Ports (`domain/ports/`)
+
+| Port | Descripción | Implementaciones |
+|------|-------------|------------------|
+| `PaymentGateway` | Comunicación con API del provider | Stripe, PayPal, Fake |
+| `PaymentStrategy` | Lógica por método de pago | Card, SPEI, PaypalRedirect |
+| `ProviderFactory` | Abstract Factory de providers | StripeFactory, PaypalFactory |
+| `PaymentRequestBuilder` | Builder de requests | StripeCard, StripeSPEI, PaypalRedirect |
+| `TokenValidator` | Validación de tokens | StripeToken, PaypalToken |
+
+### Application Layer
+
+#### Use Cases
 
 | Use Case | Estado | Tests |
 |----------|--------|-------|
-| `StartPaymentUseCase` | ✅ Completo | ✅ 11 tests |
-| `ConfirmPaymentUseCase` | ✅ Completo | ✅ 3 tests |
-| `CancelPaymentUseCase` | ✅ Completo | ✅ 3 tests |
-| `GetPaymentStatusUseCase` | ✅ Completo | ✅ 3 tests |
+| `StartPaymentUseCase` | ✅ | ✅ 11 tests |
+| `ConfirmPaymentUseCase` | ✅ | ✅ 3 tests |
+| `CancelPaymentUseCase` | ✅ | ✅ 3 tests |
+| `GetPaymentStatusUseCase` | ✅ | ✅ 3 tests |
 
-### Gateways
+#### Services
 
-| Gateway | Transformación | Errores | Tests |
-|---------|---------------|---------|-------|
-| `StripePaymentGateway` | ✅ Centavos, formato Stripe | ✅ Humanizados ES | ✅ 4 tests |
-| `PaypalPaymentGateway` | ✅ Orders API v2, strings | ✅ Humanizados ES | ✅ 4 tests |
-| `PaymentGateway` (base) | ✅ Validación base | ✅ Normalización | ✅ 23 tests |
+| Service | Estado | Tests | Descripción |
+|---------|--------|-------|-------------|
+| `ProviderFactoryRegistry` | ✅ | ✅ 5 tests | Registry de factories |
+| `FallbackOrchestratorService` | ✅ | ✅ 8 tests | Orquestación de fallback |
+| `PaymentsStore` | ✅ | ⚠️ Pendiente | NgRx Signals store |
+| `NgRxSignalsStateAdapter` | ✅ | ✅ Tests | Adapter de estado |
 
-### Estrategias
+### Infrastructure Layer
+
+#### Stripe
+
+| Componente | Estado | Tests |
+|------------|--------|-------|
+| `StripePaymentGateway` | ✅ | ✅ 4 tests |
+| `StripeProviderFactory` | ✅ | ✅ 4 tests |
+| `StripeCardRequestBuilder` | ✅ | ✅ 6 tests |
+| `StripeSpeiRequestBuilder` | ✅ | ✅ 4 tests |
+| `StripeTokenValidator` | ✅ | ✅ 3 tests |
+
+#### PayPal
+
+| Componente | Estado | Tests |
+|------------|--------|-------|
+| `PaypalPaymentGateway` | ✅ | ✅ 4 tests |
+| `PaypalProviderFactory` | ✅ | ✅ 3 tests |
+| `PaypalRedirectRequestBuilder` | ✅ | ✅ 5 tests |
+| `PaypalRedirectStrategy` | ✅ | ✅ 1 test |
+| `PaypalTokenValidator` | ✅ | ✅ 2 tests |
+
+#### Shared Strategies
 
 | Strategy | Validación | Preparación | Tests |
 |----------|-----------|-------------|-------|
 | `CardStrategy` | ✅ Token, monto mínimo | ✅ Metadata 3DS | ✅ 16 tests |
 | `SpeiStrategy` | ✅ MXN, min/max | ✅ Expiración 72h | ✅ 16 tests |
-| `PaypalRedirectStrategy` | ✅ Solo card | ✅ URLs retorno | ✅ 1 test |
 
-### Factories
+### Core Layer (Resiliencia)
 
-| Factory | Strategies soportadas | Tests |
-|---------|----------------------|-------|
-| `StripeProviderFactory` | card, spei | ✅ 4 tests |
-| `PaypalProviderFactory` | card (redirect) | ✅ 3 tests |
+#### Services
 
-### Cobertura de Tests
+| Service | Estado | Tests | Descripción |
+|---------|--------|-------|-------------|
+| `CircuitBreakerService` | ✅ | ❌ Pendiente | Patrón Circuit Breaker |
+| `RateLimiterService` | ✅ | ❌ Pendiente | Rate limiting por endpoint |
+| `CacheService` | ✅ | ✅ Tests | Cache con TTL |
+| `RetryService` | ✅ | ✅ Tests | Retry con backoff |
+| `LoggerService` | ✅ | ❌ Pendiente | Logging estructurado |
 
-```
-Test Files  16 passed
-     Tests  105 passed
-```
+#### Interceptors
+
+| Interceptor | Estado | Tests | Descripción |
+|-------------|--------|-------|-------------|
+| `ResilienceInterceptor` | ✅ | ❌ Pendiente | Circuit Breaker + Rate Limit |
+| `RetryInterceptor` | ✅ | ✅ Tests | Retry automático |
+| `CacheInterceptor` | ✅ | ✅ Tests | Cache de responses |
+| `LoggingInterceptor` | ✅ | ❌ Pendiente | Log de requests |
+| `FakeBackendInterceptor` | ✅ | ❌ Pendiente | Mock para desarrollo |
+
+#### Operators
+
+| Operator | Estado | Tests |
+|----------|--------|-------|
+| `retryWithBackoff` | ✅ | ✅ Tests |
 
 ---
 
-## Checklist de lo completado
+## Cobertura de Tests
 
-### Fase 1: Arquitectura base
-- [x] Estructura clean-ish con capas definidas
+```
+Test Files  16+ passed
+     Tests  105+ passed
+```
+
+### Archivos Sin Tests (Pendientes)
+
+**Core Services:**
+- `circuit-breaker.service.ts`
+- `rate-limiter.service.ts`
+- `logger.service.ts`
+
+**Core Interceptors:**
+- `resilience.interceptor.ts`
+- `logging.interceptor.ts`
+- `fake-backend.interceptor.ts`
+
+**Application:**
+- `payment.store.ts` (tests de integración)
+
+---
+
+## Checklist de Completado
+
+### Fase 1: Arquitectura Base ✅
+- [x] Estructura hexagonal con capas definidas
 - [x] Multi DI y Registry
-- [x] Ports definidos (Gateway, Strategy, Factory)
+- [x] Ports definidos (Gateway, Strategy, Factory, Builder)
 - [x] Modelos de dominio separados y tipados
+- [x] Path aliases configurados
 
-### Fase 2: Implementación de Gateways
-- [x] Gateway base con template method pattern
+### Fase 2: Implementación de Gateways ✅
+- [x] Gateway base con Template Method pattern
 - [x] StripePaymentGateway con transformación a centavos
 - [x] PaypalPaymentGateway con Orders API v2
 - [x] Humanización de errores en español
-- [x] Tests de gateways
+- [x] Logging estructurado con correlationId
 
-### Fase 3: Implementación de Strategies
+### Fase 3: Implementación de Strategies ✅
 - [x] CardStrategy con validación de tokens y 3DS
 - [x] SpeiStrategy con validación MXN y expiración
 - [x] PaypalRedirectStrategy para flujo OAuth
-- [x] Tests de strategies
+- [x] TokenValidator por provider
 
-### Fase 4: Factories y Registry
+### Fase 4: Factories y Registry ✅
 - [x] StripeProviderFactory (card, spei)
 - [x] PaypalProviderFactory (card vía redirect)
 - [x] ProviderFactoryRegistry con validaciones
-- [x] Tests de factories y registry
+- [x] Builders específicos por provider/method
 
-### Fase 5: Use Cases
+### Fase 5: Use Cases ✅
 - [x] StartPaymentUseCase
 - [x] ConfirmPaymentUseCase
 - [x] CancelPaymentUseCase
 - [x] GetPaymentStatusUseCase
-- [x] Tests de use cases
 
-### Fase 6: UI State
-- [x] PaymentStatePort definido
-- [x] Implementación con signals
-- [x] Tests de state
+### Fase 6: Estado y Fallback ✅
+- [x] PaymentsStore con NgRx Signals
+- [x] FallbackOrchestratorService
+- [x] Modo manual y automático de fallback
+- [x] Computed properties optimizadas
+- [x] Historial de transacciones
+
+### Fase 7: Resiliencia ✅
+- [x] CircuitBreakerService
+- [x] RateLimiterService
+- [x] ResilienceInterceptor
+- [x] RetryInterceptor con backoff exponencial
+- [x] Logging con correlationId
 
 ---
 
-## Decisiones de diseño
+## Decisiones de Diseño
 
-### Patrón Strategy + Gateway + Factory
+### Flujo de un Pago
 
 ```
-UseCase → Registry → Factory → Strategy → Gateway → API
+UI → UseCase → Registry → Factory → Strategy → Gateway → API
+                                       ↓
+                            FallbackOrchestrator (si falla)
+                                       ↓
+                            Retry con otro provider
 ```
 
-Cada capa tiene una responsabilidad:
-- **UseCase**: Orquesta el flujo de negocio
-- **Registry**: Encuentra la factory por provider
-- **Factory**: Crea la strategy por método de pago
-- **Strategy**: Valida, prepara y enriquece
-- **Gateway**: Transforma al formato de la API externa
+### Template Method en Gateway
 
-### Transformación en Gateway, no en Strategy
+El `PaymentGateway` base define el flujo:
+1. `createIntent()` → validación → logging → `createIntentRaw()` → mapeo → normalización de errores
 
-El gateway conoce el formato exacto de la API externa:
-- Stripe: centavos, `payment_method`, `payment_method_types`
-- PayPal: strings con decimales, `purchase_units`, links HATEOAS
+Cada gateway concreto implementa solo:
+- `createIntentRaw()` - Llamada HTTP específica
+- `mapIntent()` - Transformación de DTO a PaymentIntent
 
-La strategy prepara datos genéricos; el gateway los transforma.
+### Fallback Inteligente
 
-### Errores humanizados por proveedor
-
-Cada gateway traduce errores específicos a mensajes legibles:
 ```typescript
-// Stripe
-'card_declined' → 'El pago fue rechazado. Por favor verifica los datos de tu tarjeta.'
-
-// PayPal  
-'INSTRUMENT_DECLINED' → 'El método de pago fue rechazado por PayPal.'
+// Configuración
+{
+    mode: 'auto',           // 'manual' requiere confirmación del usuario
+    autoFallbackDelay: 2000,
+    maxAutoFallbacks: 1,
+    providerPriority: ['stripe', 'paypal'],
+    triggerErrorCodes: ['provider_unavailable', 'timeout']
+}
 ```
+
+### Separación Builder/Strategy
+
+- **Builder**: Construye el request con validación de campos requeridos
+- **Strategy**: Valida reglas de negocio y enriquece con metadata
 
 ---
 
 ## Pendientes
 
-### Corto plazo
-- [ ] Extender fake backend para confirm/cancel/get
-- [ ] Simular flujos completos:
-  - Card: `requires_confirmation → processing → succeeded`
-  - PayPal: `requires_action → succeeded`
-  - SPEI: `requires_action → processing → succeeded`
+### Corto Plazo
+- [ ] Tests para servicios de core sin coverage
+- [ ] Tests de integración para PaymentsStore
+- [ ] Reorganizar `core/` por funcionalidad (resilience/, logging/, caching/)
 
-### Mediano plazo
+### Mediano Plazo
 - [ ] UI reacciona a `nextAction` sin lógica por provider
+- [ ] Componente de fallback modal
 - [ ] SquareProviderFactory para validar extensibilidad
 - [ ] Documentación de flujos con diagramas
 
-### Largo plazo
+### Largo Plazo
 - [ ] `HandleRedirectReturnUseCase`
 - [ ] `HandleWebhookUseCase`
-- [ ] Escenarios de error y reintentos
+- [ ] Event Sourcing para auditoría
+- [ ] Idempotencia de transacciones
 
 ---
 
-## Próximo paso sugerido
+## Métricas de Calidad
 
-Implementar el flujo completo de UI: el componente de pagos debe usar `PaymentStatePort` para iniciar pagos, mostrar estados intermedios (`requires_action`, `processing`) y reaccionar a `nextAction` para redirecciones o instrucciones SPEI.
+| Métrica | Valor | Objetivo |
+|---------|-------|----------|
+| Test coverage (domain) | ~90% | 95% |
+| Test coverage (application) | ~80% | 90% |
+| Test coverage (infrastructure) | ~85% | 90% |
+| Test coverage (core) | ~50% | 80% |
+| Cyclomatic complexity | Bajo | < 10 por método |
+
+---
+
+## Próximos Pasos Sugeridos
+
+1. **Completar tests de core** - Circuit Breaker, Rate Limiter, Logger
+2. **Reorganizar core/** - Agrupar por funcionalidad (resilience, observability)
+3. **UI de fallback** - Modal/toast para confirmar cambio de provider
+4. **Tercer provider** - MercadoPago o Conekta para validar extensibilidad

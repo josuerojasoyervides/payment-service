@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 // Port y token (desacoplado de implementación)
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
-import { LoggerService } from '../../../../../core/services/logger.service';
+import { LoggerService } from '@core/logging';
 
 // Domain types
 import { PaymentProviderId, PaymentMethodType } from '../../../domain/models';

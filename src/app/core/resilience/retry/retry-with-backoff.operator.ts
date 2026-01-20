@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, timer } from 'rxjs';
-import { catchError, mergeMap, retryWhen, scan } from 'rxjs/operators';
+import { mergeMap, retryWhen, scan } from 'rxjs/operators';
 import {
     RetryConfig,
     DEFAULT_RETRY_CONFIG,
@@ -8,7 +8,7 @@ import {
     calculateBackoffDelay,
     parseRetryAfterHeader,
     RetryExhaustedError,
-} from '../models/retry.types';
+} from './retry.types';
 
 /**
  * Estado interno del operador de retry.

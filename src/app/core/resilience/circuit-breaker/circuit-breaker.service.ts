@@ -5,8 +5,8 @@ import {
     CircuitBreakerConfig,
     CircuitOpenError,
     DEFAULT_CIRCUIT_BREAKER_CONFIG,
-} from '../models';
-import { LoggerService } from './logger.service';
+} from './circuit-breaker.types';
+import { LoggerService } from '../../logging/logger.service';
 
 /**
  * Token para inyectar configuración del Circuit Breaker.

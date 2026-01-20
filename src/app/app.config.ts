@@ -3,11 +3,10 @@ import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
-import { FakePaymentsBackendInterceptor } from './core/interceptors/fake-backend.interceptor';
-import { cacheInterceptor } from './core/interceptors/cache.interceptor';
-import { retryInterceptor } from './core/interceptors/retry.interceptor';
-import { resilienceInterceptor } from './core/interceptors/resilience.interceptor';
-import { loggingInterceptor } from './core/interceptors/logging.interceptor';
+import { FakePaymentsBackendInterceptor } from './core/testing';
+import { cacheInterceptor } from './core/caching';
+import { retryInterceptor, resilienceInterceptor } from './core/resilience';
+import { loggingInterceptor } from './core/logging';
 
 /**
  * Configuración principal de la aplicación.

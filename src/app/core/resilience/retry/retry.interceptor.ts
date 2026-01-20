@@ -1,11 +1,10 @@
-import { HttpInterceptorFn, HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpRequest } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable, throwError, timer, defer } from 'rxjs';
+import { Observable, throwError, timer } from 'rxjs';
 import { catchError, mergeMap, tap } from 'rxjs/operators';
-import { RetryService } from '../services/retry.service';
-import { LoggerService } from '../services/logger.service';
-import { CircuitBreakerService } from '../services/circuit-breaker.service';
-import { CircuitOpenError } from '../models';
+import { RetryService } from './retry.service';
+import { LoggerService } from '../../logging/logger.service';
+import { CircuitBreakerService, CircuitOpenError } from '../circuit-breaker';
 
 /**
  * Patrones de URL a excluir del retry automático.
@@ -88,8 +87,9 @@ export const retryInterceptor: HttpInterceptorFn = (req, next) => {
             catchError((error: HttpErrorResponse) => {
                 return handleError(
                     error,
-                    req,
                     context,
+                    endpoint,
+                    method,
                     retryService,
                     circuitBreaker,
                     logger,
@@ -108,17 +108,15 @@ export const retryInterceptor: HttpInterceptorFn = (req, next) => {
  */
 function handleError(
     error: HttpErrorResponse,
-    req: HttpRequest<unknown>,
     context: { attempt: number; startTime: number },
+    endpoint: string,
+    method: string,
     retryService: RetryService,
     circuitBreaker: CircuitBreakerService,
     logger: LoggerService,
     maxRetries: number,
     retryFn: () => Observable<HttpEvent<unknown>>
 ): Observable<HttpEvent<unknown>> {
-    const endpoint = req.url;
-    const method = req.method;
-
     // Verificar si el circuit breaker está abierto
     if (isCircuitOpen(circuitBreaker, endpoint)) {
         logger.debug(
