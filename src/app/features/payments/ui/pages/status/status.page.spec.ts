@@ -9,7 +9,6 @@ describe('StatusComponent', () => {
     let component: StatusComponent;
     let fixture: ComponentFixture<StatusComponent>;
     let mockPaymentState: any;
-    let unsubscribeMock: any;
 
     const mockIntent: PaymentIntent = {
         id: 'pi_test_123',
@@ -27,17 +26,11 @@ describe('StatusComponent', () => {
     };
 
     beforeEach(async () => {
-        unsubscribeMock = vi.fn();
-        
         // Mock del payment state
         mockPaymentState = {
             intent: signal<PaymentIntent | null>(null),
             error: signal<PaymentError | null>(null),
             isLoading: signal(false),
-            subscribe: vi.fn((callback: () => void) => {
-                // Simular subscription que llama al callback
-                return unsubscribeMock;
-            }),
             refreshPayment: vi.fn(),
             confirmPayment: vi.fn(),
             cancelPayment: vi.fn(),
@@ -74,14 +67,6 @@ describe('StatusComponent', () => {
     });
 
     describe('Búsqueda de intent', () => {
-        beforeEach(() => {
-            vi.useFakeTimers();
-        });
-
-        afterEach(() => {
-            vi.useRealTimers();
-        });
-
         it('no debe buscar si el intentId está vacío', () => {
             component.intentId = '';
             component.searchIntent();
@@ -94,36 +79,25 @@ describe('StatusComponent', () => {
             expect(mockPaymentState.refreshPayment).not.toHaveBeenCalled();
         });
 
-        it('debe buscar intent y suscribirse a cambios', () => {
+        it('debe buscar intent y resetear result', () => {
             component.intentId = 'pi_test_123';
             component.searchIntent();
 
             expect(component.result()).toBeNull(); // Se resetea
-            expect(mockPaymentState.subscribe).toHaveBeenCalled();
             expect(mockPaymentState.refreshPayment).toHaveBeenCalledWith(
                 { intentId: 'pi_test_123' },
                 'stripe'
             );
         });
 
-        it('debe actualizar result cuando el intent cambia', () => {
-            component.intentId = 'pi_test_123';
-            component.searchIntent();
-
+        it('debe actualizar result automáticamente cuando el intent cambia (via effect)', () => {
+            // El effect() en el constructor escucha cambios en intent()
             // Simular que el intent cambió en el state
             mockPaymentState.intent.set(mockIntent);
-            const callback = mockPaymentState.subscribe.mock.calls[0][0];
-            callback(); // Ejecutar el callback de subscription
+            fixture.detectChanges();
 
+            // El effect debería haber actualizado result automáticamente
             expect(component.result()).toEqual(mockIntent);
-        });
-
-        it('debe limpiar la suscripción después de 5 segundos', () => {
-            component.intentId = 'pi_test_123';
-            component.searchIntent();
-
-            vi.advanceTimersByTime(5000);
-            expect(unsubscribeMock).toHaveBeenCalled();
         });
 
         it('debe usar el provider seleccionado', () => {

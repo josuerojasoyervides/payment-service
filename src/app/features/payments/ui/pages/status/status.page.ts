@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -33,27 +33,28 @@ export class StatusComponent {
         { id: 'ORDER_FAKE_XYZ789', label: 'PayPal Order', provider: 'paypal' as const },
     ];
 
-    searchIntent(): void {
-        if (!this.intentId.trim()) return;
-
-        this.result.set(null);
-        
-        // Escuchar cambios en el state
-        const unsubscribe = this.paymentState.subscribe(() => {
+    constructor() {
+        // Usar effect() dentro del constructor (contexto de inyección)
+        // para escuchar cambios en el intent del state
+        effect(() => {
             const intent = this.paymentState.intent();
             if (intent) {
                 this.result.set(intent);
             }
         });
+    }
+
+    searchIntent(): void {
+        if (!this.intentId.trim()) return;
+
+        this.result.set(null);
 
         // Hacer la consulta
+        // El effect en el constructor ya está escuchando cambios
         this.paymentState.refreshPayment(
             { intentId: this.intentId.trim() },
             this.selectedProvider()
         );
-
-        // Limpiar suscripción después de un timeout
-        setTimeout(() => unsubscribe(), 5000);
     }
 
     confirmPayment(intentId: string): void {
