@@ -2,18 +2,41 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
-import providePayments from './features/payments/config/payment.providers';
-import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
 import { FakePaymentsBackendInterceptor } from './core/interceptors/fake-backend.interceptor';
+import { cacheInterceptor } from './core/interceptors/cache.interceptor';
+import { resilienceInterceptor } from './core/interceptors/resilience.interceptor';
+import { loggingInterceptor } from './core/interceptors/logging.interceptor';
 
+/**
+ * Configuración principal de la aplicación.
+ * 
+ * Los providers de pagos se cargan de forma lazy con el módulo de payments.
+ * Los interceptors globales (cache, resilience, logging) se cargan aquí.
+ * 
+ * Orden de interceptors (importante):
+ * 1. cacheInterceptor - Caché de respuestas (evita requests innecesarios)
+ * 2. resilienceInterceptor - Circuit breaker y rate limiting
+ * 3. loggingInterceptor - Logging estructurado
+ */
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
 
-    provideHttpClient(withInterceptorsFromDi()),
+    // HTTP Client con interceptors funcionales y basados en clase
+    provideHttpClient(
+      // Interceptors funcionales (nuevos)
+      withInterceptors([
+        cacheInterceptor,       // Caché de respuestas HTTP
+        resilienceInterceptor,  // Circuit breaker y rate limiting
+        loggingInterceptor,     // Logging estructurado
+      ]),
+      // Interceptors basados en clase (legacy)
+      withInterceptorsFromDi()
+    ),
 
-    ...providePayments(),
+    // Fake backend para desarrollo
     { provide: HTTP_INTERCEPTORS, useClass: FakePaymentsBackendInterceptor, multi: true },
   ]
 };
