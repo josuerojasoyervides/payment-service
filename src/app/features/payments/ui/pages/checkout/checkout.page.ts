@@ -186,12 +186,7 @@ export class CheckoutComponent {
             const factory = this.registry.get(provider);
             const builder = factory.createRequestBuilder(method);
 
-            let options = this.formOptions();
-
-            if (isDevMode() && method === 'card' && provider === 'stripe' && !options.token) {
-                options = { ...options, token: 'tok_visa1234567890abcdef' };
-                this.logger.debug('Auto-generated dev token', 'CheckoutPage');
-            }
+            const options = this.formOptions();
 
             const request = builder
                 .forOrder(this.orderId())

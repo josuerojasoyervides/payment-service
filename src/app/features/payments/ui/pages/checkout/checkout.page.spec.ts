@@ -315,11 +315,14 @@ describe('CheckoutComponent', () => {
             });
         });
 
-        it('debe auto-generar token en modo desarrollo para card', () => {
-            component.onFormChange({}); // Sin token
+        it('debe usar token del formulario (PaymentFormComponent maneja autofill en dev)', () => {
+            // El token debe venir del formulario, no ser inyectado por CheckoutComponent
+            // PaymentFormComponent ya maneja el autofill en modo desarrollo
+            component.onFormChange({ token: 'tok_visa1234567890abcdef' });
             component.processPayment();
             expect(mockBuilder.withOptions).toHaveBeenCalledWith(expect.objectContaining({ token: 'tok_visa1234567890abcdef' }));
-            expect(mockLogger.debug).toHaveBeenCalledWith('Auto-generated dev token', 'CheckoutPage');
+            // Ya no debe haber log de auto-generación en CheckoutComponent
+            expect(mockLogger.debug).not.toHaveBeenCalledWith('Auto-generated dev token', 'CheckoutPage');
         });
 
         it('debe manejar errores al construir request', () => {
