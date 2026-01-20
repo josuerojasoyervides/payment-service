@@ -1,46 +1,109 @@
 import { HttpClient } from "@angular/common/http";
-import { catchError, map, Observable, throwError } from "rxjs";
+import { catchError, map, Observable, tap, throwError } from "rxjs";
 import { PaymentIntent, PaymentProviderId } from "../models/payment.types";
 import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from "../models/payment.requests";
 import { PaymentError } from "../models/payment.errors";
 import { inject } from "@angular/core";
+import { LoggerService } from "../../../../core/services/logger.service";
 
 export abstract class PaymentGateway<TCreateDto = unknown, TConfirmDto = unknown> {
     abstract readonly providerId: PaymentProviderId;
 
     protected readonly http = inject(HttpClient);
+    protected readonly logger = inject(LoggerService);
+
+    /** Contexto para logging */
+    protected get logContext(): string {
+        return `${this.providerId}Gateway`;
+    }
 
     // Método público que usa el resto del sistema
     createIntent(req: CreatePaymentRequest): Observable<PaymentIntent> {
         this.validateCreate(req);
+        const correlationId = this.logger.getCorrelationId();
+
+        this.logger.info(
+            `Creating payment intent`,
+            this.logContext,
+            { orderId: req.orderId, amount: req.amount, currency: req.currency, method: req.method.type },
+            correlationId
+        );
+
         return this.createIntentRaw(req).pipe(
             map(dto => this.mapIntent(dto)),
-            catchError(err => throwError(() => this.normalizeError(err)))
-        )
+            tap(intent => {
+                this.logger.info(
+                    `Payment intent created`,
+                    this.logContext,
+                    { intentId: intent.id, status: intent.status },
+                    correlationId
+                );
+            }),
+            catchError(err => {
+                this.logger.error(
+                    `Failed to create payment intent`,
+                    this.logContext,
+                    err,
+                    { orderId: req.orderId },
+                    correlationId
+                );
+                return throwError(() => this.normalizeError(err));
+            })
+        );
     }
 
     confirmIntent(req: ConfirmPaymentRequest): Observable<PaymentIntent> {
         this.validateConfirm(req);
+        const correlationId = this.logger.getCorrelationId();
+
+        this.logger.info(`Confirming intent`, this.logContext, { intentId: req.intentId }, correlationId);
+
         return this.confirmIntentRaw(req).pipe(
             map(dto => this.mapConfirmIntent(dto)),
-            catchError(err => throwError(() => this.normalizeError(err)))
-        )
+            tap(intent => {
+                this.logger.info(`Intent confirmed`, this.logContext, { intentId: intent.id, status: intent.status }, correlationId);
+            }),
+            catchError(err => {
+                this.logger.error(`Failed to confirm intent`, this.logContext, err, { intentId: req.intentId }, correlationId);
+                return throwError(() => this.normalizeError(err));
+            })
+        );
     }
 
     cancelIntent(req: CancelPaymentRequest): Observable<PaymentIntent> {
         this.validateCancel(req);
+        const correlationId = this.logger.getCorrelationId();
+
+        this.logger.info(`Canceling intent`, this.logContext, { intentId: req.intentId }, correlationId);
+
         return this.cancelIntentRaw(req).pipe(
             map(dto => this.mapCancelIntent(dto)),
-            catchError(err => throwError(() => this.normalizeError(err)))
-        )
+            tap(intent => {
+                this.logger.info(`Intent canceled`, this.logContext, { intentId: intent.id, status: intent.status }, correlationId);
+            }),
+            catchError(err => {
+                this.logger.error(`Failed to cancel intent`, this.logContext, err, { intentId: req.intentId }, correlationId);
+                return throwError(() => this.normalizeError(err));
+            })
+        );
     }
 
     getIntent(req: GetPaymentStatusRequest): Observable<PaymentIntent> {
         this.validateGetStatus(req);
+        const correlationId = this.logger.getCorrelationId();
+
+        this.logger.debug(`Getting intent status`, this.logContext, { intentId: req.intentId }, correlationId);
+
         return this.getIntentRaw(req).pipe(
             map(dto => this.mapGetIntent(dto)),
-            catchError(err => throwError(() => this.normalizeError(err)))
-        )
+            tap(intent => {
+                this.logger.debug(`Got intent status`, this.logContext, { intentId: intent.id, status: intent.status }, correlationId);
+            }),
+            catchError(err => {
+                this.logger.error(`Failed to get intent status`, this.logContext, err, { intentId: req.intentId }, correlationId);
+                return throwError(() => this.normalizeError(err));
+            })
+        );
     }
 
     // ------- Helpers compartidos -------

@@ -13,6 +13,7 @@ import { ConfirmPaymentUseCase } from "../application/use-cases/confirm-payment.
 import { CancelPaymentUseCase } from "../application/use-cases/cancel-payment.use-case";
 import { GetPaymentStatusUseCase } from "../application/use-cases/get-payment-status.use-case";
 import { FallbackOrchestratorService } from "../application/services/fallback-orchestrator.service";
+import { PaymentsStore } from "../application/store/payments.store";
 
 /**
  * Gateways de cada proveedor.
@@ -59,8 +60,10 @@ const USE_CASE_PROVIDERS: Provider[] = [
  */
 const APPLICATION_PROVIDERS: Provider[] = [
     ProviderFactoryRegistry,
-    { provide: PAYMENTS_STATE, useClass: PaymentState },
     FallbackOrchestratorService,
+    PaymentsStore,
+    // Legacy adapter para retrocompatibilidad
+    { provide: PAYMENTS_STATE, useClass: PaymentState },
 ];
 
 /**

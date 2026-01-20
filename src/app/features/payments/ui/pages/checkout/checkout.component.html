@@ -1,26 +1,32 @@
-<h1>Checkout con Builders</h1>
-<p class="subtitle">Demo del sistema de builders específicos por provider</p>
+<!-- Header -->
+<div class="header">
+    <h1>Checkout</h1>
+    <p class="subtitle">Sistema de pagos con arquitectura empresarial</p>
+</div>
 
-<!-- RESUMEN DE ORDEN -->
+<!-- Resumen de Orden -->
 <div class="order-summary">
     <h4>Resumen de Orden</h4>
     <div class="order-line">
         <span>Order ID</span>
-        <span>{{ orderId() }}</span>
+        <span><code>{{ orderId() }}</code></span>
     </div>
     <div class="order-line">
         <span>Subtotal</span>
         <span>{{ amount() | currency: currency() }}</span>
     </div>
     <div class="order-line">
-        <span>Total</span>
+        <span>Total a pagar</span>
         <span>{{ amount() | currency: currency() }}</span>
     </div>
 </div>
 
-<!-- PASO 1: SELECCIONAR PROVIDER -->
+<!-- Paso 1: Seleccionar Provider -->
 <section>
-    <h3>1. Selecciona el proveedor de pago</h3>
+    <h3>
+        <span class="step-number">1</span>
+        Proveedor de pago
+    </h3>
     <div class="provider-buttons">
         @for (provider of availableProviders(); track provider) {
             <button 
@@ -32,17 +38,17 @@
             </button>
         }
     </div>
-    <p style="margin-top: 12px; color: #666; font-size: 0.9rem;">
-        Provider seleccionado: <strong>{{ selectedProvider() }}</strong>
-    </p>
 </section>
 
-<!-- PASO 2: SELECCIONAR MÉTODO -->
+<!-- Paso 2: Seleccionar Método -->
 <section>
-    <h3>2. Selecciona el método de pago</h3>
+    <h3>
+        <span class="step-number">2</span>
+        Método de pago
+    </h3>
     
     @if (availableMethods().length === 0) {
-        <p style="color: #dc3545;">No hay métodos disponibles para este provider</p>
+        <p style="color: #dc3545;">No hay métodos disponibles para {{ selectedProvider() }}</p>
     } @else {
         <div class="method-buttons">
             @for (method of availableMethods(); track method) {
@@ -51,20 +57,24 @@
                     [class.active]="selectedMethod() === method"
                     [disabled]="isLoading()"
                     (click)="selectMethod(method)">
-                    {{ method | titlecase }}
+                    @switch (method) {
+                        @case ('card') { 💳 Tarjeta }
+                        @case ('spei') { 🏦 SPEI }
+                        @default { {{ method | titlecase }} }
+                    }
                 </button>
             }
         </div>
-        <p style="margin-top: 12px; color: #666; font-size: 0.9rem;">
-            Método seleccionado: <strong>{{ selectedMethod() }}</strong>
-        </p>
     }
 </section>
 
-<!-- PASO 3: FORMULARIO DINÁMICO -->
+<!-- Paso 3: Formulario Dinámico -->
 @if (fieldRequirements(); as requirements) {
     <section>
-        <h3>3. Completa los datos de pago</h3>
+        <h3>
+            <span class="step-number">3</span>
+            Datos de pago
+        </h3>
         
         @if (requirements.description) {
             <p class="form-description">{{ requirements.description }}</p>
@@ -92,11 +102,10 @@
                             [placeholder]="field.placeholder ?? ''" />
                     </div>
                 } @else {
-                    <!-- Campo hidden - mostrar como info -->
-                    <div class="field" style="background: #f0f0f0; padding: 8px; border-radius: 4px; font-size: 0.85rem;">
+                    <div class="field hidden-field">
                         <strong>{{ field.label }}:</strong> 
                         <code>{{ paymentForm.get(field.name)?.value || '(auto)' }}</code>
-                        <span style="color: #666;"> (campo automático)</span>
+                        <span style="color: #666; margin-left: 8px;">(automático)</span>
                     </div>
                 }
             }
@@ -108,62 +117,170 @@
     </section>
 }
 
-<!-- ERROR DE BUILD -->
-@if (buildError(); as error) {
-    <div class="result error">
-        <strong>❌ Error al construir el request:</strong>
-        <p>{{ error }}</p>
-    </div>
-}
-
-<!-- BOTÓN DE PAGO -->
+<!-- Botón de Pago -->
 <button 
     class="pay-button"
     [disabled]="isLoading()"
     (click)="processPayment()">
     @if (isLoading()) {
-        ⏳ Procesando...
+        <span class="spinner">⏳</span> Procesando...
     } @else {
-        Pagar {{ amount() | currency: currency() }} con {{ selectedProvider() | titlecase }}
+        💳 Pagar {{ amount() | currency: currency() }} con {{ selectedProvider() | titlecase }}
     }
 </button>
 
-<!-- RESULTADO -->
-@if (paymentResult(); as result) {
-    <div class="result" [class.success]="result.type === 'success'" 
-                        [class.error]="result.type === 'error'"
-                        [class.loading]="result.type === 'loading'">
-        @switch (result.type) {
-            @case ('loading') {
-                <strong>⏳ Procesando pago...</strong>
-            }
-            @case ('success') {
-                <strong>✅ Pago iniciado correctamente</strong>
-                <pre>{{ result.data | json }}</pre>
-            }
-            @case ('error') {
-                <strong>❌ Error en el pago</strong>
-                <pre>{{ result.data | json }}</pre>
-            }
-        }
+<!-- Error -->
+@if (hasError() && currentError(); as error) {
+    <div class="result error">
+        <div class="result-header">
+            ❌ Error en el pago
+        </div>
+        <p>{{ $any(error).message || 'Ha ocurrido un error procesando el pago' }}</p>
+        
+        <details>
+            <summary>Ver detalles técnicos</summary>
+            <pre>{{ error | json }}</pre>
+        </details>
+        
+        <button 
+            style="margin-top: 12px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer;"
+            (click)="resetPayment()">
+            Intentar de nuevo
+        </button>
     </div>
 }
 
-<!-- DEBUG: Request construido -->
+<!-- Resultado exitoso -->
+@if (isReady() && currentIntent(); as intent) {
+    <div class="result success">
+        <div class="result-header">
+            ✅ Pago iniciado correctamente
+        </div>
+        
+        <dl class="intent-details">
+            <dt>Intent ID</dt>
+            <dd><code>{{ intent.id }}</code></dd>
+            
+            <dt>Provider</dt>
+            <dd>{{ intent.provider | titlecase }}</dd>
+            
+            <dt>Estado</dt>
+            <dd>
+                <span class="status-badge" [class]="getStatusClass(intent.status)">
+                    {{ intent.status }}
+                </span>
+            </dd>
+            
+            <dt>Monto</dt>
+            <dd>{{ intent.amount | currency: intent.currency }}</dd>
+        </dl>
+
+        <!-- Next Action -->
+        @if (intent.nextAction; as nextAction) {
+            <div class="next-action-card">
+                <h4>⚠️ Acción requerida: {{ nextAction.type }}</h4>
+                
+                @switch (nextAction.type) {
+                    @case ('3ds') {
+                        <div class="threeds-info">
+                            <p>Tu banco requiere verificación adicional (3D Secure).</p>
+                            <p>Serás redirigido a una página segura para completar la autenticación.</p>
+                        </div>
+                    }
+                    
+                    @case ('spei') {
+                        <div class="spei-details">
+                            <p><strong>CLABE:</strong> {{ $any(nextAction).clabe }}</p>
+                            <p><strong>Referencia:</strong> {{ $any(nextAction).reference }}</p>
+                            <p><strong>Banco:</strong> {{ $any(nextAction).bank }}</p>
+                            <p><strong>Beneficiario:</strong> {{ $any(nextAction).beneficiary }}</p>
+                            <p><strong>Monto:</strong> {{ $any(nextAction).amount | currency: $any(nextAction).currency }}</p>
+                            <p><strong>Expira:</strong> {{ $any(nextAction).expiresAt | date:'medium' }}</p>
+                        </div>
+                    }
+                    
+                    @case ('paypal_approve') {
+                        <div class="paypal-info">
+                            <p>Serás redirigido a PayPal para aprobar el pago.</p>
+                            <p>
+                                <a [href]="$any(nextAction).approveUrl" target="_blank">
+                                    Ir a PayPal →
+                                </a>
+                            </p>
+                        </div>
+                    }
+                    
+                    @default {
+                        <p>Tipo de acción: {{ nextAction.type }}</p>
+                    }
+                }
+            </div>
+        }
+
+        <details style="margin-top: 16px;">
+            <summary style="cursor: pointer; color: #666;">Ver respuesta completa</summary>
+            <pre>{{ intent | json }}</pre>
+        </details>
+        
+        <button 
+            style="margin-top: 16px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;"
+            (click)="resetPayment()">
+            Nuevo pago
+        </button>
+    </div>
+}
+
+<!-- Modal de Fallback -->
+@if (hasPendingFallback() && pendingFallbackEvent(); as event) {
+    <div class="fallback-modal-overlay">
+        <div class="fallback-modal">
+            <h3>⚠️ Problema con el pago</h3>
+            <p>
+                {{ event.failedProvider | titlecase }} no está disponible en este momento.
+                ¿Deseas intentar con otro proveedor?
+            </p>
+            
+            <div class="fallback-options">
+                @for (provider of event.alternativeProviders; track provider) {
+                    <button 
+                        [class.selected]="selectedFallbackProvider() === provider"
+                        (click)="selectFallbackProvider(provider)">
+                        {{ provider | titlecase }}
+                    </button>
+                }
+            </div>
+            
+            <div class="fallback-actions">
+                <button class="cancel-btn" (click)="cancelFallback()">
+                    Cancelar
+                </button>
+                <button 
+                    class="retry-btn" 
+                    [disabled]="!selectedFallbackProvider()"
+                    (click)="confirmFallback()">
+                    Reintentar con {{ selectedFallbackProvider() || '...' | titlecase }}
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Debug Section -->
 <div class="debug-section">
-    <h3>🔍 Debug: Request Construido</h3>
+    <h3>🔍 Debug Info</h3>
     
-    @if (lastBuiltRequest(); as request) {
-        <p>Este es el <code>CreatePaymentRequest</code> que el builder generó:</p>
-        <pre>{{ request | json }}</pre>
-    } @else {
-        <p style="color: #666;">Haz clic en "Pagar" para ver el request generado.</p>
-    }
+    <details>
+        <summary>Estado del Store</summary>
+        <pre>{{ debugInfo() | json }}</pre>
+    </details>
     
-    <h3 style="margin-top: 24px;">📋 Field Requirements Actuales</h3>
-    @if (fieldRequirements(); as req) {
-        <pre>{{ req | json }}</pre>
-    } @else {
-        <p style="color: #666;">No hay requisitos disponibles.</p>
-    }
+    <details>
+        <summary>Field Requirements</summary>
+        <pre>{{ fieldRequirements() | json }}</pre>
+    </details>
+    
+    <details>
+        <summary>Formulario actual</summary>
+        <pre>{{ paymentForm.value | json }}</pre>
+    </details>
 </div>

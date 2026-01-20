@@ -1,9 +1,9 @@
 import { CurrencyCode } from '../../../domain/models/payment.types';
 import { CreatePaymentRequest } from '../../../domain/models/payment.requests';
-import { 
-    PaymentRequestBuilder, 
+import {
+    PaymentRequestBuilder,
     PaymentOptions,
-    FieldRequirements 
+    FieldRequirements
 } from '../../../domain/ports/payment-request-builder.port';
 
 /**

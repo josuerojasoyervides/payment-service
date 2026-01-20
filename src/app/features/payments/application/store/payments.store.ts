@@ -47,9 +47,12 @@ import { INITIAL_FALLBACK_STATE } from '../../domain/models/fallback.types';
  * }
  * ```
  */
+/**
+ * IMPORTANTE: Este store NO usa providedIn: 'root' porque depende de
+ * servicios que solo están disponibles en el módulo lazy de payments.
+ * Se provee en payments.routes.ts junto con el resto de providers.
+ */
 export const PaymentsStore = signalStore(
-    { providedIn: 'root' },
-    
     // Estado inicial
     withState<PaymentsState>(initialPaymentsState),
     
