@@ -8,16 +8,16 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-gray-900">Pago Cancelado</h1>
-                <p class="text-gray-600 mt-2">El proceso de pago fue cancelado</p>
+                <h1 class="text-2xl font-bold text-gray-900">{{ paymentCanceledText }}</h1>
+                <p class="text-gray-600 mt-2">{{ paymentCanceledMessageText }}</p>
             } @else if (isSuccess()) {
                 <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-gray-900">Pago Completado</h1>
-                <p class="text-gray-600 mt-2">Tu pago ha sido procesado exitosamente</p>
+                <h1 class="text-2xl font-bold text-gray-900">{{ paymentCompletedText }}</h1>
+                <p class="text-gray-600 mt-2">{{ paymentCompletedMessageText }}</p>
             } @else {
                 <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-blue-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,8 +25,8 @@
                               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-gray-900">Verificando Pago</h1>
-                <p class="text-gray-600 mt-2">Estamos confirmando el estado de tu pago...</p>
+                <h1 class="text-2xl font-bold text-gray-900">{{ verifyingPaymentText }}</h1>
+                <p class="text-gray-600 mt-2">{{ verifyingPaymentMessageText }}</p>
             }
         </div>
 
@@ -57,19 +57,19 @@
                 }
 
                 <div class="flex justify-between">
-                    <dt class="text-gray-500">Tipo de Flujo</dt>
+                    <dt class="text-gray-500">{{ flowTypeText }}</dt>
                     <dd class="text-gray-900">{{ flowType() }}</dd>
                 </div>
 
                 <div class="flex justify-between">
-                    <dt class="text-gray-500">Estado</dt>
+                    <dt class="text-gray-500">{{ statusLabelText }}</dt>
                     <dd>
                         @if (isCancel()) {
-                            <span class="badge-error">Cancelado</span>
+                            <span class="badge-error">{{ canceledText }}</span>
                         } @else if (isSuccess()) {
-                            <span class="badge-success">Completado</span>
+                            <span class="badge-success">{{ completedText }}</span>
                         } @else {
-                            <span class="badge-processing">Procesando</span>
+                            <span class="badge-processing">{{ processingText }}</span>
                         }
                     </dd>
                 </div>
@@ -79,7 +79,7 @@
         <!-- Current Intent from State -->
         @if (currentIntent(); as intent) {
             <div class="mb-6">
-                <h2 class="text-lg font-semibold mb-4">Estado del Pago</h2>
+                <h2 class="text-lg font-semibold mb-4">{{ paymentStatusText }}</h2>
                 <app-payment-intent-card
                     [intent]="intent"
                     [showActions]="true"
@@ -93,21 +93,21 @@
         <div class="flex flex-col sm:flex-row gap-3">
             <a routerLink="/payments/checkout" class="btn-primary flex-1 text-center">
                 @if (isCancel()) {
-                    Reintentar Pago
+                    {{ retryPaymentText }}
                 } @else {
-                    Nuevo Pago
+                    {{ newPaymentButtonText }}
                 }
             </a>
             
             <a routerLink="/payments/history" class="btn-secondary flex-1 text-center">
-                Ver Historial
+                {{ viewHistoryText }}
             </a>
         </div>
 
         <!-- Debug -->
         <details class="mt-8">
             <summary class="text-sm text-gray-500 cursor-pointer">
-                Ver todos los parámetros
+                {{ viewAllParamsText }}
             </summary>
             <pre class="mt-2 p-4 bg-gray-100 rounded-lg text-xs overflow-auto">{{ allParams() | json }}</pre>
         </details>

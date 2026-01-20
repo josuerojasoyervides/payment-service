@@ -5,6 +5,7 @@ import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { PaymentProviderId, PaymentIntent } from '../../../domain/models';
 import { PaymentIntentCardComponent } from '../../components';
 import { PaymentHistoryEntry } from '../../../application/store/payment.models';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Página de historial de pagos.
@@ -20,6 +21,7 @@ import { PaymentHistoryEntry } from '../../../application/store/payment.models';
 })
 export class HistoryComponent {
     private readonly paymentState = inject(PAYMENT_STATE);
+    private readonly i18n = inject(I18nService);
 
     readonly history = this.paymentState.history;
     readonly historyCount = this.paymentState.historyCount;
@@ -53,5 +55,37 @@ export class HistoryComponent {
 
     clearHistory(): void {
         this.paymentState.clearHistory();
+    }
+
+    get paymentHistoryLabel(): string {
+        return this.i18n.t(I18nKeys.ui.payment_history);
+    }
+
+    get paymentsInSessionText(): string {
+        return this.i18n.t(I18nKeys.ui.payments_in_session);
+    }
+
+    get clearHistoryText(): string {
+        return this.i18n.t(I18nKeys.ui.clear_history);
+    }
+
+    get newPaymentButtonText(): string {
+        return this.i18n.t(I18nKeys.ui.new_payment_button);
+    }
+
+    get noPaymentsHistoryText(): string {
+        return this.i18n.t(I18nKeys.ui.no_payments_history);
+    }
+
+    get paymentsWillAppearText(): string {
+        return this.i18n.t(I18nKeys.ui.payments_will_appear);
+    }
+
+    get makePaymentText(): string {
+        return this.i18n.t(I18nKeys.ui.make_payment);
+    }
+
+    get checkByIdText(): string {
+        return this.i18n.t(I18nKeys.ui.check_by_id);
     }
 }

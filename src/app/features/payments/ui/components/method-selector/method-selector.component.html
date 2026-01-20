@@ -1,9 +1,9 @@
 <div class="space-y-3">
-    <label class="label">Método de pago</label>
+    <label class="label">{{ paymentMethodLabel }}</label>
     
     @if (methods().length === 0) {
         <p class="text-sm text-gray-500 italic">
-            Selecciona un proveedor para ver los métodos disponibles
+            {{ selectProviderForMethodsText }}
         </p>
     } @else {
         <div class="flex flex-wrap gap-2">

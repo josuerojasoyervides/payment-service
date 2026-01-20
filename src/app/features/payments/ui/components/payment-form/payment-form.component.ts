@@ -1,9 +1,10 @@
-import { Component, input, output, effect, OnDestroy, isDevMode } from '@angular/core';
+import { Component, input, output, effect, OnDestroy, isDevMode, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subject, takeUntil, debounceTime } from 'rxjs';
 import { PaymentOptions } from '../../shared';
 import { FieldRequirements, FieldConfig } from '../../../domain/ports';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Componente de formulario de pago dinámico.
@@ -28,6 +29,8 @@ import { FieldRequirements, FieldConfig } from '../../../domain/ports';
     templateUrl: './payment-form.component.html',
 })
 export class PaymentFormComponent implements OnDestroy {
+    private readonly i18n = inject(I18nService);
+    
     /** Requisitos de campos del formulario */
     readonly requirements = input<FieldRequirements | null>(null);
     
@@ -182,5 +185,61 @@ export class PaymentFormComponent implements OnDestroy {
 
         this.formChange.emit(options);
         this.formValidChange.emit(this.form.valid);
+    }
+
+    /** Traduce un label de campo usando i18n si es necesario */
+    translateFieldLabel(field: FieldConfig): string {
+        // Mapeo de labels conocidos a claves de traducción
+        const labelMap: Record<string, string> = {
+            'Token de tarjeta': I18nKeys.ui.card_token,
+            'Guardar tarjeta para futuras compras': I18nKeys.ui.save_card_future,
+            'Correo electrónico': I18nKeys.ui.email_label,
+        };
+
+        const translationKey = labelMap[field.label];
+        if (translationKey) {
+            return this.i18n.t(translationKey);
+        }
+        return field.label;
+    }
+
+    /** Traduce la descripción del método */
+    translateDescription(description: string | undefined): string {
+        if (!description) return '';
+        const descMap: Record<string, string> = {
+            'Pago con tarjeta de crédito o débito': I18nKeys.ui.card_payment_description,
+            'Transferencia bancaria SPEI': I18nKeys.ui.spei_bank_transfer,
+        };
+        const translationKey = descMap[description];
+        if (translationKey) {
+            return this.i18n.t(translationKey);
+        }
+        return description;
+    }
+
+    /** Traduce las instrucciones */
+    translateInstructions(instructions: string | undefined): string {
+        if (!instructions) return '';
+        const instMap: Record<string, string> = {
+            'Ingresa los datos de tu tarjeta de forma segura': I18nKeys.ui.enter_card_data,
+            'Recibirás instrucciones de pago en tu correo electrónico': I18nKeys.ui.spei_email_instructions,
+        };
+        const translationKey = instMap[instructions];
+        if (translationKey) {
+            return this.i18n.t(translationKey);
+        }
+        return instructions;
+    }
+
+    get fieldRequiredText(): string {
+        return this.i18n.t(I18nKeys.ui.field_required);
+    }
+
+    get selectProviderMethodText(): string {
+        return this.i18n.t(I18nKeys.ui.select_provider_method);
+    }
+
+    get methodNoAdditionalDataText(): string {
+        return this.i18n.t(I18nKeys.ui.method_no_additional_data);
     }
 }

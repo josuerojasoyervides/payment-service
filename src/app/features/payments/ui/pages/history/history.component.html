@@ -3,9 +3,9 @@
         <!-- Header -->
         <div class="flex items-center justify-between mb-8">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Historial de Pagos</h1>
+                <h1 class="text-2xl font-bold text-gray-900">{{ paymentHistoryLabel }}</h1>
                 <p class="text-gray-600 mt-1">
-                    {{ historyCount() }} pago(s) en esta sesión
+                    {{ historyCount() }} {{ paymentsInSessionText }}
                 </p>
             </div>
             <div class="flex gap-3">
@@ -14,10 +14,10 @@
                     [disabled]="historyCount() === 0"
                     (click)="clearHistory()"
                 >
-                    Limpiar historial
+                    {{ clearHistoryText }}
                 </button>
                 <a routerLink="/payments/checkout" class="btn-primary text-sm">
-                    Nuevo pago
+                    {{ newPaymentButtonText }}
                 </a>
             </div>
         </div>
@@ -32,13 +32,13 @@
                     </svg>
                 </div>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">
-                    No hay pagos en el historial
+                    {{ noPaymentsHistoryText }}
                 </h3>
                 <p class="text-gray-600 mb-6">
-                    Los pagos que realices aparecerán aquí
+                    {{ paymentsWillAppearText }}
                 </p>
                 <a routerLink="/payments/checkout" class="btn-primary">
-                    Realizar un pago
+                    {{ makePaymentText }}
                 </a>
             </div>
         } @else {
@@ -89,7 +89,7 @@
                 Checkout
             </a>
             <a routerLink="/payments/status" class="text-blue-600 hover:underline">
-                Consultar por ID
+                {{ checkByIdText }}
             </a>
         </div>
     </div>

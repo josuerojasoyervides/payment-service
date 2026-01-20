@@ -1,7 +1,7 @@
 import { Component, input, output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PaymentMethodType, getDefaultMethods, MethodOption } from '../../shared';
-import { I18nService } from '@core/i18n';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Componente selector de método de pago.
@@ -52,5 +52,13 @@ export class MethodSelectorComponent {
         if (!this.disabled() && methodType !== this.selected()) {
             this.methodChange.emit(methodType);
         }
+    }
+
+    get paymentMethodLabel(): string {
+        return this.i18n.t(I18nKeys.ui.payment_method_label);
+    }
+
+    get selectProviderForMethodsText(): string {
+        return this.i18n.t(I18nKeys.ui.select_provider_for_methods);
     }
 }
