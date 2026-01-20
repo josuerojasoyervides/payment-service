@@ -4,64 +4,60 @@ import { PaymentRequestBuilder, FieldRequirements } from "../payment/payment-req
 import { PaymentStrategy } from "../payment/payment-strategy.port";
 
 /**
- * Port para factories de proveedores de pago.
+ * Port for payment provider factories.
  *
- * Cada proveedor (Stripe, PayPal, etc.) implementa esta interfaz
- * para exponer su gateway, estrategias y builders.
+ * Each provider (Stripe, PayPal, etc.) implements this interface
+ * to expose its gateway, strategies and builders.
  *
- * Patrón: Abstract Factory
- * - Crea familias de objetos relacionados (gateway + strategies + builders)
- * - Sin especificar sus clases concretas
+ * Pattern: Abstract Factory
+ * - Creates families of related objects (gateway + strategies + builders)
+ * - Without specifying their concrete classes
  * 
- * La UI usa esta interfaz para:
- * 1. Saber qué métodos soporta el provider (getSupportedMethods)
- * 2. Saber qué campos necesita cada método (getFieldRequirements)
- * 3. Obtener el builder correcto (createRequestBuilder)
+ * The UI uses this interface to:
+ * 1. Know which methods the provider supports (getSupportedMethods)
+ * 2. Know which fields each method needs (getFieldRequirements)
+ * 3. Get the correct builder (createRequestBuilder)
  */
 export interface ProviderFactory {
-    /** Identificador único del proveedor */
+    /** Unique provider identifier */
     readonly providerId: PaymentProviderId;
 
     /**
-     * Retorna el gateway de este proveedor.
-     * El gateway maneja la comunicación HTTP con la API del proveedor.
+     * Returns this provider's gateway.
+     * The gateway handles HTTP communication with the provider's API.
      */
     getGateway(): PaymentGateway;
 
     /**
-     * Crea una estrategia para el tipo de método de pago.
+     * Creates a strategy for the payment method type.
      *
-     * @param type Tipo de método de pago (card, spei, etc.)
-     * @throws Error si el método no está soportado por este proveedor
+     * @param type Payment method type (card, spei, etc.)
+     * @throws Error if the method is not supported by this provider
      */
     createStrategy(type: PaymentMethodType): PaymentStrategy;
 
     /**
-     * Verifica si este proveedor soporta un método de pago.
+     * Checks if this provider supports a payment method.
      *
-     * Útil para mostrar opciones disponibles en la UI
-     * o para validación antes de intentar crear una estrategia.
+     * Useful for showing available options in the UI
+     * or for validation before attempting to create a strategy.
      */
     supportsMethod(type: PaymentMethodType): boolean;
 
     /**
-     * Retorna la lista de métodos de pago soportados.
+     * Returns the list of supported payment methods.
      */
     getSupportedMethods(): PaymentMethodType[];
     
-    // ============================================================
-    // NUEVOS MÉTODOS PARA BUILDERS
-    // ============================================================
-    
     /**
-     * Crea un builder específico para este provider y método.
+     * Creates a builder specific to this provider and method.
      * 
-     * El builder retornado sabe exactamente qué campos necesita
-     * y valida que estén presentes al hacer build().
+     * The returned builder knows exactly which fields it needs
+     * and validates they are present when calling build().
      * 
-     * @param type Tipo de método de pago
-     * @returns Builder específico para esta combinación provider+method
-     * @throws Error si el método no está soportado
+     * @param type Payment method type
+     * @returns Builder specific to this provider+method combination
+     * @throws Error if the method is not supported
      * 
      * @example
      * const factory = registry.get('paypal');
@@ -75,15 +71,15 @@ export interface ProviderFactory {
     createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilder;
     
     /**
-     * Retorna los requisitos de campos para un método de pago.
+     * Returns field requirements for a payment method.
      * 
-     * La UI usa esto para:
-     * - Renderizar el formulario con los campos correctos
-     * - Mostrar qué campos son requeridos vs opcionales
-     * - Auto-llenar campos como returnUrl con la URL actual
+     * The UI uses this to:
+     * - Render the form with correct fields
+     * - Show which fields are required vs optional
+     * - Auto-fill fields like returnUrl with current URL
      * 
-     * @param type Tipo de método de pago
-     * @returns Configuración de campos necesarios
+     * @param type Payment method type
+     * @returns Required fields configuration
      * 
      * @example
      * const requirements = factory.getFieldRequirements('card');

@@ -140,8 +140,8 @@ describe('PaypalRedirectRequestBuilder', () => {
         });
     });
 
-    // Nota: FIELD_REQUIREMENTS ahora está en PaypalProviderFactory.getFieldRequirements()
-    // Los tests de field requirements deben estar en paypal-provider.factory.spec.ts
+    // NOTE: FIELD_REQUIREMENTS is now in PaypalProviderFactory.getFieldRequirements()
+    // Field requirements tests should be in paypal-provider.factory.spec.ts
 
     describe('fluent interface', () => {
         it('returns this from all setter methods for chaining', () => {

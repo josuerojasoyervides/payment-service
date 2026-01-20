@@ -14,16 +14,15 @@ type SelfTestRow = {
     strategyClass?: string;
     error?: string;
 
-    // opcional: resultado del smoke start
     smokeStart?: 'skipped' | 'ok' | 'error';
     smokeResult?: any;
 };
 
 /**
- * Componente de estado de pagos y testing.
+ * Payment status and testing component.
  * 
- * Este componente está desacoplado de la implementación del estado
- * gracias al uso del token PAYMENT_STATE.
+ * This component is decoupled from state implementation
+ * thanks to the PAYMENT_STATE token.
  */
 @Component({
     selector: 'app-payments',
@@ -40,7 +39,6 @@ export class PaymentsComponent implements OnDestroy {
     readonly intent = this.paymentState.intent;
     readonly error = this.paymentState.error;
 
-    // Suscripción para código legacy/imperativo
     private readonly unsubscribe = this.paymentState.subscribe(() => {
         const snapshot = this.paymentState.getSnapshot();
 
@@ -55,7 +53,6 @@ export class PaymentsComponent implements OnDestroy {
         }
     });
 
-    // Providers disponibles (del multi token)
     readonly providerIds = computed<PaymentProviderId[]>(() => {
         const ids = this.factories.map(f => f.providerId);
         return Array.from(new Set(ids)) as PaymentProviderId[];
@@ -71,7 +68,6 @@ export class PaymentsComponent implements OnDestroy {
     readonly actionResult = signal<PaymentIntent | null>(null);
     readonly actionError = signal<unknown | null>(null);
 
-    // Info calculada (para debug/validación)
     readonly resolvedFactory = computed(() => {
         const providerId = this.selectedProviderId();
         try {
@@ -141,7 +137,6 @@ export class PaymentsComponent implements OnDestroy {
         this.resetActionState();
     }
 
-    // Prueba de pipeline completo
     startTestPayment() {
         const providerId = this.selectedProviderId();
         const method = this.selectedMethodType();
@@ -182,20 +177,17 @@ export class PaymentsComponent implements OnDestroy {
 
         const rows: SelfTestRow[] = [];
 
-        // 1) Validación de multi token y duplicados
         const duplicates = this.duplicates();
         if (duplicates.length > 0) {
             console.warn('⚠️ Duplicate providers detected:', duplicates);
         }
 
-        // 2) Recorremos providers disponibles según lo que inyectó el token
         for (const providerId of this.providerIds()) {
             let factory: ProviderFactory;
 
             try {
                 factory = this.registry.get(providerId);
             } catch (e) {
-                // si el registry falla, agregamos filas de error para ambos métodos
                 for (const m of methods) {
                     rows.push({
                         providerId,
@@ -212,7 +204,6 @@ export class PaymentsComponent implements OnDestroy {
             const factoryClass = factory.constructor?.name ?? '(unknown factory)';
 
             for (const m of methods) {
-                // 3) Probar createStrategy(type)
                 try {
                     const strategy = factory.createStrategy(m);
                     const strategyClass = strategy.constructor?.name ?? '(unknown strategy)';
@@ -240,7 +231,6 @@ export class PaymentsComponent implements OnDestroy {
             }
         }
 
-        // 4) Mostrar tabla en consola (puro placer)
         console.group('💀 Payments Self Test (Registry + Multi DI + Factories)');
         console.table(
             rows.map(r => ({
@@ -256,9 +246,6 @@ export class PaymentsComponent implements OnDestroy {
 
         this.selfTestRows.set(rows);
 
-        // 5) Opcional: SMOKE START (dispara el pipeline real)
-        // OJO: Esto puede pegarle al HTTP real si no tienes backend.
-        // Aún así sirve: "ok" si responde, "error" si falla.
         if (smokeStart) {
             await this.runSmokeStartOnSupportedRows();
         }
@@ -275,7 +262,6 @@ export class PaymentsComponent implements OnDestroy {
                 continue;
             }
 
-            // Construir request válido (card requiere token)
             const req: CreatePaymentRequest = {
                 orderId: 'order_smoke',
                 amount: 123,
@@ -287,13 +273,9 @@ export class PaymentsComponent implements OnDestroy {
             };
 
             try {
-                // Usamos el Port para probar la cadena completa:
-                // Port → Store → UseCase → Registry → Factory → Strategy → Gateway
                 this.paymentState.reset();
                 this.paymentState.startPayment(req, row.providerId as PaymentProviderId);
 
-                // esperamos un poquito a que actualice state (por si hay async real)
-                // Nota: si tu backend no existe, caerá en error y también es válido
                 await new Promise(resolve => setTimeout(resolve, 150));
 
                 if (this.intent()) {
@@ -303,7 +285,6 @@ export class PaymentsComponent implements OnDestroy {
                     row.smokeStart = 'error';
                     row.smokeResult = this.error();
                 } else {
-                    // Si quedó loading o nada pasó, lo marcamos como error "inconcluso"
                     row.smokeStart = 'error';
                     row.smokeResult = { message: 'No intent/error after timeout (inconclusive)' };
                 }
@@ -312,7 +293,6 @@ export class PaymentsComponent implements OnDestroy {
                 row.smokeResult = e;
             }
 
-            // refrescar UI progresivamente
             this.selfTestRows.set([...rows]);
         }
 

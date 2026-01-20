@@ -4,9 +4,9 @@ import { PaymentProviderId, getDefaultProviders, ProviderOption } from '../../sh
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Componente selector de proveedor de pago.
+ * Payment provider selector component.
  * 
- * Muestra botones visuales para seleccionar entre Stripe, PayPal, etc.
+ * Displays visual buttons to select between Stripe, PayPal, etc.
  * 
  * @example
  * ```html
@@ -27,19 +27,19 @@ import { I18nService, I18nKeys } from '@core/i18n';
 export class ProviderSelectorComponent {
     private readonly i18n = inject(I18nService);
     
-    /** Lista de IDs de proveedores disponibles */
+    /** List of available provider IDs */
     readonly providers = input.required<PaymentProviderId[]>();
     
-    /** Proveedor actualmente seleccionado */
+    /** Currently selected provider */
     readonly selected = input<PaymentProviderId | null>(null);
     
-    /** Si el selector está deshabilitado */
+    /** Whether selector is disabled */
     readonly disabled = input<boolean>(false);
     
-    /** Emite cuando se selecciona un proveedor */
+    /** Emits when a provider is selected */
     readonly providerChange = output<PaymentProviderId>();
 
-    /** Opciones de proveedores con metadata */
+    /** Provider options with metadata */
     providerOptions(): ProviderOption[] {
         const defaultProviders = getDefaultProviders(this.i18n);
         return this.providers()

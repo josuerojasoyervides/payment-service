@@ -4,10 +4,10 @@ import { CurrencyCode, OrderItem } from '../../shared';
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Componente que muestra el resumen de una orden.
+ * Component that displays order summary.
  * 
- * Muestra el ID de la orden, el monto total, y opcionalmente
- * un desglose de los items.
+ * Shows order ID, total amount, and optionally
+ * an item breakdown.
  * 
  * @example
  * ```html
@@ -28,19 +28,19 @@ import { I18nService, I18nKeys } from '@core/i18n';
 export class OrderSummaryComponent {
     private readonly i18n = inject(I18nService);
     
-    /** ID único de la orden */
+    /** Unique order ID */
     readonly orderId = input.required<string>();
     
-    /** Monto total a pagar */
+    /** Total amount to pay */
     readonly amount = input.required<number>();
     
-    /** Código de moneda */
+    /** Currency code */
     readonly currency = input.required<CurrencyCode>();
     
-    /** Items de la orden (opcional) */
+    /** Order items (optional) */
     readonly items = input<OrderItem[]>();
 
-    /** Subtotal calculado de los items */
+    /** Calculated subtotal from items */
     readonly subtotal = computed(() => {
         const itemsList = this.items();
         if (!itemsList || itemsList.length === 0) return this.amount();

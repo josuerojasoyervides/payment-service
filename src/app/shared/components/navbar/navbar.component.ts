@@ -23,7 +23,6 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
 export class NavbarComponent {
     private readonly i18n = inject(I18nService);
 
-    /** Nombre de la aplicación traducido */
     get appName(): string {
         return this.i18n.t(I18nKeys.ui.app_name);
     }

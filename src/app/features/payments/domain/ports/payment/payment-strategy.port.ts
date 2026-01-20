@@ -3,28 +3,28 @@ import { PaymentIntent, PaymentMethodType } from "../../models/payment/payment-i
 import { CreatePaymentRequest } from "../../models/payment/payment-request.types";
 
 /**
- * Resultado de preparación de una estrategia.
- * Contiene la información necesaria para que el cliente pueda proceder.
+ * Strategy preparation result.
+ * Contains information needed for the client to proceed.
  */
 export interface StrategyPrepareResult {
-    /** Request modificado/enriquecido por la estrategia */
+    /** Request modified/enriched by the strategy */
     preparedRequest: CreatePaymentRequest;
-    /** Metadata adicional que la estrategia quiere adjuntar */
+    /** Additional metadata the strategy wants to attach */
     metadata: Record<string, unknown>;
 }
 
 /**
- * Contexto de ejecución de la estrategia.
- * Permite pasar información adicional al flujo.
+ * Strategy execution context.
+ * Allows passing additional information to the flow.
  */
 export interface StrategyContext {
-    /** URL de retorno después de 3DS o redirect */
+    /** Return URL after 3DS or redirect */
     returnUrl?: string;
-    /** URL de cancelación (para PayPal) */
+    /** Cancel URL (for PayPal) */
     cancelUrl?: string;
-    /** Indica si es un entorno de pruebas */
+    /** Indicates if it's a test environment */
     isTest?: boolean;
-    /** Información del dispositivo para antifraude */
+    /** Device information for fraud prevention */
     deviceData?: {
         ipAddress?: string;
         userAgent?: string;
@@ -34,40 +34,40 @@ export interface StrategyContext {
 }
 
 /**
- * Port para estrategias de pago.
+ * Port for payment strategies.
  *
- * Cada estrategia implementa la lógica específica para un método de pago.
- * Esto incluye validaciones, transformaciones y manejo de flujos especiales.
+ * Each strategy implements specific logic for a payment method.
+ * This includes validations, transformations and special flow handling.
  */
 export interface PaymentStrategy {
     readonly type: PaymentMethodType;
 
     /**
-     * Valida que el request sea válido para este método de pago.
-     * @throws Error si la validación falla
+     * Validates that the request is valid for this payment method.
+     * @throws Error if validation fails
      */
     validate(req: CreatePaymentRequest): void;
 
     /**
-     * Prepara el request antes de enviarlo al gateway.
-     * Puede enriquecer el request con datos específicos del método.
+     * Prepares the request before sending it to the gateway.
+     * Can enrich the request with method-specific data.
      */
     prepare(req: CreatePaymentRequest, context?: StrategyContext): StrategyPrepareResult;
 
     /**
-     * Inicia el flujo de pago completo.
-     * Combina validate → prepare → gateway.createIntent
+     * Starts the complete payment flow.
+     * Combines validate → prepare → gateway.createIntent
      */
     start(req: CreatePaymentRequest, context?: StrategyContext): Observable<PaymentIntent>;
 
     /**
-     * Indica si este método requiere acción adicional del usuario.
-     * Por ejemplo: 3DS para tarjetas, redirección para PayPal, CLABE para SPEI.
+     * Indicates if this method requires additional user action.
+     * For example: 3DS for cards, redirect for PayPal, CLABE for SPEI.
      */
     requiresUserAction(intent: PaymentIntent): boolean;
 
     /**
-     * Obtiene instrucciones específicas para el usuario basadas en el intent.
+     * Gets specific instructions for the user based on the intent.
      */
     getUserInstructions(intent: PaymentIntent): string | null;
 }

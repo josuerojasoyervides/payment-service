@@ -105,8 +105,8 @@ describe('StripeSpeiRequestBuilder', () => {
         });
     });
 
-    // Nota: FIELD_REQUIREMENTS ahora está en StripeProviderFactory.getFieldRequirements()
-    // Los tests de field requirements deben estar en stripe-provider.factory.spec.ts
+    // NOTE: FIELD_REQUIREMENTS is now in StripeProviderFactory.getFieldRequirements()
+    // Field requirements tests should be in stripe-provider.factory.spec.ts
 
     describe('fluent interface', () => {
         it('returns this from all setter methods for chaining', () => {

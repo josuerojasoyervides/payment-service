@@ -26,15 +26,15 @@ import {
 
 
 /**
- * Gateway de Stripe.
+ * Stripe gateway.
  *
- * Características específicas de Stripe:
- * - Usa PaymentIntents como modelo principal
- * - Montos en centavos (100 = $1.00)
- * - Client secret para autenticación client-side
- * - 3D Secure nativo con next_action
- * - SPEI via Sources (México)
- * - Idempotency keys para operaciones seguras
+ * Stripe-specific features:
+ * - Uses PaymentIntents as main model
+ * - Amounts in cents (100 = $1.00)
+ * - Client secret for client-side authentication
+ * - Native 3D Secure with next_action
+ * - SPEI via Sources (Mexico)
+ * - Idempotency keys for safe operations
  */
 @Injectable()
 export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto, StripePaymentIntentDto> {
@@ -42,18 +42,18 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
 
     private static readonly API_BASE = '/api/payments/stripe';
 
-    // Mapeo de estados Stripe → estados internos
+    // Stripe status → internal status mapping
     private static readonly STATUS_MAP: Record<StripePaymentIntentStatus, PaymentIntentStatus> = {
         'requires_payment_method': 'requires_payment_method',
         'requires_confirmation': 'requires_confirmation',
         'requires_action': 'requires_action',
         'processing': 'processing',
-        'requires_capture': 'processing', // Mapeamos a processing ya que está pendiente
+        'requires_capture': 'processing',
         'canceled': 'canceled',
         'succeeded': 'succeeded',
     };
 
-    // Mapeo de códigos de error Stripe → códigos internos
+    // Stripe error codes → internal codes mapping
     private static readonly ERROR_CODE_MAP: Record<string, PaymentErrorCode> = {
         'card_declined': 'card_declined',
         'expired_card': 'card_declined',
@@ -66,12 +66,11 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     };
 
     /**
-     * Crea un PaymentIntent en Stripe.
+     * Creates a PaymentIntent in Stripe.
      */
     protected createIntentRaw(req: CreatePaymentRequest): Observable<StripePaymentIntentDto | StripeSpeiSourceDto> {
         const stripeRequest = this.buildStripeCreateRequest(req);
 
-        // SPEI usa un endpoint diferente (Sources)
         if (req.method.type === 'spei') {
             return this.http.post<StripeSpeiSourceDto>(
                 `${StripePaymentGateway.API_BASE}/sources`,
@@ -88,7 +87,6 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     }
 
     protected mapIntent(dto: StripePaymentIntentDto | StripeSpeiSourceDto): PaymentIntent {
-        // Detectar si es Source (SPEI) o PaymentIntent
         if ('spei' in dto) {
             return this.mapSpeiSource(dto as StripeSpeiSourceDto);
         }
@@ -96,7 +94,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     }
 
     /**
-     * Confirma un PaymentIntent existente.
+     * Confirms an existing PaymentIntent.
      */
     protected confirmIntentRaw(req: ConfirmPaymentRequest): Observable<StripePaymentIntentDto> {
         const stripeRequest: StripeConfirmIntentRequest = {
@@ -115,7 +113,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     }
 
     /**
-     * Cancela un PaymentIntent.
+     * Cancels a PaymentIntent.
      */
     protected cancelIntentRaw(req: CancelPaymentRequest): Observable<StripePaymentIntentDto> {
         return this.http.post<StripePaymentIntentDto>(
@@ -130,7 +128,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     }
 
     /**
-     * Obtiene el estado actual de un PaymentIntent.
+     * Gets the current status of a PaymentIntent.
      */
     protected getIntentRaw(req: GetPaymentStatusRequest): Observable<StripePaymentIntentDto> {
         return this.http.get<StripePaymentIntentDto>(
@@ -143,22 +141,17 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     }
 
     /**
-     * Normaliza errores de Stripe a nuestro formato.
+     * Normalizes Stripe errors to our format.
      */
     protected override normalizeError(err: unknown): PaymentError {
-        // Stripe retorna errores en formato { error: { type, code, message } }
-        // Cuando viene de HttpErrorResponse, el body está en err.error
         let stripeError: any = null;
 
         if (err && typeof err === 'object') {
-            // Caso 1: Error viene directamente como { error: { type, code, ... } }
             if (this.isStripeErrorResponse(err)) {
                 stripeError = (err as any).error;
             }
-            // Caso 2: Error viene envuelto en HttpErrorResponse (err.error contiene el body)
             else if ('error' in err && (err as any).error) {
                 const errorBody = (err as any).error;
-                // El body puede ser { error: { ... } } (estructura de Stripe)
                 if (errorBody && typeof errorBody === 'object' && 'error' in errorBody) {
                     const innerError = errorBody.error;
                     if (innerError && typeof innerError === 'object' && 'type' in innerError && 'code' in innerError) {
@@ -176,7 +169,6 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
             };
         }
 
-        // Error HTTP genérico
         if (err && typeof err === 'object' && 'status' in err) {
             const httpError = err as { status: number; message?: string };
 
@@ -197,7 +189,6 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
             }
         }
 
-        // Fallback: usar mensaje genérico de Stripe
         return {
             code: 'provider_error',
             message: this.i18n.t(I18nKeys.errors.stripe_error),
@@ -205,10 +196,10 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
         };
     }
 
-    // ============ MAPEO PRIVADO ============
+    // ============ PRIVATE MAPPING ============
 
     /**
-     * Mapea un PaymentIntent de Stripe a nuestro modelo.
+     * Maps a Stripe PaymentIntent to our model.
      */
     private mapPaymentIntent(dto: StripePaymentIntentDto): PaymentIntent {
         const status = StripePaymentGateway.STATUS_MAP[dto.status] ?? 'processing';
@@ -217,14 +208,12 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
             id: dto.id,
             provider: this.providerId,
             status,
-            // Stripe usa centavos, convertimos a unidades
             amount: dto.amount / 100,
             currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
             clientSecret: dto.client_secret,
             raw: dto,
         };
 
-        // Mapear next_action si existe
         if (dto.next_action) {
             intent.nextAction = this.mapStripeNextAction(dto);
         }
@@ -233,7 +222,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     }
 
     /**
-     * Mapea un Source SPEI de Stripe a nuestro modelo.
+     * Maps a Stripe SPEI Source to our model.
      */
     private mapSpeiSource(dto: StripeSpeiSourceDto): PaymentIntent {
         const speiAction: NextActionSpei = {
@@ -260,13 +249,12 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     }
 
     /**
-     * Mapea next_action de Stripe a nuestro modelo.
+     * Maps Stripe next_action to our model.
      */
     private mapStripeNextAction(dto: StripePaymentIntentDto): NextActionThreeDs | undefined {
         if (!dto.next_action) return undefined;
 
         if (dto.next_action.type === 'redirect_to_url' && dto.next_action.redirect_to_url) {
-            // 3DS vía redirección
             return {
                 type: '3ds',
                 clientSecret: dto.client_secret,
@@ -276,11 +264,10 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
         }
 
         if (dto.next_action.type === 'use_stripe_sdk') {
-            // 3DS vía Stripe.js
             return {
                 type: '3ds',
                 clientSecret: dto.client_secret,
-                returnUrl: '', // Se maneja en el SDK
+                returnUrl: '',
                 threeDsVersion: '2.0',
             };
         }
@@ -289,7 +276,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     }
 
     /**
-     * Mapea estados de SPEI Source a nuestros estados.
+     * Maps SPEI Source statuses to our statuses.
      */
     private mapSpeiStatus(status: StripeSpeiSourceDto['status']): PaymentIntentStatus {
         const map: Record<StripeSpeiSourceDto['status'], PaymentIntentStatus> = {
@@ -305,11 +292,10 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     // ============ HELPERS ============
 
     /**
-     * Construye el request en formato Stripe.
+     * Builds the request in Stripe format.
      */
     private buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreateIntentRequest {
         return {
-            // Stripe usa centavos
             amount: Math.round(req.amount * 100),
             currency: req.currency.toLowerCase(),
             payment_method_types: [req.method.type === 'spei' ? 'spei' : 'card'],
@@ -323,7 +309,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     }
 
     /**
-     * Genera headers de idempotencia para operaciones seguras.
+     * Generates idempotency headers for safe operations.
      */
     private getIdempotencyHeaders(key: string, operation: string): Record<string, string> {
         return {
@@ -332,7 +318,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     }
 
     /**
-     * Type guard para errores de Stripe.
+     * Type guard for Stripe errors.
      */
     private isStripeErrorResponse(err: unknown): err is { error: StripeErrorResponse['error'] } {
         return err !== null &&
@@ -343,7 +329,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
     }
 
     /**
-     * Convierte errores técnicos de Stripe a mensajes legibles.
+     * Converts technical Stripe errors to readable messages.
      */
     private humanizeStripeError(error: StripeErrorResponse['error']): string {
         const errorKeyMap: Partial<Record<string, string>> = {

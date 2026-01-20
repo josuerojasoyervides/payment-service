@@ -111,15 +111,12 @@ export const resilienceInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req).pipe(
         tap({
             next: () => {
-                // Request exitoso, registrar éxito en circuit breaker
                 circuitBreaker.recordSuccess(endpoint);
             },
         }),
         catchError((error: HttpErrorResponse) => {
-            // Registrar fallo en circuit breaker
             circuitBreaker.recordFailure(endpoint, error.status);
 
-            // Enriquecer el error con información de resiliencia
             const enrichedError = enrichError(error, circuitBreaker, rateLimiter, endpoint);
 
             return throwError(() => enrichedError);

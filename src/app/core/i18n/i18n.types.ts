@@ -1,16 +1,14 @@
 /**
- * Tipo para las traducciones.
+ * Type for translations.
  * 
- * Estructura jerárquica de claves de traducción.
+ * Hierarchical structure of translation keys.
  */
 export interface Translations {
     errors: {
-        // Errores generales
         provider_error: string;
         invalid_request: string;
         network_error: string;
 
-        // Errores de tarjeta
         card_declined: string;
         expired_card: string;
         incorrect_cvc: string;
@@ -18,7 +16,6 @@ export interface Translations {
         authentication_required: string;
         processing_error: string;
 
-        // Errores de validación
         order_id_required: string;
         currency_required: string;
         amount_invalid: string;
@@ -27,13 +24,11 @@ export interface Translations {
         intent_id_required: string;
         min_amount: string;
 
-        // Errores de proveedores
         stripe_error: string;
         paypal_error: string;
         stripe_unavailable: string;
         paypal_unavailable: string;
 
-        // Errores de PayPal específicos
         paypal_invalid_request: string;
         paypal_permission_denied: string;
         paypal_resource_not_found: string;
@@ -44,18 +39,15 @@ export interface Translations {
     };
 
     messages: {
-        // Mensajes informativos
         payment_created: string;
         payment_confirmed: string;
         payment_canceled: string;
         payment_processing: string;
 
-        // Instrucciones
         bank_verification_required: string;
         spei_instructions: string;
         paypal_redirect_required: string;
 
-        // Estados
         status_requires_payment_method: string;
         status_requires_confirmation: string;
         status_requires_action: string;
@@ -162,33 +154,28 @@ export interface Translations {
         stripe_intent: string;
         paypal_order: string;
 
-        // Proveedores
         provider_stripe: string;
         provider_paypal: string;
         provider_stripe_description: string;
         provider_paypal_description: string;
 
-        // Métodos
         method_card: string;
         method_card_description: string;
         method_spei: string;
         method_spei_description: string;
 
-        // Idioma y navegación
         language: string;
         select_language: string;
         spanish: string;
         english: string;
         app_name: string;
 
-        // Estados de botones y acciones
         processing: string;
         payment_successful: string;
         payment_error_text: string;
         pay_with: string;
         with: string;
 
-        // Labels de formularios
         provider_label: string;
         status_label: string;
         amount_label: string;
@@ -196,7 +183,6 @@ export interface Translations {
         confirm_button: string;
         cancel_button: string;
 
-        // Instrucciones SPEI
         spei_instructions_title: string;
         spei_step_1: string;
         spei_step_2: string;
@@ -243,14 +229,12 @@ export interface Translations {
         canceled: string;
         completed: string;
 
-        // Debug y desarrollo
         debug_info: string;
         provider_debug: string;
         method_debug: string;
         form_valid: string;
         loading_debug: string;
 
-        // Showcase
         component_showcase: string;
         component_showcase_description: string;
         go_to_checkout: string;
@@ -270,7 +254,6 @@ export interface Translations {
         expanded: string;
         info: string;
 
-        // Campos técnicos
         client_secret: string;
         redirect_url: string;
         id_label: string;

@@ -5,7 +5,7 @@ export type NextAction =
     | NextActionPaypalApprove;
 
 /**
- * Redirección genérica a una URL externa.
+ * Generic redirect to an external URL.
  */
 export interface NextActionRedirect {
     type: 'redirect';
@@ -14,52 +14,52 @@ export interface NextActionRedirect {
 }
 
 /**
- * Transferencia SPEI - requiere que el usuario realice la transferencia manualmente.
+ * SPEI transfer - requires user to perform transfer manually.
  */
 export interface NextActionSpei {
     type: 'spei';
-    /** Instrucciones legibles para el usuario */
+    /** Readable instructions for the user */
     instructions: string;
-    /** CLABE de 18 dígitos */
+    /** 18-digit CLABE */
     clabe: string;
-    /** Referencia numérica para el concepto */
+    /** Numeric reference for the concept */
     reference: string;
-    /** Banco receptor */
+    /** Receiving bank */
     bank: string;
-    /** Beneficiario */
+    /** Beneficiary */
     beneficiary: string;
-    /** Monto exacto a transferir */
+    /** Exact amount to transfer */
     amount: number;
-    /** Moneda */
+    /** Currency */
     currency: string;
-    /** Fecha/hora límite para realizar el pago (ISO 8601) */
+    /** Deadline date/time to make payment (ISO 8601) */
     expiresAt: string;
 }
 
 /**
- * 3D Secure - autenticación adicional del tarjetahabiente.
+ * 3D Secure - additional cardholder authentication.
  */
 export interface NextActionThreeDs {
     type: '3ds';
-    /** Client secret para Stripe.js */
+    /** Client secret for Stripe.js */
     clientSecret: string;
-    /** URL de retorno después de 3DS */
+    /** Return URL after 3DS */
     returnUrl: string;
-    /** Versión de 3DS (1.0, 2.0, 2.1, 2.2) */
+    /** 3DS version (1.0, 2.0, 2.1, 2.2) */
     threeDsVersion?: string;
 }
 
 /**
- * PayPal - requiere aprobación del usuario en PayPal.
+ * PayPal - requires user approval in PayPal.
  */
 export interface NextActionPaypalApprove {
     type: 'paypal_approve';
-    /** URL para redirigir al usuario a PayPal */
+    /** URL to redirect user to PayPal */
     approveUrl: string;
-    /** URL de retorno después de aprobar */
+    /** Return URL after approval */
     returnUrl: string;
-    /** URL si el usuario cancela en PayPal */
+    /** URL if user cancels in PayPal */
     cancelUrl: string;
-    /** ID de la orden en PayPal */
+    /** Order ID in PayPal */
     paypalOrderId: string;
 }

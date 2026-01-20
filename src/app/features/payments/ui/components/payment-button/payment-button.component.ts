@@ -4,10 +4,10 @@ import { PaymentProviderId, CurrencyCode, PaymentButtonState } from '../../share
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Componente de botón de pago con estados visuales.
+ * Payment button component with visual states.
  * 
- * Muestra el monto a pagar y el proveedor seleccionado,
- * con diferentes estados: idle, loading, success, error.
+ * Displays the amount to pay and selected provider,
+ * with different states: idle, loading, success, error.
  * 
  * @example
  * ```html
@@ -30,34 +30,34 @@ import { I18nService, I18nKeys } from '@core/i18n';
 export class PaymentButtonComponent {
     private readonly i18n = inject(I18nService);
     
-    /** Monto a pagar */
+    /** Amount to pay */
     readonly amount = input.required<number>();
     
-    /** Código de moneda */
+    /** Currency code */
     readonly currency = input.required<CurrencyCode>();
     
-    /** Proveedor de pago */
+    /** Payment provider */
     readonly provider = input<PaymentProviderId | null>(null);
     
-    /** Si está en estado de carga */
+    /** Whether in loading state */
     readonly loading = input<boolean>(false);
     
-    /** Si el botón está deshabilitado */
+    /** Whether button is disabled */
     readonly disabled = input<boolean>(false);
     
-    /** Estado explícito del botón */
+    /** Explicit button state */
     readonly buttonState = input<PaymentButtonState>('idle');
     
-    /** Emite cuando se hace clic en el botón */
+    /** Emits when button is clicked */
     readonly pay = output<void>();
 
-    /** Estado computado del botón */
+    /** Computed button state */
     readonly state = computed<PaymentButtonState>(() => {
         if (this.loading()) return 'loading';
         return this.buttonState();
     });
 
-    /** Nombre legible del proveedor */
+    /** Readable provider name */
     readonly providerName = computed(() => {
         const p = this.provider();
         if (!p) return '';
@@ -87,7 +87,7 @@ export class PaymentButtonComponent {
         return this.i18n.t(I18nKeys.ui.with);
     }
 
-    /** Clases CSS del botón según estado */
+    /** Button CSS classes based on state */
     readonly buttonClasses = computed(() => {
         const state = this.state();
         const disabled = this.disabled() || this.loading();
@@ -106,7 +106,6 @@ export class PaymentButtonComponent {
             return `${base} bg-gray-300 text-gray-500 cursor-not-allowed`;
         }
 
-        // Estado normal - color según proveedor
         const provider = this.provider();
         if (provider === 'stripe') {
             return `${base} bg-stripe-primary hover:opacity-90 text-white focus:ring-stripe-primary`;

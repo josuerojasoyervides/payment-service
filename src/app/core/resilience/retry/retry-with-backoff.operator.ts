@@ -22,27 +22,27 @@ interface RetryOperatorState {
  * Opciones para el operador retryWithBackoff.
  */
 export interface RetryWithBackoffOptions extends Partial<RetryConfig> {
-    /** Callback ejecutado antes de cada retry */
+    /** Callback executed before each retry */
     onRetry?: (attempt: number, delay: number, error: HttpErrorResponse) => void;
 
-    /** Callback ejecutado cuando se agotan los reintentos */
+    /** Callback executed when retries are exhausted */
     onExhausted?: (attempts: number, lastError: HttpErrorResponse) => void;
 
-    /** Método HTTP para validar si es reintentable (opcional) */
+    /** HTTP method to validate if retryable (optional) */
     method?: string;
 }
 
 /**
- * Operador RxJS que implementa retry con backoff exponencial.
+ * RxJS operator that implements retry with exponential backoff.
  * 
- * Características:
- * - Backoff exponencial con jitter
- * - Respeta header Retry-After
- * - Configurable por request
- * - Callbacks para observabilidad
+ * Features:
+ * - Exponential backoff with jitter
+ * - Respects Retry-After header
+ * - Configurable per request
+ * - Callbacks for observability
  * 
- * @param options Opciones de configuración del retry
- * @returns Operador que aplica retry con backoff
+ * @param options Retry configuration options
+ * @returns Operator that applies retry with backoff
  * 
  * @example
  * ```typescript
@@ -78,12 +78,10 @@ export function retryWithBackoff<T>(
                         const { attempt, errors } = state;
                         const lastError = errors[errors.length - 1];
 
-                        // Verificar si el error es reintentable
                         if (!isRetryableHttpError(lastError, config, options.method)) {
                             return throwError(() => lastError);
                         }
 
-                        // Verificar si quedan intentos
                         if (attempt >= config.maxRetries) {
                             options.onExhausted?.(attempt, lastError);
                             return throwError(() => new RetryExhaustedError(
@@ -93,13 +91,10 @@ export function retryWithBackoff<T>(
                             ));
                         }
 
-                        // Calcular delay
                         const delay = getRetryDelay(attempt, lastError, config);
 
-                        // Notificar retry
                         options.onRetry?.(attempt, delay, lastError);
 
-                        // Esperar y reintentar
                         return timer(delay);
                     })
                 )
@@ -109,7 +104,7 @@ export function retryWithBackoff<T>(
 }
 
 /**
- * Versión simplificada del operador con configuración por defecto.
+ * Simplified version of the operator with default configuration.
  * 
  * @example
  * ```typescript
@@ -121,10 +116,10 @@ export function retryWithDefaultBackoff<T>(): (source: Observable<T>) => Observa
 }
 
 /**
- * Operador que aplica retry solo para errores específicos.
+ * Operator that applies retry only for specific errors.
  * 
- * @param statusCodes Códigos de status HTTP a reintentar
- * @param options Opciones adicionales
+ * @param statusCodes HTTP status codes to retry
+ * @param options Additional options
  * 
  * @example
  * ```typescript
@@ -144,7 +139,7 @@ export function retryOnStatus<T>(
 }
 
 /**
- * Operador que aplica retry solo para errores de servidor (5xx).
+ * Operator that applies retry only for server errors (5xx).
  * 
  * @example
  * ```typescript
@@ -161,9 +156,9 @@ export function retryOnServerError<T>(
 }
 
 /**
- * Operador que aplica retry solo para errores de rate limiting (429).
+ * Operator that applies retry only for rate limiting errors (429).
  * 
- * Usa un delay inicial más largo y respeta Retry-After.
+ * Uses a longer initial delay and respects Retry-After.
  * 
  * @example
  * ```typescript
@@ -174,31 +169,25 @@ export function retryOnRateLimit<T>(
     options: Omit<RetryWithBackoffOptions, 'retryableStatusCodes'> = {}
 ): (source: Observable<T>) => Observable<T> {
     return retryWithBackoff({
-        initialDelay: 5000, // Delay más largo para rate limiting
+        initialDelay: 5000,
         maxRetries: 5,
         ...options,
         retryableStatusCodes: [429],
     });
 }
 
-// ============================================================
-// HELPERS PRIVADOS
-// ============================================================
-
 /**
- * Verifica si un error HTTP es reintentable.
+ * Checks if an HTTP error is retryable.
  */
 function isRetryableHttpError(
     error: unknown,
     config: RetryConfig,
     method?: string
 ): error is HttpErrorResponse {
-    // Verificar que es un HttpErrorResponse
     if (!(error instanceof HttpErrorResponse)) {
         return false;
     }
 
-    // Verificar método si se especificó
     if (method && !config.retryableMethods.includes(method.toUpperCase())) {
         return false;
     }

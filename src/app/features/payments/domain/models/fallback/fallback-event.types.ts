@@ -3,43 +3,43 @@ import { PaymentError } from '../payment/payment-error.types';
 import { CreatePaymentRequest } from '../payment/payment-request.types';
 
 /**
- * Evento emitido cuando hay alternativas de fallback disponibles.
+ * Event emitted when fallback alternatives are available.
  * 
- * La UI puede escuchar este evento para mostrar opciones al usuario.
+ * The UI can listen to this event to show options to the user.
  */
 export interface FallbackAvailableEvent {
-    /** Provider que falló */
+    /** Provider that failed */
     failedProvider: PaymentProviderId;
     
-    /** Error que causó el fallo */
+    /** Error that caused the failure */
     error: PaymentError;
     
-    /** Lista de providers alternativos disponibles */
+    /** List of available alternative providers */
     alternativeProviders: PaymentProviderId[];
     
-    /** Request original que falló */
+    /** Original request that failed */
     originalRequest: CreatePaymentRequest;
     
-    /** Timestamp del evento */
+    /** Event timestamp */
     timestamp: number;
     
-    /** ID único del evento para tracking */
+    /** Unique event ID for tracking */
     eventId: string;
 }
 
 /**
- * Respuesta del usuario al evento de fallback.
+ * User response to fallback event.
  */
 export interface FallbackUserResponse {
-    /** ID del evento al que responde */
+    /** ID of the event being responded to */
     eventId: string;
     
-    /** Si el usuario aceptó el fallback */
+    /** Whether user accepted the fallback */
     accepted: boolean;
     
-    /** Provider seleccionado (si accepted es true) */
+    /** Selected provider (if accepted is true) */
     selectedProvider?: PaymentProviderId;
     
-    /** Timestamp de la respuesta */
+    /** Response timestamp */
     timestamp: number;
 }

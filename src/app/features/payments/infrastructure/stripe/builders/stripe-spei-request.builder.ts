@@ -2,15 +2,15 @@ import { CurrencyCode, CreatePaymentRequest } from '../../../domain/models';
 import { PaymentRequestBuilder, PaymentOptions } from '../../../domain/ports';
 
 /**
- * Builder específico para pagos con SPEI vía Stripe.
+ * Builder for SPEI payments via Stripe.
  * 
- * Este builder SABE que Stripe SPEI necesita:
- * - customerEmail (REQUERIDO) - Para enviar instrucciones de pago
+ * This builder knows that Stripe SPEI needs:
+ * - customerEmail (REQUIRED) - To send payment instructions
  * 
- * NO necesita:
- * - token (SPEI no usa tokenización)
- * - returnUrl (No hay redirect)
- * - saveForFuture (No aplica a SPEI)
+ * Does NOT need:
+ * - token (SPEI doesn't use tokenization)
+ * - returnUrl (No redirect)
+ * - saveForFuture (Not applicable to SPEI)
  */
 export class StripeSpeiRequestBuilder implements PaymentRequestBuilder {
     private orderId?: string;
@@ -31,11 +31,9 @@ export class StripeSpeiRequestBuilder implements PaymentRequestBuilder {
     }
 
     withOptions(options: PaymentOptions): this {
-        // SPEI solo necesita email
         if (options.customerEmail !== undefined) {
             this.customerEmail = options.customerEmail;
         }
-        // Ignora token, returnUrl, etc. - no los necesita
         return this;
     }
 
@@ -63,14 +61,12 @@ export class StripeSpeiRequestBuilder implements PaymentRequestBuilder {
         if (!this.currency) {
             throw new Error('currency is required');
         }
-        // VALIDACIÓN ESPECÍFICA DE SPEI
         if (!this.customerEmail) {
             throw new Error(
                 'SPEI payments require customerEmail. ' +
                 'The payment instructions will be sent to this email.'
             );
         }
-        // Validar formato de email básico
         if (!this.customerEmail.includes('@')) {
             throw new Error('customerEmail must be a valid email address');
         }

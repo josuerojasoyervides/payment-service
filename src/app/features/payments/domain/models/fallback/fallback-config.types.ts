@@ -2,41 +2,41 @@ import { PaymentProviderId } from '../payment/payment-intent.types';
 import { FallbackMode } from './fallback-state.types';
 
 /**
- * Configuración del sistema de fallback.
+ * Fallback system configuration.
  */
 export interface FallbackConfig {
-    /** Si el fallback está habilitado */
+    /** Whether fallback is enabled */
     enabled: boolean;
     
-    /** Máximo número de intentos de fallback */
+    /** Maximum number of fallback attempts */
     maxAttempts: number;
     
-    /** Tiempo máximo de espera por respuesta del usuario (ms) */
+    /** Maximum wait time for user response (ms) */
     userResponseTimeout: number;
     
-    /** Códigos de error que activan fallback */
+    /** Error codes that trigger fallback */
     triggerErrorCodes: string[];
     
-    /** Providers en orden de preferencia para fallback */
+    /** Providers in preference order for fallback */
     providerPriority: PaymentProviderId[];
     
-    /** Modo de fallback: 'manual' requiere confirmación del usuario, 'auto' ejecuta automáticamente */
+    /** Fallback mode: 'manual' requires user confirmation, 'auto' executes automatically */
     mode: FallbackMode;
     
-    /** Delay antes de ejecutar fallback automático (ms) - solo aplica en modo 'auto' */
+    /** Delay before executing automatic fallback (ms) - only applies in 'auto' mode */
     autoFallbackDelay: number;
     
-    /** Máximo número de fallbacks automáticos antes de requerir intervención manual */
+    /** Maximum number of automatic fallbacks before requiring manual intervention */
     maxAutoFallbacks: number;
 }
 
 /**
- * Configuración por defecto del fallback.
+ * Default fallback configuration.
  */
 export const DEFAULT_FALLBACK_CONFIG: FallbackConfig = {
     enabled: true,
     maxAttempts: 2,
-    userResponseTimeout: 30000, // 30 segundos
+    userResponseTimeout: 30000,
     triggerErrorCodes: [
         'provider_unavailable',
         'provider_error',
@@ -44,7 +44,7 @@ export const DEFAULT_FALLBACK_CONFIG: FallbackConfig = {
         'timeout',
     ],
     providerPriority: ['stripe', 'paypal'],
-    mode: 'manual',           // Comportamiento actual por defecto
-    autoFallbackDelay: 2000,  // 2 segundos de delay antes del auto-fallback
-    maxAutoFallbacks: 1,      // Solo 1 auto-fallback, luego requiere intervención
+    mode: 'manual',
+    autoFallbackDelay: 2000,
+    maxAutoFallbacks: 1,
 };

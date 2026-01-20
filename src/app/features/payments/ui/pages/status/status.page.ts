@@ -8,11 +8,11 @@ import { PaymentIntentCardComponent, NextActionCardComponent } from '../../compo
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Página para consultar el estado de un pago por su ID.
+ * Page to query payment status by ID.
  * 
- * Permite ingresar un Intent ID (de Stripe o PayPal) y
- * consultar su estado actual, con opciones para confirmar,
- * cancelar o refrescar.
+ * Allows entering an Intent ID (from Stripe or PayPal) and
+ * querying its current status, with options to confirm,
+ * cancel or refresh.
  */
 @Component({
     selector: 'app-status',
@@ -36,8 +36,6 @@ export class StatusComponent {
     ];
 
     constructor() {
-        // Usar effect() dentro del constructor (contexto de inyección)
-        // para escuchar cambios en el intent del state
         effect(() => {
             const intent = this.paymentState.intent();
             if (intent) {
@@ -51,8 +49,6 @@ export class StatusComponent {
 
         this.result.set(null);
 
-        // Hacer la consulta
-        // El effect en el constructor ya está escuchando cambios
         this.paymentState.refreshPayment(
             { intentId: this.intentId.trim() },
             this.selectedProvider()
@@ -83,7 +79,6 @@ export class StatusComponent {
         return this.i18n.t(I18nKeys.ui.unknown_error);
     }
 
-    // ===== Textos para el template =====
     get consultStatusTitle(): string {
         return this.i18n.t(I18nKeys.ui.consult_status);
     }

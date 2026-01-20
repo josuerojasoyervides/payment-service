@@ -3,33 +3,33 @@ import { RateLimiterConfig, DEFAULT_RATE_LIMITER_CONFIG } from './rate-limiter';
 import { RetryConfig, DEFAULT_RETRY_CONFIG } from './retry';
 
 /**
- * Configuración completa de resiliencia.
+ * Complete resilience configuration.
  */
 export interface ResilienceConfig {
-    /** Si habilitar circuit breaker */
+    /** Whether to enable circuit breaker */
     enableCircuitBreaker: boolean;
     
-    /** Si habilitar rate limiting */
+    /** Whether to enable rate limiting */
     enableRateLimiting: boolean;
     
-    /** Si habilitar retry automático */
+    /** Whether to enable automatic retry */
     enableRetry: boolean;
     
-    /** Configuración del circuit breaker */
+    /** Circuit breaker configuration */
     circuitBreaker: CircuitBreakerConfig;
     
-    /** Configuración del rate limiter */
+    /** Rate limiter configuration */
     rateLimiter: RateLimiterConfig;
     
-    /** Configuración del retry */
+    /** Retry configuration */
     retry: RetryConfig;
     
-    /** Patrones de URL a excluir de la resiliencia */
+    /** URL patterns to exclude from resilience */
     excludePatterns: RegExp[];
 }
 
 /**
- * Configuración por defecto de resiliencia.
+ * Default resilience configuration.
  */
 export const DEFAULT_RESILIENCE_CONFIG: ResilienceConfig = {
     enableCircuitBreaker: true,

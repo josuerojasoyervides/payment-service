@@ -1,38 +1,32 @@
 /**
- * DTOs basados en la API real de Stripe
+ * DTOs based on Stripe real API
  * @see https://stripe.com/docs/api/payment_intents
  */
 
 export interface StripePaymentIntentDto {
-    id: string;                          // pi_1234567890
+    id: string;
     object: 'payment_intent';
-    amount: number;                      // En centavos (ej: 10000 = $100.00)
+    amount: number;
     amount_received: number;
-    currency: string;                    // 'mxn', 'usd'
+    currency: string;
     status: StripePaymentIntentStatus;
-    client_secret: string;               // pi_xxx_secret_xxx
-    created: number;                     // Unix timestamp
+    client_secret: string;
+    created: number;
     livemode: boolean;
 
-    // Metadata opcional
     metadata?: Record<string, string>;
     description?: string;
 
-    // Para 3DS y acciones requeridas
     next_action?: StripeNextAction | null;
 
-    // Método de pago
-    payment_method?: string | null;      // pm_1234567890
-    payment_method_types: string[];      // ['card']
+    payment_method?: string | null;
+    payment_method_types: string[];
 
-    // Información de error
     last_payment_error?: StripePaymentError | null;
 
-    // Configuración
     capture_method: 'automatic' | 'manual';
     confirmation_method: 'automatic' | 'manual';
 
-    // Recibo
     receipt_email?: string | null;
 }
 
@@ -91,9 +85,9 @@ export interface StripeConfirmIntentRequest {
     return_url?: string;
 }
 
-// SPEI específico de Stripe México (OXXO/SPEI vía Sources)
+// Stripe Mexico-specific SPEI (OXXO/SPEI via Sources)
 export interface StripeSpeiSourceDto {
-    id: string;                          // src_1234567890
+    id: string;
     object: 'source';
     amount: number;
     currency: string;
@@ -104,12 +98,11 @@ export interface StripeSpeiSourceDto {
 
     spei: {
         bank: string;
-        clabe: string;                   // 18 dígitos
+        clabe: string;
         reference: string;
     };
 
-    // Expiración
-    expires_at: number;                  // Unix timestamp
+    expires_at: number;
 }
 
 export interface StripeErrorResponse {

@@ -1,20 +1,18 @@
 /**
  * Core Module
  * 
- * Módulo central con servicios transversales de la aplicación:
+ * Central module with cross-cutting application services:
  * - Resilience: Circuit Breaker, Rate Limiter, Retry
- * - Caching: Cache HTTP con LRU y TTL
- * - Logging: Logging estructurado con correlation IDs
- * - Testing: Fake backends para desarrollo
+ * - Caching: HTTP cache with LRU and TTL
+ * - Logging: Structured logging with correlation IDs
+ * - Testing: Fake backends for development
  * 
  * @example
  * ```typescript
- * // Importar módulos específicos
  * import { CircuitBreakerService, retryInterceptor } from '@core/resilience';
  * import { CacheService, cacheInterceptor } from '@core/caching';
  * import { LoggerService, loggingInterceptor } from '@core/logging';
  * 
- * // O importar del barrel principal
  * import { 
  *   CircuitBreakerService,
  *   CacheService,

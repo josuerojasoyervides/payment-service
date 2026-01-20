@@ -4,10 +4,10 @@ import { I18nService, I18nKeys } from '@core/i18n';
 import { ClabeFormatPipe } from '@shared/pipes';
 
 /**
- * Componente que muestra instrucciones para pago SPEI.
+ * Component that displays SPEI payment instructions.
  * 
- * Incluye CLABE, referencia y monto con funcionalidad
- * de copiar al portapapeles.
+ * Includes CLABE, reference and amount with clipboard
+ * copy functionality.
  * 
  * @example
  * ```html
@@ -31,28 +31,28 @@ import { ClabeFormatPipe } from '@shared/pipes';
 export class SpeiInstructionsComponent {
     private readonly i18n = inject(I18nService);
 
-    /** CLABE interbancaria */
+    /** Interbank CLABE */
     readonly clabe = input.required<string>();
 
-    /** Número de referencia */
+    /** Reference number */
     readonly reference = input.required<string>();
 
-    /** Nombre del banco */
+    /** Bank name */
     readonly bank = input.required<string>();
 
-    /** Nombre del beneficiario */
+    /** Beneficiary name */
     readonly beneficiary = input<string>();
 
-    /** Monto a transferir */
+    /** Amount to transfer */
     readonly amount = input.required<number>();
 
-    /** Código de moneda */
+    /** Currency code */
     readonly currency = input<string>('MXN');
 
-    /** Fecha de expiración */
+    /** Expiration date */
     readonly expiresAt = input<string>();
 
-    /** Campo que acaba de ser copiado */
+    /** Field that was just copied */
     readonly copiedField = signal<string | null>(null);
 
     // ===== Textos para el template =====
@@ -104,13 +104,12 @@ export class SpeiInstructionsComponent {
         return this.i18n.t(I18nKeys.ui.keep_receipt);
     }
 
-    /** Copia texto al portapapeles */
+    /** Copies text to clipboard */
     async copyToClipboard(text: string, field: string): Promise<void> {
         try {
             await navigator.clipboard.writeText(text);
             this.copiedField.set(field);
 
-            // Resetear después de 2 segundos
             setTimeout(() => {
                 if (this.copiedField() === field) {
                     this.copiedField.set(null);

@@ -5,12 +5,12 @@ import { SpeiInstructionsComponent } from '../spei-instructions/spei-instruction
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Componente que muestra la acción requerida para completar un pago.
+ * Component that displays the required action to complete a payment.
  * 
- * Soporta diferentes tipos de acciones:
- * - 3DS: Autenticación bancaria
- * - SPEI: Instrucciones de transferencia
- * - PayPal: Redirección a PayPal
+ * Supports different action types:
+ * - 3DS: Bank authentication
+ * - SPEI: Transfer instructions
+ * - PayPal: Redirect to PayPal
  * 
  * @example
  * ```html
@@ -29,14 +29,13 @@ import { I18nService, I18nKeys } from '@core/i18n';
 export class NextActionCardComponent {
     private readonly i18n = inject(I18nService);
     
-    /** Acción requerida */
+    /** Required action */
     readonly nextAction = input<NextAction | null>(null);
     
-    /** Emite cuando la acción se ha completado */
+    /** Emits when action is completed */
     readonly actionCompleted = output<void>();
 
     onPayPalClick(): void {
-        // En una implementación real, podríamos trackear esto
         console.log('[NextActionCard] PayPal redirect clicked');
     }
 

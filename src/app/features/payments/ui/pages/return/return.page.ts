@@ -7,14 +7,14 @@ import { PaymentIntentCardComponent } from '../../components';
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Página de retorno para callbacks de 3DS y PayPal.
+ * Return page for 3DS and PayPal callbacks.
  * 
- * Esta página maneja los retornos de:
+ * This page handles returns from:
  * - 3D Secure authentication
  * - PayPal approval/cancel
  * 
- * Lee los query params para determinar el estado y
- * muestra el resultado apropiado.
+ * Reads query params to determine status and
+ * displays the appropriate result.
  */
 @Component({
     selector: 'app-return',
@@ -55,28 +55,23 @@ export class ReturnComponent implements OnInit {
     readonly flowType = computed(() => {
         if (this.paypalToken()) return 'PayPal Redirect';
         if (this.intentId()) return '3D Secure';
-        return 'Desconocido';
+        return 'Unknown';
     });
 
     ngOnInit(): void {
-        // Leer route data
         const data = this.route.snapshot.data;
         this.isReturnFlow.set(!!data['returnFlow']);
         this.isCancelFlow.set(!!data['cancelFlow']);
 
-        // Leer query params
         const params = this.route.snapshot.queryParams;
         this.allParams.set(params);
         
-        // Stripe params
         this.intentId.set(params['payment_intent'] || params['setup_intent'] || null);
         this.redirectStatus.set(params['redirect_status'] || null);
         
-        // PayPal params
         this.paypalToken.set(params['token'] || null);
         this.paypalPayerId.set(params['PayerID'] || null);
 
-        // Si tenemos un intent ID, intentar refrescar el estado
         const id = this.intentId() || this.paypalToken();
         if (id && !this.isCancelFlow()) {
             this.refreshPayment(id);
@@ -94,9 +89,7 @@ export class ReturnComponent implements OnInit {
     }
 
     private detectProvider(): PaymentProviderId {
-        // Si hay token de PayPal, es PayPal
         if (this.paypalToken()) return 'paypal';
-        // Por defecto, asumir Stripe
         return 'stripe';
     }
 
@@ -121,7 +114,7 @@ export class ReturnComponent implements OnInit {
     }
 
     get paymentCompletedText(): string {
-        return this.i18n.t(I18nKeys.ui.payment_completed); // Ya existe en línea 95
+        return this.i18n.t(I18nKeys.ui.payment_completed);
     }
 
     get paymentCompletedMessageText(): string {

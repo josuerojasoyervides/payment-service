@@ -2,16 +2,16 @@ import { CurrencyCode, CreatePaymentRequest } from '../../../domain/models';
 import { PaymentRequestBuilder, PaymentOptions } from '../../../domain/ports';
 
 /**
- * Builder específico para pagos con tarjeta vía Stripe.
+ * Builder for card payments via Stripe.
  * 
- * Este builder SABE que Stripe card necesita:
- * - token (REQUERIDO) - El token de Stripe Elements
- * - saveForFuture (OPCIONAL) - Si guardar el método para futuro uso
+ * This builder knows that Stripe card needs:
+ * - token (REQUIRED) - Stripe Elements token
+ * - saveForFuture (OPTIONAL) - Whether to save the method for future use
  * 
- * NO necesita:
- * - returnUrl (Stripe maneja 3DS internamente)
+ * Does NOT need:
+ * - returnUrl (Stripe handles 3DS internally)
  * - cancelUrl
- * - customerEmail (opcional, Stripe lo obtiene del token)
+ * - customerEmail (optional, Stripe gets it from token)
  */
 export class StripeCardRequestBuilder implements PaymentRequestBuilder {
     private orderId?: string;
@@ -33,17 +33,15 @@ export class StripeCardRequestBuilder implements PaymentRequestBuilder {
     }
 
     /**
-     * Recibe las opciones genéricas y extrae las que necesita Stripe Card.
+     * Receives generic options and extracts what Stripe Card needs.
      */
     withOptions(options: PaymentOptions): this {
-        // Extraer solo lo que Stripe Card necesita
         if (options.token !== undefined) {
             this.token = options.token;
         }
         if (options.saveForFuture !== undefined) {
             this.saveForFuture = options.saveForFuture;
         }
-        // Ignora returnUrl, cancelUrl, customerEmail - no los necesita
         return this;
     }
 
@@ -58,7 +56,6 @@ export class StripeCardRequestBuilder implements PaymentRequestBuilder {
                 type: 'card',
                 token: this.token,
             },
-            // Metadata para datos específicos de Stripe
             metadata: {
                 saveForFuture: this.saveForFuture,
             },
@@ -66,7 +63,7 @@ export class StripeCardRequestBuilder implements PaymentRequestBuilder {
     }
 
     /**
-     * Validación específica para Stripe Card.
+     * Stripe Card-specific validation.
      */
     private validate(): void {
         if (!this.orderId) {
@@ -78,7 +75,6 @@ export class StripeCardRequestBuilder implements PaymentRequestBuilder {
         if (!this.currency) {
             throw new Error('currency is required');
         }
-        // VALIDACIÓN ESPECÍFICA DE STRIPE CARD
         if (!this.token) {
             throw new Error(
                 'Stripe card payments require a token. ' +

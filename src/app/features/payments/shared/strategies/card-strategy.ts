@@ -12,21 +12,21 @@ import { PaymentIntent, PaymentMethodType, CreatePaymentRequest } from "../../do
 import { I18nService, I18nKeys } from "@core/i18n";
 
 /**
- * Estrategia para pagos con tarjeta de crédito/débito.
+ * Strategy for credit/debit card payments.
  *
- * Características:
- * - Validación de token delegada al TokenValidator del proveedor
- * - Soporte para 3D Secure (autenticación adicional)
- * - Manejo de tarjetas guardadas vs tokenizadas
- * - Metadata de dispositivo para antifraude
+ * Features:
+ * - Token validation delegated to provider's TokenValidator
+ * - Support for 3D Secure (additional authentication)
+ * - Handling of saved vs tokenized cards
+ * - Device metadata for fraud prevention
  * 
- * Esta estrategia es compartida entre proveedores, pero la validación
- * de tokens es específica de cada uno gracias al TokenValidator inyectado.
+ * This strategy is shared between providers, but token validation
+ * is specific to each one thanks to the injected TokenValidator.
  */
 export class CardStrategy implements PaymentStrategy {
     readonly type: PaymentMethodType = 'card';
 
-    /** Patrón genérico para detectar tarjetas guardadas (PaymentMethod) */
+    /** Generic pattern to detect saved cards (PaymentMethod) */
     private static readonly SAVED_CARD_PATTERN = /^pm_[a-zA-Z0-9]+$/;
 
     constructor(
@@ -36,14 +36,13 @@ export class CardStrategy implements PaymentStrategy {
     ) { }
 
     /**
-     * Valida el request para pagos con tarjeta.
+     * Validates the request for card payments.
      *
-     * Reglas:
-     * - Token es obligatorio si el proveedor lo requiere (delegado a TokenValidator)
-     * - Monto mínimo de 10 MXN / 1 USD
+     * Rules:
+     * - Token is mandatory if provider requires it (delegated to TokenValidator)
+     * - Minimum amount of 10 MXN / 1 USD
      */
     validate(req: CreatePaymentRequest): void {
-        // Delegar validación de token al validador del proveedor
         if (this.tokenValidator.requiresToken()) {
             if (!req.method.token) {
                 throw new Error(this.i18n.t(I18nKeys.errors.card_token_required));
@@ -58,12 +57,12 @@ export class CardStrategy implements PaymentStrategy {
     }
 
     /**
-     * Prepara el request para el gateway.
+     * Prepares the request for the gateway.
      *
-     * Enriquecimientos:
-     * - Agrega metadata de dispositivo para antifraude
-     * - Detecta si es tarjeta guardada para aplicar SCA
-     * - Configura return_url para 3DS
+     * Enrichments:
+     * - Adds device metadata for fraud prevention
+     * - Detects if it's a saved card to apply SCA
+     * - Configures return_url for 3DS
      */
     prepare(req: CreatePaymentRequest, context?: StrategyContext): StrategyPrepareResult {
         const isSavedCard = CardStrategy.SAVED_CARD_PATTERN.test(req.method.token!);
@@ -71,11 +70,10 @@ export class CardStrategy implements PaymentStrategy {
         const metadata: Record<string, unknown> = {
             payment_method_type: 'card',
             is_saved_card: isSavedCard,
-            requires_sca: isSavedCard, // Strong Customer Authentication para tarjetas guardadas
+            requires_sca: isSavedCard,
             timestamp: new Date().toISOString(),
         };
 
-        // Agregar datos del dispositivo si están disponibles
         if (context?.deviceData) {
             metadata['device_ip'] = context.deviceData.ipAddress;
             metadata['device_user_agent'] = context.deviceData.userAgent;
@@ -84,7 +82,6 @@ export class CardStrategy implements PaymentStrategy {
                 : undefined;
         }
 
-        // Agregar return_url para 3DS
         if (context?.returnUrl) {
             metadata['return_url'] = context.returnUrl;
         }
@@ -92,29 +89,24 @@ export class CardStrategy implements PaymentStrategy {
         return {
             preparedRequest: {
                 ...req,
-                // Podríamos enriquecer el request aquí si necesitáramos
             },
             metadata,
         };
     }
 
     /**
-     * Inicia el flujo de pago con tarjeta.
+     * Starts the card payment flow.
      *
-     * Flujo:
-     * 1. Valida el request
-     * 2. Prepara metadata y enriquecimientos
-     * 3. Crea el intent en el gateway
-     * 4. Detecta si requiere 3DS
+     * Flow:
+     * 1. Validates the request
+     * 2. Prepares metadata and enrichments
+     * 3. Creates intent in gateway
+     * 4. Detects if 3DS is required
      */
     start(req: CreatePaymentRequest, context?: StrategyContext): Observable<PaymentIntent> {
-        // 1. Validar
         this.validate(req);
 
-        // 2. Preparar
         const { preparedRequest, metadata } = this.prepare(req, context);
-
-        // 3. Log para debugging (en prod sería telemetría)
         console.log(`[CardStrategy] Starting payment:`, {
             orderId: req.orderId,
             amount: req.amount,
@@ -123,7 +115,6 @@ export class CardStrategy implements PaymentStrategy {
             metadata,
         });
 
-        // 4. Ejecutar y procesar respuesta
         return this.gateway.createIntent(preparedRequest).pipe(
             tap(intent => {
                 if (this.requiresUserAction(intent)) {
@@ -135,7 +126,7 @@ export class CardStrategy implements PaymentStrategy {
     }
 
     /**
-     * Determina si el intent requiere acción del usuario (3DS).
+     * Determines if the intent requires user action (3DS).
      */
     requiresUserAction(intent: PaymentIntent): boolean {
         return intent.status === 'requires_action' &&
@@ -143,7 +134,7 @@ export class CardStrategy implements PaymentStrategy {
     }
 
     /**
-     * Genera instrucciones para el usuario si hay 3DS pendiente.
+     * Generates instructions for the user if 3DS is pending.
      */
     getUserInstructions(intent: PaymentIntent): string | null {
         if (!this.requiresUserAction(intent)) {
@@ -154,21 +145,20 @@ export class CardStrategy implements PaymentStrategy {
     }
 
     /**
-     * Enriquece el intent con información de 3DS si aplica.
+     * Enriches the intent with 3DS information if applicable.
      */
     private enrichIntentWith3dsInfo(intent: PaymentIntent, context?: StrategyContext): PaymentIntent {
         if (intent.status !== 'requires_action' || !intent.clientSecret) {
             return intent;
         }
 
-        // Si el intent requiere acción y tiene client_secret, es 3DS
         return {
             ...intent,
             nextAction: {
                 type: '3ds',
                 clientSecret: intent.clientSecret,
                 returnUrl: context?.returnUrl ?? window.location.href,
-                threeDsVersion: '2.0', // Asumimos 3DS 2.0 moderno
+                threeDsVersion: '2.0',
             },
         };
     }

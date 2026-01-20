@@ -123,7 +123,6 @@ describe('PaypalPaymentGateway', () => {
                 const paymentErr = error as PaymentError;
 
                 expect(paymentErr.code).toBe('provider_error');
-                // Error genérico de red
                 expect(paymentErr.message).toBeDefined();
                 expect(paymentErr.raw).toBeTruthy();
             }

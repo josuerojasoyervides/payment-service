@@ -4,10 +4,10 @@ import { PaymentProviderId, FallbackAvailableEvent, getDefaultProviders } from '
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Modal que muestra opciones de fallback cuando un proveedor falla.
+ * Modal that displays fallback options when a provider fails.
  * 
- * Permite al usuario seleccionar un proveedor alternativo
- * o cancelar el proceso de fallback.
+ * Allows user to select an alternative provider
+ * or cancel the fallback process.
  * 
  * @example
  * ```html
@@ -28,22 +28,22 @@ import { I18nService, I18nKeys } from '@core/i18n';
 export class FallbackModalComponent {
     private readonly i18n = inject(I18nService);
     
-    /** Evento de fallback pendiente */
+    /** Pending fallback event */
     readonly event = input<FallbackAvailableEvent | null>(null);
     
-    /** Si el modal está abierto */
+    /** Whether modal is open */
     readonly open = input<boolean>(false);
     
-    /** Emite cuando el usuario confirma el fallback */
+    /** Emits when user confirms fallback */
     readonly confirm = output<PaymentProviderId>();
     
-    /** Emite cuando el usuario cancela */
+    /** Emits when user cancels */
     readonly cancel = output<void>();
 
-    /** Proveedor seleccionado */
+    /** Selected provider */
     readonly selectedProvider = signal<PaymentProviderId | null>(null);
 
-    /** Mensaje de error del evento */
+    /** Error message from event */
     readonly errorMessage = computed(() => {
         const e = this.event();
         if (!e?.error) return null;
@@ -53,7 +53,7 @@ export class FallbackModalComponent {
         return null;
     });
 
-    /** Proveedores alternativos con metadata */
+    /** Alternative providers with metadata */
     readonly alternativeProviders = computed(() => {
         const e = this.event();
         if (!e) return [];
@@ -64,7 +64,7 @@ export class FallbackModalComponent {
             .filter((p): p is NonNullable<typeof p> => p !== undefined);
     });
 
-    /** Nombre del proveedor seleccionado */
+    /** Selected provider name */
     readonly selectedProviderName = computed(() => {
         const id = this.selectedProvider();
         if (!id) return null;
@@ -112,7 +112,6 @@ export class FallbackModalComponent {
     }
 
     onOverlayClick(event: MouseEvent): void {
-        // Solo cerrar si se hace clic en el overlay, no en el contenido
         if (event.target === event.currentTarget) {
             this.onCancel();
         }

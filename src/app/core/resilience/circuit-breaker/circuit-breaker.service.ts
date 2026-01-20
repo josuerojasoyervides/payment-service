@@ -64,7 +64,6 @@ export class CircuitBreakerService {
                 return true;
 
             case 'open':
-                // Verificar si pasó el timeout para pasar a half-open
                 if (circuit.openedAt && (now - circuit.openedAt) >= this.config.resetTimeout) {
                     this.transitionTo(endpoint, circuit, 'half-open');
                     return true;
@@ -72,46 +71,39 @@ export class CircuitBreakerService {
                 throw new CircuitOpenError(endpoint, circuit);
 
             case 'half-open':
-                // En half-open solo permitimos un request a la vez
-                // Si ya hay uno en vuelo, rechazamos
                 return true;
         }
     }
 
     /**
-     * Registra un éxito para un endpoint.
+     * Records a success for an endpoint.
      */
     recordSuccess(endpoint: string): void {
         const circuit = this.getOrCreateCircuit(endpoint);
 
         switch (circuit.state) {
             case 'closed':
-                // Reset de fallos en closed
                 circuit.failures = 0;
                 break;
 
             case 'half-open':
                 circuit.successes++;
                 
-                // Si alcanzamos el threshold de éxitos, cerrar el circuito
                 if (circuit.successes >= this.config.successThreshold) {
                     this.transitionTo(endpoint, circuit, 'closed');
                 }
                 break;
 
             case 'open':
-                // No debería pasar, pero por si acaso
                 break;
         }
     }
 
     /**
-     * Registra un fallo para un endpoint.
+     * Records a failure for an endpoint.
      */
     recordFailure(endpoint: string, statusCode?: number): void {
-        // Verificar si el status code cuenta como fallo
         if (statusCode && !this.config.failureStatusCodes.includes(statusCode)) {
-            // 4xx errors no abren el circuito (son errores del cliente)
             return;
         }
 
@@ -120,9 +112,7 @@ export class CircuitBreakerService {
 
         switch (circuit.state) {
             case 'closed':
-                // Verificar si el fallo está dentro de la ventana
                 if (circuit.lastFailure && (now - circuit.lastFailure) > this.config.failureWindow) {
-                    // Fuera de la ventana, resetear contador
                     circuit.failures = 1;
                 } else {
                     circuit.failures++;
@@ -130,40 +120,37 @@ export class CircuitBreakerService {
 
                 circuit.lastFailure = now;
 
-                // Verificar si debemos abrir el circuito
                 if (circuit.failures >= this.config.failureThreshold) {
                     this.transitionTo(endpoint, circuit, 'open');
                 }
                 break;
 
             case 'half-open':
-                // Un fallo en half-open vuelve a abrir el circuito
                 this.transitionTo(endpoint, circuit, 'open');
                 break;
 
             case 'open':
-                // Ya está abierto, solo actualizamos lastFailure
                 circuit.lastFailure = now;
                 break;
         }
     }
 
     /**
-     * Obtiene el estado actual de un circuito.
+     * Gets the current state of a circuit.
      */
     getCircuitInfo(endpoint: string): CircuitInfo | undefined {
         return this.circuits.get(this.normalizeEndpoint(endpoint));
     }
 
     /**
-     * Obtiene todos los circuitos activos.
+     * Gets all active circuits.
      */
     getAllCircuits(): Map<string, CircuitInfo> {
         return new Map(this.circuits);
     }
 
     /**
-     * Resetea un circuito específico.
+     * Resets a specific circuit.
      */
     reset(endpoint: string): void {
         const key = this.normalizeEndpoint(endpoint);
@@ -177,16 +164,12 @@ export class CircuitBreakerService {
     }
 
     /**
-     * Resetea todos los circuitos.
+     * Resets all circuits.
      */
     resetAll(): void {
         this.circuits.clear();
         this.logger.info('All circuits reset', 'CircuitBreaker');
     }
-
-    // ============================================================
-    // MÉTODOS PRIVADOS
-    // ============================================================
 
     private getOrCreateCircuit(endpoint: string): CircuitInfo {
         const key = this.normalizeEndpoint(endpoint);

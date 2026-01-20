@@ -15,17 +15,17 @@ import { StripePaymentIntentDto, StripeSpeiSourceDto } from "../../stripe/dto/st
 import { PaypalOrderDto } from "../../paypal/dto/paypal.dto";
 
 /**
- * Tokens especiales para controlar el comportamiento del fake gateway.
+ * Special tokens to control fake gateway behavior.
  * 
- * Uso:
- * - tok_success: Siempre éxito inmediato
- * - tok_3ds: Requiere 3D Secure
- * - tok_fail: Siempre falla
- * - tok_timeout: Simula timeout (delay largo)
- * - tok_decline: Tarjeta rechazada
- * - tok_insufficient: Fondos insuficientes
- * - tok_expired: Tarjeta expirada
- * - tok_processing: Estado processing
+ * Usage:
+ * - tok_success: Always immediate success
+ * - tok_3ds: Requires 3D Secure
+ * - tok_fail: Always fails
+ * - tok_timeout: Simulates timeout (long delay)
+ * - tok_decline: Card declined
+ * - tok_insufficient: Insufficient funds
+ * - tok_expired: Expired card
+ * - tok_processing: Processing status
  */
 const SPECIAL_TOKENS = {
     SUCCESS: 'tok_success',
@@ -39,7 +39,7 @@ const SPECIAL_TOKENS = {
 } as const;
 
 /**
- * Errores predefinidos para testing.
+ * Predefined errors for testing.
  */
 const FAKE_ERRORS: Record<string, PaymentError> = {
     decline: {
@@ -70,25 +70,24 @@ const FAKE_ERRORS: Record<string, PaymentError> = {
 };
 
 /**
- * Gateway fake para desarrollo y testing.
+ * Fake gateway for development and testing.
  *
- * Simula respuestas realistas de Stripe y PayPal.
- * Se comporta de forma diferente según el providerId que se le asigne.
+ * Simulates realistic responses from Stripe and PayPal.
+ * Behaves differently based on the assigned providerId.
  *
- * Características:
- * - Genera IDs únicos para cada request
- * - Simula delays de red (150-300ms)
- * - Respuestas en formato real de cada provider
- * - Simula diferentes flujos (3DS, SPEI, PayPal redirect)
- * - Tokens especiales para forzar diferentes comportamientos
+ * Features:
+ * - Generates unique IDs for each request
+ * - Simulates network delays (150-300ms)
+ * - Responses in real format of each provider
+ * - Simulates different flows (3DS, SPEI, PayPal redirect)
+ * - Special tokens to force different behaviors
  */
 @Injectable()
 export class FakePaymentGateway extends PaymentGateway {
-    // Este campo será configurado por la factory
     readonly providerId: PaymentProviderId = 'stripe';
     
     /**
-     * Factory method para crear instancias con el providerId correcto.
+     * Factory method to create instances with correct providerId.
      */
     static create(providerId: PaymentProviderId): FakePaymentGateway {
         const instance = new FakePaymentGateway();
@@ -99,7 +98,7 @@ export class FakePaymentGateway extends PaymentGateway {
     private static counter = 0;
 
     /**
-     * Genera un ID único para simular IDs de provider.
+     * Generates a unique ID to simulate provider IDs.
      */
     private generateId(prefix: string): string {
         FakePaymentGateway.counter++;
@@ -109,15 +108,15 @@ export class FakePaymentGateway extends PaymentGateway {
     }
 
     /**
-     * Simula delay de red realista.
+     * Simulates realistic network delay.
      */
     private simulateNetworkDelay<T>(data: T, customDelay?: number): Observable<T> {
-        const delayMs = customDelay ?? (150 + Math.random() * 150); // 150-300ms
+        const delayMs = customDelay ?? (150 + Math.random() * 150);
         return of(data).pipe(delay(delayMs));
     }
 
     /**
-     * Simula un error con delay.
+     * Simulates an error with delay.
      */
     private simulateError(error: PaymentError, delayMs: number = 200): Observable<never> {
         return of(null).pipe(
@@ -127,23 +126,21 @@ export class FakePaymentGateway extends PaymentGateway {
     }
 
     /**
-     * Override de validación: PayPal no requiere token para métodos card.
+     * Validation override: PayPal doesn't require token for card methods.
      */
     protected override validateCreate(req: CreatePaymentRequest) {
         if (!req.orderId) throw new Error("orderId is required");
         if (!req.currency) throw new Error("currency is required");
         if (!Number.isFinite(req.amount) || req.amount <= 0) throw new Error("amount is invalid");
         if (!req.method?.type) throw new Error("payment method type is required");
-        // PayPal no requiere token - usa flujo de redirección
         if (this.providerId === 'paypal') {
-            return; // PayPal no requiere token
+            return;
         }
-        // Para Stripe, validar token si es método card
         if (req.method.type === "card" && !req.method.token) throw new Error("card token is required");
     }
 
     /**
-     * Verifica si el token es especial y determina el comportamiento.
+     * Checks if token is special and determines behavior.
      */
     private getTokenBehavior(token?: string): 'success' | '3ds' | 'fail' | 'timeout' | 'decline' | 'insufficient' | 'expired' | 'processing' | 'normal' {
         if (!token) return 'normal';
@@ -168,7 +165,6 @@ export class FakePaymentGateway extends PaymentGateway {
 
         const behavior = this.getTokenBehavior(req.method.token);
 
-        // Manejar tokens especiales de error
         if (behavior === 'fail') {
             return throwError(() => FAKE_ERRORS['provider_error']);
         }
@@ -182,21 +178,17 @@ export class FakePaymentGateway extends PaymentGateway {
             return throwError(() => FAKE_ERRORS['expired']);
         }
         if (behavior === 'timeout') {
-            // Simular timeout con delay muy largo
             return this.simulateNetworkDelay(this.createFakeStripeIntent(req, 'processing'), 10000);
         }
 
-        // SPEI solo para Stripe
         if (req.method.type === 'spei') {
             return this.simulateNetworkDelay(this.createFakeSpeiSource(req));
         }
 
-        // Para card, simular según provider
         if (this.providerId === 'paypal') {
             return this.simulateNetworkDelay(this.createFakePaypalOrder(req));
         }
 
-        // Determinar status basado en token
         let status: StripePaymentIntentDto['status'] = 'requires_confirmation';
         if (behavior === 'success') {
             status = 'succeeded';
@@ -205,8 +197,6 @@ export class FakePaymentGateway extends PaymentGateway {
         } else if (behavior === 'processing') {
             status = 'processing';
         } else {
-            // En modo desarrollo, si el token es el token de desarrollo, retornar succeeded directamente
-            // para facilitar el testing sin necesidad de confirmar manualmente
             if (req.method.token === 'tok_visa1234567890abcdef') {
                 status = 'succeeded';
             }
@@ -216,7 +206,6 @@ export class FakePaymentGateway extends PaymentGateway {
     }
 
     protected mapIntent(dto: any): PaymentIntent {
-        // Detectar tipo de respuesta y mapear
         if ('object' in dto && dto.object === 'payment_intent') {
             return this.mapStripeIntent(dto as StripePaymentIntentDto);
         }
@@ -227,7 +216,6 @@ export class FakePaymentGateway extends PaymentGateway {
             return this.mapPaypalOrder(dto as PaypalOrderDto);
         }
 
-        // Fallback genérico
         return this.mapGeneric(dto);
     }
 
@@ -288,20 +276,16 @@ export class FakePaymentGateway extends PaymentGateway {
         const intentId = this.generateId('pi');
         const amountInCents = Math.round(req.amount * 100);
 
-        // Usar status forzado si está definido, de lo contrario determinar por lógica
         let status: StripePaymentIntentDto['status'];
         
         if (forcedStatus !== undefined) {
-            // Si hay un status forzado, usarlo directamente
             status = forcedStatus;
         } else {
-            // Determinar status por defecto
             status = 'requires_confirmation';
             
-            // Simular 3DS para ciertos tokens o probabilidad aleatoria
             const requires3ds = req.method.token?.includes('3ds') ||
                 req.method.token?.includes('auth') ||
-                Math.random() > 0.7; // 30% de probabilidad
+                Math.random() > 0.7;
             
             if (requires3ds) {
                 status = 'requires_action';
@@ -339,15 +323,12 @@ export class FakePaymentGateway extends PaymentGateway {
         const sourceId = this.generateId('src');
         const amountInCents = Math.round(req.amount * 100);
 
-        // Generar CLABE fake pero realista (18 dígitos)
         const clabe = '646180' + Array.from({ length: 12 }, () =>
             Math.floor(Math.random() * 10)
         ).join('');
 
-        // Referencia de 7 dígitos
         const reference = String(Math.floor(Math.random() * 10000000)).padStart(7, '0');
 
-        // Expira en 72 horas
         const expiresAt = Math.floor(Date.now() / 1000) + (72 * 60 * 60);
 
         return {
@@ -536,7 +517,6 @@ export class FakePaymentGateway extends PaymentGateway {
     }
 
     private createFakePaypalOrderStatus(orderId: string): PaypalOrderDto {
-        // Simular orden aprobada (lista para capturar)
         return {
             id: orderId,
             status: 'APPROVED',

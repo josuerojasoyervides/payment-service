@@ -25,8 +25,6 @@ describe('ClabeFormatPipe', () => {
         });
 
         it('debe manejar CLABE como número', () => {
-            // Nota: JavaScript pierde precisión con números tan grandes
-            // Por eso convertimos a string primero
             const clabe = '646180157000000001';
             const result = pipe.transform(clabe);
             expect(result).toBe('646 180 15700000000 1');

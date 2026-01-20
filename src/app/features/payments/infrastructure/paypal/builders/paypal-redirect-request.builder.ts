@@ -2,18 +2,18 @@ import { CurrencyCode, CreatePaymentRequest } from '../../../domain/models';
 import { PaymentRequestBuilder, PaymentOptions } from '../../../domain/ports';
 
 /**
- * Builder específico para pagos vía PayPal (redirect flow).
+ * Builder for payments via PayPal (redirect flow).
  * 
- * PayPal SIEMPRE usa flujo de redirección, incluso para tarjetas.
- * El usuario es redirigido a PayPal para autorizar el pago.
+ * PayPal ALWAYS uses redirect flow, even for cards.
+ * The user is redirected to PayPal to authorize the payment.
  * 
- * Este builder SABE que PayPal necesita:
- * - returnUrl (REQUERIDO) - URL a donde redirigir después del pago
- * - cancelUrl (OPCIONAL) - URL si el usuario cancela (default: returnUrl)
+ * This builder knows that PayPal needs:
+ * - returnUrl (REQUIRED) - URL to redirect after payment
+ * - cancelUrl (OPTIONAL) - URL if user cancels (default: returnUrl)
  * 
- * NO necesita:
- * - token (PayPal maneja esto internamente)
- * - customerEmail (PayPal lo obtiene del usuario)
+ * Does NOT need:
+ * - token (PayPal handles this internally)
+ * - customerEmail (PayPal gets it from user)
  */
 export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
     private orderId?: string;
@@ -35,14 +35,12 @@ export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
     }
 
     withOptions(options: PaymentOptions): this {
-        // PayPal necesita URLs de redirect
         if (options.returnUrl !== undefined) {
             this.returnUrl = options.returnUrl;
         }
         if (options.cancelUrl !== undefined) {
             this.cancelUrl = options.cancelUrl;
         }
-        // Ignora token, customerEmail - PayPal no los usa desde la app
         return this;
     }
 
@@ -54,10 +52,10 @@ export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
             amount: this.amount!,
             currency: this.currency!,
             method: {
-                type: 'card',  // PayPal procesa cards vía su checkout
+                type: 'card',
             },
             returnUrl: this.returnUrl,
-            cancelUrl: this.cancelUrl ?? this.returnUrl,  // Default a returnUrl
+            cancelUrl: this.cancelUrl ?? this.returnUrl,
         };
     }
 
@@ -71,20 +69,17 @@ export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
         if (!this.currency) {
             throw new Error('currency is required');
         }
-        // VALIDACIÓN ESPECÍFICA DE PAYPAL
         if (!this.returnUrl) {
             throw new Error(
                 'PayPal payments require returnUrl. ' +
                 'This is where the user will be redirected after completing payment.'
             );
         }
-        // Validar que sea URL válida
         try {
             new URL(this.returnUrl);
         } catch {
             throw new Error('returnUrl must be a valid URL');
         }
-        // Validar cancelUrl si se proporciona
         if (this.cancelUrl) {
             try {
                 new URL(this.cancelUrl);

@@ -8,10 +8,10 @@ import { PaymentHistoryEntry } from '../../../application/store/payment.models';
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Página de historial de pagos.
+ * Payment history page.
  * 
- * Muestra todos los intentos de pago realizados durante la sesión.
- * Permite ver detalles, refrescar estados y realizar acciones.
+ * Shows all payment attempts made during the session.
+ * Allows viewing details, refreshing states and performing actions.
  */
 @Component({
     selector: 'app-history',

@@ -38,15 +38,12 @@ export class FakePaymentsBackendInterceptor implements HttpInterceptor {
             return this.fakePaypalStatus(req.url);
         }
 
-        // lo demás pasa normal
         return next.handle(req);
     }
 
     private fakeStripeIntent(body: any): Observable<HttpEvent<any>> {
-        // Simula respuestas distintas según el método
         const method = body?.method?.type;
 
-        // 🔥 ejemplo: forzar un error si token = "declined"
         if (method === 'card' && body?.method?.token === 'declined') {
             return throwError(() => ({
                 error: { code: 'card_declined', message: 'Card was declined (fake)' },
@@ -109,7 +106,6 @@ export class FakePaymentsBackendInterceptor implements HttpInterceptor {
     private fakePaypalIntent(body: any): Observable<HttpEvent<any>> {
         const method = body?.method?.type;
 
-        // PayPal típico: redirect flow
         const response = {
             id: 'pi_fake_paypal_1',
             status: 'requires_action',

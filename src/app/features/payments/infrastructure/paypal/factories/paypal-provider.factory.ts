@@ -14,16 +14,16 @@ import { PaypalTokenValidator } from "../validators/paypal-token.validator";
 import { I18nService, I18nKeys } from "@core/i18n";
 
 /**
- * Factory de PayPal.
+ * PayPal provider factory.
  *
- * Diferencias clave vs Stripe:
- * - PayPal maneja tarjetas a través de su checkout (redirect)
- * - No soporta SPEI (solo métodos de pago de PayPal)
- * - Todos los métodos usan flujo de redirección
- * - SIEMPRE requiere returnUrl y cancelUrl
+ * Key differences vs Stripe:
+ * - PayPal handles cards through its checkout (redirect)
+ * - Does not support SPEI (only PayPal payment methods)
+ * - All methods use redirect flow
+ * - ALWAYS requires returnUrl and cancelUrl
  *
- * Métodos soportados:
- * - card: Tarjetas vía PayPal checkout (con redirección)
+ * Supported methods:
+ * - card: Cards via PayPal checkout (with redirect)
  */
 @Injectable()
 export class PaypalProviderFactory implements ProviderFactory {
@@ -33,12 +33,12 @@ export class PaypalProviderFactory implements ProviderFactory {
     private readonly i18n = inject(I18nService);
 
     /**
-     * Cache de estrategias.
+     * Strategy cache.
      */
     private readonly strategyCache = new Map<PaymentMethodType, PaymentStrategy>();
 
     /**
-     * Métodos de pago soportados por PayPal.
+     * Payment methods supported by PayPal.
      */
     static readonly SUPPORTED_METHODS: PaymentMethodType[] = ['card'];
 
@@ -69,31 +69,29 @@ export class PaypalProviderFactory implements ProviderFactory {
     }
 
     // ============================================================
-    // NUEVOS MÉTODOS PARA BUILDERS
+    // BUILDER METHODS
     // ============================================================
 
     /**
-     * Crea un builder específico para PayPal.
+     * Creates a builder specific to PayPal.
      * 
-     * PayPal SIEMPRE usa redirect flow, así que todos los métodos
-     * usan el mismo builder que requiere returnUrl.
+     * PayPal ALWAYS uses redirect flow, so all methods
+     * use the same builder that requires returnUrl.
      */
     createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilder {
         this.assertSupported(type);
 
-        // PayPal usa el mismo builder para todo (redirect flow)
         return new PaypalRedirectRequestBuilder();
     }
 
     /**
-     * Retorna los requisitos de campos para PayPal.
+     * Returns field requirements for PayPal.
      * 
-     * PayPal siempre necesita URLs de redirect.
+     * PayPal always needs redirect URLs.
      */
     getFieldRequirements(type: PaymentMethodType): FieldRequirements {
         this.assertSupported(type);
 
-        // PayPal usa los mismos requisitos para todos los métodos
         return {
             description: this.i18n.t(I18nKeys.ui.pay_with_paypal),
             instructions: this.i18n.t(I18nKeys.ui.paypal_redirect_secure_message),
