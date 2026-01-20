@@ -106,20 +106,34 @@ Construir un sistema de pagos **extensible, resiliente y desacoplado** que sopor
 
 ```
 src/app/
-├── core/                           # Servicios transversales
-│   ├── interceptors/               # HTTP interceptors
+├── core/                           # Servicios transversales (por funcionalidad)
+│   ├── index.ts                    # Barrel principal
+│   ├── resilience/                 # Circuit Breaker + Rate Limiter + Retry
+│   │   ├── circuit-breaker/
+│   │   │   ├── circuit-breaker.service.ts
+│   │   │   ├── circuit-breaker.types.ts
+│   │   │   └── index.ts
+│   │   ├── rate-limiter/
+│   │   │   ├── rate-limiter.service.ts
+│   │   │   ├── rate-limiter.types.ts
+│   │   │   └── index.ts
+│   │   ├── retry/
+│   │   │   ├── retry.service.ts
+│   │   │   ├── retry.interceptor.ts
+│   │   │   ├── retry-with-backoff.operator.ts
+│   │   │   └── index.ts
 │   │   ├── resilience.interceptor.ts
-│   │   ├── retry.interceptor.ts
-│   │   ├── cache.interceptor.ts
-│   │   └── logging.interceptor.ts
-│   ├── services/                   # Servicios de infraestructura
-│   │   ├── circuit-breaker.service.ts
-│   │   ├── rate-limiter.service.ts
+│   │   └── index.ts
+│   ├── caching/
 │   │   ├── cache.service.ts
-│   │   ├── retry.service.ts
-│   │   └── logger.service.ts
-│   ├── models/                     # Tipos de configuración
-│   └── operators/                  # Operadores RxJS custom
+│   │   ├── cache.interceptor.ts
+│   │   └── index.ts
+│   ├── logging/
+│   │   ├── logger.service.ts
+│   │   ├── logging.interceptor.ts
+│   │   └── index.ts
+│   └── testing/
+│       └── fake-backend.interceptor.ts
 │
 └── features/payments/
     ├── domain/

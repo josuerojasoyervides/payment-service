@@ -1,15 +1,15 @@
 import { computed, effect, inject, Injectable, Signal } from '@angular/core';
-import { PaymentStatePort, PaymentDebugSummary, Unsubscribe } from '../state/payment-state';
+import { PaymentStatePort, PaymentDebugSummary, Unsubscribe } from '../state/payment-state.port';
 import { PaymentsStore } from '../store/payment.store';
-import { 
-    PaymentIntent, 
+import {
+    PaymentIntent,
     PaymentProviderId,
     PaymentError,
-    FallbackAvailableEvent, 
+    FallbackAvailableEvent,
     FallbackState,
-    CancelPaymentRequest, 
-    ConfirmPaymentRequest, 
-    CreatePaymentRequest, 
+    CancelPaymentRequest,
+    ConfirmPaymentRequest,
+    CreatePaymentRequest,
     GetPaymentStatusRequest,
 } from '../../domain/models';
 import { PaymentHistoryEntry, PaymentsState } from '../store/payment.models';
@@ -59,7 +59,7 @@ export class NgRxSignalsStateAdapter implements PaymentStatePort {
     readonly hasError: Signal<boolean> = this.store.hasError;
     readonly intent: Signal<PaymentIntent | null> = this.store.currentIntent;
     readonly error: Signal<PaymentError | null> = this.store.currentError;
-    readonly selectedProvider: Signal<PaymentProviderId | null> = computed(() => 
+    readonly selectedProvider: Signal<PaymentProviderId | null> = computed(() =>
         this.store.selectedProvider()
     );
 
