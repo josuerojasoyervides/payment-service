@@ -173,5 +173,12 @@ export interface Translations {
         method_card_description: string;
         method_spei: string;
         method_spei_description: string;
+
+        // Idioma y navegación
+        language: string;
+        select_language: string;
+        spanish: string;
+        english: string;
+        app_name: string;
     };
 }

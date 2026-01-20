@@ -134,6 +134,11 @@ export const en: Translations = {
         method_card_description: 'Credit or debit',
         method_spei: 'SPEI',
         method_spei_description: 'Bank transfer',
+        language: 'Language',
+        select_language: 'Select a language',
+        spanish: 'Spanish',
+        english: 'English',
+        app_name: 'Payment System',
     },
 };
 
