@@ -232,6 +232,13 @@ export class CheckoutComponent {
         this.paymentState.cancelFallback();
     }
 
+    onPaypalRequested(url: string): void {
+        this.logger.info('Redirecting to PayPal', 'CheckoutPage', { url });
+        if (typeof window !== 'undefined') {
+            window.location.href = url;
+        }
+    }
+
     resetPayment(): void {
         this.paymentState.reset();
         this.orderId.set('order_' + Math.random().toString(36).substring(7));

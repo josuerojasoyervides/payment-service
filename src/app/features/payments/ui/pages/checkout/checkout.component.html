@@ -33,6 +33,7 @@
                 @if (currentIntent()?.nextAction) {
                     <app-next-action-card
                         [nextAction]="currentIntent()!.nextAction!"
+                        (paypalRequested)="onPaypalRequested($event)"
                     />
                 }
             </div>

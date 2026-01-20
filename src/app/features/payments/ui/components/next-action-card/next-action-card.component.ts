@@ -34,9 +34,18 @@ export class NextActionCardComponent {
     
     /** Emits when action is completed */
     readonly actionCompleted = output<void>();
+    
+    /** Emits when PayPal redirect is requested */
+    readonly paypalRequested = output<string>();
 
     onPayPalClick(): void {
-        console.log('[NextActionCard] PayPal redirect clicked');
+        const action = this.nextAction();
+        if (action && action.type === 'paypal_approve') {
+            const approveUrl = (action as any).approveUrl;
+            if (approveUrl) {
+                this.paypalRequested.emit(approveUrl);
+            }
+        }
     }
 
     // ===== Textos para el template =====
