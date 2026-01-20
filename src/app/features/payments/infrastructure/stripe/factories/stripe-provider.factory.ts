@@ -128,7 +128,19 @@ export class StripeProviderFactory implements ProviderFactory {
                     ],
                 };
             case 'spei':
-                return StripeSpeiRequestBuilder.FIELD_REQUIREMENTS;
+                return {
+                    description: this.i18n.t(I18nKeys.ui.spei_bank_transfer),
+                    instructions: this.i18n.t(I18nKeys.ui.spei_email_instructions),
+                    fields: [
+                        {
+                            name: 'customerEmail',
+                            label: this.i18n.t(I18nKeys.ui.email_label),
+                            required: true,
+                            type: 'email',
+                            placeholder: 'tu@email.com',
+                        },
+                    ],
+                };
             default:
                 return { fields: [] };
         }

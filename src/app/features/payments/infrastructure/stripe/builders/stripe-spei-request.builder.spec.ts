@@ -105,21 +105,8 @@ describe('StripeSpeiRequestBuilder', () => {
         });
     });
 
-    describe('FIELD_REQUIREMENTS', () => {
-        it('defines customerEmail as required email field', () => {
-            const emailField = StripeSpeiRequestBuilder.FIELD_REQUIREMENTS.fields
-                .find(f => f.name === 'customerEmail');
-
-            expect(emailField).toBeDefined();
-            expect(emailField?.required).toBe(true);
-            expect(emailField?.type).toBe('email');
-        });
-
-        it('includes description and instructions', () => {
-            expect(StripeSpeiRequestBuilder.FIELD_REQUIREMENTS.description).toContain('SPEI');
-            expect(StripeSpeiRequestBuilder.FIELD_REQUIREMENTS.instructions).toBeDefined();
-        });
-    });
+    // Nota: FIELD_REQUIREMENTS ahora está en StripeProviderFactory.getFieldRequirements()
+    // Los tests de field requirements deben estar en stripe-provider.factory.spec.ts
 
     describe('fluent interface', () => {
         it('returns this from all setter methods for chaining', () => {

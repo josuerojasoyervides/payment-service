@@ -3,6 +3,7 @@ import { PaypalPaymentGateway } from '../gateways/paypal-payment.gateway';
 import { PaypalProviderFactory } from './paypal-provider.factory'
 import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
 import { firstValueFrom, of } from 'rxjs';
+import { I18nService } from '@core/i18n';
 
 describe('PaypalProviderFactory', () => {
     let factory: PaypalProviderFactory;
@@ -12,10 +13,19 @@ describe('PaypalProviderFactory', () => {
     } satisfies Partial<PaypalPaymentGateway>;
 
     beforeEach(() => {
+        const i18nMock = {
+            t: vi.fn((key: string) => key),
+            setLanguage: vi.fn(),
+            getLanguage: vi.fn(() => 'es'),
+            has: vi.fn(() => true),
+            currentLang: { asReadonly: vi.fn() } as any,
+        } as any;
+
         TestBed.configureTestingModule({
             providers: [
                 PaypalProviderFactory,
-                { provide: PaypalPaymentGateway, useValue: gatewayStub }
+                { provide: PaypalPaymentGateway, useValue: gatewayStub },
+                { provide: I18nService, useValue: i18nMock },
             ]
         })
 
@@ -55,5 +65,37 @@ describe('PaypalProviderFactory', () => {
 
         expect(gatewayStub.createIntent).toHaveBeenCalledTimes(1);
         expect(result.provider).toBe('paypal');
+    });
+
+    describe('getFieldRequirements', () => {
+        it('returns field requirements for card method', () => {
+            const requirements = factory.getFieldRequirements('card');
+            
+            expect(requirements.fields).toBeDefined();
+            expect(requirements.fields.length).toBeGreaterThan(0);
+            expect(requirements.description).toBeDefined();
+            expect(requirements.instructions).toBeDefined();
+            
+            const returnUrlField = requirements.fields.find(f => f.name === 'returnUrl');
+            expect(returnUrlField).toBeDefined();
+            expect(returnUrlField?.required).toBe(true);
+            expect(returnUrlField?.type).toBe('hidden');
+            expect(returnUrlField?.autoFill).toBe('currentUrl');
+        });
+
+        it('includes cancelUrl as optional field', () => {
+            const requirements = factory.getFieldRequirements('card');
+            
+            const cancelUrlField = requirements.fields.find(f => f.name === 'cancelUrl');
+            expect(cancelUrlField).toBeDefined();
+            expect(cancelUrlField?.required).toBe(false);
+            expect(cancelUrlField?.type).toBe('hidden');
+        });
+
+        it('throws for unsupported payment method type', () => {
+            expect(() =>
+                factory.getFieldRequirements('spei' as any)
+            ).toThrow(/Payment method "spei" is not supported by PayPal/);
+        });
     });
 })

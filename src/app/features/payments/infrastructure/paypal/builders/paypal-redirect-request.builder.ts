@@ -1,5 +1,5 @@
 import { CurrencyCode, CreatePaymentRequest } from '../../../domain/models';
-import { PaymentRequestBuilder, PaymentOptions, FieldRequirements } from '../../../domain/ports';
+import { PaymentRequestBuilder, PaymentOptions } from '../../../domain/ports';
 
 /**
  * Builder específico para pagos vía PayPal (redirect flow).
@@ -22,36 +22,6 @@ export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
     private returnUrl?: string;
     private cancelUrl?: string;
 
-    /**
-     * Requisitos de campos para PayPal.
-     * 
-     * @deprecated Este campo estático ya no se usa. 
-     * Las factories ahora generan FieldRequirements dinámicamente usando i18n.
-     * Ver: PaypalProviderFactory.getFieldRequirements()
-     */
-    // TODO: Revisar si esto está bien deprecarlo o es mejor usar i18n para las descripciones y instrucciones.
-    static readonly FIELD_REQUIREMENTS: FieldRequirements = {
-        description: 'Pagar con PayPal', // Deprecated: usar i18n
-        instructions: 'Serás redirigido a PayPal para completar el pago de forma segura', // Deprecated: usar i18n
-        fields: [
-            {
-                name: 'returnUrl',
-                label: 'URL de retorno', // Deprecated: usar i18n
-                required: true,
-                type: 'hidden',
-                autoFill: 'currentUrl',
-                placeholder: '',
-            },
-            {
-                name: 'cancelUrl',
-                label: 'URL de cancelación', // Deprecated: usar i18n
-                required: false,
-                type: 'hidden',
-                autoFill: 'currentUrl',
-                placeholder: '',
-            },
-        ],
-    };
 
     forOrder(orderId: string): this {
         this.orderId = orderId;

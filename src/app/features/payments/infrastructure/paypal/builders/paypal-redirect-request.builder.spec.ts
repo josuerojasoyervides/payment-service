@@ -140,31 +140,8 @@ describe('PaypalRedirectRequestBuilder', () => {
         });
     });
 
-    describe('FIELD_REQUIREMENTS', () => {
-        it('defines returnUrl as required hidden field with autoFill', () => {
-            const returnField = PaypalRedirectRequestBuilder.FIELD_REQUIREMENTS.fields
-                .find(f => f.name === 'returnUrl');
-
-            expect(returnField).toBeDefined();
-            expect(returnField?.required).toBe(true);
-            expect(returnField?.type).toBe('hidden');
-            expect(returnField?.autoFill).toBe('currentUrl');
-        });
-
-        it('defines cancelUrl as optional hidden field', () => {
-            const cancelField = PaypalRedirectRequestBuilder.FIELD_REQUIREMENTS.fields
-                .find(f => f.name === 'cancelUrl');
-
-            expect(cancelField).toBeDefined();
-            expect(cancelField?.required).toBe(false);
-            expect(cancelField?.type).toBe('hidden');
-        });
-
-        it('includes description and instructions', () => {
-            expect(PaypalRedirectRequestBuilder.FIELD_REQUIREMENTS.description).toContain('PayPal');
-            expect(PaypalRedirectRequestBuilder.FIELD_REQUIREMENTS.instructions).toContain('redirigido');
-        });
-    });
+    // Nota: FIELD_REQUIREMENTS ahora está en PaypalProviderFactory.getFieldRequirements()
+    // Los tests de field requirements deben estar en paypal-provider.factory.spec.ts
 
     describe('fluent interface', () => {
         it('returns this from all setter methods for chaining', () => {

@@ -1,5 +1,5 @@
 import { CurrencyCode, CreatePaymentRequest } from '../../../domain/models';
-import { PaymentRequestBuilder, PaymentOptions, FieldRequirements } from '../../../domain/ports';
+import { PaymentRequestBuilder, PaymentOptions } from '../../../domain/ports';
 
 /**
  * Builder específico para pagos con SPEI vía Stripe.
@@ -18,22 +18,6 @@ export class StripeSpeiRequestBuilder implements PaymentRequestBuilder {
     private currency?: CurrencyCode;
     private customerEmail?: string;
 
-    /**
-     * Requisitos de campos para Stripe SPEI.
-     */
-    static readonly FIELD_REQUIREMENTS: FieldRequirements = {
-        description: 'Transferencia bancaria SPEI',
-        instructions: 'Recibirás instrucciones de pago en tu correo electrónico',
-        fields: [
-            {
-                name: 'customerEmail',
-                label: 'Correo electrónico',
-                required: true,
-                type: 'email',
-                placeholder: 'tu@email.com',
-            },
-        ],
-    };
 
     forOrder(orderId: string): this {
         this.orderId = orderId;

@@ -74,4 +74,40 @@ describe('StripeProviderFactory', () => {
         expect(gatewayStub.createIntent).toHaveBeenCalledTimes(1);
         expect(result.provider).toBe('stripe');
     });
+
+    describe('getFieldRequirements', () => {
+        it('returns field requirements for card method', () => {
+            const requirements = factory.getFieldRequirements('card');
+            
+            expect(requirements.fields).toBeDefined();
+            expect(requirements.fields.length).toBeGreaterThan(0);
+            expect(requirements.description).toBeDefined();
+            expect(requirements.instructions).toBeDefined();
+            
+            const tokenField = requirements.fields.find(f => f.name === 'token');
+            expect(tokenField).toBeDefined();
+            expect(tokenField?.required).toBe(true);
+            expect(tokenField?.type).toBe('hidden');
+        });
+
+        it('returns field requirements for spei method', () => {
+            const requirements = factory.getFieldRequirements('spei');
+            
+            expect(requirements.fields).toBeDefined();
+            expect(requirements.fields.length).toBeGreaterThan(0);
+            expect(requirements.description).toBeDefined();
+            expect(requirements.instructions).toBeDefined();
+            
+            const emailField = requirements.fields.find(f => f.name === 'customerEmail');
+            expect(emailField).toBeDefined();
+            expect(emailField?.required).toBe(true);
+            expect(emailField?.type).toBe('email');
+        });
+
+        it('throws for unsupported payment method type', () => {
+            expect(() =>
+                factory.getFieldRequirements('unsupported' as any)
+            ).toThrow(/Payment method "unsupported" is not supported by Stripe/);
+        });
+    });
 })

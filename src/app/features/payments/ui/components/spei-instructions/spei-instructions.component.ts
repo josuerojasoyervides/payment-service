@@ -1,6 +1,7 @@
 import { Component, input, signal, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { I18nService, I18nKeys } from '@core/i18n';
+import { ClabeFormatPipe } from '@shared/pipes';
 
 /**
  * Componente que muestra instrucciones para pago SPEI.
@@ -24,7 +25,7 @@ import { I18nService, I18nKeys } from '@core/i18n';
 @Component({
     selector: 'app-spei-instructions',
     standalone: true,
-    imports: [CommonModule, CurrencyPipe, DatePipe],
+    imports: [CommonModule, CurrencyPipe, DatePipe, ClabeFormatPipe],
     templateUrl: './spei-instructions.component.html',
 })
 export class SpeiInstructionsComponent {
@@ -101,13 +102,6 @@ export class SpeiInstructionsComponent {
 
     get keepReceiptText(): string {
         return this.i18n.t(I18nKeys.ui.keep_receipt);
-    }
-
-    // TODO: Extract this into a decorator or utility function or a pipe
-    /** Formatea la CLABE con espacios para mejor legibilidad */
-    formatClabe(clabe: string): string {
-        // Formato: XXX XXX XXXXXXXXXXX X
-        return clabe.replace(/(\d{3})(\d{3})(\d{11})(\d{1})/, '$1 $2 $3 $4');
     }
 
     /** Copia texto al portapapeles */
