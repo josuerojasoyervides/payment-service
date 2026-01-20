@@ -79,7 +79,6 @@ export class RetryService {
             return false;
         }
 
-        // Verificar si el método es reintentable
         if (!isRetryableMethod(method, this.config)) {
             this.logger.debug(
                 `Method ${method} is not retryable`,
@@ -89,7 +88,6 @@ export class RetryService {
             return false;
         }
 
-        // Verificar si el error es reintentable
         if (!isRetryableError(error, this.config)) {
             this.logger.debug(
                 `Status ${error.status} is not retryable`,

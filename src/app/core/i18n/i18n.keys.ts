@@ -16,9 +16,6 @@ function buildKeys(obj: Record<string, any>, prefix = ''): any {
     );
 }
 
-// Nota: no usamos `as const` directamente sobre buildKeys(en) porque Angular/TS
-// limita las const assertions a literales directos. Aún así, el shape de
-// I18nKeys está completamente determinado por `en`.
 export const I18nKeys = buildKeys(en);
 
 /**

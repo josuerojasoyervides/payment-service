@@ -22,18 +22,13 @@ async function waitForPaymentComplete(store: PaymentsStoreType, maxWaitMs = 2000
         const isReady = store.isReady();
         const hasError = store.hasError();
         
-        // El pago completó si:
-        // 1. Hay un intent Y no está loading, O
-        // 2. Hay un error (también es un estado final)
         if ((intent && !isLoading) || (hasError && !isLoading)) {
             return;
         }
         
-        // Esperar un poco antes de verificar de nuevo
         await new Promise(resolve => setTimeout(resolve, 50));
     }
     
-    // Información de debug antes de fallar
     const finalIntent = store.intent();
     const finalLoading = store.isLoading();
     const finalReady = store.isReady();
@@ -46,17 +41,17 @@ async function waitForPaymentComplete(store: PaymentsStoreType, maxWaitMs = 2000
 }
 
 /**
- * Tests de integración reales para CheckoutComponent.
+ * Real integration tests for CheckoutComponent.
  * 
- * Estos tests prueban el flujo completo desde el componente hasta el gateway,
- * usando los providers y stores reales (no mocks).
+ * These tests verify the complete flow from component to gateway,
+ * using real providers and stores (no mocks).
  * 
- * Características:
- * - Usa PaymentsStore real
- * - Usa ProviderFactoryRegistry real
- * - Usa FakeGateway real (configurado en payment.providers.ts)
- * - Prueba transiciones de estado reales
- * - Verifica el flujo completo de principio a fin
+ * Features:
+ * - Uses real PaymentsStore
+ * - Uses real ProviderFactoryRegistry
+ * - Uses real FakeGateway (configured in payment.providers.ts)
+ * - Tests real state transitions
+ * - Verifies complete end-to-end flow
  */
 describe('CheckoutComponent - Integración Real', () => {
     let component: CheckoutComponent;
@@ -69,11 +64,8 @@ describe('CheckoutComponent - Integración Real', () => {
         await TestBed.configureTestingModule({
             imports: [CheckoutComponent],
             providers: [
-                // Usar providers reales de pagos
                 ...providePayments(),
-                // Router necesario para RouterLink en el componente
                 provideRouter([]),
-                // Logger real
                 LoggerService,
             ],
         }).compileComponents();
@@ -81,12 +73,10 @@ describe('CheckoutComponent - Integración Real', () => {
         fixture = TestBed.createComponent(CheckoutComponent);
         component = fixture.componentInstance;
 
-        // Obtener servicios reales
         store = TestBed.inject(PaymentsStore) as PaymentsStoreType;
         registry = TestBed.inject(ProviderFactoryRegistry);
         logger = TestBed.inject(LoggerService);
 
-        // Resetear el store antes de cada test
         store.reset();
 
         fixture.detectChanges();
@@ -112,7 +102,6 @@ describe('CheckoutComponent - Integración Real', () => {
             const providers = component.availableProviders();
             expect(providers.length).toBeGreaterThan(0);
             
-            // El effect debería auto-seleccionar el primer provider
             const selected = component.selectedProvider();
             expect(selected).toBeTruthy();
             expect(providers).toContain(selected);
@@ -121,42 +110,33 @@ describe('CheckoutComponent - Integración Real', () => {
 
     describe('Flujo completo de pago exitoso - Stripe + Card', () => {
         beforeEach(async () => {
-            // Configurar para Stripe + Card
             component.selectedProvider.set('stripe');
             component.selectedMethod.set('card');
             fixture.detectChanges();
             
-            // Esperar a que el formulario se construya
             await fixture.whenStable();
             fixture.detectChanges();
         });
 
         it('debe procesar pago completo desde formulario hasta resultado exitoso', async () => {
-            // 1. Verificar que el formulario está presente
             const requirements = component.fieldRequirements();
             expect(requirements).toBeTruthy();
             expect(requirements?.fields.length).toBeGreaterThan(0);
             
-            // 2. Esperar a que el formulario emita el estado inicial
             await fixture.whenStable();
             fixture.detectChanges();
             
-            // 3. El formulario debería estar válido (token auto-rellenado en dev)
             expect(component.isFormValid()).toBe(true);
             
-            // 4. Procesar el pago
             component.processPayment();
             
-            // 5. Verificar que el store está en loading
             expect(store.isLoading()).toBe(true);
             expect(component.isLoading()).toBe(true);
             
-            // 6. Esperar a que el flujo complete (async)
             await waitForPaymentComplete(store);
             
             fixture.detectChanges();
             
-            // 8. Verificar estado final
             expect(store.isLoading()).toBe(false);
             expect(store.isReady()).toBe(true);
             expect(store.hasError()).toBe(false);
@@ -188,39 +168,30 @@ describe('CheckoutComponent - Integración Real', () => {
             await waitForPaymentComplete(store);
             fixture.detectChanges();
             
-            // El token debe haber sido validado correctamente por el StripeTokenValidator
-            // Si el formato fuera incorrecto, habría un error
             expect(store.hasError()).toBe(false);
             
-            // Verificar que el intent se creó exitosamente
             const intent = store.intent();
             expect(intent).toBeTruthy();
             expect(intent?.status).toBe('succeeded');
         });
 
         it('debe manejar saveForFuture como checkbox (boolean)', async () => {
-            // Verificar que el formulario tiene el campo saveForFuture como checkbox
             const requirements = component.fieldRequirements();
             const saveForFutureField = requirements?.fields.find(f => f.name === 'saveForFuture');
             
             if (saveForFutureField) {
-                // El campo debe estar presente
                 expect(saveForFutureField).toBeTruthy();
                 
                 await fixture.whenStable();
                 fixture.detectChanges();
                 
-                // El formulario debería estar válido
                 expect(component.isFormValid()).toBe(true);
                 
-                // Procesar el pago
                 component.processPayment();
                 
-                // Esperar a que complete
                 await waitForPaymentComplete(store);
                 fixture.detectChanges();
                 
-                // Debe completar exitosamente
                 expect(store.hasError()).toBe(false);
                 expect(store.isReady()).toBe(true);
             }
@@ -237,25 +208,20 @@ describe('CheckoutComponent - Integración Real', () => {
         });
 
         it('debe transicionar correctamente: idle -> loading -> ready', async () => {
-            // Estado inicial: idle
             expect(store.isLoading()).toBe(false);
             expect(store.isReady()).toBe(false);
             expect(store.hasError()).toBe(false);
             
-            // Procesar pago: debe ir a loading
             component.processPayment();
             await fixture.whenStable();
             fixture.detectChanges();
             
-            // Estado: loading
             expect(store.isLoading()).toBe(true);
             expect(store.isReady()).toBe(false);
             
-            // Esperar a que complete: debe ir a ready
             await waitForPaymentComplete(store);
             fixture.detectChanges();
             
-            // Estado final: ready
             expect(store.isLoading()).toBe(false);
             expect(store.isReady()).toBe(true);
             expect(store.hasError()).toBe(false);
@@ -264,11 +230,9 @@ describe('CheckoutComponent - Integración Real', () => {
         it('debe actualizar el historial después de un pago exitoso', async () => {
             component.processPayment();
             
-            // Esperar a que complete
             await waitForPaymentComplete(store);
             fixture.detectChanges();
             
-            // Verificar que el historial tiene una entrada
             const history = store.history();
             expect(history.length).toBeGreaterThan(0);
             
@@ -301,11 +265,9 @@ describe('CheckoutComponent - Integración Real', () => {
             
             component.processPayment();
             
-            // Esperar a que complete
             await waitForPaymentComplete(store);
             fixture.detectChanges();
             
-            // SPEI retorna requires_action con instrucciones
             expect(store.isLoading()).toBe(false);
             expect(store.isReady()).toBe(true);
             
@@ -333,20 +295,15 @@ describe('CheckoutComponent - Integración Real', () => {
             await fixture.whenStable();
             fixture.detectChanges();
             
-            // PayPal no requiere token, pero el componente puede intentar agregarlo
-            // Asegurarnos de que el formulario esté válido
             expect(component.isFormValid()).toBe(true);
             
             component.processPayment();
             
-            // Esperar un poco para que el observable inicie y complete
-            // El fake gateway tiene un delay de 150-300ms
             await new Promise(resolve => setTimeout(resolve, 500));
             fixture.detectChanges();
             
-            // Esperar a que complete verificando el estado
             let attempts = 0;
-            const maxAttempts = 50; // 5 segundos máximo (50 * 100ms)
+            const maxAttempts = 50;
             
             while (attempts < maxAttempts) {
                 const intent = store.intent();
@@ -354,12 +311,10 @@ describe('CheckoutComponent - Integración Real', () => {
                 const isReady = store.isReady();
                 const hasError = store.hasError();
                 
-                // Si hay un intent y no está loading, completó
                 if (intent && !isLoading) {
                     break;
                 }
                 
-                // Si hay un error, también es un estado final
                 if (hasError && !isLoading) {
                     break;
                 }
@@ -369,12 +324,10 @@ describe('CheckoutComponent - Integración Real', () => {
                 attempts++;
             }
             
-            // Verificar que completó (puede ser éxito o error, pero debe haber completado)
             const finalLoading = store.isLoading();
             const finalIntent = store.intent();
             const finalError = store.hasError();
             
-            // Si todavía está loading después de todos los intentos, hay un problema
             if (finalLoading) {
                 throw new Error(
                     `Payment still loading after ${maxAttempts * 100}ms. ` +
@@ -382,13 +335,12 @@ describe('CheckoutComponent - Integración Real', () => {
                 );
             }
             
-            // Verificar que hay un intent (éxito)
             expect(finalIntent).toBeTruthy();
             expect(finalIntent?.provider).toBe('paypal');
             expect(finalIntent?.status).toBe('requires_action');
             expect(finalIntent?.nextAction).toBeTruthy();
             expect(finalIntent?.nextAction?.type).toBe('paypal_approve');
-        }, 10000); // Timeout de 10 segundos para este test
+        }, 10000);
     });
 
     describe('Manejo de errores en flujo completo', () => {
@@ -401,18 +353,11 @@ describe('CheckoutComponent - Integración Real', () => {
         });
 
         it('debe manejar errores de validación del token', async () => {
-            // Simular un token inválido (muy corto)
-            // Nota: En modo desarrollo, el token se auto-rellena con uno válido
-            // Para probar este caso, necesitaríamos modificar el formulario después de que se construya
-            
-            // Por ahora, verificamos que el flujo normal funciona
             component.processPayment();
             
-            // Esperar a que complete
             await waitForPaymentComplete(store);
             fixture.detectChanges();
             
-            // Debe completar exitosamente con el token de desarrollo
             expect(store.hasError()).toBe(false);
         });
     });
@@ -428,14 +373,11 @@ describe('CheckoutComponent - Integración Real', () => {
             const requirements = component.fieldRequirements();
             expect(requirements).toBeTruthy();
             
-            // Esperar a que el formulario se construya
             await fixture.whenStable();
             fixture.detectChanges();
             
-            // El formulario debe estar presente y válido
             expect(component.isFormValid()).toBe(true);
             
-            // El componente debe recibir los cambios del formulario
             const formOptions = { token: 'tok_visa1234567890abcdef', saveForFuture: false };
             component.onFormChange(formOptions);
             
@@ -446,7 +388,6 @@ describe('CheckoutComponent - Integración Real', () => {
             await fixture.whenStable();
             fixture.detectChanges();
             
-            // Simular cambio en el formulario
             component.onFormValidChange(true);
             expect(component.isFormValid()).toBe(true);
             

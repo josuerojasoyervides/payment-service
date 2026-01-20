@@ -92,11 +92,9 @@ describe('StatusComponent', () => {
 
         it('debe actualizar result automáticamente cuando el intent cambia (via effect)', () => {
             // El effect() en el constructor escucha cambios en intent()
-            // Simular que el intent cambió en el state
             mockPaymentState.intent.set(mockIntent);
             fixture.detectChanges();
-
-            // El effect debería haber actualizado result automáticamente
+            
             expect(component.result()).toEqual(mockIntent);
         });
 

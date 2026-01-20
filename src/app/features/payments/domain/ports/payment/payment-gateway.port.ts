@@ -14,12 +14,10 @@ export abstract class PaymentGateway<TCreateDto = unknown, TConfirmDto = unknown
     protected readonly logger = inject(LoggerService);
     protected readonly i18n = inject(I18nService);
 
-    /** Contexto para logging */
     protected get logContext(): string {
         return `${this.providerId}Gateway`;
     }
 
-    // Método público que usa el resto del sistema
     createIntent(req: CreatePaymentRequest): Observable<PaymentIntent> {
         this.validateCreate(req);
         const correlationId = this.logger.getCorrelationId();
@@ -130,7 +128,6 @@ export abstract class PaymentGateway<TCreateDto = unknown, TConfirmDto = unknown
     }
 
     protected normalizeError(err: unknown): PaymentError {
-        // base genérico (cada provider puede override)
         return {
             code: "provider_error",
             message: this.i18n.t(I18nKeys.errors.provider_error),
@@ -138,7 +135,6 @@ export abstract class PaymentGateway<TCreateDto = unknown, TConfirmDto = unknown
         }
     }
 
-    // ------- “enchufes” para cada provider -------
     protected abstract createIntentRaw(req: CreatePaymentRequest): Observable<TCreateDto>;
     protected abstract mapIntent(dto: TCreateDto): PaymentIntent
 

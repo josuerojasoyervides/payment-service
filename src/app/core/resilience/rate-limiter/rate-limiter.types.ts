@@ -1,33 +1,33 @@
 /**
- * Información de rate limiting para un endpoint.
+ * Rate limiting information for an endpoint.
  */
 export interface RateLimitInfo {
-    /** Número de requests en la ventana actual */
+    /** Number of requests in current window */
     requestCount: number;
     
-    /** Timestamp de inicio de la ventana */
+    /** Window start timestamp */
     windowStart: number;
     
-    /** Timestamp del último request */
+    /** Last request timestamp */
     lastRequest: number;
 }
 
 /**
- * Configuración del Rate Limiter.
+ * Rate Limiter configuration.
  */
 export interface RateLimiterConfig {
-    /** Máximo de requests por ventana de tiempo */
+    /** Maximum requests per time window */
     maxRequests: number;
     
-    /** Duración de la ventana en ms (default: 60000 = 1 min) */
+    /** Window duration in ms (default: 60000 = 1 min) */
     windowMs: number;
     
-    /** Si aplicar por endpoint individual o globalmente */
+    /** Whether to apply per endpoint or globally */
     perEndpoint: boolean;
 }
 
 /**
- * Error lanzado cuando se excede el rate limit.
+ * Error thrown when rate limit is exceeded.
  */
 export class RateLimitExceededError extends Error {
     constructor(
@@ -40,7 +40,7 @@ export class RateLimitExceededError extends Error {
 }
 
 /**
- * Configuración por defecto del Rate Limiter.
+ * Default Rate Limiter configuration.
  */
 export const DEFAULT_RATE_LIMITER_CONFIG: RateLimiterConfig = {
     maxRequests: 100,

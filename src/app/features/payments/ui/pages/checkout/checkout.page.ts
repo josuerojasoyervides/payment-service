@@ -2,7 +2,7 @@ import { Component, computed, effect, inject, isDevMode, signal } from '@angular
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
-// Port y token (desacoplado de implementación)
+// Port and token (decoupled from implementation)
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { LoggerService } from '@core/logging';
@@ -25,16 +25,16 @@ import {
 } from '../../components';
 
 /**
- * Página de checkout para procesar pagos.
+ * Checkout page for processing payments.
  * 
- * Esta página compone los componentes reutilizables para crear
- * el flujo completo de checkout:
- * 1. Resumen de orden
- * 2. Selección de proveedor
- * 3. Selección de método de pago
- * 4. Formulario dinámico
- * 5. Botón de pago
- * 6. Resultado (éxito/error)
+ * This page composes reusable components to create
+ * the complete checkout flow:
+ * 1. Order summary
+ * 2. Provider selection
+ * 3. Payment method selection
+ * 4. Dynamic form
+ * 5. Payment button
+ * 6. Result (success/error)
  */
 @Component({
     selector: 'app-checkout',
@@ -56,42 +56,34 @@ import {
 export class CheckoutComponent {
     readonly isDevMode = isDevMode();
 
-    // Servicios
     private readonly paymentState = inject(PAYMENT_STATE);
     private readonly registry = inject(ProviderFactoryRegistry);
     private readonly logger = inject(LoggerService);
     private readonly i18n = inject(I18nService);
 
-    // === Datos de la orden (simulados) ===
     readonly orderId = signal('order_' + Math.random().toString(36).substring(7));
     readonly amount = signal(499.99);
     readonly currency = signal<CurrencyCode>('MXN');
 
-    // === Selección del usuario ===
     readonly selectedProvider = signal<PaymentProviderId | null>(null);
     readonly selectedMethod = signal<PaymentMethodType | null>(null);
 
-    // === Estado del formulario ===
     private formOptions = signal<PaymentOptions>({});
     readonly isFormValid = signal(false);
 
-    // === Estado del store (vía port) ===
     readonly isLoading = this.paymentState.isLoading;
     readonly isReady = this.paymentState.isReady;
     readonly hasError = this.paymentState.hasError;
     readonly currentIntent = this.paymentState.intent;
     readonly currentError = this.paymentState.error;
 
-    // === Estado del fallback ===
     readonly hasPendingFallback = this.paymentState.hasPendingFallback;
     readonly pendingFallbackEvent = this.paymentState.pendingFallbackEvent;
 
-    // === Providers disponibles ===
     readonly availableProviders = computed<PaymentProviderId[]>(() => {
         return this.registry.getAvailableProviders();
     });
 
-    // === Métodos disponibles para el provider seleccionado ===
     readonly availableMethods = computed<PaymentMethodType[]>(() => {
         const provider = this.selectedProvider();
         if (!provider) return [];
@@ -103,7 +95,6 @@ export class CheckoutComponent {
         }
     });
 
-    // === Requisitos de campos ===
     readonly fieldRequirements = computed<FieldRequirements | null>(() => {
         const provider = this.selectedProvider();
         const method = this.selectedMethod();
@@ -116,16 +107,13 @@ export class CheckoutComponent {
         }
     });
 
-    // === Mostrar resultado ===
     readonly showResult = computed(() => {
         return this.isReady() || this.hasError();
     });
 
-    // === Debug info ===
     readonly debugInfo = this.paymentState.debugSummary;
 
     constructor() {
-        // Auto-seleccionar primer provider disponible
         effect(() => {
             const providers = this.availableProviders();
             if (providers.length > 0 && !this.selectedProvider()) {
@@ -133,7 +121,6 @@ export class CheckoutComponent {
             }
         });
 
-        // Auto-seleccionar primer método cuando cambia el provider
         effect(() => {
             const methods = this.availableMethods();
             const currentMethod = this.selectedMethod();
@@ -142,7 +129,6 @@ export class CheckoutComponent {
             }
         });
 
-        // Log eventos de fallback
         effect(() => {
             const event = this.pendingFallbackEvent();
             if (event) {
@@ -158,7 +144,6 @@ export class CheckoutComponent {
         });
     }
 
-    // === Acciones de selección ===
     selectProvider(provider: PaymentProviderId): void {
         this.selectedProvider.set(provider);
         this.paymentState.selectProvider(provider);
@@ -172,7 +157,6 @@ export class CheckoutComponent {
         this.logger.info('Method selected', 'CheckoutPage', { method });
     }
 
-    // === Handlers del formulario ===
     onFormChange(options: PaymentOptions): void {
         this.formOptions.set(options);
     }
@@ -181,7 +165,6 @@ export class CheckoutComponent {
         this.isFormValid.set(valid);
     }
 
-    // === Proceso de pago ===
     processPayment(): void {
         const provider = this.selectedProvider();
         const method = this.selectedMethod();
@@ -198,18 +181,13 @@ export class CheckoutComponent {
             const factory = this.registry.get(provider);
             const builder = factory.createRequestBuilder(method);
 
-            // Obtener opciones del formulario
             let options = this.formOptions();
 
-            // En desarrollo, auto-generar token si es requerido y no existe
-            // El token debe cumplir el formato de Stripe: tok_ seguido de al menos 14 caracteres alfanuméricos (sin guiones bajos)
-            // PayPal no requiere token (usa flujo de redirección)
             if (isDevMode() && method === 'card' && provider === 'stripe' && !options.token) {
                 options = { ...options, token: 'tok_visa1234567890abcdef' };
                 this.logger.debug('Auto-generated dev token', 'CheckoutPage');
             }
 
-            // Construir request
             const request = builder
                 .forOrder(this.orderId())
                 .withAmount(this.amount(), this.currency())
@@ -222,7 +200,6 @@ export class CheckoutComponent {
                 method: request.method.type
             });
 
-            // Ejecutar pago
             this.paymentState.startPayment(request, provider);
 
         } catch (error) {
@@ -243,7 +220,6 @@ export class CheckoutComponent {
         this.paymentState.cancelFallback();
     }
 
-    // === Reset ===
     resetPayment(): void {
         this.paymentState.reset();
         this.orderId.set('order_' + Math.random().toString(36).substring(7));
@@ -251,7 +227,6 @@ export class CheckoutComponent {
         this.logger.info('Payment reset', 'CheckoutPage');
     }
 
-    // ===== Textos para el template =====
     get checkoutTitle(): string {
         return this.i18n.t(I18nKeys.ui.checkout);
     }

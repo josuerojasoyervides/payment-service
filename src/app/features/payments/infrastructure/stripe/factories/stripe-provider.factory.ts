@@ -16,17 +16,17 @@ import { StripeTokenValidator } from '../validators/stripe-token.validator';
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Factory de Stripe.
+ * Stripe provider factory.
  *
- * Responsabilidades:
- * - Proveer el gateway de Stripe
- * - Crear estrategias específicas para Stripe
- * - Proveer builders específicos para cada método de pago
- * - Exponer requisitos de campos para la UI
+ * Responsibilities:
+ * - Provide Stripe gateway
+ * - Create Stripe-specific strategies
+ * - Provide builders for each payment method
+ * - Expose field requirements for UI
  *
- * Métodos soportados por Stripe:
- * - card: Tarjetas de crédito/débito con soporte 3DS
- * - spei: Transferencias SPEI (México)
+ * Supported payment methods:
+ * - card: Credit/debit cards with 3DS support
+ * - spei: SPEI transfers (Mexico)
  */
 @Injectable()
 export class StripeProviderFactory implements ProviderFactory {
@@ -36,12 +36,12 @@ export class StripeProviderFactory implements ProviderFactory {
     private readonly i18n = inject(I18nService);
 
     /**
-     * Cache de estrategias para evitar recrearlas.
+     * Strategy cache to avoid recreating them.
      */
     private readonly strategyCache = new Map<PaymentMethodType, PaymentStrategy>();
 
     /**
-     * Métodos de pago soportados por Stripe.
+     * Payment methods supported by Stripe.
      */
     static readonly SUPPORTED_METHODS: PaymentMethodType[] = ['card', 'spei'];
 
@@ -50,7 +50,7 @@ export class StripeProviderFactory implements ProviderFactory {
     }
 
     /**
-     * Crea o retorna una estrategia cacheada para el tipo de pago.
+     * Creates or returns a cached strategy for the payment type.
      */
     createStrategy(type: PaymentMethodType): PaymentStrategy {
         this.assertSupported(type);
@@ -75,14 +75,14 @@ export class StripeProviderFactory implements ProviderFactory {
     }
 
     // ============================================================
-    // NUEVOS MÉTODOS PARA BUILDERS
+    // BUILDER METHODS
     // ============================================================
 
     /**
-     * Crea un builder específico para el método de pago.
+     * Creates a builder specific to the payment method.
      * 
-     * La UI usa esto para construir el request con los campos correctos.
-     * Cada builder sabe qué campos necesita y valida al hacer build().
+     * The UI uses this to build the request with the correct fields.
+     * Each builder knows what fields it needs and validates on build().
      */
     createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilder {
         this.assertSupported(type);
@@ -98,9 +98,9 @@ export class StripeProviderFactory implements ProviderFactory {
     }
 
     /**
-     * Retorna los requisitos de campos para un método de pago.
+     * Returns field requirements for a payment method.
      * 
-     * La UI usa esto para renderizar el formulario correcto.
+     * The UI uses this to render the correct form.
      */
     getFieldRequirements(type: PaymentMethodType): FieldRequirements {
         this.assertSupported(type);
@@ -162,7 +162,6 @@ export class StripeProviderFactory implements ProviderFactory {
     private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
         switch (type) {
             case 'card':
-                // Inyectar el validador de tokens de Stripe
                 return new CardStrategy(this.gateway, new StripeTokenValidator(), this.i18n);
             case 'spei':
                 return new SpeiStrategy(this.gateway, this.i18n);

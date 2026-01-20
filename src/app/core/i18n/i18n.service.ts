@@ -4,55 +4,47 @@ import { es } from './translations/es';
 import { en } from './translations/en';
 
 /**
- * Servicio de internacionalización (i18n).
+ * Internationalization (i18n) service.
  * 
- * Proporciona traducciones centralizadas para toda la aplicación.
- * Soporta múltiples idiomas y cambio dinámico de idioma.
+ * Provides centralized translations for the entire application.
+ * Supports multiple languages and dynamic language switching.
  * 
  * @example
  * ```typescript
  * import { I18nKeys } from '@core/i18n';
  * 
- * // Inyectar el servicio
  * private readonly i18n = inject(I18nService);
  * 
- * // Uso recomendado: con I18nKeys (autocompletado completo)
  * const message = this.i18n.t(I18nKeys.errors.card_declined);
  * const message = this.i18n.t(I18nKeys.ui.loading);
  * 
- * // Con parámetros
  * const message = this.i18n.t(I18nKeys.errors.min_amount, { amount: 10, currency: 'MXN' });
  * 
- * // También acepta strings literales (para casos dinámicos)
  * const dynamicKey = `errors.${errorCode}`;
  * this.i18n.t(dynamicKey);
  * ```
  */
 @Injectable({ providedIn: 'root' })
 export class I18nService {
-    /** Idioma actual (signal reactivo) */
     private readonly _currentLang = signal<string>('es');
     
-    /** Traducciones disponibles */
     private readonly translationsMap: Record<string, Translations> = {
         es,
         en,
     };
     
-    /** Traducciones cargadas */
     private get translations(): Translations {
         return this.translationsMap[this._currentLang()] || this.translationsMap['es'];
     }
     
-    /** Idioma actual (readonly) */
     readonly currentLang = this._currentLang.asReadonly();
     
     /**
-     * Obtiene una traducción por clave.
+     * Gets a translation by key.
      * 
-     * @param key Clave de traducción (ej: 'errors.card_declined')
-     * @param params Parámetros opcionales para interpolación
-     * @returns Texto traducido o la clave si no se encuentra
+     * @param key Translation key (e.g., 'errors.card_declined')
+     * @param params Optional parameters for interpolation
+     * @returns Translated text or the key if not found
      */
     t(key: string, params?: Record<string, string | number>): string {
         const translation = this.getTranslation(key);
@@ -62,7 +54,6 @@ export class I18nService {
             return key;
         }
         
-        // Interpolación de parámetros
         if (params) {
             return this.interpolate(translation, params);
         }
@@ -71,9 +62,9 @@ export class I18nService {
     }
     
     /**
-     * Cambia el idioma actual.
+     * Changes the current language.
      * 
-     * @param lang C?digo de idioma (ej: 'es', 'en')
+     * @param lang Language code (e.g., 'es', 'en')
      */
     setLanguage(lang: string): void {
         if (this.translationsMap[lang]) {
@@ -84,29 +75,22 @@ export class I18nService {
     }
     
     /**
-     * Obtiene el idioma actual.
+     * Gets the current language.
      */
     getLanguage(): string {
         return this._currentLang();
     }
     
     /**
-     * Verifica si existe una traducción para una clave.
+     * Checks if a translation exists for a key.
      * 
-     * @param key Clave de traducción
-     * @returns true si la clave existe, false en caso contrario
+     * @param key Translation key
+     * @returns true if the key exists, false otherwise
      */
     has(key: string): boolean {
         return this.getTranslation(key) !== undefined;
     }
     
-    // ============================================================
-    // M?TODOS PRIVADOS
-    // ============================================================
-    
-    /**
-     * Obtiene una traducci?n del objeto de traducciones.
-     */
     private getTranslation(key: string): string | undefined {
         const keys = key.split('.');
         let value: any = this.translations;
@@ -123,7 +107,7 @@ export class I18nService {
     }
     
     /**
-     * Interpola par?metros en una cadena de texto.
+     * Interpolates parameters in a text string.
      * 
      * @example
      * interpolate('Min amount: {{amount}} {{currency}}', { amount: 10, currency: 'MXN' })

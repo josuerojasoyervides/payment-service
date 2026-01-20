@@ -1,161 +1,161 @@
 /**
- * Configuración del sistema de caché HTTP.
+ * HTTP cache system configuration.
  */
 export interface CacheConfig {
-    /** TTL por defecto en milisegundos (default: 30000 = 30s) */
+    /** Default TTL in milliseconds (default: 30000 = 30s) */
     defaultTTL: number;
 
-    /** Número máximo de entradas en caché (default: 100) */
+    /** Maximum number of cache entries (default: 100) */
     maxEntries: number;
 
-    /** Métodos HTTP que son cacheables (default: ['GET']) */
+    /** HTTP methods that are cacheable (default: ['GET']) */
     cacheableMethods: string[];
 
-    /** Patrones de URL a excluir del caché */
+    /** URL patterns to exclude from cache */
     excludePatterns: RegExp[];
 
-    /** Si respetar headers Cache-Control (default: true) */
+    /** Whether to respect Cache-Control headers (default: true) */
     respectCacheControl: boolean;
 
-    /** Si agregar header X-Cache a las respuestas (default: true) */
+    /** Whether to add X-Cache header to responses (default: true) */
     addCacheHeader: boolean;
 }
 
 /**
- * Entrada individual en el caché.
+ * Individual cache entry.
  */
 export interface CacheEntry<T = unknown> {
-    /** Datos cacheados */
+    /** Cached data */
     data: T;
 
-    /** Timestamp de cuando se cacheó */
+    /** Timestamp when cached */
     timestamp: number;
 
-    /** TTL específico para esta entrada */
+    /** Specific TTL for this entry */
     ttl: number;
 
-    /** ETag para validación condicional */
+    /** ETag for conditional validation */
     etag?: string;
 
-    /** Último acceso (para LRU) */
+    /** Last access (for LRU) */
     lastAccess: number;
 
-    /** Número de accesos (para estadísticas) */
+    /** Number of accesses (for statistics) */
     accessCount: number;
 
-    /** Headers originales de la respuesta */
+    /** Original response headers */
     headers?: Record<string, string>;
 }
 
 /**
- * Información del caché para debugging/observabilidad.
+ * Cache information for debugging/observability.
  */
 export interface CacheInfo {
-    /** Número de entradas activas */
+    /** Number of active entries */
     size: number;
 
-    /** Número máximo de entradas */
+    /** Maximum number of entries */
     maxSize: number;
 
-    /** Ratio de aciertos (hits / total requests) */
+    /** Hit ratio (hits / total requests) */
     hitRatio: number;
 
-    /** Total de aciertos */
+    /** Total hits */
     hits: number;
 
-    /** Total de fallos */
+    /** Total misses */
     misses: number;
 
-    /** Entradas expiradas eliminadas */
+    /** Expired entries removed */
     evictions: number;
 }
 
 /**
- * Estadísticas de una entrada específica.
+ * Statistics for a specific entry.
  */
 export interface CacheEntryStats {
-    /** Key del caché */
+    /** Cache key */
     key: string;
 
-    /** Timestamp de creación */
+    /** Creation timestamp */
     createdAt: number;
 
-    /** Timestamp de último acceso */
+    /** Last access timestamp */
     lastAccessAt: number;
 
-    /** Número de accesos */
+    /** Number of accesses */
     accessCount: number;
 
-    /** TTL restante en ms */
+    /** Remaining TTL in ms */
     remainingTTL: number;
 
-    /** Si la entrada está expirada */
+    /** Whether entry is expired */
     isExpired: boolean;
 
-    /** Tamaño aproximado en bytes */
+    /** Approximate size in bytes */
     sizeBytes: number;
 }
 
 /**
- * Opciones para operaciones de caché individuales.
+ * Options for individual cache operations.
  */
 export interface CacheOptions {
-    /** TTL específico para esta operación */
+    /** Specific TTL for this operation */
     ttl?: number;
 
-    /** Tags para invalidación por grupo */
+    /** Tags for group invalidation */
     tags?: string[];
 
-    /** ETag para validación condicional */
+    /** ETag for conditional validation */
     etag?: string;
 
-    /** Forzar refresco (ignorar caché existente) */
+    /** Force refresh (ignore existing cache) */
     forceRefresh?: boolean;
 }
 
 /**
- * Resultado de una operación de caché.
+ * Result of a cache operation.
  */
 export interface CacheResult<T> {
-    /** Datos obtenidos */
+    /** Retrieved data */
     data: T;
 
-    /** Si fue un acierto de caché */
+    /** Whether it was a cache hit */
     hit: boolean;
 
-    /** Key usada */
+    /** Key used */
     key: string;
 
-    /** TTL restante (si fue hit) */
+    /** Remaining TTL (if hit) */
     remainingTTL?: number;
 
-    /** Timestamp de cuando se cacheó (si fue hit) */
+    /** Timestamp when cached (if hit) */
     cachedAt?: number;
 }
 
 /**
- * Configuración de TTL por patrón de URL.
+ * TTL configuration by URL pattern.
  */
 export interface TTLPattern {
-    /** Patrón de URL (regex) */
+    /** URL pattern (regex) */
     pattern: RegExp;
 
-    /** TTL en ms para este patrón */
+    /** TTL in ms for this pattern */
     ttl: number;
 
-    /** Descripción del patrón */
+    /** Pattern description */
     description?: string;
 }
 
 /**
- * Configuración por defecto del caché.
+ * Default cache configuration.
  */
 export const DEFAULT_CACHE_CONFIG: CacheConfig = {
-    defaultTTL: 30000,         // 30 segundos
+    defaultTTL: 30000,
     maxEntries: 100,
     cacheableMethods: ['GET'],
     excludePatterns: [
-        /\/auth\//,            // Endpoints de autenticación
+        /\/auth\//,
         /\/login$/,
         /\/logout$/,
         /\/refresh-token$/,
@@ -165,28 +165,28 @@ export const DEFAULT_CACHE_CONFIG: CacheConfig = {
 };
 
 /**
- * Patrones de TTL predefinidos para endpoints comunes.
+ * Predefined TTL patterns for common endpoints.
  */
 export const COMMON_TTL_PATTERNS: TTLPattern[] = [
     {
         pattern: /\/intents\/[^/]+$/,
-        ttl: 30000,  // 30s para estados de pago
+        ttl: 30000,
         description: 'Payment intent status',
     },
     {
         pattern: /\/config$/,
-        ttl: 300000, // 5 minutos para configuración
+        ttl: 300000,
         description: 'Configuration endpoints',
     },
     {
         pattern: /\/static\//,
-        ttl: 3600000, // 1 hora para recursos estáticos
+        ttl: 3600000,
         description: 'Static resources',
     },
 ];
 
 /**
- * Genera una cache key a partir de URL y parámetros.
+ * Generates a cache key from URL and parameters.
  */
 export function generateCacheKey(url: string, params?: Record<string, string>): string {
     let key = url;
@@ -203,14 +203,14 @@ export function generateCacheKey(url: string, params?: Record<string, string>): 
 }
 
 /**
- * Verifica si una URL está excluida del caché.
+ * Checks if a URL is excluded from cache.
  */
 export function isExcludedFromCache(url: string, patterns: RegExp[]): boolean {
     return patterns.some(pattern => pattern.test(url));
 }
 
 /**
- * Obtiene el TTL para una URL basado en patrones.
+ * Gets TTL for a URL based on patterns.
  */
 export function getTTLForUrl(url: string, patterns: TTLPattern[], defaultTTL: number): number {
     for (const pattern of patterns) {
@@ -222,7 +222,7 @@ export function getTTLForUrl(url: string, patterns: TTLPattern[], defaultTTL: nu
 }
 
 /**
- * Parsea el header Cache-Control para extraer max-age.
+ * Parses Cache-Control header to extract max-age.
  */
 export function parseCacheControlMaxAge(cacheControl: string | null): number | undefined {
     if (!cacheControl) {
@@ -231,14 +231,14 @@ export function parseCacheControlMaxAge(cacheControl: string | null): number | u
 
     const match = cacheControl.match(/max-age=(\d+)/);
     if (match) {
-        return parseInt(match[1], 10) * 1000; // Convertir a ms
+        return parseInt(match[1], 10) * 1000;
     }
 
     return undefined;
 }
 
 /**
- * Verifica si el header Cache-Control indica no-cache o no-store.
+ * Checks if Cache-Control header indicates no-cache or no-store.
  */
 export function shouldSkipCache(cacheControl: string | null): boolean {
     if (!cacheControl) {
@@ -249,12 +249,11 @@ export function shouldSkipCache(cacheControl: string | null): boolean {
 }
 
 /**
- * Estima el tamaño en bytes de un objeto.
+ * Estimates size in bytes of an object.
  */
 export function estimateSizeInBytes(obj: unknown): number {
     try {
         const str = JSON.stringify(obj);
-        // En UTF-8, cada carácter puede ser 1-4 bytes, asumimos promedio de 1.5
         return Math.ceil(str.length * 1.5);
     } catch {
         return 0;

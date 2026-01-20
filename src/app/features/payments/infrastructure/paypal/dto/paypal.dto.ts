@@ -1,35 +1,31 @@
 /**
- * DTOs basados en la API real de PayPal Orders v2
+ * DTOs based on PayPal Orders v2 real API
  * @see https://developer.paypal.com/docs/api/orders/v2/
  */
 
 export interface PaypalOrderDto {
-    id: string;                          // 5O190127TN364715T
+    id: string;
     status: PaypalOrderStatus;
     intent: 'CAPTURE' | 'AUTHORIZE';
-    create_time: string;                 // ISO 8601
+    create_time: string;
     update_time: string;
 
-    // Links HATEOAS
     links: PaypalLink[];
 
-    // Unidades de compra
     purchase_units: PaypalPurchaseUnit[];
 
-    // Pagador (después de aprobación)
     payer?: PaypalPayer;
 
-    // Información de pago (después de captura)
     payment_source?: PaypalPaymentSource;
 }
 
 export type PaypalOrderStatus =
-    | 'CREATED'           // Orden creada, pendiente de aprobación
-    | 'SAVED'             // Orden guardada
-    | 'APPROVED'          // Aprobada por el pagador
-    | 'VOIDED'            // Cancelada
-    | 'COMPLETED'         // Capturada exitosamente
-    | 'PAYER_ACTION_REQUIRED';  // Requiere acción del pagador
+    | 'CREATED'
+    | 'SAVED'
+    | 'APPROVED'
+    | 'VOIDED'
+    | 'COMPLETED'
+    | 'PAYER_ACTION_REQUIRED';
 
 export interface PaypalLink {
     href: string;
@@ -40,13 +36,13 @@ export interface PaypalLink {
 export interface PaypalPurchaseUnit {
     reference_id: string;
     description?: string;
-    custom_id?: string;                  // Tu orderId
+    custom_id?: string;
     invoice_id?: string;
     soft_descriptor?: string;
 
     amount: {
-        currency_code: string;           // 'MXN', 'USD'
-        value: string;                   // '100.00' (string!)
+        currency_code: string;
+        value: string;
         breakdown?: {
             item_total?: PaypalMoney;
             shipping?: PaypalMoney;
@@ -57,7 +53,6 @@ export interface PaypalPurchaseUnit {
 
     items?: PaypalItem[];
 
-    // Después de captura
     payments?: {
         captures?: PaypalCapture[];
         authorizations?: PaypalAuthorization[];
@@ -157,7 +152,7 @@ export interface PaypalErrorResponse {
     links?: PaypalLink[];
 }
 
-// Helpers para extraer links
+// Helpers to extract links
 export function findPaypalLink(links: PaypalLink[], rel: PaypalLink['rel']): string | null {
     return links.find(l => l.rel === rel)?.href ?? null;
 }

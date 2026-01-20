@@ -4,10 +4,10 @@ import { PaymentMethodType, getDefaultMethods, MethodOption } from '../../shared
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Componente selector de método de pago.
+ * Payment method selector component.
  * 
- * Muestra opciones de métodos de pago (tarjeta, SPEI, etc.)
- * filtradas según lo que soporte el proveedor seleccionado.
+ * Displays payment method options (card, SPEI, etc.)
+ * filtered by what the selected provider supports.
  * 
  * @example
  * ```html
@@ -28,19 +28,19 @@ import { I18nService, I18nKeys } from '@core/i18n';
 export class MethodSelectorComponent {
     private readonly i18n = inject(I18nService);
     
-    /** Lista de métodos de pago disponibles */
+    /** List of available payment methods */
     readonly methods = input.required<PaymentMethodType[]>();
     
-    /** Método actualmente seleccionado */
+    /** Currently selected method */
     readonly selected = input<PaymentMethodType | null>(null);
     
-    /** Si el selector está deshabilitado */
+    /** Whether selector is disabled */
     readonly disabled = input<boolean>(false);
     
-    /** Emite cuando se selecciona un método */
+    /** Emits when a method is selected */
     readonly methodChange = output<PaymentMethodType>();
 
-    /** Opciones de métodos con metadata */
+    /** Method options with metadata */
     methodOptions(): MethodOption[] {
         const defaultMethods = getDefaultMethods(this.i18n);
         return this.methods()

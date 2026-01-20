@@ -4,10 +4,10 @@ import { PaymentIntent, PaymentError, STATUS_BADGE_MAP } from '../../shared';
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Componente que muestra el resultado de un pago.
+ * Component that displays payment result.
  * 
- * Puede mostrar un pago exitoso con detalles del intent,
- * o un error con mensaje y opción de reintentar.
+ * Can show a successful payment with intent details,
+ * or an error with message and retry option.
  * 
  * @example
  * ```html
@@ -28,31 +28,31 @@ import { I18nService, I18nKeys } from '@core/i18n';
 export class PaymentResultComponent {
     private readonly i18n = inject(I18nService);
 
-    /** Intent del pago (si fue exitoso) */
+    /** Payment intent (if successful) */
     readonly intent = input<PaymentIntent | null>(null);
 
-    /** Error del pago (si falló) */
+    /** Payment error (if failed) */
     readonly error = input<PaymentError | null>(null);
 
-    /** Emite cuando el usuario quiere reintentar */
+    /** Emits when user wants to retry */
     readonly retry = output<void>();
 
-    /** Emite cuando el usuario quiere hacer un nuevo pago */
+    /** Emits when user wants to make a new payment */
     readonly newPayment = output<void>();
 
-    /** Si hay un intent válido */
+    /** Whether there is a valid intent */
     readonly hasIntent = computed(() => this.intent() !== null);
 
-    /** Si hay un error */
+    /** Whether there is an error */
     readonly hasError = computed(() => this.error() !== null);
 
-    /** Si el pago fue exitoso */
+    /** Whether payment was successful */
     readonly isSucceeded = computed(() => {
         const i = this.intent();
         return i !== null && i.status === 'succeeded';
     });
 
-    /** Mensaje de error legible */
+    /** Readable error message */
     readonly errorMessage = computed(() => {
         const e = this.error();
         if (!e) return this.i18n.t(I18nKeys.ui.payment_error);
@@ -62,7 +62,7 @@ export class PaymentResultComponent {
         return this.i18n.t(I18nKeys.ui.payment_error);
     });
 
-    /** Código de error */
+    /** Error code */
     readonly errorCode = computed(() => {
         const e = this.error();
         if (!e) return null;
@@ -72,23 +72,20 @@ export class PaymentResultComponent {
         return null;
     });
 
-    /** Clase CSS del badge de estado */
+    /** CSS class for status badge */
     readonly statusBadgeClass = computed(() => {
         const i = this.intent();
         if (!i) return 'badge';
         return STATUS_BADGE_MAP[i.status] || 'badge';
     });
 
-    /** Texto del estado */
+    /** Status text */
     readonly statusText = computed(() => {
         const i = this.intent();
         if (!i) return '';
-        // Para claves dinámicas, usamos string literal (no hay otra opción)
         const statusKey = `messages.status_${i.status}`;
         return this.i18n.has(statusKey) ? this.i18n.t(statusKey) : i.status;
     });
-
-    // ===== Textos para el template (mantener lógica en el componente) =====
     get paymentErrorTitle(): string {
         return this.i18n.t(I18nKeys.ui.payment_error);
     }

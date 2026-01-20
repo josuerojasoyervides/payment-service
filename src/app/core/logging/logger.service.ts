@@ -17,23 +17,20 @@ export const LOGGER_CONFIG = new InjectionToken<Partial<LoggerConfig>>('LOGGER_C
  * Servicio de logging estructurado.
  * 
  * Características:
- * - Correlation IDs para trazar flujos completos
- * - Output estructurado (JSON) listo para backend
- * - Niveles de log configurables
- * - Medición de duración de operaciones
+ * - Correlation IDs to trace complete flows
+ * - Structured output (JSON) ready for backend
+ * - Configurable log levels
+ * - Operation duration measurement
  * - Context-aware logging
  * 
  * @example
  * ```typescript
- * // Uso básico
  * logger.info('Payment started', 'CheckoutComponent', { orderId: '123' });
  * 
- * // Con correlación
  * const ctx = logger.startCorrelation('payment-flow', { orderId: '123' });
  * logger.info('Creating intent', 'Gateway', {}, ctx.correlationId);
  * logger.endCorrelation(ctx);
  * 
- * // Medir operación
  * const result = await logger.measure('createIntent', async () => {
  *   return gateway.createIntent(req);
  * }, 'StripeGateway');
@@ -45,10 +42,8 @@ export class LoggerService {
     private readonly config: LoggerConfig;
     private readonly activeCorrelations = new Map<string, CorrelationContext>();
 
-    /** Correlation ID del contexto actual (thread-local simulation) */
     private currentCorrelationId: string | null = null;
 
-    /** Buffer de logs para envío batch al backend */
     private readonly logBuffer: LogEntry[] = [];
     private readonly MAX_BUFFER_SIZE = 100;
 
@@ -56,49 +51,41 @@ export class LoggerService {
         this.config = { ...DEFAULT_LOGGER_CONFIG, ...this.injectedConfig };
     }
 
-    // ============================================================
-    // MÉTODOS PRINCIPALES DE LOGGING
-    // ============================================================
-
     /**
-     * Log de nivel debug.
+     * Debug level log.
      */
     debug(message: string, context: string, metadata?: Record<string, unknown>, correlationId?: string): void {
         this.log('debug', message, context, metadata, correlationId);
     }
 
     /**
-     * Log de nivel info.
+     * Info level log.
      */
     info(message: string, context: string, metadata?: Record<string, unknown>, correlationId?: string): void {
         this.log('info', message, context, metadata, correlationId);
     }
 
     /**
-     * Log de nivel warn.
+     * Warn level log.
      */
     warn(message: string, context: string, metadata?: Record<string, unknown>, correlationId?: string): void {
         this.log('warn', message, context, metadata, correlationId);
     }
 
     /**
-     * Log de nivel error.
+     * Error level log.
      */
     error(message: string, context: string, error?: unknown, metadata?: Record<string, unknown>, correlationId?: string): void {
         const errorMeta = this.extractErrorInfo(error);
         this.log('error', message, context, { ...metadata, ...errorMeta }, correlationId, errorMeta.stack);
     }
 
-    // ============================================================
-    // CORRELATION / TRACING
-    // ============================================================
-
     /**
-     * Inicia un contexto de correlación para trazar un flujo completo.
+     * Starts a correlation context to trace a complete flow.
      * 
-     * @param operation Nombre de la operación (ej: 'payment-flow', 'checkout')
-     * @param metadata Metadata inicial del contexto
-     * @returns Contexto de correlación
+     * @param operation Operation name (e.g., 'payment-flow', 'checkout')
+     * @param metadata Initial context metadata
+     * @returns Correlation context
      */
     startCorrelation(operation: string, metadata?: Record<string, unknown>): CorrelationContext {
         const correlationId = this.generateCorrelationId();
@@ -158,17 +145,13 @@ export class LoggerService {
         this.currentCorrelationId = null;
     }
 
-    // ============================================================
-    // MEDICIÓN DE OPERACIONES
-    // ============================================================
-
     /**
-     * Ejecuta una función y mide su duración, logueando el resultado.
+     * Executes a function and measures its duration, logging the result.
      * 
-     * @param operationName Nombre de la operación
-     * @param fn Función a ejecutar
-     * @param context Contexto del log
-     * @param metadata Metadata adicional
+     * @param operationName Operation name
+     * @param fn Function to execute
+     * @param context Log context
+     * @param metadata Additional metadata
      */
     async measure<T>(
         operationName: string,
@@ -209,7 +192,7 @@ export class LoggerService {
     }
 
     /**
-     * Versión síncrona de measure.
+     * Synchronous version of measure.
      */
     measureSync<T>(
         operationName: string,
@@ -249,10 +232,6 @@ export class LoggerService {
         }
     }
 
-    // ============================================================
-    // MÉTODOS INTERNOS
-    // ============================================================
-
     private log(
         level: LogLevel,
         message: string,
@@ -261,7 +240,6 @@ export class LoggerService {
         correlationId?: string,
         stack?: string
     ): void {
-        // Verificar nivel mínimo
         if (LOG_LEVEL_PRIORITY[level] < LOG_LEVEL_PRIORITY[this.config.minLevel]) {
             return;
         }
@@ -279,7 +257,6 @@ export class LoggerService {
         // Output a consola
         this.writeToConsole(entry);
 
-        // Buffer para backend
         if (this.config.sendToBackend) {
             this.bufferLog(entry);
         }
@@ -325,7 +302,7 @@ export class LoggerService {
     }
 
     /**
-     * Envía los logs buffereados al backend.
+     * Sends buffered logs to backend.
      */
     flushLogs(): void {
         if (!this.config.sendToBackend || !this.config.backendUrl || this.logBuffer.length === 0) {
@@ -335,7 +312,6 @@ export class LoggerService {
         const logsToSend = [...this.logBuffer];
         this.logBuffer.length = 0;
 
-        // Usar sendBeacon para garantizar entrega incluso al cerrar la página
         if (navigator.sendBeacon) {
             navigator.sendBeacon(
                 this.config.backendUrl,

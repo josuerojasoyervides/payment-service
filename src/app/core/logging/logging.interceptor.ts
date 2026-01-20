@@ -104,16 +104,14 @@ function sanitizeUrl(url: string): string {
             }
         }
         
-        // Retornar path + query sin el origin para logs más limpios
         return urlObj.pathname + urlObj.search;
     } catch {
-        // Si no es una URL válida, retornar tal cual
         return url;
     }
 }
 
 /**
- * Obtiene el content-length de la respuesta si está disponible.
+ * Gets response content-length if available.
  */
 function getContentLength(response: HttpResponse<unknown>): number | undefined {
     const contentLength = response.headers.get('content-length');

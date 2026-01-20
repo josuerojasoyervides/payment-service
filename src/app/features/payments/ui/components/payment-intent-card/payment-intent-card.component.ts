@@ -4,10 +4,10 @@ import { PaymentIntent, STATUS_BADGE_MAP, getStatusText } from '../../shared';
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Componente card para mostrar un PaymentIntent.
+ * Card component to display a PaymentIntent.
  * 
- * Útil para listas de historial, página de status, etc.
- * Muestra información resumida y acciones opcionales.
+ * Useful for history lists, status page, etc.
+ * Shows summarized information and optional actions.
  * 
  * @example
  * ```html
@@ -30,30 +30,30 @@ import { I18nService, I18nKeys } from '@core/i18n';
 export class PaymentIntentCardComponent {
     private readonly i18n = inject(I18nService);
     
-    /** Intent a mostrar */
+    /** Intent to display */
     readonly intent = input.required<PaymentIntent>();
     
-    /** Si mostrar acciones */
+    /** Whether to show actions */
     readonly showActions = input<boolean>(true);
     
-    /** Si está expandido */
+    /** Whether expanded */
     readonly expanded = input<boolean>(false);
     
-    /** Emite para confirmar el intent */
+    /** Emits to confirm the intent */
     readonly confirm = output<string>();
     
-    /** Emite para cancelar el intent */
+    /** Emits to cancel the intent */
     readonly cancel = output<string>();
     
-    /** Emite para refrescar el estado */
+    /** Emits to refresh status */
     readonly refresh = output<string>();
     
-    /** Emite para expandir/colapsar */
+    /** Emits to expand/collapse */
     readonly expandedChange = output<boolean>();
 
     private _expanded = false;
 
-    /** Estado helpers */
+    /** Status helpers */
     readonly isSucceeded = computed(() => this.intent().status === 'succeeded');
     readonly isFailed = computed(() => this.intent().status === 'failed');
     readonly isCanceled = computed(() => this.intent().status === 'canceled');
@@ -62,22 +62,22 @@ export class PaymentIntentCardComponent {
     );
     readonly isProcessing = computed(() => this.intent().status === 'processing');
 
-    /** Si se puede confirmar */
+    /** Whether can confirm */
     readonly canConfirm = computed(() => 
         ['requires_confirmation', 'requires_action'].includes(this.intent().status)
     );
 
-    /** Si se puede cancelar */
+    /** Whether can cancel */
     readonly canCancel = computed(() => 
         !['succeeded', 'canceled', 'failed'].includes(this.intent().status)
     );
 
-    /** Clase del badge de estado */
+    /** Status badge class */
     readonly statusBadgeClass = computed(() => {
         return STATUS_BADGE_MAP[this.intent().status] || 'badge';
     });
 
-    /** Texto del estado */
+    /** Status text */
     readonly statusText = computed(() => {
         return getStatusText(this.i18n, this.intent().status);
     });

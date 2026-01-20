@@ -168,7 +168,6 @@ describe('CheckoutComponent', () => {
 
         it('debe auto-seleccionar el primer provider disponible', () => {
             fixture.detectChanges();
-            // El effect se ejecuta después de detectChanges
             expect(component.selectedProvider()).toBe('stripe');
         });
 
@@ -176,7 +175,6 @@ describe('CheckoutComponent', () => {
             fixture.detectChanges();
             component.selectedProvider.set('stripe');
             fixture.detectChanges();
-            // El effect se ejecuta después de detectChanges
             expect(component.selectedMethod()).toBe('card');
         });
     });
@@ -263,7 +261,6 @@ describe('CheckoutComponent', () => {
         it('debe actualizar form options', () => {
             const options: PaymentOptions = { token: 'tok_test' };
             component.onFormChange(options);
-            // No hay getter público, pero podemos verificar que no lanza error
             expect(() => component.onFormChange(options)).not.toThrow();
         });
 

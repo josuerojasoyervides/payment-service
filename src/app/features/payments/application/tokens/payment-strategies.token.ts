@@ -3,24 +3,24 @@ import { PaymentStrategy } from '../../domain/ports';
 import { PaymentProviderId } from '../../domain/models';
 
 /**
- * Token para inyectar estrategias de pago por provider.
+ * Token to inject payment strategies by provider.
  *
- * Cada provider registra sus propias estrategias usando multi: true.
- * Esto permite agregar nuevos métodos de pago sin modificar código existente.
+ * Each provider registers its own strategies using multi: true.
+ * This allows adding new payment methods without modifying existing code.
  */
 export const PAYMENT_STRATEGIES = new InjectionToken<PaymentStrategy[]>('PAYMENT_STRATEGIES');
 
 /**
- * Interfaz para registrar estrategias con metadata.
+ * Interface to register strategies with metadata.
  */
 export interface RegisteredStrategy {
-    /** Provider al que pertenece esta estrategia */
+    /** Provider this strategy belongs to */
     providerId: PaymentProviderId;
-    /** La estrategia en sí */
+    /** The strategy itself */
     strategy: PaymentStrategy;
 }
 
 /**
- * Token para estrategias con su metadata.
+ * Token for strategies with their metadata.
  */
 export const REGISTERED_PAYMENT_STRATEGIES = new InjectionToken<RegisteredStrategy[]>('REGISTERED_PAYMENT_STRATEGIES');

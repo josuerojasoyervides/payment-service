@@ -28,7 +28,6 @@ export interface LanguageOption {
 export class LanguageSelectorComponent {
     private readonly i18n = inject(I18nService);
 
-    /** Idiomas disponibles con nombres estáticos (los nombres de idioma no cambian con el idioma seleccionado) */
     readonly languages: LanguageOption[] = [
         { code: 'es', name: 'Español', flag: '🇪🇸' },
         { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -43,7 +42,6 @@ export class LanguageSelectorComponent {
         return this.languages.find(l => l.code === lang) || this.languages[0];
     });
 
-    /** Si el dropdown está abierto */
     isOpen = false;
 
     /**

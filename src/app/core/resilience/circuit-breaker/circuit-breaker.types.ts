@@ -1,54 +1,54 @@
 /**
- * Estados posibles del Circuit Breaker.
+ * Possible Circuit Breaker states.
  * 
- * - closed: Operación normal, las llamadas pasan
- * - open: Circuito abierto, las llamadas se rechazan inmediatamente
- * - half-open: Estado de prueba, permite una llamada para verificar recuperación
+ * - closed: Normal operation, calls pass through
+ * - open: Circuit open, calls are rejected immediately
+ * - half-open: Test state, allows one call to verify recovery
  */
 export type CircuitState = 'closed' | 'open' | 'half-open';
 
 /**
- * Información del estado de un circuito específico.
+ * Information about a specific circuit's state.
  */
 export interface CircuitInfo {
-    /** Estado actual del circuito */
+    /** Current circuit state */
     state: CircuitState;
     
-    /** Contador de fallos consecutivos */
+    /** Consecutive failures counter */
     failures: number;
     
-    /** Timestamp del último fallo */
+    /** Last failure timestamp */
     lastFailure: number;
     
-    /** Timestamp de cuando se abrió el circuito */
+    /** Timestamp when circuit was opened */
     openedAt?: number;
     
-    /** Contador de éxitos consecutivos (en half-open) */
+    /** Consecutive successes counter (in half-open) */
     successes: number;
 }
 
 /**
- * Configuración del Circuit Breaker.
+ * Circuit Breaker configuration.
  */
 export interface CircuitBreakerConfig {
-    /** Número de fallos antes de abrir el circuito (default: 5) */
+    /** Number of failures before opening circuit (default: 5) */
     failureThreshold: number;
     
-    /** Tiempo en ms para considerar un fallo como "reciente" (default: 30000) */
+    /** Time in ms to consider a failure as "recent" (default: 30000) */
     failureWindow: number;
     
-    /** Tiempo en ms antes de intentar half-open (default: 60000) */
+    /** Time in ms before attempting half-open (default: 60000) */
     resetTimeout: number;
     
-    /** Número de éxitos en half-open para cerrar el circuito (default: 2) */
+    /** Number of successes in half-open to close circuit (default: 2) */
     successThreshold: number;
     
-    /** Códigos de status HTTP que cuentan como fallo (default: 5xx) */
+    /** HTTP status codes that count as failure (default: 5xx) */
     failureStatusCodes: number[];
 }
 
 /**
- * Error lanzado cuando el circuito está abierto.
+ * Error thrown when circuit is open.
  */
 export class CircuitOpenError extends Error {
     constructor(
@@ -61,7 +61,7 @@ export class CircuitOpenError extends Error {
 }
 
 /**
- * Configuración por defecto del Circuit Breaker.
+ * Default Circuit Breaker configuration.
  */
 export const DEFAULT_CIRCUIT_BREAKER_CONFIG: CircuitBreakerConfig = {
     failureThreshold: 5,

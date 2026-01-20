@@ -1,76 +1,76 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
 /**
- * Configuración del sistema de retry con backoff exponencial.
+ * Retry system configuration with exponential backoff.
  */
 export interface RetryConfig {
-    /** Número máximo de reintentos (default: 3) */
+    /** Maximum number of retries (default: 3) */
     maxRetries: number;
 
-    /** Delay inicial en ms antes del primer reintento (default: 1000) */
+    /** Initial delay in ms before first retry (default: 1000) */
     initialDelay: number;
 
-    /** Delay máximo en ms entre reintentos (default: 30000) */
+    /** Maximum delay in ms between retries (default: 30000) */
     maxDelay: number;
 
-    /** Multiplicador para el backoff exponencial (default: 2) */
+    /** Multiplier for exponential backoff (default: 2) */
     backoffMultiplier: number;
 
-    /** Códigos de status HTTP que son reintentables (default: [408, 429, 500, 502, 503, 504]) */
+    /** HTTP status codes that are retryable (default: [408, 429, 500, 502, 503, 504]) */
     retryableStatusCodes: number[];
 
-    /** Métodos HTTP que son reintentables (default: ['GET', 'PUT', 'DELETE']) */
+    /** HTTP methods that are retryable (default: ['GET', 'PUT', 'DELETE']) */
     retryableMethods: string[];
 
-    /** Factor de jitter para evitar thundering herd (0-1, default: 0.3) */
+    /** Jitter factor to avoid thundering herd (0-1, default: 0.3) */
     jitterFactor: number;
 }
 
 /**
- * Información de un intento de retry.
+ * Information about a retry attempt.
  */
 export interface RetryAttemptInfo {
-    /** Número del intento actual (1-based) */
+    /** Current attempt number (1-based) */
     attempt: number;
 
-    /** Número máximo de intentos */
+    /** Maximum number of attempts */
     maxAttempts: number;
 
-    /** Delay calculado para este intento en ms */
+    /** Calculated delay for this attempt in ms */
     delay: number;
 
-    /** Error que causó el retry */
+    /** Error that caused the retry */
     error: HttpErrorResponse;
 
-    /** Timestamp del intento */
+    /** Attempt timestamp */
     timestamp: number;
 }
 
 /**
- * Estado del retry para un request específico.
+ * Retry state for a specific request.
  */
 export interface RetryState {
-    /** URL del request */
+    /** Request URL */
     url: string;
 
-    /** Método HTTP */
+    /** HTTP method */
     method: string;
 
-    /** Intentos realizados */
+    /** Attempts made */
     attempts: RetryAttemptInfo[];
 
-    /** Si el request finalmente tuvo éxito */
+    /** Whether the request finally succeeded */
     succeeded: boolean;
 
-    /** Timestamp de inicio */
+    /** Start timestamp */
     startedAt: number;
 
-    /** Timestamp de fin */
+    /** End timestamp */
     endedAt?: number;
 }
 
 /**
- * Error lanzado cuando se agotan los reintentos.
+ * Error thrown when retries are exhausted.
  */
 export class RetryExhaustedError extends Error {
     constructor(
@@ -87,7 +87,7 @@ export class RetryExhaustedError extends Error {
 }
 
 /**
- * Configuración por defecto del retry.
+ * Default retry configuration.
  */
 export const DEFAULT_RETRY_CONFIG: RetryConfig = {
     maxRetries: 3,
@@ -100,35 +100,31 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
 };
 
 /**
- * Verifica si un error HTTP es reintentable según la configuración.
+ * Checks if an HTTP error is retryable according to configuration.
  */
 export function isRetryableError(error: HttpErrorResponse, config: RetryConfig): boolean {
     return config.retryableStatusCodes.includes(error.status);
 }
 
 /**
- * Verifica si un método HTTP es reintentable según la configuración.
+ * Checks if an HTTP method is retryable according to configuration.
  */
 export function isRetryableMethod(method: string, config: RetryConfig): boolean {
     return config.retryableMethods.includes(method.toUpperCase());
 }
 
 /**
- * Calcula el delay con backoff exponencial y jitter.
+ * Calculates delay with exponential backoff and jitter.
  * 
- * @param attempt Número del intento (1-based)
- * @param config Configuración de retry
- * @returns Delay en milisegundos
+ * @param attempt Attempt number (1-based)
+ * @param config Retry configuration
+ * @returns Delay in milliseconds
  */
 export function calculateBackoffDelay(attempt: number, config: RetryConfig): number {
-    // Backoff exponencial: initialDelay * (multiplier ^ (attempt - 1))
     const exponentialDelay = config.initialDelay * Math.pow(config.backoffMultiplier, attempt - 1);
 
-    // Aplicar límite máximo
     const cappedDelay = Math.min(exponentialDelay, config.maxDelay);
 
-    // Aplicar jitter para evitar thundering herd
-    // Jitter range: [delay * (1 - jitter), delay * (1 + jitter)]
     const jitter = config.jitterFactor * cappedDelay;
     const minDelay = cappedDelay - jitter;
     const maxDelay = cappedDelay + jitter;
@@ -137,10 +133,10 @@ export function calculateBackoffDelay(attempt: number, config: RetryConfig): num
 }
 
 /**
- * Extrae el valor de Retry-After header si existe.
+ * Extracts Retry-After header value if it exists.
  * 
- * @param error Error HTTP con posible header Retry-After
- * @returns Delay en ms o undefined si no hay header
+ * @param error HTTP error with possible Retry-After header
+ * @returns Delay in ms or undefined if no header
  */
 export function parseRetryAfterHeader(error: HttpErrorResponse): number | undefined {
     const retryAfter = error.headers?.get('Retry-After');
@@ -149,14 +145,12 @@ export function parseRetryAfterHeader(error: HttpErrorResponse): number | undefi
         return undefined;
     }
 
-    // Retry-After puede ser un número de segundos o una fecha HTTP
     const seconds = parseInt(retryAfter, 10);
 
     if (!isNaN(seconds)) {
-        return seconds * 1000; // Convertir a ms
+        return seconds * 1000;
     }
 
-    // Intentar parsear como fecha HTTP
     const date = new Date(retryAfter);
     if (!isNaN(date.getTime())) {
         const delay = date.getTime() - Date.now();

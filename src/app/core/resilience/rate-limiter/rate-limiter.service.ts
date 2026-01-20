@@ -57,27 +57,24 @@ export class RateLimiterService {
         const info = this.getOrCreateInfo(key);
         const now = Date.now();
 
-        // Limpiar ventana si expiró
         this.cleanupWindow(info, now);
 
         return info.requestCount < this.config.maxRequests;
     }
 
     /**
-     * Registra un request realizado.
+     * Records a request made.
      * 
-     * @param endpoint Identificador del endpoint
-     * @throws RateLimitExceededError si se excede el límite
+     * @param endpoint Endpoint identifier
+     * @throws RateLimitExceededError if limit is exceeded
      */
     recordRequest(endpoint: string): void {
         const key = this.getKey(endpoint);
         const info = this.getOrCreateInfo(key);
         const now = Date.now();
 
-        // Limpiar ventana si expiró
         this.cleanupWindow(info, now);
 
-        // Verificar límite
         if (info.requestCount >= this.config.maxRequests) {
             const retryAfter = this.getRetryAfter(endpoint);
             
@@ -100,7 +97,7 @@ export class RateLimiterService {
     }
 
     /**
-     * Obtiene el tiempo en ms hasta que se pueda hacer otro request.
+     * Gets time in ms until another request can be made.
      */
     getRetryAfter(endpoint: string): number {
         const key = this.getKey(endpoint);
@@ -117,7 +114,7 @@ export class RateLimiterService {
     }
 
     /**
-     * Obtiene información del rate limit para un endpoint.
+     * Gets rate limit information for an endpoint.
      */
     getLimitInfo(endpoint: string): RateLimitInfo | undefined {
         const key = this.getKey(endpoint);
@@ -125,7 +122,7 @@ export class RateLimiterService {
     }
 
     /**
-     * Obtiene el número de requests restantes para un endpoint.
+     * Gets the number of remaining requests for an endpoint.
      */
     getRemainingRequests(endpoint: string): number {
         const key = this.getKey(endpoint);
@@ -135,7 +132,6 @@ export class RateLimiterService {
 
         const now = Date.now();
         
-        // Si la ventana expiró, todos los requests están disponibles
         if (now - info.windowStart >= this.config.windowMs) {
             return this.config.maxRequests;
         }
@@ -144,7 +140,7 @@ export class RateLimiterService {
     }
 
     /**
-     * Resetea el contador para un endpoint.
+     * Resets the counter for an endpoint.
      */
     reset(endpoint: string): void {
         const key = this.getKey(endpoint);
@@ -152,15 +148,11 @@ export class RateLimiterService {
     }
 
     /**
-     * Resetea todos los contadores.
+     * Resets all counters.
      */
     resetAll(): void {
         this.limits.clear();
     }
-
-    // ============================================================
-    // MÉTODOS PRIVADOS
-    // ============================================================
 
     private getKey(endpoint: string): string {
         if (!this.config.perEndpoint) {
@@ -189,7 +181,6 @@ export class RateLimiterService {
 
     private cleanupWindow(info: RateLimitInfo, now: number): void {
         if (now - info.windowStart >= this.config.windowMs) {
-            // La ventana expiró, resetear
             info.requestCount = 0;
             info.windowStart = now;
         }

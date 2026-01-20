@@ -16,18 +16,18 @@ import { findPaypalLink, PaypalOrderDto } from "../dto/paypal.dto";
 import { I18nService, I18nKeys } from "@core/i18n";
 
 /**
- * Estrategia de redirección para PayPal.
+ * Redirect strategy for PayPal.
  *
- * PayPal usa un flujo diferente a Stripe:
- * 1. Se crea una "Order" (no un PaymentIntent)
- * 2. El usuario es redirigido a PayPal para aprobar
- * 3. PayPal redirige de vuelta con el token
- * 4. Se captura el pago
+ * PayPal uses a different flow than Stripe:
+ * 1. An "Order" is created (not a PaymentIntent)
+ * 2. User is redirected to PayPal to approve
+ * 3. PayPal redirects back with token
+ * 4. Payment is captured
  *
- * Esta estrategia maneja ese flujo completo.
+ * This strategy handles that complete flow.
  */
 export class PaypalRedirectStrategy implements PaymentStrategy {
-    readonly type: PaymentMethodType = 'card'; // PayPal procesa tarjetas via su checkout
+    readonly type: PaymentMethodType = 'card';
 
     private static readonly DEFAULT_LANDING_PAGE = 'LOGIN';
     private static readonly DEFAULT_USER_ACTION = 'PAY_NOW';
@@ -38,11 +38,11 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     ) { }
 
     /**
-     * Valida el request para PayPal.
+     * Validates the request for PayPal.
      *
-     * PayPal tiene sus propias restricciones:
-     * - Monedas soportadas: USD, MXN, EUR, etc.
-     * - Montos mínimos varían por moneda
+     * PayPal has its own restrictions:
+     * - Supported currencies: USD, MXN, EUR, etc.
+     * - Minimum amounts vary by currency
      */
     validate(req: CreatePaymentRequest): void {
         const supportedCurrencies = ['USD', 'MXN', 'EUR', 'GBP', 'CAD', 'AUD'];
@@ -54,7 +54,6 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
             );
         }
 
-        // Montos mínimos por moneda
         const minAmounts: Record<string, number> = {
             USD: 1,
             MXN: 10,
@@ -69,19 +68,18 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
             throw new Error(`Minimum amount for PayPal in ${req.currency} is ${minAmount}`);
         }
 
-        // PayPal no usa tokens de la misma forma - ignoramos si viene
         if (req.method.token) {
             console.warn('[PaypalRedirectStrategy] Token provided but PayPal uses its own checkout flow');
         }
     }
 
     /**
-     * Prepara el request para PayPal.
+     * Prepares the request for PayPal.
      *
-     * PayPal requiere:
-     * - return_url y cancel_url obligatorios
-     * - Configuración de landing page y user action
-     * - Descripción del producto/servicio
+     * PayPal requires:
+     * - return_url and cancel_url mandatory
+     * - Landing page and user action configuration
+     * - Product/service description
      */
     prepare(req: CreatePaymentRequest, context?: StrategyContext): StrategyPrepareResult {
         const returnUrl = context?.returnUrl ?? `${window.location.origin}/payments/return`;
@@ -93,14 +91,11 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
             cancel_url: cancelUrl,
             landing_page: PaypalRedirectStrategy.DEFAULT_LANDING_PAGE,
             user_action: PaypalRedirectStrategy.DEFAULT_USER_ACTION,
-            brand_name: 'Payment Service', // En prod vendría de configuración
+            brand_name: 'Payment Service',
             timestamp: new Date().toISOString(),
-
-            // PayPal-specific: formatear monto como string con 2 decimales
             formatted_amount: req.amount.toFixed(2),
         };
 
-        // Agregar info del dispositivo para PayPal Risk
         if (context?.deviceData) {
             metadata['paypal_client_metadata_id'] = this.generateClientMetadataId(context.deviceData);
         }
@@ -108,7 +103,6 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
         return {
             preparedRequest: {
                 ...req,
-                // PayPal no necesita token, lo quitamos explícitamente
                 method: { type: 'card' },
             },
             metadata,
@@ -116,31 +110,26 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     }
 
     /**
-     * Inicia el flujo de PayPal Checkout.
+     * Starts the PayPal Checkout flow.
      *
-     * Flujo:
-     * 1. Valida el request
-     * 2. Prepara con URLs de retorno
-     * 3. Crea Order en PayPal via gateway
-     * 4. Extrae approve URL de los links HATEOAS
-     * 5. Retorna intent con nextAction de tipo paypal_approve
+     * Flow:
+     * 1. Validates the request
+     * 2. Prepares with return URLs
+     * 3. Creates Order in PayPal via gateway
+     * 4. Extracts approve URL from HATEOAS links
+     * 5. Returns intent with nextAction of type paypal_approve
      */
     start(req: CreatePaymentRequest, context?: StrategyContext): Observable<PaymentIntent> {
-        // 1. Validar
         this.validate(req);
 
-        // 2. Preparar
         const { preparedRequest, metadata } = this.prepare(req, context);
 
-        // 3. Log
         console.log(`[PaypalRedirectStrategy] Creating PayPal order:`, {
             orderId: req.orderId,
             amount: req.amount,
             currency: req.currency,
             returnUrl: metadata['return_url'],
         });
-
-        // 4. Ejecutar y transformar a nuestro modelo
         return this.gateway.createIntent(preparedRequest).pipe(
             tap(intent => {
                 console.log(`[PaypalRedirectStrategy] PayPal order created: ${intent.id}`);
@@ -150,17 +139,16 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     }
 
     /**
-     * PayPal siempre requiere acción del usuario (aprobar en PayPal).
+     * PayPal always requires user action (approve in PayPal).
      */
     requiresUserAction(intent: PaymentIntent): boolean {
-        // PayPal siempre requiere redirección para aprobar
         return intent.status === 'requires_action' ||
             intent.nextAction?.type === 'paypal_approve' ||
             intent.nextAction?.type === 'redirect';
     }
 
     /**
-     * Instrucciones para el usuario sobre el flujo de PayPal.
+     * Instructions for the user about PayPal flow.
      */
     getUserInstructions(intent: PaymentIntent): string | null {
         if (intent.status === 'succeeded') {
@@ -175,18 +163,16 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     }
 
     /**
-     * Enriquece el intent con la información de aprobación de PayPal.
+     * Enriches the intent with PayPal approval information.
      */
     private enrichIntentWithPaypalApproval(
         intent: PaymentIntent,
         metadata: Record<string, unknown>
     ): PaymentIntent {
-        // Extraer approve URL de la respuesta raw de PayPal
         const approveUrl = this.extractApproveUrl(intent);
 
         if (!approveUrl) {
             console.error('[PaypalRedirectStrategy] No approve URL found in PayPal response');
-            // Fallback: usar redirectUrl si existe
             if (intent.redirectUrl) {
                 return {
                     ...intent,
@@ -213,28 +199,24 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
             ...intent,
             status: 'requires_action',
             nextAction: paypalAction,
-            // Guardar la URL también en redirectUrl por compatibilidad
             redirectUrl: approveUrl,
         };
     }
 
     /**
-     * Extrae la URL de aprobación de la respuesta de PayPal.
+     * Extracts the approval URL from PayPal response.
      */
     private extractApproveUrl(intent: PaymentIntent): string | null {
         const raw = intent.raw as PaypalOrderDto | undefined;
 
-        // Buscar en links HATEOAS (forma correcta de PayPal)
         if (raw?.links) {
             const approveLink = findPaypalLink(raw.links, 'approve');
             if (approveLink) return approveLink;
 
-            // Fallback a payer-action
             const payerActionLink = findPaypalLink(raw.links, 'payer-action');
             if (payerActionLink) return payerActionLink;
         }
 
-        // Fallback: buscar en redirectUrl directo
         if (intent.redirectUrl?.includes('paypal.com')) {
             return intent.redirectUrl;
         }
@@ -243,7 +225,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     }
 
     /**
-     * Genera un client metadata ID para PayPal Risk/Fraud.
+     * Generates a client metadata ID for PayPal Risk/Fraud.
      */
     private generateClientMetadataId(deviceData: NonNullable<StrategyContext['deviceData']>): string {
         const data = [
@@ -252,7 +234,6 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
             Date.now().toString(36),
         ].join('|');
 
-        // Simple hash (en prod usarías algo más robusto)
         return btoa(data).substring(0, 32);
     }
 }

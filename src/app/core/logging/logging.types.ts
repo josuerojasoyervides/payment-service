@@ -1,80 +1,80 @@
 /**
- * Niveles de log soportados.
+ * Supported log levels.
  */
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /**
- * Entrada de log estructurada.
+ * Structured log entry.
  * 
- * Diseñada para ser serializable a JSON y enviar a un backend de logging.
+ * Designed to be JSON serializable and sendable to a logging backend.
  */
 export interface LogEntry {
-    /** Timestamp ISO 8601 */
+    /** ISO 8601 timestamp */
     timestamp: string;
     
-    /** Nivel de severidad */
+    /** Severity level */
     level: LogLevel;
     
-    /** Contexto/origen del log (ej: 'StripeGateway', 'CardStrategy') */
+    /** Log context/origin (e.g., 'StripeGateway', 'CardStrategy') */
     context: string;
     
-    /** Mensaje descriptivo */
+    /** Descriptive message */
     message: string;
     
-    /** ID de correlación para trazar flujos completos */
+    /** Correlation ID to trace complete flows */
     correlationId: string;
     
-    /** Metadata adicional */
+    /** Additional metadata */
     metadata?: Record<string, unknown>;
     
-    /** Duración en ms (para operaciones medidas) */
+    /** Duration in ms (for measured operations) */
     duration?: number;
     
-    /** Stack trace para errores */
+    /** Stack trace for errors */
     stack?: string;
 }
 
 /**
- * Configuración del logger.
+ * Logger configuration.
  */
 export interface LoggerConfig {
-    /** Nivel mínimo de log a registrar */
+    /** Minimum log level to record */
     minLevel: LogLevel;
     
-    /** Si incluir timestamp en console output */
+    /** Whether to include timestamp in console output */
     includeTimestamp: boolean;
     
-    /** Si enviar logs al backend */
+    /** Whether to send logs to backend */
     sendToBackend: boolean;
     
-    /** URL del endpoint de logging (si sendToBackend es true) */
+    /** Logging endpoint URL (if sendToBackend is true) */
     backendUrl?: string;
     
-    /** Prefijo para todos los logs */
+    /** Prefix for all logs */
     prefix?: string;
 }
 
 /**
- * Contexto de correlación para tracing.
+ * Correlation context for tracing.
  * 
- * Permite propagar el correlationId a través de operaciones anidadas.
+ * Allows propagating correlationId through nested operations.
  */
 export interface CorrelationContext {
-    /** ID único de correlación */
+    /** Unique correlation ID */
     correlationId: string;
     
-    /** Nombre de la operación raíz */
+    /** Root operation name */
     operation: string;
     
-    /** Timestamp de inicio */
+    /** Start timestamp */
     startTime: number;
     
-    /** Metadata inicial */
+    /** Initial metadata */
     metadata?: Record<string, unknown>;
 }
 
 /**
- * Información de un request HTTP para logging.
+ * HTTP request information for logging.
  */
 export interface HttpLogInfo {
     method: string;
@@ -87,7 +87,7 @@ export interface HttpLogInfo {
 }
 
 /**
- * Configuración por defecto del logger.
+ * Default logger configuration.
  */
 export const DEFAULT_LOGGER_CONFIG: LoggerConfig = {
     minLevel: 'debug',
@@ -96,7 +96,7 @@ export const DEFAULT_LOGGER_CONFIG: LoggerConfig = {
 };
 
 /**
- * Prioridad de niveles de log (mayor = más severo).
+ * Log level priority (higher = more severe).
  */
 export const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
     debug: 0,

@@ -56,29 +56,24 @@ export const retryInterceptor: HttpInterceptorFn = (req, next) => {
         return next(req);
     }
 
-    // Verificar si el método es reintentable
     if (!config.retryableMethods.includes(method.toUpperCase())) {
         return next(req);
     }
 
-    // Contexto del retry
     const context = {
         attempt: 0,
         startTime: Date.now(),
     };
 
-    // Función que ejecuta el request
     const executeRequest = (): Observable<HttpEvent<unknown>> => {
         context.attempt++;
         return next(req);
     };
 
-    // Función recursiva de retry
     const retryRequest = (): Observable<HttpEvent<unknown>> => {
         return executeRequest().pipe(
             tap({
                 next: () => {
-                    // Request exitoso
                     if (context.attempt > 1) {
                         retryService.recordSuccess(endpoint, method);
                     }
@@ -104,7 +99,7 @@ export const retryInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 /**
- * Maneja un error y determina si debe reintentar.
+ * Handles an error and determines if it should retry.
  */
 function handleError(
     error: HttpErrorResponse,
@@ -117,7 +112,6 @@ function handleError(
     maxRetries: number,
     retryFn: () => Observable<HttpEvent<unknown>>
 ): Observable<HttpEvent<unknown>> {
-    // Verificar si el circuit breaker está abierto
     if (isCircuitOpen(circuitBreaker, endpoint)) {
         logger.debug(
             'Circuit is open, not retrying',

@@ -17,37 +17,34 @@ import {
 import { LoggerService } from '../logging/logger.service';
 
 /**
- * Token para inyectar configuración del Cache.
+ * Token to inject Cache configuration.
  */
 export const CACHE_CONFIG = new InjectionToken<Partial<CacheConfig>>('CACHE_CONFIG');
 
 /**
- * Token para inyectar patrones de TTL personalizados.
+ * Token to inject custom TTL patterns.
  */
 export const CACHE_TTL_PATTERNS = new InjectionToken<TTLPattern[]>('CACHE_TTL_PATTERNS');
 
 /**
- * Servicio de caché en memoria con LRU eviction y TTL.
+ * In-memory cache service with LRU eviction and TTL.
  * 
- * Características:
+ * Features:
  * - LRU (Least Recently Used) eviction
- * - TTL por entrada
- * - Invalidación por key, patrón o tags
- * - Estadísticas de uso
- * - Integración con LoggerService
+ * - TTL per entry
+ * - Invalidation by key, pattern or tags
+ * - Usage statistics
+ * - LoggerService integration
  * 
  * @example
  * ```typescript
- * // Guardar en caché
  * cacheService.set('key', data, { ttl: 60000 });
  * 
- * // Obtener del caché
  * const result = cacheService.get<MyData>('key');
  * if (result) {
  *   console.log(result.data);
  * }
  * 
- * // Invalidar
  * cacheService.invalidate('key');
  * cacheService.invalidatePattern(/\/api\/users/);
  * ```
@@ -60,13 +57,10 @@ export class CacheService {
     private readonly ttlPatterns: TTLPattern[];
     private readonly logger = inject(LoggerService);
 
-    /** Cache principal */
     private readonly cache = new Map<string, CacheEntry>();
 
-    /** Índice de tags para invalidación por grupo */
     private readonly tagIndex = new Map<string, Set<string>>();
 
-    /** Estadísticas */
     private stats = {
         hits: 0,
         misses: 0,
@@ -79,10 +73,10 @@ export class CacheService {
     }
 
     /**
-     * Obtiene un valor del caché.
+     * Gets a value from cache.
      * 
      * @param key Cache key
-     * @returns El valor cacheado o undefined si no existe/expiró
+     * @returns Cached value or undefined if not found/expired
      */
     get<T>(key: string): CacheResult<T> | undefined {
         const entry = this.cache.get(key) as CacheEntry<T> | undefined;
@@ -92,14 +86,12 @@ export class CacheService {
             return undefined;
         }
 
-        // Verificar expiración
         if (this.isExpired(entry)) {
             this.delete(key);
             this.stats.misses++;
             return undefined;
         }
 
-        // Actualizar LRU
         entry.lastAccess = Date.now();
         entry.accessCount++;
         this.stats.hits++;
@@ -114,14 +106,13 @@ export class CacheService {
     }
 
     /**
-     * Guarda un valor en el caché.
+     * Saves a value to cache.
      * 
      * @param key Cache key
-     * @param data Datos a cachear
-     * @param options Opciones de caché
+     * @param data Data to cache
+     * @param options Cache options
      */
     set<T>(key: string, data: T, options?: CacheOptions): void {
-        // Verificar si necesitamos hacer eviction
         if (this.cache.size >= this.config.maxEntries) {
             this.evictLRU();
         }
@@ -138,7 +129,6 @@ export class CacheService {
 
         this.cache.set(key, entry);
 
-        // Actualizar índice de tags
         if (options?.tags) {
             for (const tag of options.tags) {
                 if (!this.tagIndex.has(tag)) {
@@ -156,7 +146,7 @@ export class CacheService {
     }
 
     /**
-     * Verifica si una key existe y no está expirada.
+     * Checks if a key exists and is not expired.
      */
     has(key: string): boolean {
         const entry = this.cache.get(key);
@@ -173,12 +163,11 @@ export class CacheService {
     }
 
     /**
-     * Elimina una entrada del caché.
+     * Deletes an entry from cache.
      */
     delete(key: string): boolean {
         const deleted = this.cache.delete(key);
 
-        // Limpiar de índices de tags
         for (const keys of this.tagIndex.values()) {
             keys.delete(key);
         }
@@ -191,14 +180,14 @@ export class CacheService {
     }
 
     /**
-     * Invalida una entrada específica.
+     * Invalidates a specific entry.
      */
     invalidate(key: string): boolean {
         return this.delete(key);
     }
 
     /**
-     * Invalida todas las entradas que coincidan con un patrón.
+     * Invalidates all entries matching a pattern.
      */
     invalidatePattern(pattern: RegExp): number {
         let count = 0;
@@ -222,7 +211,7 @@ export class CacheService {
     }
 
     /**
-     * Invalida todas las entradas con un tag específico.
+     * Invalidates all entries with a specific tag.
      */
     invalidateByTag(tag: string): number {
         const keys = this.tagIndex.get(tag);
@@ -251,7 +240,7 @@ export class CacheService {
     }
 
     /**
-     * Limpia todo el caché.
+     * Clears entire cache.
      */
     clear(): void {
         const size = this.cache.size;
@@ -277,7 +266,7 @@ export class CacheService {
     }
 
     /**
-     * Obtiene estadísticas de una entrada específica.
+     * Gets statistics for a specific entry.
      */
     getEntryStats(key: string): CacheEntryStats | undefined {
         const entry = this.cache.get(key);
@@ -304,7 +293,7 @@ export class CacheService {
     }
 
     /**
-     * Limpia entradas expiradas.
+     * Cleans up expired entries.
      */
     cleanup(): number {
         let count = 0;
@@ -335,7 +324,7 @@ export class CacheService {
     }
 
     /**
-     * Genera una cache key para una URL y parámetros.
+     * Generates a cache key for a URL and parameters.
      */
     generateKey(url: string, params?: Record<string, string>): string {
         return generateCacheKey(url, params);
@@ -349,19 +338,12 @@ export class CacheService {
     }
 
     /**
-     * Obtiene la configuración actual.
+     * Gets current configuration.
      */
     getConfig(): Readonly<CacheConfig> {
         return this.config;
     }
 
-    // ============================================================
-    // MÉTODOS PRIVADOS
-    // ============================================================
-
-    /**
-     * Verifica si una entrada está expirada.
-     */
     private isExpired(entry: CacheEntry): boolean {
         return Date.now() - entry.timestamp > entry.ttl;
     }

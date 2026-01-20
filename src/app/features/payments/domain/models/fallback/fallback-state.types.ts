@@ -3,61 +3,61 @@ import { PaymentError } from '../payment/payment-error.types';
 import { FallbackAvailableEvent } from './fallback-event.types';
 
 /**
- * Estado del proceso de fallback.
+ * Fallback process status.
  */
 export type FallbackStatus = 
-    | 'idle'           // No hay fallback pendiente
-    | 'pending'        // Esperando respuesta del usuario
-    | 'executing'      // Ejecutando fallback (manual)
-    | 'auto_executing' // Ejecutando fallback automáticamente
-    | 'completed'      // Fallback completado exitosamente
-    | 'cancelled'      // Usuario canceló el fallback
-    | 'failed';        // Fallback también falló
+    | 'idle'
+    | 'pending'
+    | 'executing'
+    | 'auto_executing'
+    | 'completed'
+    | 'cancelled'
+    | 'failed';
 
 /**
- * Modo de operación del fallback.
+ * Fallback operation mode.
  */
 export type FallbackMode = 'manual' | 'auto';
 
 /**
- * Información de un intento fallido de pago.
+ * Information about a failed payment attempt.
  */
 export interface FailedAttempt {
-    /** Provider que falló */
+    /** Provider that failed */
     provider: PaymentProviderId;
     
-    /** Error que causó el fallo */
+    /** Error that caused the failure */
     error: PaymentError;
     
-    /** Timestamp del fallo */
+    /** Failure timestamp */
     timestamp: number;
     
-    /** Si este intento fue un auto-fallback */
+    /** Whether this attempt was an auto-fallback */
     wasAutoFallback: boolean;
 }
 
 /**
- * Estado completo del sistema de fallback.
+ * Complete fallback system state.
  */
 export interface FallbackState {
-    /** Estado actual */
+    /** Current status */
     status: FallbackStatus;
     
-    /** Evento pendiente (si status es 'pending') */
+    /** Pending event (if status is 'pending') */
     pendingEvent: FallbackAvailableEvent | null;
     
-    /** Historial de intentos fallidos en el flujo actual */
+    /** History of failed attempts in current flow */
     failedAttempts: FailedAttempt[];
     
-    /** Provider actualmente en ejecución */
+    /** Currently executing provider */
     currentProvider: PaymentProviderId | null;
     
-    /** Si el fallback actual es automático */
+    /** Whether current fallback is automatic */
     isAutoFallback: boolean;
 }
 
 /**
- * Estado inicial del fallback.
+ * Initial fallback state.
  */
 export const INITIAL_FALLBACK_STATE: FallbackState = {
     status: 'idle',

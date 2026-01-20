@@ -1,19 +1,19 @@
 /**
- * Decorator para logging automático de métodos.
+ * Decorator for automatic method logging.
  * 
- * NOTA: Los decoradores de método tienen limitaciones en Angular con DI.
- * Este decorator asume que el LoggerService está disponible globalmente.
- * Para uso más robusto, usar logger.measure() directamente.
+ * NOTE: Method decorators have limitations in Angular with DI.
+ * This decorator assumes LoggerService is available globally.
+ * For more robust usage, use logger.measure() directly.
  * 
- * @param context Nombre del contexto para el log
- * @param options Opciones adicionales
+ * @param context Context name for the log
+ * @param options Additional options
  * 
  * @example
  * ```typescript
  * class PaymentService {
  *   @LogMethod('PaymentService')
  *   async processPayment(req: PaymentRequest) {
- *     // ... implementación
+ *     // ... implementation
  *   }
  * }
  * ```
@@ -28,19 +28,17 @@ export function LogMethod(context: string, options?: LogMethodOptions) {
         const methodName = options?.operationName ?? propertyKey;
 
         descriptor.value = function (...args: unknown[]) {
-            const startTime = performance.now();
-            const correlationId = generateSimpleId();
+        const startTime = performance.now();
+        const correlationId = generateSimpleId();
 
-            // Log de entrada
-            logToConsole('debug', context, `Starting ${methodName}`, correlationId, 
-                options?.logArgs ? { args: sanitizeArgs(args) } : undefined
-            );
+        logToConsole('debug', context, `Starting ${methodName}`, correlationId, 
+            options?.logArgs ? { args: sanitizeArgs(args) } : undefined
+        );
 
-            try {
-                const result = originalMethod.apply(this, args);
+        try {
+            const result = originalMethod.apply(this, args);
 
-                // Si es una Promise, manejar async
-                if (result instanceof Promise) {
+            if (result instanceof Promise) {
                     return result
                         .then((value: unknown) => {
                             const duration = Math.round(performance.now() - startTime);
@@ -57,7 +55,6 @@ export function LogMethod(context: string, options?: LogMethodOptions) {
                         });
                 }
 
-                // Resultado síncrono
                 const duration = Math.round(performance.now() - startTime);
                 logToConsole('info', context, `Completed ${methodName}`, correlationId, { duration });
                 return result;
@@ -77,14 +74,14 @@ export function LogMethod(context: string, options?: LogMethodOptions) {
 }
 
 interface LogMethodOptions {
-    /** Nombre personalizado de la operación */
+    /** Custom operation name */
     operationName?: string;
-    /** Si loguear los argumentos del método */
+    /** Whether to log method arguments */
     logArgs?: boolean;
 }
 
 /**
- * Función helper para loguear sin depender de DI.
+ * Helper function to log without DI dependency.
  */
 function logToConsole(
     level: 'debug' | 'info' | 'warn' | 'error',
@@ -109,14 +106,14 @@ function logToConsole(
 }
 
 /**
- * Genera un ID simple para correlación.
+ * Generates a simple ID for correlation.
  */
 function generateSimpleId(): string {
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
 }
 
 /**
- * Sanitiza argumentos para logging (evita datos sensibles).
+ * Sanitizes arguments for logging (avoids sensitive data).
  */
 function sanitizeArgs(args: unknown[]): unknown[] {
     return args.map(arg => {

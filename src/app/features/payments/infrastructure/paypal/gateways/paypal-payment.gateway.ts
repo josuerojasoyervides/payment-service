@@ -22,14 +22,14 @@ import {
 } from '../dto/paypal.dto';
 
 /**
- * Gateway de PayPal (Orders API v2).
+ * PayPal gateway (Orders API v2).
  *
- * Diferencias clave vs Stripe:
- * - PayPal usa "Orders" en lugar de "PaymentIntents"
- * - Montos como strings con 2 decimales ("100.00")
- * - Flujo: Create Order → Approve (redirect) → Capture
- * - Links HATEOAS para navegación
- * - Sin client_secret, usa cookies de sesión
+ * Key differences vs Stripe:
+ * - PayPal uses "Orders" instead of "PaymentIntents"
+ * - Amounts as strings with 2 decimals ("100.00")
+ * - Flow: Create Order → Approve (redirect) → Capture
+ * - HATEOAS links for navigation
+ * - No client_secret, uses session cookies
  */
 @Injectable()
 export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalOrderDto> {
@@ -37,17 +37,17 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
 
     private static readonly API_BASE = '/api/payments/paypal';
 
-    // Mapeo de estados PayPal → estados internos
+    // PayPal status → internal status mapping
     private static readonly STATUS_MAP: Record<PaypalOrderStatus, PaymentIntentStatus> = {
-        'CREATED': 'requires_action',          // Necesita aprobación del usuario
-        'SAVED': 'requires_confirmation',       // Guardada, pendiente de captura
-        'APPROVED': 'requires_confirmation',    // Aprobada, lista para capturar
+        'CREATED': 'requires_action',
+        'SAVED': 'requires_confirmation',
+        'APPROVED': 'requires_confirmation',
         'VOIDED': 'canceled',
         'COMPLETED': 'succeeded',
         'PAYER_ACTION_REQUIRED': 'requires_action',
     };
 
-    // Mapeo de errores PayPal → errores internos
+    // PayPal errors → internal errors mapping
     private static readonly ERROR_MAP: Record<string, PaymentErrorCode> = {
         'INVALID_REQUEST': 'invalid_request',
         'PERMISSION_DENIED': 'provider_error',
@@ -59,10 +59,10 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
     };
 
     /**
-     * Crea una Order en PayPal.
+     * Creates an Order in PayPal.
      *
-     * PayPal no crea un "intent" directamente - crea una Order
-     * que el usuario debe aprobar antes de poder capturar.
+     * PayPal doesn't create an "intent" directly - it creates an Order
+     * that the user must approve before it can be captured.
      */
     protected createIntentRaw(req: CreatePaymentRequest): Observable<PaypalOrderDto> {
         const paypalRequest = this.buildPaypalCreateRequest(req);
@@ -73,7 +73,7 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
             {
                 headers: {
                     'PayPal-Request-Id': this.generateRequestId(req.orderId),
-                    'Prefer': 'return=representation', // Retornar orden completa
+                    'Prefer': 'return=representation',
                 },
             }
         );
@@ -84,10 +84,10 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
     }
 
     /**
-     * Confirma (captura) una Order aprobada.
+     * Confirms (captures) an approved Order.
      *
-     * En PayPal, "confirm" = "capture" - el paso final después de que
-     * el usuario aprobó en PayPal.
+     * In PayPal, "confirm" = "capture" - the final step after
+     * the user approved in PayPal.
      */
     protected confirmIntentRaw(req: ConfirmPaymentRequest): Observable<PaypalOrderDto> {
         return this.http.post<PaypalOrderDto>(
@@ -106,15 +106,13 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
     }
 
     /**
-     * Cancela (void) una Order.
+     * Cancels (voids) an Order.
      *
-     * PayPal no tiene un endpoint directo de "cancel" para orders.
-     * Solo se pueden cancelar autorizaciones. Para orders no aprobadas,
-     * simplemente expiran.
+     * PayPal doesn't have a direct "cancel" endpoint for orders.
+     * Only authorizations can be canceled. For unapproved orders,
+     * they simply expire.
      */
     protected cancelIntentRaw(req: CancelPaymentRequest): Observable<PaypalOrderDto> {
-        // PayPal usa PATCH para actualizar el estado
-        // En realidad, las orders no se "cancelan" - se voidan las autorizaciones
         return this.http.post<PaypalOrderDto>(
             `${PaypalPaymentGateway.API_BASE}/orders/${req.intentId}/void`,
             {}
@@ -126,7 +124,7 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
     }
 
     /**
-     * Obtiene el estado actual de una Order.
+     * Gets the current status of an Order.
      */
     protected getIntentRaw(req: GetPaymentStatusRequest): Observable<PaypalOrderDto> {
         return this.http.get<PaypalOrderDto>(
@@ -139,19 +137,18 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
     }
 
     /**
-     * Override de validación: PayPal no requiere token para métodos card.
-     * PayPal usa su propio flujo de redirección.
+     * Validation override: PayPal doesn't require token for card methods.
+     * PayPal uses its own redirect flow.
      */
     protected override validateCreate(req: CreatePaymentRequest) {
         if (!req.orderId) throw new Error("orderId is required");
         if (!req.currency) throw new Error("currency is required");
         if (!Number.isFinite(req.amount) || req.amount <= 0) throw new Error("amount is invalid");
         if (!req.method?.type) throw new Error("payment method type is required");
-        // PayPal no requiere token - usa flujo de redirección
     }
 
     /**
-     * Normaliza errores de PayPal a nuestro formato.
+     * Normalizes PayPal errors to our format.
      */
     protected override normalizeError(err: unknown): PaymentError {
         if (this.isPaypalErrorResponse(err)) {
@@ -162,7 +159,6 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
             };
         }
 
-        // Error HTTP genérico
         if (err && typeof err === 'object' && 'status' in err) {
             const httpError = err as { status: number };
 
@@ -186,16 +182,15 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
         return super.normalizeError(err);
     }
 
-    // ============ MAPEO PRIVADO ============
+    // ============ PRIVATE MAPPING ============
 
     /**
-     * Mapea una Order de PayPal a nuestro modelo de PaymentIntent.
+     * Maps a PayPal Order to our PaymentIntent model.
      */
     private mapOrder(dto: PaypalOrderDto): PaymentIntent {
         const status = PaypalPaymentGateway.STATUS_MAP[dto.status] ?? 'processing';
         const purchaseUnit = dto.purchase_units[0];
 
-        // Extraer monto (PayPal usa strings)
         const amount = parseFloat(purchaseUnit?.amount?.value ?? '0');
         const currency = purchaseUnit?.amount?.currency_code as 'MXN' | 'USD';
 
@@ -208,7 +203,6 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
             raw: dto,
         };
 
-        // Agregar URL de aprobación si está pendiente
         if (dto.status === 'CREATED' || dto.status === 'PAYER_ACTION_REQUIRED') {
             const approveUrl = findPaypalLink(dto.links, 'approve');
             if (approveUrl) {
@@ -217,10 +211,8 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
             }
         }
 
-        // Si está completada, extraer info del capture
         if (dto.status === 'COMPLETED' && purchaseUnit?.payments?.captures?.[0]) {
             const capture = purchaseUnit.payments.captures[0];
-            // Podríamos agregar metadata del capture aquí
             console.log(`[PaypalGateway] Capture ID: ${capture.id}, Status: ${capture.status}`);
         }
 
@@ -228,7 +220,7 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
     }
 
     /**
-     * Construye la acción de aprobación de PayPal.
+     * Builds PayPal approval action.
      */
     private buildPaypalApproveAction(dto: PaypalOrderDto, approveUrl: string): NextActionPaypalApprove {
         return {
@@ -243,18 +235,17 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
     // ============ HELPERS ============
 
     /**
-     * Construye el request en formato PayPal Orders API.
+     * Builds the request in PayPal Orders API format.
      */
     private buildPaypalCreateRequest(req: CreatePaymentRequest): PaypalCreateOrderRequest {
         return {
-            intent: 'CAPTURE', // Captura inmediata (vs AUTHORIZE)
+            intent: 'CAPTURE',
             purchase_units: [{
                 reference_id: req.orderId,
                 custom_id: req.orderId,
                 description: `Orden ${req.orderId}`,
                 amount: {
                     currency_code: req.currency,
-                    // PayPal requiere strings con 2 decimales
                     value: req.amount.toFixed(2),
                 },
             }],
@@ -269,14 +260,14 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
     }
 
     /**
-     * Genera un ID único para idempotencia.
+     * Generates a unique ID for idempotency.
      */
     private generateRequestId(orderId: string, operation: string = 'create'): string {
         return `${orderId}-${operation}-${Date.now()}`;
     }
 
     /**
-     * Type guard para errores de PayPal.
+     * Type guard for PayPal errors.
      */
     private isPaypalErrorResponse(err: unknown): err is PaypalErrorResponse {
         return err !== null &&
@@ -286,7 +277,7 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
     }
 
     /**
-     * Convierte errores de PayPal a mensajes legibles.
+     * Converts PayPal errors to readable messages.
      */
     private humanizePaypalError(error: PaypalErrorResponse): string {
         const errorKeyMap: Partial<Record<string, string>> = {
@@ -298,7 +289,6 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
             'INTERNAL_SERVICE_ERROR': I18nKeys.errors.paypal_internal_error,
         };
 
-        // Buscar mensaje específico en details
         if (error.details?.length) {
             const detail = error.details[0];
             return detail.description || detail.issue || error.message;

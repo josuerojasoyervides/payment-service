@@ -1,30 +1,27 @@
 import { PaymentMethodType, CurrencyCode } from './payment-intent.types';
 
 /**
- * Request genérico para crear un pago.
+ * Generic request to create a payment.
  * 
- * Contiene campos comunes a todos los providers.
- * Cada provider usa los campos que necesita e ignora el resto.
+ * Contains fields common to all providers.
+ * Each provider uses the fields it needs and ignores the rest.
  * 
- * La validación de qué campos son requeridos para cada
- * combinación provider+method ocurre en el Builder específico.
+ * Validation of which fields are required for each
+ * provider+method combination happens in the specific Builder.
  */
 export interface CreatePaymentRequest {
-    // === Campos REQUERIDOS por todos ===
     orderId: string;
     amount: number;
     currency: CurrencyCode;
     method: {
         type: PaymentMethodType;
-        token?: string;           // Para card (Stripe)
+        token?: string;
     };
     
-    // === Campos OPCIONALES según provider/method ===
-    returnUrl?: string;           // Para flujos redirect (PayPal)
-    cancelUrl?: string;           // Para flujos redirect (PayPal)
-    customerEmail?: string;       // Para recibos (SPEI, OXXO)
+    returnUrl?: string;
+    cancelUrl?: string;
+    customerEmail?: string;
     
-    // === Extensión para datos específicos de provider ===
     metadata?: Record<string, unknown>;
 }
 

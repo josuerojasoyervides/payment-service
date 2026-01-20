@@ -68,63 +68,33 @@ export interface PaymentStatePort {
     /** Si hay un pago completado exitosamente */
     readonly isReady: Signal<boolean>;
 
-    /** Si hay un error */
     readonly hasError: Signal<boolean>;
 
-    /** Intent actual si está disponible */
     readonly intent: Signal<PaymentIntent | null>;
 
-    /** Error actual si existe */
     readonly error: Signal<PaymentError | null>;
 
-    /** Provider actualmente seleccionado */
     readonly selectedProvider: Signal<PaymentProviderId | null>;
 
-    // ============================================================
-    // ESTADO DE FALLBACK
-    // ============================================================
-
-    /** Si hay un fallback pendiente de respuesta del usuario */
     readonly hasPendingFallback: Signal<boolean>;
 
-    /** Si hay un auto-fallback en progreso */
     readonly isAutoFallbackInProgress: Signal<boolean>;
 
-    /** Si hay cualquier tipo de fallback en ejecución */
     readonly isFallbackExecuting: Signal<boolean>;
 
-    /** Si el fallback actual es automático */
     readonly isAutoFallback: Signal<boolean>;
 
-    /** Evento de fallback pendiente (si existe) */
     readonly pendingFallbackEvent: Signal<FallbackAvailableEvent | null>;
 
-    /** Estado completo del fallback */
     readonly fallbackState: Signal<FallbackState>;
 
-    // ============================================================
-    // HISTORIAL
-    // ============================================================
-
-    /** Número de entradas en el historial */
     readonly historyCount: Signal<number>;
 
-    /** Última entrada del historial */
     readonly lastHistoryEntry: Signal<PaymentHistoryEntry | null>;
 
-    /** Historial completo */
     readonly history: Signal<PaymentHistoryEntry[]>;
 
-    // ============================================================
-    // DEBUG
-    // ============================================================
-
-    /** Resumen del estado para debugging */
     readonly debugSummary: Signal<PaymentDebugSummary>;
-
-    // ============================================================
-    // SNAPSHOT (Para código imperativo/legacy)
-    // ============================================================
 
     /**
      * Obtiene un snapshot del estado actual.

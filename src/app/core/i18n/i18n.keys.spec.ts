@@ -5,7 +5,6 @@ import { en } from './translations/en';
 describe('I18nKeys', () => {
     describe('buildKeys function', () => {
         it('should generate correct key paths for nested objects', () => {
-            // Verificar estructura básica
             expect(I18nKeys).toBeDefined();
             expect(I18nKeys.errors).toBeDefined();
             expect(I18nKeys.messages).toBeDefined();
@@ -37,7 +36,6 @@ describe('I18nKeys', () => {
         });
 
         it('should have all keys from en translations', () => {
-            // Verificar que todas las claves de en están en I18nKeys
             const checkKeys = (obj: any, keys: any, prefix: string = '') => {
                 for (const [key, value] of Object.entries(obj)) {
                     const fullPath = prefix ? `${prefix}.${key}` : key;
@@ -46,7 +44,6 @@ describe('I18nKeys', () => {
                     if (value && typeof value === 'object' && !Array.isArray(value)) {
                         checkKeys(value, keys[key], fullPath);
                     } else {
-                        // Verificar que la hoja tiene el path correcto
                         expect(keys[key]).toBe(fullPath);
                     }
                 }
@@ -56,7 +53,6 @@ describe('I18nKeys', () => {
         });
 
         it('should have same structure as en translations', () => {
-            // Verificar que la estructura coincide exactamente
             const getKeys = (obj: any): string[] => {
                 return Object.keys(obj).sort();
             };
@@ -68,7 +64,6 @@ describe('I18nKeys', () => {
         });
 
         it('should generate paths with correct depth', () => {
-            // Verificar que las rutas tienen exactamente 2 niveles (category.key)
             const checkDepth = (obj: any, expectedPrefix: string) => {
                 for (const [key, value] of Object.entries(obj)) {
                     if (typeof value === 'string') {
@@ -90,7 +85,6 @@ describe('I18nKeys', () => {
 
     describe('I18nKeys usage', () => {
         it('should be usable with I18nService.t()', () => {
-            // Verificar que las claves son strings válidos
             expect(typeof I18nKeys.errors.card_declined).toBe('string');
             expect(typeof I18nKeys.ui.loading).toBe('string');
             expect(typeof I18nKeys.messages.payment_created).toBe('string');

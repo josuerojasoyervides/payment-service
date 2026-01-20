@@ -88,17 +88,12 @@ export class NgRxSignalsStateAdapter implements PaymentStatePort {
 
     readonly debugSummary: Signal<PaymentDebugSummary> = this.store.debugSummary;
 
-    // ============================================================
-    // SNAPSHOT (Para código imperativo/legacy)
-    // ============================================================
-
     getSnapshot(): Readonly<PaymentsState> {
         return this.state();
     }
 
     subscribe(listener: () => void): Unsubscribe {
         const ref = effect(() => {
-            // Trigger en cualquier cambio de estado
             this.state();
             listener();
         });
@@ -111,50 +106,42 @@ export class NgRxSignalsStateAdapter implements PaymentStatePort {
     // ============================================================
 
     startPayment(request: CreatePaymentRequest, providerId: PaymentProviderId): void {
-        this.store.startPayment({ request, providerId });
+        this.store['startPayment']({ request, providerId });
     }
 
     confirmPayment(request: ConfirmPaymentRequest, providerId: PaymentProviderId): void {
-        this.store.confirmPayment({ request, providerId });
+        this.store['confirmPayment']({ request, providerId });
     }
 
     cancelPayment(request: CancelPaymentRequest, providerId: PaymentProviderId): void {
-        this.store.cancelPayment({ request, providerId });
+        this.store['cancelPayment']({ request, providerId });
     }
 
     refreshPayment(request: GetPaymentStatusRequest, providerId: PaymentProviderId): void {
-        this.store.refreshPayment({ request, providerId });
+        this.store['refreshPayment']({ request, providerId });
     }
 
-    // ============================================================
-    // ACCIONES DE UI
-    // ============================================================
-
     selectProvider(providerId: PaymentProviderId): void {
-        this.store.selectProvider(providerId);
+        this.store['selectProvider'](providerId);
     }
 
     clearError(): void {
-        this.store.clearError();
+        this.store['clearError']();
     }
 
     reset(): void {
-        this.store.reset();
+        this.store['reset']();
     }
 
     clearHistory(): void {
-        this.store.clearHistory();
+        this.store['clearHistory']();
     }
 
-    // ============================================================
-    // ACCIONES DE FALLBACK
-    // ============================================================
-
     executeFallback(providerId: PaymentProviderId): void {
-        this.store.executeFallback(providerId);
+        this.store['executeFallback'](providerId);
     }
 
     cancelFallback(): void {
-        this.store.cancelFallback();
+        this.store['cancelFallback']();
     }
 }

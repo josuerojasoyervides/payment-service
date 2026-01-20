@@ -2,105 +2,101 @@ import { CurrencyCode } from '../../models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '../../models/payment/payment-request.types';
 
 /**
- * Opciones genéricas para el builder.
+ * Generic options for the builder.
  * 
- * Contiene TODOS los campos posibles que cualquier provider podría necesitar.
- * Cada builder específico usa los que necesita y valida los requeridos.
+ * Contains ALL possible fields that any provider might need.
+ * Each specific builder uses what it needs and validates required ones.
  */
 export interface PaymentOptions {
-    token?: string;           // Card token (Stripe)
-    returnUrl?: string;       // Redirect URL (PayPal)
-    cancelUrl?: string;       // Cancel URL (PayPal)
-    customerEmail?: string;   // Email (SPEI, OXXO)
-    saveForFuture?: boolean;  // Guardar método (Stripe)
+    token?: string;
+    returnUrl?: string;
+    cancelUrl?: string;
+    customerEmail?: string;
+    saveForFuture?: boolean;
 }
 
 /**
- * Interface base para builders de payment requests.
+ * Base interface for payment request builders.
  * 
- * Esta es la ABSTRACCIÓN que la UI conoce.
- * Infrastructure provee las IMPLEMENTACIONES específicas.
+ * This is the ABSTRACTION that the UI knows.
+ * Infrastructure provides specific IMPLEMENTATIONS.
  * 
- * La UI nunca importa de infrastructure, solo usa esta interface.
+ * The UI never imports from infrastructure, only uses this interface.
  */
 export interface PaymentRequestBuilder {
     /**
-     * Asigna el ID de la orden.
+     * Sets the order ID.
      */
     forOrder(orderId: string): this;
     
     /**
-     * Asigna monto y moneda.
+     * Sets amount and currency.
      */
     withAmount(amount: number, currency: CurrencyCode): this;
     
     /**
-     * Asigna opciones específicas del método de pago.
+     * Sets payment method specific options.
      * 
-     * La UI pasa todas las opciones que tiene disponibles.
-     * El builder usa las que necesita y valida las requeridas.
+     * The UI passes all available options.
+     * The builder uses what it needs and validates required ones.
      */
     withOptions(options: PaymentOptions): this;
     
     /**
-     * Construye el request final.
+     * Builds the final request.
      * 
-     * @throws Error si faltan campos requeridos para este provider/method
+     * @throws Error if required fields are missing for this provider/method
      */
     build(): CreatePaymentRequest;
 }
 
-// ============================================================
-// FIELD REQUIREMENTS - Para que la UI sepa qué campos mostrar
-// ============================================================
-
 /**
- * Tipos de campo soportados en el formulario.
+ * Field types supported in the form.
  */
 export type FieldType = 'text' | 'email' | 'hidden' | 'url';
 
 /**
- * Configuración de un campo del formulario de pago.
+ * Payment form field configuration.
  */
 export interface FieldConfig {
-    /** Nombre del campo (key en PaymentOptions) */
+    /** Field name (key in PaymentOptions) */
     name: keyof PaymentOptions;
     
-    /** Label para mostrar en UI */
+    /** Label to display in UI */
     label: string;
     
-    /** Si es requerido para este provider/method */
+    /** Whether required for this provider/method */
     required: boolean;
     
-    /** Tipo de input */
+    /** Input type */
     type: FieldType;
     
-    /** Placeholder para el input */
+    /** Input placeholder */
     placeholder?: string;
     
-    /** Valor por defecto */
+    /** Default value */
     defaultValue?: string;
     
     /** 
-     * Si es 'hidden', la UI debe proveerlo pero no mostrarlo.
-     * Ej: returnUrl puede ser la URL actual
+     * If 'hidden', UI must provide it but not display it.
+     * E.g., returnUrl can be the current URL
      */
     autoFill?: 'currentUrl' | 'none';
 }
 
 /**
- * Requisitos de campos para un provider/method específico.
+ * Field requirements for a specific provider/method.
  * 
- * La UI consulta esto ANTES de renderizar el formulario
- * para saber qué campos mostrar.
+ * The UI queries this BEFORE rendering the form
+ * to know which fields to show.
  */
 export interface FieldRequirements {
-    /** Campos que este provider/method necesita */
+    /** Fields this provider/method needs */
     fields: FieldConfig[];
     
-    /** Descripción del método de pago para la UI */
+    /** Payment method description for UI */
     description?: string;
     
-    /** Instrucciones adicionales para el usuario */
+    /** Additional instructions for the user */
     instructions?: string;
 }

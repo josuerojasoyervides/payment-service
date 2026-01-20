@@ -201,7 +201,6 @@ describe('I18nService', () => {
     describe('Parameter interpolation edge cases', () => {
         it('should handle missing parameters gracefully', () => {
             const result = service.t(I18nKeys.errors.min_amount, { amount: 10 });
-            // currency no está presente, debería dejar {{currency}} sin reemplazar
             expect(result).toContain('10');
             expect(result).toContain('{{currency}}');
         });

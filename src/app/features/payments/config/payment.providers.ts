@@ -16,13 +16,13 @@ import { FallbackOrchestratorService } from "../application/services/fallback-or
 import { PaymentsStore } from "../application/store/payment.store";
 
 /**
- * Gateways de cada proveedor.
+ * Gateways for each provider.
  *
- * En desarrollo/testing, se pueden reemplazar por fakes.
+ * In development/testing, can be replaced with fakes.
  */
 const GATEWAY_PROVIDERS: Provider[] = [
-    // Para desarrollo: usar fake gateway que simula respuestas
-    // En producción: quitar esta línea y usar el gateway real
+    // For development: use fake gateway that simulates responses
+    // In production: remove this line and use real gateway
     { 
         provide: StripePaymentGateway, 
         useFactory: () => FakePaymentGateway.create('stripe')
@@ -32,16 +32,16 @@ const GATEWAY_PROVIDERS: Provider[] = [
         useFactory: () => FakePaymentGateway.create('paypal')
     },
 
-    // Gateways reales (comentados para desarrollo)
+    // Real gateways (commented for development)
     // StripePaymentGateway,
     // PaypalPaymentGateway,
 ];
 
 /**
- * Factories de proveedores (usando multi-token).
+ * Provider factories (using multi-token).
  *
- * Cada factory se registra con multi: true para permitir
- * agregar nuevos proveedores sin modificar configuración existente.
+ * Each factory is registered with multi: true to allow
+ * adding new providers without modifying existing configuration.
  */
 const FACTORY_PROVIDERS: Provider[] = [
     { provide: PAYMENT_PROVIDER_FACTORIES, useClass: StripeProviderFactory, multi: true },
@@ -49,10 +49,10 @@ const FACTORY_PROVIDERS: Provider[] = [
 ];
 
 /**
- * Use cases de la capa de aplicación.
+ * Application layer use cases.
  *
- * No usan providedIn: 'root' para permitir testing
- * y dar control explícito del lifecycle.
+ * Do not use providedIn: 'root' to allow testing
+ * and give explicit control of lifecycle.
  */
 const USE_CASE_PROVIDERS: Provider[] = [
     StartPaymentUseCase,
@@ -62,31 +62,31 @@ const USE_CASE_PROVIDERS: Provider[] = [
 ];
 
 /**
- * Servicios de infraestructura de la aplicación.
+ * Application infrastructure services.
  * 
- * IMPORTANTE: El estado se inyecta vía token PAYMENT_STATE.
- * Esto permite cambiar la implementación (NgRx Signals, Akita, etc.)
- * sin modificar los componentes que consumen el estado.
+ * IMPORTANT: State is injected via PAYMENT_STATE token.
+ * This allows changing the implementation (NgRx Signals, Akita, etc.)
+ * without modifying components that consume the state.
  */
 const APPLICATION_PROVIDERS: Provider[] = [
     ProviderFactoryRegistry,
     FallbackOrchestratorService,
     PaymentsStore,
-    // Adapter que implementa PaymentStatePort usando NgRx Signals
-    // Si se decide cambiar de manejador de estado, solo cambiar este provider
+    // Adapter that implements PaymentStatePort using NgRx Signals
+    // If you decide to change state manager, only change this provider
     { provide: PAYMENT_STATE, useClass: NgRxSignalsStateAdapter },
 ];
 
 /**
- * Función para proveer toda la infraestructura de pagos.
+ * Function to provide all payment infrastructure.
  *
- * Uso:
+ * Usage:
  * ```typescript
- * // En app.config.ts
+ * // In app.config.ts
  * export const appConfig: ApplicationConfig = {
  *   providers: [
  *     providePayments(),
- *     // otros providers...
+ *     // other providers...
  *   ]
  * };
  * ```
@@ -101,33 +101,30 @@ export default function providePayments(): (Provider | EnvironmentProviders)[] {
 }
 
 /**
- * Función para proveer pagos con configuración personalizada.
+ * Function to provide payments with custom configuration.
  *
- * @param options Opciones de configuración
+ * @param options Configuration options
  */
 export function providePaymentsWithConfig(options: {
-    /** Usar gateways reales en lugar de fakes */
+    /** Use real gateways instead of fakes */
     useRealGateways?: boolean;
-    /** Providers adicionales */
+    /** Additional providers */
     extraProviders?: Provider[];
 }): (Provider | EnvironmentProviders)[] {
     const providers: Provider[] = [];
 
-    // Gateways
     if (options.useRealGateways) {
         providers.push(StripePaymentGateway, PaypalPaymentGateway);
     } else {
         providers.push(...GATEWAY_PROVIDERS);
     }
 
-    // Core providers
     providers.push(
         ...FACTORY_PROVIDERS,
         ...USE_CASE_PROVIDERS,
         ...APPLICATION_PROVIDERS,
     );
 
-    // Extra providers
     if (options.extraProviders) {
         providers.push(...options.extraProviders);
     }

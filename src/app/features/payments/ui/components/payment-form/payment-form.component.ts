@@ -7,10 +7,10 @@ import { FieldRequirements, FieldConfig } from '../../../domain/ports';
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
- * Componente de formulario de pago dinámico.
+ * Dynamic payment form component.
  * 
- * Genera campos automáticamente basándose en los requisitos
- * del proveedor y método de pago seleccionados.
+ * Automatically generates fields based on requirements
+ * from the selected provider and payment method.
  * 
  * @example
  * ```html
@@ -31,31 +31,29 @@ import { I18nService, I18nKeys } from '@core/i18n';
 export class PaymentFormComponent implements OnDestroy {
     private readonly i18n = inject(I18nService);
     
-    /** Requisitos de campos del formulario */
+    /** Form field requirements */
     readonly requirements = input<FieldRequirements | null>(null);
     
-    /** Si el formulario está deshabilitado */
+    /** Whether the form is disabled */
     readonly disabled = input<boolean>(false);
     
-    /** Emite cuando cambian los valores del formulario */
+    /** Emits when form values change */
     readonly formChange = output<PaymentOptions>();
     
-    /** Emite cuando cambia la validez del formulario */
+    /** Emits when form validity changes */
     readonly formValidChange = output<boolean>();
 
-    /** Formulario reactivo */
+    /** Reactive form */
     readonly form = new FormGroup<Record<string, FormControl>>({});
     
     private readonly destroy$ = new Subject<void>();
 
     constructor() {
-        // Efecto para reconstruir el formulario cuando cambian los requisitos
         effect(() => {
             const reqs = this.requirements();
             this.rebuildForm(reqs);
         });
 
-        // Efecto para deshabilitar/habilitar el formulario
         effect(() => {
             if (this.disabled()) {
                 this.form.disable({ emitEvent: false });
@@ -70,34 +68,31 @@ export class PaymentFormComponent implements OnDestroy {
         this.destroy$.complete();
     }
 
-    /** Campos visibles (no hidden) */
+    /** Visible fields (not hidden) */
     visibleFields(): FieldConfig[] {
         const reqs = this.requirements();
         if (!reqs) return [];
         return reqs.fields.filter(f => f.type !== 'hidden');
     }
 
-    /** Campos ocultos */
+    /** Hidden fields */
     hiddenFields(): FieldConfig[] {
         const reqs = this.requirements();
         if (!reqs) return [];
         return reqs.fields.filter(f => f.type === 'hidden');
     }
 
-    /** Verifica si un campo tiene error */
+    /** Checks if a field has an error */
     isFieldInvalid(fieldName: string): boolean {
         const control = this.form.get(fieldName);
         return control ? control.invalid && control.touched : false;
     }
 
     private rebuildForm(requirements: FieldRequirements | null): void {
-        // Limpiar suscripciones anteriores
         this.destroy$.next();
 
-        // Limpiar controles existentes usando reset y luego agregar nuevos
         this.form.reset();
         
-        // Remover todos los controles manualmente
         const keys = Object.keys(this.form.controls);
         keys.forEach(key => {
             (this.form as any).removeControl(key);
@@ -105,22 +100,17 @@ export class PaymentFormComponent implements OnDestroy {
 
         if (!requirements) return;
 
-        // Agregar controles según requisitos
         for (const field of requirements.fields) {
             let defaultValue = field.defaultValue ?? '';
 
-            // Auto-fill para campos especiales
             if (field.autoFill === 'currentUrl') {
                 defaultValue = typeof window !== 'undefined' ? window.location.href : '';
             }
 
-            // En modo desarrollo, auto-rellenar token si es requerido y está vacío
-            // El token debe cumplir el formato de Stripe: tok_ seguido de al menos 14 caracteres alfanuméricos (sin guiones bajos)
             if (isDevMode() && field.name === 'token' && field.required && !defaultValue) {
                 defaultValue = 'tok_visa1234567890abcdef';
             }
 
-            // Para saveForFuture, usar boolean false como default
             let controlValue: any = defaultValue;
             if (field.name === 'saveForFuture') {
                 if (defaultValue === 'false' || defaultValue === '' || !defaultValue) {
@@ -132,8 +122,6 @@ export class PaymentFormComponent implements OnDestroy {
                 }
             }
 
-            // Validadores: campos requeridos necesitan Validators.required
-            // En modo desarrollo, el token hidden se auto-rellena, así que no necesita ser requerido en el form
             const isRequired = field.required && !(isDevMode() && field.type === 'hidden' && field.name === 'token');
             const validators = isRequired ? [Validators.required] : [];
             
@@ -147,10 +135,8 @@ export class PaymentFormComponent implements OnDestroy {
             );
         }
 
-        // Emitir cambios iniciales
         this.emitFormState();
 
-        // Suscribirse a cambios del formulario
         this.form.valueChanges
             .pipe(
                 debounceTime(150),
@@ -165,20 +151,17 @@ export class PaymentFormComponent implements OnDestroy {
         const values = this.form.value;
         const options: PaymentOptions = {};
 
-        // Mapear valores del formulario a PaymentOptions
         if (values['token']) options.token = values['token'];
         if (values['returnUrl']) options.returnUrl = values['returnUrl'];
         if (values['cancelUrl']) options.cancelUrl = values['cancelUrl'];
         if (values['customerEmail']) options.customerEmail = values['customerEmail'];
         
-        // Manejar saveForFuture: puede venir como boolean (checkbox) o string 'true'/'false'
         if (values['saveForFuture'] !== undefined && values['saveForFuture'] !== null) {
             if (typeof values['saveForFuture'] === 'boolean') {
                 options.saveForFuture = values['saveForFuture'];
             } else if (typeof values['saveForFuture'] === 'string') {
                 options.saveForFuture = values['saveForFuture'] === 'true';
             } else {
-                // Para checkbox, puede venir como true/false directamente
                 options.saveForFuture = !!values['saveForFuture'];
             }
         }
@@ -187,9 +170,8 @@ export class PaymentFormComponent implements OnDestroy {
         this.formValidChange.emit(this.form.valid);
     }
 
-    /** Traduce un label de campo usando i18n si es necesario */
+    /** Translates a field label using i18n if needed */
     translateFieldLabel(field: FieldConfig): string {
-        // Mapeo de labels conocidos a claves de traducción
         const labelMap: Record<string, string> = {
             'Token de tarjeta': I18nKeys.ui.card_token,
             'Guardar tarjeta para futuras compras': I18nKeys.ui.save_card_future,
@@ -203,7 +185,7 @@ export class PaymentFormComponent implements OnDestroy {
         return field.label;
     }
 
-    /** Traduce la descripción del método */
+    /** Translates the method description */
     translateDescription(description: string | undefined): string {
         if (!description) return '';
         const descMap: Record<string, string> = {
@@ -217,7 +199,7 @@ export class PaymentFormComponent implements OnDestroy {
         return description;
     }
 
-    /** Traduce las instrucciones */
+    /** Translates the instructions */
     translateInstructions(instructions: string | undefined): string {
         if (!instructions) return '';
         const instMap: Record<string, string> = {

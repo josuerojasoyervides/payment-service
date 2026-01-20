@@ -29,13 +29,13 @@ import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 
 /**
- * Signal Store para el módulo de pagos.
+ * Signal Store for payments module.
  * 
- * Implementa estado reactivo con @ngrx/signals para:
- * - Estado inmutable por defecto
- * - Computed properties optimizadas
- * - Métodos para acciones
- * - Integración con RxJS para efectos
+ * Implements reactive state with @ngrx/signals for:
+ * - Immutable state by default
+ * - Optimized computed properties
+ * - Methods for actions
+ * - RxJS integration for effects
  * 
  * @example
  * ```typescript
@@ -52,61 +52,45 @@ import { FallbackOrchestratorService } from '../services/fallback-orchestrator.s
  *   }
  * }
  * ```
- */
-/**
- * IMPORTANTE: Este store NO usa providedIn: 'root' porque depende de
- * servicios que solo están disponibles en el módulo lazy de payments.
- * Se provee en payments.routes.ts junto con el resto de providers.
+ * 
+ * IMPORTANT: This store does NOT use providedIn: 'root' because it depends on
+ * services that are only available in the lazy payments module.
+ * It's provided in payments.routes.ts along with the rest of providers.
  */
 export const PaymentsStore = signalStore(
-    // Estado inicial
     withState<PaymentsState>(initialPaymentsState),
     
-    // Computed properties (selectores)
     withComputed((state) => ({
-        /** Si hay un pago en proceso */
         isLoading: computed(() => state.status() === 'loading'),
         
-        /** Si hay un pago completado exitosamente */
         isReady: computed(() => state.status() === 'ready'),
         
-        /** Si hay un error */
         hasError: computed(() => state.status() === 'error'),
         
-        /** Intent actual si está disponible */
         currentIntent: computed(() => state.intent()),
         
-        /** Error actual si existe */
         currentError: computed(() => state.error()),
         
-        /** Si hay un fallback pendiente */
         hasPendingFallback: computed(() => state.fallback().status === 'pending'),
         
-        /** Si hay un auto-fallback en progreso */
         isAutoFallbackInProgress: computed(() => state.fallback().status === 'auto_executing'),
         
-        /** Si hay cualquier tipo de fallback en ejecución */
         isFallbackExecuting: computed(() => 
             state.fallback().status === 'executing' || 
             state.fallback().status === 'auto_executing'
         ),
         
-        /** Evento de fallback pendiente */
         pendingFallbackEvent: computed(() => state.fallback().pendingEvent),
         
-        /** Si el fallback actual es automático */
         isAutoFallback: computed(() => state.fallback().isAutoFallback),
         
-        /** Número de entradas en el historial */
         historyCount: computed(() => state.history().length),
         
-        /** Último intent del historial */
         lastHistoryEntry: computed(() => {
             const history = state.history();
             return history.length > 0 ? history[history.length - 1] : null;
         }),
         
-        /** Resumen del estado para debugging */
         debugSummary: computed(() => ({
             status: state.status(),
             intentId: state.intent()?.id ?? null,
@@ -117,15 +101,11 @@ export const PaymentsStore = signalStore(
         })),
     })),
     
-    // Métodos (acciones)
     withMethods((store) => {
         const registry = inject(ProviderFactoryRegistry);
         const fallbackOrchestrator = inject(FallbackOrchestratorService);
         
         return {
-            /**
-             * Inicia un nuevo pago.
-             */
             startPayment: rxMethod<{ request: CreatePaymentRequest; providerId: PaymentProviderId }>(
                 pipe(
                     tap(({ providerId }) => {
@@ -178,9 +158,6 @@ export const PaymentsStore = signalStore(
                 )
             ),
             
-            /**
-             * Confirma un pago existente.
-             */
             confirmPayment: rxMethod<{ request: ConfirmPaymentRequest; providerId: PaymentProviderId }>(
                 pipe(
                     tap(() => {
@@ -211,9 +188,6 @@ export const PaymentsStore = signalStore(
                 )
             ),
             
-            /**
-             * Cancela un pago existente.
-             */
             cancelPayment: rxMethod<{ request: CancelPaymentRequest; providerId: PaymentProviderId }>(
                 pipe(
                     tap(() => {
@@ -244,9 +218,6 @@ export const PaymentsStore = signalStore(
                 )
             ),
             
-            /**
-             * Obtiene el estado actual de un pago.
-             */
             refreshPayment: rxMethod<{ request: GetPaymentStatusRequest; providerId: PaymentProviderId }>(
                 pipe(
                     tap(() => {
@@ -276,9 +247,6 @@ export const PaymentsStore = signalStore(
                 )
             ),
             
-            /**
-             * Ejecuta un fallback con el provider seleccionado.
-             */
             executeFallback(providerId: PaymentProviderId): void {
                 const currentRequest = store.currentRequest();
                 if (!currentRequest) {
@@ -286,13 +254,9 @@ export const PaymentsStore = signalStore(
                     return;
                 }
                 
-                // Usar el método startPayment existente
                 this.startPayment({ request: currentRequest, providerId });
             },
             
-            /**
-             * Cancela el fallback pendiente.
-             */
             cancelFallback(): void {
                 const pendingEvent = store.fallback().pendingEvent;
                 if (pendingEvent) {
@@ -308,31 +272,19 @@ export const PaymentsStore = signalStore(
                 });
             },
             
-            /**
-             * Selecciona un provider.
-             */
             selectProvider(providerId: PaymentProviderId): void {
                 patchState(store, { selectedProvider: providerId });
             },
             
-            /**
-             * Resetea el estado a inicial.
-             */
             reset(): void {
                 fallbackOrchestrator.reset();
                 patchState(store, initialPaymentsState);
             },
             
-            /**
-             * Limpia solo el error actual.
-             */
             clearError(): void {
                 patchState(store, { error: null, status: 'idle' });
             },
             
-            /**
-             * Limpia el historial.
-             */
             clearHistory(): void {
                 patchState(store, { history: [] });
             },
@@ -366,6 +318,6 @@ function addToHistory(
 }
 
 /**
- * Tipo del store para inyección.
+ * Store type for injection.
  */
 export type PaymentsStoreType = InstanceType<typeof PaymentsStore>;

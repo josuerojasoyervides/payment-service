@@ -28,8 +28,8 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       // Interceptors funcionales (nuevos)
       withInterceptors([
-        cacheInterceptor,       // Caché de respuestas HTTP
-        retryInterceptor,       // Retry automático con backoff exponencial
+        cacheInterceptor,
+        retryInterceptor,
         resilienceInterceptor,  // Circuit breaker y rate limiting
         loggingInterceptor,     // Logging estructurado
       ]),

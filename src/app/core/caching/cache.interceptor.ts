@@ -48,21 +48,17 @@ export const cacheInterceptor: HttpInterceptorFn = (req, next) => {
     const logger = inject(LoggerService);
     const config = cacheService.getConfig();
 
-    // Solo cachear métodos configurados
     if (!config.cacheableMethods.includes(req.method.toUpperCase())) {
-        // Para métodos de mutación, invalidar caché relacionado
         if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method.toUpperCase())) {
             invalidateRelatedCache(req, cacheService, logger);
         }
         return next(req);
     }
 
-    // Verificar si la URL está excluida
     if (cacheService.shouldExclude(req.url)) {
         return next(req);
     }
 
-    // Verificar header Cache-Control: no-cache
     const cacheControl = req.headers.get('Cache-Control');
     if (config.respectCacheControl && shouldSkipCache(cacheControl)) {
         logger.debug('Skipping cache due to Cache-Control header', 'CacheInterceptor', {
@@ -72,10 +68,8 @@ export const cacheInterceptor: HttpInterceptorFn = (req, next) => {
         return next(req);
     }
 
-    // Generar cache key
     const cacheKey = generateCacheKey(req.url, getRequestParams(req));
 
-    // Intentar obtener del caché
     const cached = cacheService.get<HttpResponse<unknown>>(cacheKey);
 
     if (cached) {
@@ -85,30 +79,25 @@ export const cacheInterceptor: HttpInterceptorFn = (req, next) => {
             remainingTTL: cached.remainingTTL,
         });
 
-        // Reconstruir la respuesta con header X-Cache
         const cachedResponse = addCacheHeader(cached.data, 'HIT');
         return of(cachedResponse);
     }
 
     logger.debug('Cache MISS', 'CacheInterceptor', { url: req.url, key: cacheKey });
 
-    // Ejecutar request y cachear respuesta
     return next(req).pipe(
         tap(event => {
             if (event instanceof HttpResponse) {
-                // Verificar si la respuesta es cacheable
                 const responseCacheControl = event.headers.get('Cache-Control');
                 if (config.respectCacheControl && shouldSkipCache(responseCacheControl)) {
                     return;
                 }
 
-                // Determinar TTL
                 let ttl: number | undefined;
                 if (config.respectCacheControl && responseCacheControl) {
                     ttl = parseCacheControlMaxAge(responseCacheControl);
                 }
 
-                // Cachear la respuesta
                 cacheService.set(cacheKey, event, { ttl });
 
                 logger.debug('Cache SET', 'CacheInterceptor', {
@@ -128,7 +117,7 @@ export const cacheInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 /**
- * Agrega el header X-Cache a una respuesta.
+ * Adds X-Cache header to a response.
  */
 function addCacheHeader<T>(response: HttpResponse<T>, status: 'HIT' | 'MISS'): HttpResponse<T> {
     return response.clone({
@@ -137,7 +126,7 @@ function addCacheHeader<T>(response: HttpResponse<T>, status: 'HIT' | 'MISS'): H
 }
 
 /**
- * Extrae los parámetros de un request como objeto.
+ * Extracts request parameters as an object.
  */
 function getRequestParams(req: HttpRequest<unknown>): Record<string, string> | undefined {
     const params: Record<string, string> = {};
@@ -158,14 +147,14 @@ function getRequestParams(req: HttpRequest<unknown>): Record<string, string> | u
 }
 
 /**
- * Invalida caché relacionado para operaciones de mutación.
+ * Invalidates related cache for mutation operations.
  * 
- * Estrategia de invalidación:
- * - POST /intents → No invalida nada (crea nuevo)
- * - POST /intents/:id/confirm → Invalida /intents/:id
- * - POST /intents/:id/cancel → Invalida /intents/:id
- * - PUT /resource/:id → Invalida /resource/:id
- * - DELETE /resource/:id → Invalida /resource/:id
+ * Invalidation strategy:
+ * - POST /intents → Doesn't invalidate (creates new)
+ * - POST /intents/:id/confirm → Invalidates /intents/:id
+ * - POST /intents/:id/cancel → Invalidates /intents/:id
+ * - PUT /resource/:id → Invalidates /resource/:id
+ * - DELETE /resource/:id → Invalidates /resource/:id
  */
 function invalidateRelatedCache(
     req: HttpRequest<unknown>,
@@ -174,7 +163,6 @@ function invalidateRelatedCache(
 ): void {
     const url = req.url;
 
-    // Detectar patrón de confirmación/cancelación de intents
     const confirmCancelMatch = url.match(/\/intents\/([^/]+)\/(confirm|cancel)$/);
     if (confirmCancelMatch) {
         const intentId = confirmCancelMatch[1];
@@ -190,7 +178,6 @@ function invalidateRelatedCache(
         return;
     }
 
-    // Patrón genérico: PUT/DELETE en un recurso específico
     if (['PUT', 'PATCH', 'DELETE'].includes(req.method)) {
         const resourceMatch = url.match(/^(.+\/[^/]+)$/);
         if (resourceMatch) {
@@ -207,12 +194,12 @@ function invalidateRelatedCache(
 }
 
 /**
- * Factory function para crear el interceptor con opciones personalizadas.
+ * Factory function to create interceptor with custom options.
  */
 export function createCacheInterceptor(options?: {
-    /** Forzar caching incluso si Cache-Control dice no-cache */
+    /** Force caching even if Cache-Control says no-cache */
     ignoreNoCache?: boolean;
-    /** Tags adicionales para todas las entradas */
+    /** Additional tags for all entries */
     defaultTags?: string[];
 }): HttpInterceptorFn {
     return (req, next) => {
@@ -220,7 +207,6 @@ export function createCacheInterceptor(options?: {
         const logger = inject(LoggerService);
         const config = cacheService.getConfig();
 
-        // Usar la lógica base pero con opciones personalizadas
         if (!config.cacheableMethods.includes(req.method.toUpperCase())) {
             if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method.toUpperCase())) {
                 invalidateRelatedCache(req, cacheService, logger);
@@ -232,7 +218,6 @@ export function createCacheInterceptor(options?: {
             return next(req);
         }
 
-        // Si ignoreNoCache está activo, no verificar Cache-Control
         if (!options?.ignoreNoCache) {
             const cacheControl = req.headers.get('Cache-Control');
             if (config.respectCacheControl && shouldSkipCache(cacheControl)) {

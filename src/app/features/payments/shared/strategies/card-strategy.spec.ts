@@ -10,7 +10,6 @@ describe('CardStrategy', () => {
     let tokenValidatorMock: TokenValidator;
     let i18nMock: I18nService;
 
-    // Token válido con formato correcto (14+ caracteres después del prefijo)
     const validToken = 'tok_test1234567890abc';
 
     const validReq: CreatePaymentRequest = {
