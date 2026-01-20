@@ -11,6 +11,7 @@ import { PaypalPaymentGateway } from "../gateways/paypal-payment.gateway";
 import { PaypalRedirectStrategy } from "../strategies/paypal-redirect.strategy";
 import { PaypalRedirectRequestBuilder } from "../builders/paypal-redirect-request.builder";
 import { PaypalTokenValidator } from "../validators/paypal-token.validator";
+import { I18nService } from "@core/i18n";
 
 /**
  * Factory de PayPal.
@@ -29,6 +30,7 @@ export class PaypalProviderFactory implements ProviderFactory {
     readonly providerId = 'paypal' as const;
 
     private readonly gateway = inject(PaypalPaymentGateway);
+    private readonly i18n = inject(I18nService);
 
     /**
      * Cache de estrategias.
@@ -112,7 +114,7 @@ export class PaypalProviderFactory implements ProviderFactory {
     private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
         switch (type) {
             case 'card':
-                return new PaypalRedirectStrategy(this.gateway);
+                return new PaypalRedirectStrategy(this.gateway, this.i18n);
             default:
                 throw new Error(`Unexpected payment method type: ${type}`);
         }

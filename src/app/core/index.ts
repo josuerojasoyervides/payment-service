@@ -34,3 +34,6 @@ export * from './logging';
 
 // Testing
 export * from './testing';
+
+// i18n
+export * from './i18n';

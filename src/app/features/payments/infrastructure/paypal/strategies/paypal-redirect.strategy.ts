@@ -1,3 +1,4 @@
+import { inject } from "@angular/core";
 import { map, Observable, tap } from "rxjs";
 import { 
     PaymentIntent, 
@@ -12,6 +13,7 @@ import {
     PaymentGateway,
 } from "../../../domain/ports";
 import { findPaypalLink, PaypalOrderDto } from "../dto/paypal.dto";
+import { I18nService } from "@core/i18n";
 
 /**
  * Estrategia de redirección para PayPal.
@@ -30,7 +32,10 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     private static readonly DEFAULT_LANDING_PAGE = 'LOGIN';
     private static readonly DEFAULT_USER_ACTION = 'PAY_NOW';
 
-    constructor(private readonly gateway: PaymentGateway) { }
+    constructor(
+        private readonly gateway: PaymentGateway,
+        private readonly i18n: I18nService = inject(I18nService)
+    ) { }
 
     /**
      * Valida el request para PayPal.

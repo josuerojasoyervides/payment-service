@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { CreatePaymentRequest, PaymentError } from '../../../domain/models';
+import { I18nService } from '@core/i18n';
 
 describe('StripePaymentGateway', () => {
     let gateway: StripePaymentGateway;
@@ -17,8 +18,30 @@ describe('StripePaymentGateway', () => {
     };
 
     beforeEach(() => {
+        const i18nMock = {
+            t: vi.fn((key: string) => {
+                const translations: Record<string, string> = {
+                    'errors.card_declined': 'Tu tarjeta fue rechazada. Contacta a tu banco o usa otra tarjeta.',
+                    'errors.stripe_error': 'Error procesando el pago con Stripe.',
+                    'errors.stripe_unavailable': 'Stripe no está disponible en este momento. Intenta más tarde.',
+                    'errors.order_id_required': 'orderId is required',
+                    'errors.provider_error': 'Payment provider error',
+                };
+                return translations[key] || key;
+            }),
+            setLanguage: vi.fn(),
+            getLanguage: vi.fn(() => 'es'),
+            has: vi.fn(() => true),
+            currentLang: { asReadonly: vi.fn() } as any,
+        } as any;
+
         TestBed.configureTestingModule({
-            providers: [provideHttpClient(), provideHttpClientTesting(), StripePaymentGateway],
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                StripePaymentGateway,
+                { provide: I18nService, useValue: i18nMock },
+            ],
         });
 
         gateway = TestBed.inject(StripePaymentGateway);
@@ -92,7 +115,7 @@ describe('StripePaymentGateway', () => {
 
                 expect(paymentError.code).toBe('card_declined');
                 // Message is humanized in Spanish
-                expect(paymentError.message).toContain('rechazado');
+                expect(paymentError.message).toContain('rechazada');
             }
         });
 

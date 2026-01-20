@@ -4,6 +4,7 @@ import { StripePaymentGateway } from '../gateways/stripe-payment.gateway';
 import { firstValueFrom, of } from 'rxjs';
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
+import { I18nService } from '@core/i18n';
 
 describe('StripeProviderFactory', () => {
     let factory: StripeProviderFactory;
@@ -14,10 +15,19 @@ describe('StripeProviderFactory', () => {
     } satisfies Partial<StripePaymentGateway>;
 
     beforeEach(() => {
+        const i18nMock = {
+            t: vi.fn((key: string) => key),
+            setLanguage: vi.fn(),
+            getLanguage: vi.fn(() => 'es'),
+            has: vi.fn(() => true),
+            currentLang: { asReadonly: vi.fn() } as any,
+        } as any;
+
         TestBed.configureTestingModule({
             providers: [
                 StripeProviderFactory,
-                { provide: StripePaymentGateway, useValue: gatewayStub }
+                { provide: StripePaymentGateway, useValue: gatewayStub },
+                { provide: I18nService, useValue: i18nMock },
             ]
         })
 

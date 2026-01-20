@@ -4,6 +4,7 @@ import { PaypalPaymentGateway } from "../gateways/paypal-payment.gateway";
 import { CreatePaymentRequest } from "../../../domain/models";
 import { firstValueFrom, of } from "rxjs";
 import { PaymentGateway } from "../../../domain/ports";
+import { I18nService } from "@core/i18n";
 
 describe('PaypalRedirectStrategy', () => {
     let strategy: PaypalRedirectStrategy;
@@ -32,14 +33,23 @@ describe('PaypalRedirectStrategy', () => {
             )
         } as any;
 
+        const i18nMock = {
+            t: vi.fn((key: string) => key),
+            setLanguage: vi.fn(),
+            getLanguage: vi.fn(() => 'es'),
+            has: vi.fn(() => true),
+            currentLang: { asReadonly: vi.fn() } as any,
+        } as any;
+
         TestBed.configureTestingModule({
             providers: [
                 PaypalRedirectStrategy,
-                { provide: PaypalPaymentGateway, useValue: gatewayMock }
+                { provide: PaypalPaymentGateway, useValue: gatewayMock },
+                { provide: I18nService, useValue: i18nMock },
             ]
         })
 
-        strategy = new PaypalRedirectStrategy(gatewayMock as any);
+        strategy = new PaypalRedirectStrategy(gatewayMock as any, i18nMock);
     })
 
     it('delegates to gateway.createIntent(req)', async () => {

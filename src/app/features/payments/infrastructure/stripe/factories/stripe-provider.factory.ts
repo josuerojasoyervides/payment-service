@@ -13,6 +13,7 @@ import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
 import { StripeCardRequestBuilder } from '../builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '../builders/stripe-spei-request.builder';
 import { StripeTokenValidator } from '../validators/stripe-token.validator';
+import { I18nService } from '@core/i18n';
 
 /**
  * Factory de Stripe.
@@ -32,6 +33,7 @@ export class StripeProviderFactory implements ProviderFactory {
     readonly providerId = 'stripe' as const;
 
     private readonly gateway = inject(StripePaymentGateway);
+    private readonly i18n = inject(I18nService);
 
     /**
      * Cache de estrategias para evitar recrearlas.
@@ -130,9 +132,9 @@ export class StripeProviderFactory implements ProviderFactory {
         switch (type) {
             case 'card':
                 // Inyectar el validador de tokens de Stripe
-                return new CardStrategy(this.gateway, new StripeTokenValidator());
+                return new CardStrategy(this.gateway, new StripeTokenValidator(), this.i18n);
             case 'spei':
-                return new SpeiStrategy(this.gateway);
+                return new SpeiStrategy(this.gateway, this.i18n);
             default:
                 throw new Error(`Unexpected payment method type: ${type}`);
         }

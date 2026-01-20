@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { 
     PaymentIntent, 
     PaymentIntentStatus,
@@ -12,6 +12,7 @@ import {
 } from '../../../domain/models';
 import { PaymentGateway } from '../../../domain/ports';
 import { Observable } from 'rxjs';
+import { I18nService } from '@core/i18n';
 import {
     PaypalOrderDto,
     PaypalOrderStatus,
@@ -168,7 +169,7 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
             if (httpError.status === 401) {
                 return {
                     code: 'provider_error',
-                    message: 'Error de autenticación con PayPal. Contacta soporte.',
+                    message: this.i18n.t('errors.paypal_auth_error'),
                     raw: err,
                 };
             }
@@ -176,7 +177,7 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
             if (httpError.status >= 500) {
                 return {
                     code: 'provider_unavailable',
-                    message: 'PayPal no está disponible en este momento. Intenta más tarde.',
+                    message: this.i18n.t('errors.paypal_unavailable'),
                     raw: err,
                 };
             }
@@ -288,13 +289,13 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
      * Convierte errores de PayPal a mensajes legibles.
      */
     private humanizePaypalError(error: PaypalErrorResponse): string {
-        const messages: Record<string, string> = {
-            'INVALID_REQUEST': 'La solicitud a PayPal es inválida. Verifica los datos.',
-            'PERMISSION_DENIED': 'No tienes permiso para realizar esta operación.',
-            'RESOURCE_NOT_FOUND': 'La orden de PayPal no fue encontrada.',
-            'INSTRUMENT_DECLINED': 'El método de pago fue rechazado por PayPal.',
-            'ORDER_NOT_APPROVED': 'Debes aprobar el pago en PayPal antes de continuar.',
-            'INTERNAL_SERVICE_ERROR': 'PayPal está experimentando problemas. Intenta más tarde.',
+        const errorKeyMap: Record<string, string> = {
+            'INVALID_REQUEST': 'errors.paypal_invalid_request',
+            'PERMISSION_DENIED': 'errors.paypal_permission_denied',
+            'RESOURCE_NOT_FOUND': 'errors.paypal_resource_not_found',
+            'INSTRUMENT_DECLINED': 'errors.paypal_instrument_declined',
+            'ORDER_NOT_APPROVED': 'errors.paypal_order_not_approved',
+            'INTERNAL_SERVICE_ERROR': 'errors.paypal_internal_error',
         };
 
         // Buscar mensaje específico en details
@@ -303,6 +304,11 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
             return detail.description || detail.issue || error.message;
         }
 
-        return messages[error.name] ?? error.message ?? 'Error procesando el pago con PayPal.';
+        const translationKey = errorKeyMap[error.name];
+        if (translationKey) {
+            return this.i18n.t(translationKey);
+        }
+
+        return error.message ?? this.i18n.t('errors.paypal_error');
     }
 }
