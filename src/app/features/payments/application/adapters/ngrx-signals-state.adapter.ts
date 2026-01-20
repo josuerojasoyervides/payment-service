@@ -1,0 +1,153 @@
+import { computed, effect, inject, Injectable, Signal } from '@angular/core';
+import { PaymentStatePort, PaymentDebugSummary, Unsubscribe } from '../state/payment-state';
+import { PaymentsStore } from '../store/payments.store';
+import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
+import { PaymentError } from '../../domain/models/payment.errors';
+import { FallbackAvailableEvent, FallbackState } from '../../domain/models/fallback.types';
+import { PaymentHistoryEntry, PaymentsState } from '../store/payments.models';
+import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from '../../domain/models/payment.requests';
+
+/**
+ * Adapter que implementa PaymentStatePort usando NgRx Signals.
+ * 
+ * Este adapter permite que los componentes usen el port sin conocer
+ * la implementación concreta. Si en el futuro se decide cambiar
+ * de NgRx Signals a otra librería, solo hay que crear un nuevo adapter.
+ * 
+ * Patrón: Adapter
+ * - Adapta la interface de PaymentsStore al contrato PaymentStatePort
+ * - Los componentes no conocen PaymentsStore directamente
+ * - Facilita testing con mocks del port
+ * 
+ * @example
+ * ```typescript
+ * // En payment.providers.ts
+ * { provide: PAYMENTS_STATE, useClass: NgRxSignalsStateAdapter }
+ * 
+ * // En el componente
+ * private readonly state = inject(PAYMENTS_STATE);
+ * readonly isLoading = this.state.isLoading; // Signal<boolean>
+ * ```
+ */
+@Injectable()
+export class NgRxSignalsStateAdapter implements PaymentStatePort {
+    private readonly store = inject(PaymentsStore);
+
+    // ============================================================
+    // ESTADO REACTIVO (delegado al store)
+    // ============================================================
+
+    readonly state: Signal<PaymentsState> = computed(() => ({
+        status: this.store.status(),
+        intent: this.store.intent(),
+        error: this.store.error(),
+        selectedProvider: this.store.selectedProvider(),
+        currentRequest: this.store.currentRequest(),
+        fallback: this.store.fallback(),
+        history: this.store.history(),
+    }));
+
+    readonly isLoading: Signal<boolean> = this.store.isLoading;
+    readonly isReady: Signal<boolean> = this.store.isReady;
+    readonly hasError: Signal<boolean> = this.store.hasError;
+    readonly intent: Signal<PaymentIntent | null> = this.store.currentIntent;
+    readonly error: Signal<PaymentError | null> = this.store.currentError;
+    readonly selectedProvider: Signal<PaymentProviderId | null> = computed(() => 
+        this.store.selectedProvider()
+    );
+
+    // ============================================================
+    // ESTADO DE FALLBACK
+    // ============================================================
+
+    readonly hasPendingFallback: Signal<boolean> = this.store.hasPendingFallback;
+    readonly isAutoFallbackInProgress: Signal<boolean> = this.store.isAutoFallbackInProgress;
+    readonly isFallbackExecuting: Signal<boolean> = this.store.isFallbackExecuting;
+    readonly isAutoFallback: Signal<boolean> = this.store.isAutoFallback;
+    readonly pendingFallbackEvent: Signal<FallbackAvailableEvent | null> = this.store.pendingFallbackEvent;
+    readonly fallbackState: Signal<FallbackState> = computed(() => this.store.fallback());
+
+    // ============================================================
+    // HISTORIAL
+    // ============================================================
+
+    readonly historyCount: Signal<number> = this.store.historyCount;
+    readonly lastHistoryEntry: Signal<PaymentHistoryEntry | null> = this.store.lastHistoryEntry;
+    readonly history: Signal<PaymentHistoryEntry[]> = computed(() => this.store.history());
+
+    // ============================================================
+    // DEBUG
+    // ============================================================
+
+    readonly debugSummary: Signal<PaymentDebugSummary> = this.store.debugSummary;
+
+    // ============================================================
+    // SNAPSHOT (Para código imperativo/legacy)
+    // ============================================================
+
+    getSnapshot(): Readonly<PaymentsState> {
+        return this.state();
+    }
+
+    subscribe(listener: () => void): Unsubscribe {
+        const ref = effect(() => {
+            // Trigger en cualquier cambio de estado
+            this.state();
+            listener();
+        });
+
+        return () => ref.destroy();
+    }
+
+    // ============================================================
+    // ACCIONES DE PAGO
+    // ============================================================
+
+    startPayment(request: CreatePaymentRequest, providerId: PaymentProviderId): void {
+        this.store.startPayment({ request, providerId });
+    }
+
+    confirmPayment(request: ConfirmPaymentRequest, providerId: PaymentProviderId): void {
+        this.store.confirmPayment({ request, providerId });
+    }
+
+    cancelPayment(request: CancelPaymentRequest, providerId: PaymentProviderId): void {
+        this.store.cancelPayment({ request, providerId });
+    }
+
+    refreshPayment(request: GetPaymentStatusRequest, providerId: PaymentProviderId): void {
+        this.store.refreshPayment({ request, providerId });
+    }
+
+    // ============================================================
+    // ACCIONES DE UI
+    // ============================================================
+
+    selectProvider(providerId: PaymentProviderId): void {
+        this.store.selectProvider(providerId);
+    }
+
+    clearError(): void {
+        this.store.clearError();
+    }
+
+    reset(): void {
+        this.store.reset();
+    }
+
+    clearHistory(): void {
+        this.store.clearHistory();
+    }
+
+    // ============================================================
+    // ACCIONES DE FALLBACK
+    // ============================================================
+
+    executeFallback(providerId: PaymentProviderId): void {
+        this.store.executeFallback(providerId);
+    }
+
+    cancelFallback(): void {
+        this.store.cancelFallback();
+    }
+}
