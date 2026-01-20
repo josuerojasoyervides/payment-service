@@ -110,6 +110,7 @@ export interface FallbackModalProps {
 
 /**
  * Configuración por defecto de proveedores.
+ * @deprecated Usar getDefaultProviders() con I18nService en su lugar
  */
 export const DEFAULT_PROVIDERS: ProviderOption[] = [
     {
@@ -127,7 +128,28 @@ export const DEFAULT_PROVIDERS: ProviderOption[] = [
 ];
 
 /**
+ * Obtiene la configuración de proveedores usando i18n.
+ */
+export function getDefaultProviders(i18n: { t: (key: string) => string }): ProviderOption[] {
+    return [
+        {
+            id: 'stripe',
+            name: i18n.t('ui.provider_stripe'),
+            icon: '💳',
+            description: i18n.t('ui.provider_stripe_description'),
+        },
+        {
+            id: 'paypal',
+            name: i18n.t('ui.provider_paypal'),
+            icon: '🅿️',
+            description: i18n.t('ui.provider_paypal_description'),
+        },
+    ];
+}
+
+/**
  * Configuración por defecto de métodos de pago.
+ * @deprecated Usar getDefaultMethods() con I18nService en su lugar
  */
 export const DEFAULT_METHODS: MethodOption[] = [
     {
@@ -145,6 +167,26 @@ export const DEFAULT_METHODS: MethodOption[] = [
 ];
 
 /**
+ * Obtiene la configuración de métodos usando i18n.
+ */
+export function getDefaultMethods(i18n: { t: (key: string) => string }): MethodOption[] {
+    return [
+        {
+            type: 'card',
+            name: i18n.t('ui.method_card'),
+            icon: '💳',
+            description: i18n.t('ui.method_card_description'),
+        },
+        {
+            type: 'spei',
+            name: i18n.t('ui.method_spei'),
+            icon: '🏦',
+            description: i18n.t('ui.method_spei_description'),
+        },
+    ];
+}
+
+/**
  * Mapeo de estados de pago a clases de badge.
  */
 export const STATUS_BADGE_MAP: Record<string, string> = {
@@ -159,6 +201,7 @@ export const STATUS_BADGE_MAP: Record<string, string> = {
 
 /**
  * Mapeo de estados de pago a textos legibles.
+ * @deprecated Usar getStatusText() con I18nService en su lugar
  */
 export const STATUS_TEXT_MAP: Record<string, string> = {
     'requires_payment_method': 'Requiere método de pago',
@@ -169,6 +212,14 @@ export const STATUS_TEXT_MAP: Record<string, string> = {
     'failed': 'Fallido',
     'canceled': 'Cancelado',
 };
+
+/**
+ * Obtiene el texto de un estado usando i18n.
+ */
+export function getStatusText(i18n: { t: (key: string) => string; has: (key: string) => boolean }, status: string): string {
+    const statusKey = `messages.status_${status}`;
+    return i18n.has(statusKey) ? i18n.t(statusKey) : status;
+}
 
 /**
  * Re-exportar tipos del dominio para conveniencia.

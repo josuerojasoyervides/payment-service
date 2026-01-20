@@ -88,5 +88,90 @@ export interface Translations {
         fallback_accept: string;
         fallback_cancel: string;
         fallback_auto_executing: string;
+        
+        // Errores y mensajes
+        unknown_error: string;
+        payment_error: string;
+        payment_completed: string;
+        payment_started_successfully: string;
+        intent_id: string;
+        provider: string;
+        status: string;
+        amount: string;
+        view_technical_details: string;
+        try_again: string;
+        view_full_response: string;
+        new_payment: string;
+        error_code: string;
+        
+        // Fallback modal
+        payment_problem: string;
+        provider_unavailable: string;
+        try_another_provider: string;
+        retry_with: string;
+        
+        // SPEI
+        spei_transfer: string;
+        make_transfer_with_data: string;
+        reference: string;
+        exact_amount: string;
+        destination_bank: string;
+        beneficiary: string;
+        reference_expires: string;
+        copy: string;
+        copied: string;
+        transfer_exact_amount: string;
+        payment_may_take: string;
+        keep_receipt: string;
+        
+        // 3DS
+        '3ds_verification_required': string;
+        bank_requires_verification: string;
+        '3ds_version': string;
+        complete_verification: string;
+        
+        // PayPal
+        paypal_approval_required: string;
+        redirected_to_paypal: string;
+        order_id: string;
+        go_to_paypal: string;
+        after_approve_verify: string;
+        
+        // Acciones
+        action_required: string;
+        action_requires_attention: string;
+        view_action_details: string;
+        
+        // Páginas
+        checkout: string;
+        payment_system: string;
+        view_history: string;
+        check_status: string;
+        showcase: string;
+        payment_provider: string;
+        payment_method: string;
+        payment_data: string;
+        consult_status: string;
+        enter_payment_id: string;
+        intent_id_placeholder: string;
+        example_stripe: string;
+        consulting: string;
+        error_consulting: string;
+        result: string;
+        quick_examples: string;
+        stripe_intent: string;
+        paypal_order: string;
+        
+        // Proveedores
+        provider_stripe: string;
+        provider_paypal: string;
+        provider_stripe_description: string;
+        provider_paypal_description: string;
+        
+        // Métodos
+        method_card: string;
+        method_card_description: string;
+        method_spei: string;
+        method_spei_description: string;
     };
 }

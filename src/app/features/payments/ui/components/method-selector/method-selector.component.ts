@@ -1,6 +1,7 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PaymentMethodType, DEFAULT_METHODS, MethodOption } from '../../shared';
+import { PaymentMethodType, getDefaultMethods, MethodOption } from '../../shared';
+import { I18nService } from '@core/i18n';
 
 /**
  * Componente selector de método de pago.
@@ -25,6 +26,8 @@ import { PaymentMethodType, DEFAULT_METHODS, MethodOption } from '../../shared';
     templateUrl: './method-selector.component.html',
 })
 export class MethodSelectorComponent {
+    private readonly i18n = inject(I18nService);
+    
     /** Lista de métodos de pago disponibles */
     readonly methods = input.required<PaymentMethodType[]>();
     
@@ -39,8 +42,9 @@ export class MethodSelectorComponent {
 
     /** Opciones de métodos con metadata */
     methodOptions(): MethodOption[] {
+        const defaultMethods = getDefaultMethods(this.i18n);
         return this.methods()
-            .map(type => DEFAULT_METHODS.find(m => m.type === type))
+            .map(type => defaultMethods.find(m => m.type === type))
             .filter((m): m is MethodOption => m !== undefined);
     }
 

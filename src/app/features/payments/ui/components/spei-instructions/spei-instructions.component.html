@@ -2,8 +2,8 @@
     <div class="flex items-center gap-3 mb-4">
         <span class="text-3xl">🏦</span>
         <div>
-            <h3 class="text-lg font-semibold text-blue-900">Transferencia SPEI</h3>
-            <p class="text-sm text-blue-700">Realiza la transferencia con los siguientes datos</p>
+            <h3 class="text-lg font-semibold text-blue-900">{{ speiTransferTitle }}</h3>
+            <p class="text-sm text-blue-700">{{ makeTransferText }}</p>
         </div>
     </div>
 
@@ -25,13 +25,13 @@
                         <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
-                        Copiado
+                        {{ copiedLabel }}
                     } @else {
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                   d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
                         </svg>
-                        Copiar
+                        {{ copyLabel }}
                     }
                 </button>
             </div>
@@ -40,7 +40,7 @@
         <div class="grid grid-cols-2 gap-4">
             <!-- Referencia -->
             <div class="bg-white rounded-lg p-4 border border-blue-100">
-                <p class="text-xs text-gray-500 uppercase tracking-wide">Referencia</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">{{ referenceLabel }}</p>
                 <div class="flex items-center justify-between mt-1">
                     <p class="font-mono font-semibold text-gray-900">{{ reference() }}</p>
                     <button 
@@ -63,7 +63,7 @@
 
             <!-- Monto -->
             <div class="bg-white rounded-lg p-4 border border-blue-100">
-                <p class="text-xs text-gray-500 uppercase tracking-wide">Monto exacto</p>
+                <p class="text-xs text-gray-500 uppercase tracking-wide">{{ exactAmountLabel }}</p>
                 <p class="font-semibold text-gray-900 text-lg mt-1">
                     {{ amount() | currency: currency() }}
                 </p>
@@ -73,12 +73,12 @@
         <!-- Banco y Beneficiario -->
         <div class="grid grid-cols-2 gap-4 text-sm">
             <div>
-                <p class="text-gray-500">Banco destino</p>
+                <p class="text-gray-500">{{ destinationBankLabel }}</p>
                 <p class="font-medium text-gray-900">{{ bank() }}</p>
             </div>
             @if (beneficiary()) {
                 <div>
-                    <p class="text-gray-500">Beneficiario</p>
+                    <p class="text-gray-500">{{ beneficiaryLabel }}</p>
                     <p class="font-medium text-gray-900">{{ beneficiary() }}</p>
                 </div>
             }
@@ -92,7 +92,7 @@
                           d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 <span>
-                    Esta referencia expira el 
+                    {{ referenceExpiresText }} 
                     <strong>{{ expiresAt() | date:'medium' }}</strong>
                 </span>
             </div>
@@ -100,9 +100,9 @@
 
         <!-- Notas importantes -->
         <div class="text-xs text-gray-500 space-y-1 mt-4">
-            <p>• Transfiere el monto exacto para evitar rechazos</p>
-            <p>• El pago puede tardar de 1 a 24 horas en reflejarse</p>
-            <p>• Conserva tu comprobante de transferencia</p>
+            <p>• {{ transferExactAmountText }}</p>
+            <p>• {{ paymentMayTakeText }}</p>
+            <p>• {{ keepReceiptText }}</p>
         </div>
     </div>
 </div>
