@@ -23,12 +23,19 @@ import { PaymentsStore } from "../application/store/payment.store";
 const GATEWAY_PROVIDERS: Provider[] = [
     // For development: use fake gateway that simulates responses
     // In production: remove this line and use real gateway
-    { 
-        provide: StripePaymentGateway, 
+
+    /**
+     * ! TODO: ✅ El contrato real no debería ser “StripePaymentGateway”, debería ser “PaymentGateway”.
+     * ! UI/Application no deberían inyectar gateways por clase concreta nunca.
+     * ! Solo la infra debería decidir la implementación concreta.
+     * ! las clases concretas de gateways no deberían importarse en config si quieres reemplazabilidad total.
+     */
+    {
+        provide: StripePaymentGateway,
         useFactory: () => FakePaymentGateway.create('stripe')
     },
-    { 
-        provide: PaypalPaymentGateway, 
+    {
+        provide: PaypalPaymentGateway,
         useFactory: () => FakePaymentGateway.create('paypal')
     },
 

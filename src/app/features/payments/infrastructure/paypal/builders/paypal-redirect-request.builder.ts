@@ -46,7 +46,11 @@ export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
 
     build(): CreatePaymentRequest {
         this.validate();
-
+        /**
+         * ! TODO: PaypalRedirectRequestBuilder: confirma el “hack legítimo”
+         * ! Este builder deja clarísimo que PayPal no tiene card como método, 
+         * ! sino que está usando card como etiqueta de compatibilidad:
+         */
         return {
             orderId: this.orderId!,
             amount: this.amount!,
