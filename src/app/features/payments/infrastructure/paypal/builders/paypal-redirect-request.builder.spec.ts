@@ -107,13 +107,16 @@ describe('PaypalRedirectRequestBuilder', () => {
             ).toThrow(/currency is required/);
         });
 
-        it('throws when returnUrl is missing (PayPal requires redirect URL)', () => {
-            expect(() =>
-                builder
-                    .forOrder('order_123')
-                    .withAmount(100, 'MXN')
-                    .build()
-            ).toThrow(/require returnUrl/);
+        it('allows building without returnUrl (can come from StrategyContext)', () => {
+            // returnUrl es opcional en el builder - puede venir de StrategyContext
+            const request = builder
+                .forOrder('order_123')
+                .withAmount(100, 'MXN')
+                .build();
+            
+            expect(request.orderId).toBe('order_123');
+            expect(request.amount).toBe(100);
+            expect(request.returnUrl).toBeUndefined();
         });
 
         it('throws when returnUrl is not a valid URL', () => {

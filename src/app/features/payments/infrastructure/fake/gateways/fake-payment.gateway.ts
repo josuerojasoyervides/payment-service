@@ -1,12 +1,12 @@
 import { Injectable } from "@angular/core";
 import { delay, Observable, of, throwError } from "rxjs";
-import { 
-    PaymentIntent, 
-    PaymentProviderId, 
+import {
+    PaymentIntent,
+    PaymentProviderId,
     PaymentIntentStatus,
-    CancelPaymentRequest, 
-    ConfirmPaymentRequest, 
-    CreatePaymentRequest, 
+    CancelPaymentRequest,
+    ConfirmPaymentRequest,
+    CreatePaymentRequest,
     GetPaymentStatusRequest,
     PaymentError,
 } from "../../../domain/models";
@@ -85,7 +85,7 @@ const FAKE_ERRORS: Record<string, PaymentError> = {
 @Injectable()
 export class FakePaymentGateway extends PaymentGateway {
     readonly providerId: PaymentProviderId = 'stripe';
-    
+
     /**
      * Factory method to create instances with correct providerId.
      */
@@ -142,20 +142,29 @@ export class FakePaymentGateway extends PaymentGateway {
     /**
      * Checks if token is special and determines behavior.
      */
-    private getTokenBehavior(token?: string): 'success' | '3ds' | 'fail' | 'timeout' | 'decline' | 'insufficient' | 'expired' | 'processing' | 'normal' {
+    private getTokenBehavior(token?: string):
+        | 'success'
+        | '3ds'
+        | 'fail'
+        | 'timeout'
+        | 'decline'
+        | 'insufficient'
+        | 'expired'
+        | 'processing'
+        | 'normal' {
         if (!token) return 'normal';
-        
-        switch (token) {
-            case SPECIAL_TOKENS.SUCCESS: return 'success';
-            case SPECIAL_TOKENS.THREE_DS: return '3ds';
-            case SPECIAL_TOKENS.FAIL: return 'fail';
-            case SPECIAL_TOKENS.TIMEOUT: return 'timeout';
-            case SPECIAL_TOKENS.DECLINE: return 'decline';
-            case SPECIAL_TOKENS.INSUFFICIENT: return 'insufficient';
-            case SPECIAL_TOKENS.EXPIRED: return 'expired';
-            case SPECIAL_TOKENS.PROCESSING: return 'processing';
-            default: return 'normal';
-        }
+
+        // ✅ Soporta exact match Y prefijos (super útil para tests)
+        if (token === SPECIAL_TOKENS.SUCCESS || token.startsWith(`${SPECIAL_TOKENS.SUCCESS}_`)) return 'success';
+        if (token === SPECIAL_TOKENS.THREE_DS || token.startsWith(`${SPECIAL_TOKENS.THREE_DS}`)) return '3ds';
+        if (token === SPECIAL_TOKENS.FAIL || token.startsWith(`${SPECIAL_TOKENS.FAIL}_`)) return 'fail';
+        if (token === SPECIAL_TOKENS.TIMEOUT || token.startsWith(`${SPECIAL_TOKENS.TIMEOUT}_`)) return 'timeout';
+        if (token === SPECIAL_TOKENS.DECLINE || token.startsWith(`${SPECIAL_TOKENS.DECLINE}_`)) return 'decline';
+        if (token === SPECIAL_TOKENS.INSUFFICIENT || token.startsWith(`${SPECIAL_TOKENS.INSUFFICIENT}_`)) return 'insufficient';
+        if (token === SPECIAL_TOKENS.EXPIRED || token.startsWith(`${SPECIAL_TOKENS.EXPIRED}_`)) return 'expired';
+        if (token === SPECIAL_TOKENS.PROCESSING || token.startsWith(`${SPECIAL_TOKENS.PROCESSING}_`)) return 'processing';
+
+        return 'normal';
     }
 
     // ============ CREATE INTENT ============
@@ -270,23 +279,23 @@ export class FakePaymentGateway extends PaymentGateway {
     // ============ FAKE STRIPE RESPONSES ============
 
     private createFakeStripeIntent(
-        req: CreatePaymentRequest, 
+        req: CreatePaymentRequest,
         forcedStatus?: StripePaymentIntentDto['status']
     ): StripePaymentIntentDto {
         const intentId = this.generateId('pi');
         const amountInCents = Math.round(req.amount * 100);
 
         let status: StripePaymentIntentDto['status'];
-        
+
         if (forcedStatus !== undefined) {
             status = forcedStatus;
         } else {
             status = 'requires_confirmation';
-            
+
             const requires3ds = req.method.token?.includes('3ds') ||
                 req.method.token?.includes('auth') ||
                 Math.random() > 0.7;
-            
+
             if (requires3ds) {
                 status = 'requires_action';
             }

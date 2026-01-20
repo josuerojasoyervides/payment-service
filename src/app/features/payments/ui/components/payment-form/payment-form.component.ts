@@ -103,7 +103,13 @@ export class PaymentFormComponent implements OnDestroy {
         for (const field of requirements.fields) {
             let defaultValue = field.defaultValue ?? '';
 
-            if (field.autoFill === 'currentUrl') {
+            // No auto-fill returnUrl/cancelUrl con currentUrl
+            // Estas URLs deben venir de StrategyContext (CheckoutComponent)
+            // El formulario se enfoca en inputs reales del usuario (token, customerEmail, saveForFuture)
+            if (field.autoFill === 'currentUrl' && (field.name === 'returnUrl' || field.name === 'cancelUrl')) {
+                // Dejar vacío - estas URLs vienen del context, no del formulario
+                defaultValue = '';
+            } else if (field.autoFill === 'currentUrl') {
                 defaultValue = typeof window !== 'undefined' ? window.location.href : '';
             }
 

@@ -12,6 +12,7 @@ import {
     CreatePaymentRequest,
     GetPaymentStatusRequest,
 } from '../../domain/models';
+import { StrategyContext } from '../../domain/ports';
 import { PaymentHistoryEntry, PaymentsState } from '../store/payment.models';
 
 /**
@@ -63,6 +64,12 @@ export class NgRxSignalsStateAdapter implements PaymentStatePort {
         this.store.selectedProvider()
     );
 
+    // Estados más descriptivos basados en el intent
+    readonly requiresUserAction: Signal<boolean> = this.store.requiresUserAction;
+    readonly isSucceeded: Signal<boolean> = this.store.isSucceeded;
+    readonly isProcessing: Signal<boolean> = this.store.isProcessing;
+    readonly isFailed: Signal<boolean> = this.store.isFailed;
+
     // ============================================================
     // ESTADO DE FALLBACK
     // ============================================================
@@ -105,8 +112,8 @@ export class NgRxSignalsStateAdapter implements PaymentStatePort {
     // ACCIONES DE PAGO
     // ============================================================
 
-    startPayment(request: CreatePaymentRequest, providerId: PaymentProviderId): void {
-        this.store['startPayment']({ request, providerId });
+    startPayment(request: CreatePaymentRequest, providerId: PaymentProviderId, context?: StrategyContext): void {
+        this.store['startPayment']({ request, providerId, context });
     }
 
     confirmPayment(request: ConfirmPaymentRequest, providerId: PaymentProviderId): void {

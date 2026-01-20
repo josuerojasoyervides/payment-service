@@ -207,7 +207,9 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
             const approveUrl = findPaypalLink(dto.links, 'approve');
             if (approveUrl) {
                 intent.redirectUrl = approveUrl;
-                intent.nextAction = this.buildPaypalApproveAction(dto, approveUrl);
+                // No construir nextAction aquí - PaypalRedirectStrategy.enrichIntentWithPaypalApproval
+                // lo construirá con las URLs correctas desde StrategyContext (metadata)
+                // Si necesitamos construir aquí, requeriríamos acceso al request original con returnUrl/cancelUrl
             }
         }
 
@@ -221,13 +223,30 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
 
     /**
      * Builds PayPal approval action.
+     * 
+     * Note: This method is called from mapOrder which doesn't have access to the original request.
+     * However, PaypalRedirectStrategy.enrichIntentWithPaypalApproval already sets the correct URLs
+     * from StrategyContext. This method should ideally not be used, as the strategy enriches the intent.
+     * 
+     * If called, returnUrl/cancelUrl MUST be provided - no fallbacks allowed.
+     * The system must guarantee these URLs come from StrategyContext.
      */
-    private buildPaypalApproveAction(dto: PaypalOrderDto, approveUrl: string): NextActionPaypalApprove {
+    private buildPaypalApproveAction(dto: PaypalOrderDto, approveUrl: string, returnUrl?: string, cancelUrl?: string): NextActionPaypalApprove {
+        // No inventar URLs - deben venir del request preparado
+        // Si no están disponibles, lanzar error claro
+        if (!returnUrl) {
+            throw new Error(
+                'returnUrl is required for PayPal approval action. ' +
+                'PaypalRedirectStrategy.enrichIntentWithPaypalApproval should set nextAction with URLs from StrategyContext. ' +
+                'If this method is called, returnUrl must be provided explicitly.'
+            );
+        }
+
         return {
             type: 'paypal_approve',
             approveUrl,
-            returnUrl: window.location.origin + '/payments/return',
-            cancelUrl: window.location.origin + '/payments/cancel',
+            returnUrl,
+            cancelUrl: cancelUrl ?? returnUrl,
             paypalOrderId: dto.id,
         };
     }
@@ -238,6 +257,21 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
      * Builds the request in PayPal Orders API format.
      */
     private buildPaypalCreateRequest(req: CreatePaymentRequest): PaypalCreateOrderRequest {
+        // returnUrl/cancelUrl deben venir del request preparado (PaypalRedirectStrategy.prepare)
+        // que usa StrategyContext como ÚNICA fuente
+        // El builder/strategy deben garantizar que returnUrl esté presente
+        // Si no está => error claro (no inventar URLs)
+        if (!req.returnUrl) {
+            throw new Error(
+                'returnUrl is required for PayPal orders. ' +
+                'PaypalRedirectStrategy.prepare() must set returnUrl from StrategyContext. ' +
+                'Check that CheckoutComponent provides StrategyContext.returnUrl when starting payment.'
+            );
+        }
+        
+        const returnUrl = req.returnUrl;
+        const cancelUrl = req.cancelUrl ?? returnUrl;
+
         return {
             intent: 'CAPTURE',
             purchase_units: [{
@@ -253,8 +287,8 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
                 brand_name: 'Payment Service',
                 landing_page: 'LOGIN',
                 user_action: 'PAY_NOW',
-                return_url: `${window.location.origin}/payments/paypal/return`,
-                cancel_url: `${window.location.origin}/payments/paypal/cancel`,
+                return_url: returnUrl,
+                cancel_url: cancelUrl,
             },
         };
     }

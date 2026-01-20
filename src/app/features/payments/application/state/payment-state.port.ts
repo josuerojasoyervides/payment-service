@@ -10,6 +10,7 @@ import {
     FallbackAvailableEvent, 
     FallbackState,
 } from '../../domain/models';
+import { StrategyContext } from '../../domain/ports';
 import { PaymentHistoryEntry, PaymentsState, PaymentFlowStatus } from '../store/payment.models';
 
 /**
@@ -117,7 +118,7 @@ export interface PaymentStatePort {
     /**
      * Inicia un nuevo pago.
      */
-    startPayment(request: CreatePaymentRequest, providerId: PaymentProviderId): void;
+    startPayment(request: CreatePaymentRequest, providerId: PaymentProviderId, context?: StrategyContext): void;
 
     /**
      * Confirma un pago existente.

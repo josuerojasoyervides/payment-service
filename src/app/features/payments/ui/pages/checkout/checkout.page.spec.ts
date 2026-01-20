@@ -305,11 +305,39 @@ describe('CheckoutComponent', () => {
             expect(mockPaymentState.startPayment).not.toHaveBeenCalled();
         });
 
-        it('debe auto-generar token en modo desarrollo para card', () => {
-            component.onFormChange({}); // Sin token
+        it('no debe procesar pago si el form es inválido', () => {
+            component.isFormValid.set(false);
+            component.processPayment();
+            expect(mockPaymentState.startPayment).not.toHaveBeenCalled();
+            expect(mockLogger.info).toHaveBeenCalledWith('Form invalid, payment blocked', 'CheckoutPage', {
+                provider: 'stripe',
+                method: 'card'
+            });
+        });
+
+        it('sí debe procesar pago si isFormValid es true', () => {
+            component.isFormValid.set(true);
+            component.onFormChange({ token: 'tok_test' });
+            component.processPayment();
+
+            // Debe procesar el pago (startPayment debe ser llamado)
+            expect(mockPaymentState.startPayment).toHaveBeenCalled();
+            // NO debe haber log de "Form invalid, payment blocked"
+            const blockedCalls = mockLogger.info.mock.calls.filter(
+                (call: any[]) => call[0] === 'Form invalid, payment blocked'
+            );
+
+            expect(blockedCalls.length).toBe(0);
+        });
+
+        it('debe usar token del formulario (PaymentFormComponent maneja autofill en dev)', () => {
+            // El token debe venir del formulario, no ser inyectado por CheckoutComponent
+            // PaymentFormComponent ya maneja el autofill en modo desarrollo
+            component.onFormChange({ token: 'tok_visa1234567890abcdef' });
             component.processPayment();
             expect(mockBuilder.withOptions).toHaveBeenCalledWith(expect.objectContaining({ token: 'tok_visa1234567890abcdef' }));
-            expect(mockLogger.debug).toHaveBeenCalledWith('Auto-generated dev token', 'CheckoutPage');
+            // Ya no debe haber log de auto-generación en CheckoutComponent
+            expect(mockLogger.debug).not.toHaveBeenCalledWith('Auto-generated dev token', 'CheckoutPage');
         });
 
         it('debe manejar errores al construir request', () => {

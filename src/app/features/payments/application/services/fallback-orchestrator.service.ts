@@ -1,6 +1,6 @@
 import { inject, Injectable, InjectionToken, signal, computed } from '@angular/core';
 import { Subject, timer, takeUntil, filter } from 'rxjs';
-import { 
+import {
     PaymentProviderId,
     PaymentError,
     CreatePaymentRequest,
@@ -56,7 +56,7 @@ export class FallbackOrchestratorService {
     private readonly registry = inject(ProviderFactoryRegistry);
 
     private readonly _state = signal<FallbackState>(INITIAL_FALLBACK_STATE);
-    
+
     private readonly _fallbackAvailable$ = new Subject<FallbackAvailableEvent>();
     private readonly _userResponse$ = new Subject<FallbackUserResponse>();
     private readonly _fallbackExecute$ = new Subject<{ request: CreatePaymentRequest; provider: PaymentProviderId }>();
@@ -66,14 +66,14 @@ export class FallbackOrchestratorService {
     readonly fallbackAvailable$ = this._fallbackAvailable$.asObservable();
     readonly userResponse$ = this._userResponse$.asObservable();
     readonly fallbackExecute$ = this._fallbackExecute$.asObservable();
-    
+
     readonly autoFallbackStarted$ = this._autoFallbackStarted$.asObservable();
 
     // Computed signals
     readonly state = this._state.asReadonly();
     readonly isPending = computed(() => this._state().status === 'pending');
     readonly isAutoExecuting = computed(() => this._state().status === 'auto_executing');
-    readonly isExecuting = computed(() => 
+    readonly isExecuting = computed(() =>
         this._state().status === 'executing' || this._state().status === 'auto_executing'
     );
     readonly pendingEvent = computed(() => this._state().pendingEvent);
@@ -211,7 +211,7 @@ export class FallbackOrchestratorService {
         originalRequest?: CreatePaymentRequest
     ): void {
         const wasAutoFallback = this._state().isAutoFallback;
-        
+
         this._state.update(state => ({
             ...state,
             status: 'failed',
@@ -255,9 +255,9 @@ export class FallbackOrchestratorService {
     ): PaymentProviderId[] {
         const allProviders = this.registry.getAvailableProviders();
         const failedProviderIds = this._state().failedAttempts.map(a => a.provider);
-        
+
         return this.config.providerPriority
-            .filter(provider => 
+            .filter(provider =>
                 provider !== failedProvider &&
                 !failedProviderIds.includes(provider) &&
                 allProviders.includes(provider)
@@ -265,6 +265,22 @@ export class FallbackOrchestratorService {
             .filter(provider => {
                 try {
                     const factory = this.registry.get(provider);
+                    /* 
+                        ! TODO FallbackOrchestrator filtra por método usando request.method.type
+                        ! Si falla Stripe con SPEI:
+                        ! request.method.type = 'spei'
+                        ! entonces PayPal queda fuera ✅ (porque PayPal no soporta spei)
+                        ! Pero si falla Stripe con CARD token:
+                        ! request.method.type = 'card'
+                        ! PayPal sí es alternativa ✅
+                        ! Pero PayPal para “card” no es token-card, es redirect-card.
+                        ! Eso significa que “fallback de card” hoy realmente está diciendo:
+                        ! “fallback entre flows distintos”
+                        ! ✅ ¿fallback permite cambiar de flow?
+                        ! o solo cambiar de provider manteniendo el mismo flow?
+                        ! Y si no lo defines, luego se siente como:
+                        ! “por qué carajos me mandaste a PayPal si yo estaba pagando con tarjeta normal”
+                    */
                     return factory.supportsMethod(request.method.type);
                 } catch {
                     return false;
