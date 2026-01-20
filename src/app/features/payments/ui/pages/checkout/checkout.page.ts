@@ -171,6 +171,11 @@ export class CheckoutComponent {
 
         if (!provider || !method) return;
 
+        if (!this.isFormValid()) {
+            this.logger.info('Form invalid, payment blocked', 'CheckoutPage', { provider, method });
+            return;
+        }
+
         const correlationCtx = this.logger.startCorrelation('payment-flow', {
             orderId: this.orderId(),
             provider,

@@ -261,6 +261,8 @@ describe('CheckoutComponent - Integración Real', () => {
             
             // SPEI requiere customerEmail, proporcionarlo
             component.onFormChange({ customerEmail: 'test@example.com' });
+            // Marcar el formulario como válido después de proporcionar el email
+            component.onFormValidChange(true);
             fixture.detectChanges();
             
             component.processPayment();

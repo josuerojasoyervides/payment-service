@@ -305,6 +305,16 @@ describe('CheckoutComponent', () => {
             expect(mockPaymentState.startPayment).not.toHaveBeenCalled();
         });
 
+        it('no debe procesar pago si el form es inválido', () => {
+            component.isFormValid.set(false);
+            component.processPayment();
+            expect(mockPaymentState.startPayment).not.toHaveBeenCalled();
+            expect(mockLogger.info).toHaveBeenCalledWith('Form invalid, payment blocked', 'CheckoutPage', {
+                provider: 'stripe',
+                method: 'card'
+            });
+        });
+
         it('debe auto-generar token en modo desarrollo para card', () => {
             component.onFormChange({}); // Sin token
             component.processPayment();
