@@ -1,4 +1,4 @@
-import { computed, inject } from '@angular/core';
+import { computed, effect, inject } from '@angular/core';
 import { 
     signalStore, 
     withState, 
@@ -7,7 +7,7 @@ import {
     patchState,
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe, switchMap, tap, catchError, of } from 'rxjs';
+import { pipe, switchMap, tap, catchError, of, filter, takeUntil, Subject } from 'rxjs';
 
 import { 
     PaymentsState, 
@@ -106,6 +106,10 @@ export const PaymentsStore = signalStore(
         const registry = inject(ProviderFactoryRegistry);
         const fallbackOrchestrator = inject(FallbackOrchestratorService);
         
+        // Suscribirse a fallbackExecute$ para ejecutar auto-fallback
+        // Solo ejecutar si el estado es 'auto_executing' para evitar loops infinitos
+        const destroy$ = new Subject<void>();
+        
         return {
             startPayment: rxMethod<{ request: CreatePaymentRequest; providerId: PaymentProviderId; context?: StrategyContext }>(
                 pipe(
@@ -131,6 +135,9 @@ export const PaymentsStore = signalStore(
                                 });
                                 addToHistory(store, intent, providerId);
                                 fallbackOrchestrator.notifySuccess();
+                                patchState(store, {
+                                    fallback: fallbackOrchestrator.getSnapshot(),
+                                });
                             }),
                             catchError((error: PaymentError) => {
                                 patchState(store, {
@@ -146,11 +153,10 @@ export const PaymentsStore = signalStore(
                                     request
                                 );
                                 
-                                if (hasFallback) {
-                                    patchState(store, {
-                                        fallback: fallbackOrchestrator.getSnapshot(),
-                                    });
-                                }
+                                // Actualizar snapshot del fallback en cada transición
+                                patchState(store, {
+                                    fallback: fallbackOrchestrator.getSnapshot(),
+                                });
                                 
                                 return of(null);
                             })
@@ -266,11 +272,16 @@ export const PaymentsStore = signalStore(
                         accepted: false,
                         timestamp: Date.now(),
                     });
+                    // Actualizar snapshot después de respondToFallback
+                    patchState(store, {
+                        fallback: fallbackOrchestrator.getSnapshot(),
+                    });
+                } else {
+                    // Si no hay evento pendiente, resetear directamente
+                    patchState(store, {
+                        fallback: INITIAL_FALLBACK_STATE,
+                    });
                 }
-                
-                patchState(store, {
-                    fallback: INITIAL_FALLBACK_STATE,
-                });
             },
             
             selectProvider(providerId: PaymentProviderId): void {
@@ -279,7 +290,10 @@ export const PaymentsStore = signalStore(
             
             reset(): void {
                 fallbackOrchestrator.reset();
-                patchState(store, initialPaymentsState);
+                patchState(store, {
+                    ...initialPaymentsState,
+                    fallback: fallbackOrchestrator.getSnapshot(),
+                });
             },
             
             clearError(): void {
@@ -290,6 +304,35 @@ export const PaymentsStore = signalStore(
                 patchState(store, { history: [] });
             },
         };
+    }),
+    
+    // Effect para suscribirse a fallbackExecute$ después de que los métodos estén disponibles
+    withMethods((store) => {
+        const fallbackOrchestrator = inject(FallbackOrchestratorService);
+        const destroy$ = new Subject<void>();
+        
+        // Suscribirse a fallbackExecute$ para ejecutar auto-fallback
+        // Solo ejecutar si el estado es 'auto_executing' para evitar loops infinitos
+        fallbackOrchestrator.fallbackExecute$
+            .pipe(
+                takeUntil(destroy$),
+                filter(() => store.fallback().status === 'auto_executing')
+            )
+            .subscribe(({ request, provider }) => {
+                // Ejecutar el pago con el provider alternativo
+                // Usar el método startPayment del store que ya está disponible
+                (store as any).startPayment({ request, providerId: provider });
+            });
+        
+        // Cleanup cuando el store se destruya
+        effect(() => {
+            return () => {
+                destroy$.next();
+                destroy$.complete();
+            };
+        });
+        
+        return {};
     })
 );
 
