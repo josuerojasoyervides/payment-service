@@ -1,286 +1,133 @@
-<!-- Header -->
-<div class="header">
-    <h1>Checkout</h1>
-    <p class="subtitle">Sistema de pagos con arquitectura empresarial</p>
-</div>
-
-<!-- Resumen de Orden -->
-<div class="order-summary">
-    <h4>Resumen de Orden</h4>
-    <div class="order-line">
-        <span>Order ID</span>
-        <span><code>{{ orderId() }}</code></span>
-    </div>
-    <div class="order-line">
-        <span>Subtotal</span>
-        <span>{{ amount() | currency: currency() }}</span>
-    </div>
-    <div class="order-line">
-        <span>Total a pagar</span>
-        <span>{{ amount() | currency: currency() }}</span>
-    </div>
-</div>
-
-<!-- Paso 1: Seleccionar Provider -->
-<section>
-    <h3>
-        <span class="step-number">1</span>
-        Proveedor de pago
-    </h3>
-    <div class="provider-buttons">
-        @for (provider of availableProviders(); track provider) {
-            <button 
-                class="provider-btn"
-                [class.active]="selectedProvider() === provider"
-                [disabled]="isLoading()"
-                (click)="selectProvider(provider)">
-                {{ provider | titlecase }}
-            </button>
-        }
-    </div>
-</section>
-
-<!-- Paso 2: Seleccionar Método -->
-<section>
-    <h3>
-        <span class="step-number">2</span>
-        Método de pago
-    </h3>
-    
-    @if (availableMethods().length === 0) {
-        <p style="color: #dc3545;">No hay métodos disponibles para {{ selectedProvider() }}</p>
-    } @else {
-        <div class="method-buttons">
-            @for (method of availableMethods(); track method) {
-                <button 
-                    class="method-btn"
-                    [class.active]="selectedMethod() === method"
-                    [disabled]="isLoading()"
-                    (click)="selectMethod(method)">
-                    @switch (method) {
-                        @case ('card') { 💳 Tarjeta }
-                        @case ('spei') { 🏦 SPEI }
-                        @default { {{ method | titlecase }} }
-                    }
-                </button>
-            }
-        </div>
-    }
-</section>
-
-<!-- Paso 3: Formulario Dinámico -->
-@if (fieldRequirements(); as requirements) {
-    <section>
-        <h3>
-            <span class="step-number">3</span>
-            Datos de pago
-        </h3>
-        
-        @if (requirements.description) {
-            <p class="form-description">{{ requirements.description }}</p>
-        }
-        
-        @if (requirements.instructions) {
-            <div class="form-instructions">
-                💡 {{ requirements.instructions }}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-2xl mx-auto px-4">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Checkout</h1>
+            <p class="text-gray-600 mt-2">Sistema de pagos con arquitectura empresarial</p>
+            
+            <!-- Navigation -->
+            <div class="flex justify-center gap-4 mt-4 text-sm">
+                <a routerLink="/payments/history" class="text-blue-600 hover:underline">
+                    Ver historial
+                </a>
+                <a routerLink="/payments/status" class="text-blue-600 hover:underline">
+                    Consultar estado
+                </a>
+                <a routerLink="/payments/showcase" class="text-blue-600 hover:underline">
+                    Showcase
+                </a>
             </div>
-        }
-        
-        <form [formGroup]="paymentForm">
-            @for (field of requirements.fields; track field.name) {
-                @if (isFieldVisible(field)) {
-                    <div class="field">
-                        <label>
-                            {{ field.label }}
-                            @if (field.required) {
-                                <span class="required">*</span>
-                            }
-                        </label>
-                        <input 
-                            [type]="getFieldType(field)"
-                            [formControlName]="field.name"
-                            [placeholder]="field.placeholder ?? ''" />
+        </div>
+
+        <!-- Mostrar resultado si hay éxito o error -->
+        @if (showResult()) {
+            <div class="mb-6">
+                <app-payment-result
+                    [intent]="currentIntent()"
+                    [error]="currentError()"
+                    (retry)="resetPayment()"
+                    (newPayment)="resetPayment()"
+                />
+
+                <!-- Next Action si existe -->
+                @if (currentIntent()?.nextAction) {
+                    <app-next-action-card
+                        [nextAction]="currentIntent()!.nextAction!"
+                    />
+                }
+            </div>
+        } @else {
+            <!-- Flujo de checkout -->
+            <div class="space-y-6">
+                <!-- Order Summary -->
+                <app-order-summary
+                    [orderId]="orderId()"
+                    [amount]="amount()"
+                    [currency]="currency()"
+                />
+
+                <!-- Step 1: Provider Selection -->
+                <div class="card">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="step-number">1</span>
+                        <h2 class="text-lg font-semibold">Proveedor de pago</h2>
                     </div>
-                } @else {
-                    <div class="field hidden-field">
-                        <strong>{{ field.label }}:</strong> 
-                        <code>{{ paymentForm.get(field.name)?.value || '(auto)' }}</code>
-                        <span style="color: #666; margin-left: 8px;">(automático)</span>
+                    <app-provider-selector
+                        [providers]="availableProviders()"
+                        [selected]="selectedProvider()"
+                        [disabled]="isLoading()"
+                        (providerChange)="selectProvider($event)"
+                    />
+                </div>
+
+                <!-- Step 2: Method Selection -->
+                <div class="card">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span [class]="selectedProvider() ? 'step-number' : 'step-number-inactive'">2</span>
+                        <h2 class="text-lg font-semibold">Método de pago</h2>
+                    </div>
+                    <app-method-selector
+                        [methods]="availableMethods()"
+                        [selected]="selectedMethod()"
+                        [disabled]="isLoading() || !selectedProvider()"
+                        (methodChange)="selectMethod($event)"
+                    />
+                </div>
+
+                <!-- Step 3: Payment Form -->
+                @if (selectedMethod()) {
+                    <div class="card">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="step-number">3</span>
+                            <h2 class="text-lg font-semibold">Datos de pago</h2>
+                        </div>
+                        <app-payment-form
+                            [requirements]="fieldRequirements()"
+                            [disabled]="isLoading()"
+                            (formChange)="onFormChange($event)"
+                            (formValidChange)="onFormValidChange($event)"
+                        />
                     </div>
                 }
-            }
-        </form>
-        
-        @if (requirements.fields.length === 0) {
-            <p style="color: #666;">Este método no requiere datos adicionales.</p>
-        }
-    </section>
-}
 
-<!-- Botón de Pago -->
-<button 
-    class="pay-button"
-    [disabled]="isLoading()"
-    (click)="processPayment()">
-    @if (isLoading()) {
-        <span class="spinner">⏳</span> Procesando...
-    } @else {
-        💳 Pagar {{ amount() | currency: currency() }} con {{ selectedProvider() | titlecase }}
-    }
-</button>
-
-<!-- Error -->
-@if (hasError() && currentError(); as error) {
-    <div class="result error">
-        <div class="result-header">
-            ❌ Error en el pago
-        </div>
-        <p>{{ $any(error).message || 'Ha ocurrido un error procesando el pago' }}</p>
-        
-        <details>
-            <summary>Ver detalles técnicos</summary>
-            <pre>{{ error | json }}</pre>
-        </details>
-        
-        <button 
-            style="margin-top: 12px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer;"
-            (click)="resetPayment()">
-            Intentar de nuevo
-        </button>
-    </div>
-}
-
-<!-- Resultado exitoso -->
-@if (isReady() && currentIntent(); as intent) {
-    <div class="result success">
-        <div class="result-header">
-            ✅ Pago iniciado correctamente
-        </div>
-        
-        <dl class="intent-details">
-            <dt>Intent ID</dt>
-            <dd><code>{{ intent.id }}</code></dd>
-            
-            <dt>Provider</dt>
-            <dd>{{ intent.provider | titlecase }}</dd>
-            
-            <dt>Estado</dt>
-            <dd>
-                <span class="status-badge" [class]="getStatusClass(intent.status)">
-                    {{ intent.status }}
-                </span>
-            </dd>
-            
-            <dt>Monto</dt>
-            <dd>{{ intent.amount | currency: intent.currency }}</dd>
-        </dl>
-
-        <!-- Next Action -->
-        @if (intent.nextAction; as nextAction) {
-            <div class="next-action-card">
-                <h4>⚠️ Acción requerida: {{ nextAction.type }}</h4>
-                
-                @switch (nextAction.type) {
-                    @case ('3ds') {
-                        <div class="threeds-info">
-                            <p>Tu banco requiere verificación adicional (3D Secure).</p>
-                            <p>Serás redirigido a una página segura para completar la autenticación.</p>
-                        </div>
-                    }
-                    
-                    @case ('spei') {
-                        <div class="spei-details">
-                            <p><strong>CLABE:</strong> {{ $any(nextAction).clabe }}</p>
-                            <p><strong>Referencia:</strong> {{ $any(nextAction).reference }}</p>
-                            <p><strong>Banco:</strong> {{ $any(nextAction).bank }}</p>
-                            <p><strong>Beneficiario:</strong> {{ $any(nextAction).beneficiary }}</p>
-                            <p><strong>Monto:</strong> {{ $any(nextAction).amount | currency: $any(nextAction).currency }}</p>
-                            <p><strong>Expira:</strong> {{ $any(nextAction).expiresAt | date:'medium' }}</p>
-                        </div>
-                    }
-                    
-                    @case ('paypal_approve') {
-                        <div class="paypal-info">
-                            <p>Serás redirigido a PayPal para aprobar el pago.</p>
-                            <p>
-                                <a [href]="$any(nextAction).approveUrl" target="_blank">
-                                    Ir a PayPal →
-                                </a>
-                            </p>
-                        </div>
-                    }
-                    
-                    @default {
-                        <p>Tipo de acción: {{ nextAction.type }}</p>
-                    }
+                <!-- Payment Button -->
+                @if (selectedProvider() && selectedMethod()) {
+                    <app-payment-button
+                        [amount]="amount()"
+                        [currency]="currency()"
+                        [provider]="selectedProvider()"
+                        [loading]="isLoading()"
+                        [disabled]="!isFormValid()"
+                        (pay)="processPayment()"
+                    />
                 }
             </div>
         }
 
-        <details style="margin-top: 16px;">
-            <summary style="cursor: pointer; color: #666;">Ver respuesta completa</summary>
-            <pre>{{ intent | json }}</pre>
-        </details>
-        
-        <button 
-            style="margin-top: 16px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;"
-            (click)="resetPayment()">
-            Nuevo pago
-        </button>
-    </div>
-}
-
-<!-- Modal de Fallback -->
-@if (hasPendingFallback() && pendingFallbackEvent(); as event) {
-    <div class="fallback-modal-overlay">
-        <div class="fallback-modal">
-            <h3>⚠️ Problema con el pago</h3>
-            <p>
-                {{ event.failedProvider | titlecase }} no está disponible en este momento.
-                ¿Deseas intentar con otro proveedor?
-            </p>
-            
-            <div class="fallback-options">
-                @for (provider of event.alternativeProviders; track provider) {
-                    <button 
-                        [class.selected]="selectedFallbackProvider() === provider"
-                        (click)="selectFallbackProvider(provider)">
-                        {{ provider | titlecase }}
-                    </button>
-                }
+        <!-- Debug Section (solo en desarrollo) -->
+        @if (isDevMode) {
+            <div class="mt-8 p-4 bg-gray-100 rounded-lg">
+                <details>
+                    <summary class="cursor-pointer text-sm text-gray-600 font-medium">
+                        🔍 Debug Info
+                    </summary>
+                    <div class="mt-4 space-y-2 text-xs font-mono">
+                        <p><strong>Provider:</strong> {{ selectedProvider() }}</p>
+                        <p><strong>Method:</strong> {{ selectedMethod() }}</p>
+                        <p><strong>Form Valid:</strong> {{ isFormValid() }}</p>
+                        <p><strong>Loading:</strong> {{ isLoading() }}</p>
+                        <pre class="bg-white p-2 rounded mt-2 overflow-auto">{{ debugInfo() | json }}</pre>
+                    </div>
+                </details>
             </div>
-            
-            <div class="fallback-actions">
-                <button class="cancel-btn" (click)="cancelFallback()">
-                    Cancelar
-                </button>
-                <button 
-                    class="retry-btn" 
-                    [disabled]="!selectedFallbackProvider()"
-                    (click)="confirmFallback()">
-                    Reintentar con {{ selectedFallbackProvider() || '...' | titlecase }}
-                </button>
-            </div>
-        </div>
-    </div>
-}
+        }
 
-<!-- Debug Section -->
-<div class="debug-section">
-    <h3>🔍 Debug Info</h3>
-    
-    <details>
-        <summary>Estado del Store</summary>
-        <pre>{{ debugInfo() | json }}</pre>
-    </details>
-    
-    <details>
-        <summary>Field Requirements</summary>
-        <pre>{{ fieldRequirements() | json }}</pre>
-    </details>
-    
-    <details>
-        <summary>Formulario actual</summary>
-        <pre>{{ paymentForm.value | json }}</pre>
-    </details>
+        <!-- Fallback Modal -->
+        <app-fallback-modal
+            [event]="pendingFallbackEvent()"
+            [open]="hasPendingFallback()"
+            (confirm)="confirmFallback($event)"
+            (cancel)="cancelFallback()"
+        />
+    </div>
 </div>

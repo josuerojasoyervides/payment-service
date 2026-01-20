@@ -1,0 +1,83 @@
+import { Component, inject, signal, effect } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
+import { PaymentProviderId, PaymentIntent } from '../../../domain/models';
+import { PaymentIntentCardComponent, NextActionCardComponent } from '../../components';
+
+/**
+ * Página para consultar el estado de un pago por su ID.
+ * 
+ * Permite ingresar un Intent ID (de Stripe o PayPal) y
+ * consultar su estado actual, con opciones para confirmar,
+ * cancelar o refrescar.
+ */
+@Component({
+    selector: 'app-status',
+    standalone: true,
+    imports: [CommonModule, FormsModule, RouterLink, PaymentIntentCardComponent, NextActionCardComponent],
+    templateUrl: './status.component.html',
+})
+export class StatusComponent {
+    private readonly paymentState = inject(PAYMENT_STATE);
+
+    intentId = '';
+    readonly selectedProvider = signal<PaymentProviderId>('stripe');
+    readonly result = signal<PaymentIntent | null>(null);
+    readonly error = this.paymentState.error;
+    readonly isLoading = this.paymentState.isLoading;
+
+    readonly examples = [
+        { id: 'pi_fake_abc123', label: 'Stripe Intent', provider: 'stripe' as const },
+        { id: 'ORDER_FAKE_XYZ789', label: 'PayPal Order', provider: 'paypal' as const },
+    ];
+
+    constructor() {
+        // Usar effect() dentro del constructor (contexto de inyección)
+        // para escuchar cambios en el intent del state
+        effect(() => {
+            const intent = this.paymentState.intent();
+            if (intent) {
+                this.result.set(intent);
+            }
+        });
+    }
+
+    searchIntent(): void {
+        if (!this.intentId.trim()) return;
+
+        this.result.set(null);
+
+        // Hacer la consulta
+        // El effect en el constructor ya está escuchando cambios
+        this.paymentState.refreshPayment(
+            { intentId: this.intentId.trim() },
+            this.selectedProvider()
+        );
+    }
+
+    confirmPayment(intentId: string): void {
+        this.paymentState.confirmPayment({ intentId }, this.selectedProvider());
+    }
+
+    cancelPayment(intentId: string): void {
+        this.paymentState.cancelPayment({ intentId }, this.selectedProvider());
+    }
+
+    refreshPayment(intentId: string): void {
+        this.paymentState.refreshPayment({ intentId }, this.selectedProvider());
+    }
+
+    useExample(example: { id: string; provider: PaymentProviderId }): void {
+        this.intentId = example.id;
+        this.selectedProvider.set(example.provider);
+    }
+
+    getErrorMessage(error: unknown): string {
+        if (typeof error === 'object' && error !== null && 'message' in error) {
+            return (error as { message: string }).message;
+        }
+        return 'Error desconocido';
+    }
+}

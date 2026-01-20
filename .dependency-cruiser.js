@@ -29,6 +29,8 @@ module.exports = {
           '(^|/)tsconfig[.]json$',                                            // TypeScript config
           '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$', // other configs
           '^src/app/features/payments/domain/',
+          '^src/app/features/payments/infrastructure/stripe/dto/stripe.dto.ts$', // DTO usado por gateways
+          '^src/app/features/payments/application/state/payment-state.port.ts$', // Port usado por adapters
         ]
       },
       to: {},
