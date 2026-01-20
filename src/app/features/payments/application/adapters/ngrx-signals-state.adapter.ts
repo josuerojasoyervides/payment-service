@@ -64,6 +64,12 @@ export class NgRxSignalsStateAdapter implements PaymentStatePort {
         this.store.selectedProvider()
     );
 
+    // Estados más descriptivos basados en el intent
+    readonly requiresUserAction: Signal<boolean> = this.store.requiresUserAction;
+    readonly isSucceeded: Signal<boolean> = this.store.isSucceeded;
+    readonly isProcessing: Signal<boolean> = this.store.isProcessing;
+    readonly isFailed: Signal<boolean> = this.store.isFailed;
+
     // ============================================================
     // ESTADO DE FALLBACK
     // ============================================================

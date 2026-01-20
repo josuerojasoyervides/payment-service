@@ -92,6 +92,27 @@ export const PaymentsStore = signalStore(
             return history.length > 0 ? history[history.length - 1] : null;
         }),
         
+        // Estados más descriptivos basados en el intent
+        requiresUserAction: computed(() => {
+            const intent = state.intent();
+            return intent?.status === 'requires_action' || !!intent?.nextAction;
+        }),
+        
+        isSucceeded: computed(() => {
+            const intent = state.intent();
+            return intent?.status === 'succeeded';
+        }),
+        
+        isProcessing: computed(() => {
+            const intent = state.intent();
+            return intent?.status === 'processing';
+        }),
+        
+        isFailed: computed(() => {
+            const intent = state.intent();
+            return intent?.status === 'failed';
+        }),
+        
         debugSummary: computed(() => ({
             status: state.status(),
             intentId: state.intent()?.id ?? null,
