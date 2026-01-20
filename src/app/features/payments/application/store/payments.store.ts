@@ -76,8 +76,20 @@ export const PaymentsStore = signalStore(
         /** Si hay un fallback pendiente */
         hasPendingFallback: computed(() => state.fallback().status === 'pending'),
         
+        /** Si hay un auto-fallback en progreso */
+        isAutoFallbackInProgress: computed(() => state.fallback().status === 'auto_executing'),
+        
+        /** Si hay cualquier tipo de fallback en ejecución */
+        isFallbackExecuting: computed(() => 
+            state.fallback().status === 'executing' || 
+            state.fallback().status === 'auto_executing'
+        ),
+        
         /** Evento de fallback pendiente */
         pendingFallbackEvent: computed(() => state.fallback().pendingEvent),
+        
+        /** Si el fallback actual es automático */
+        isAutoFallback: computed(() => state.fallback().isAutoFallback),
         
         /** Número de entradas en el historial */
         historyCount: computed(() => state.history().length),
@@ -94,6 +106,7 @@ export const PaymentsStore = signalStore(
             intentId: state.intent()?.id ?? null,
             provider: state.selectedProvider(),
             fallbackStatus: state.fallback().status,
+            isAutoFallback: state.fallback().isAutoFallback,
             historyCount: state.history().length,
         })),
     })),

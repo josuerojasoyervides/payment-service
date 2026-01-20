@@ -61,6 +61,9 @@ export class NgRxSignalsStateAdapter implements PaymentStatePort {
     // ============================================================
 
     readonly hasPendingFallback: Signal<boolean> = this.store.hasPendingFallback;
+    readonly isAutoFallbackInProgress: Signal<boolean> = this.store.isAutoFallbackInProgress;
+    readonly isFallbackExecuting: Signal<boolean> = this.store.isFallbackExecuting;
+    readonly isAutoFallback: Signal<boolean> = this.store.isAutoFallback;
     readonly pendingFallbackEvent: Signal<FallbackAvailableEvent | null> = this.store.pendingFallbackEvent;
     readonly fallbackState: Signal<FallbackState> = computed(() => this.store.fallback());
 

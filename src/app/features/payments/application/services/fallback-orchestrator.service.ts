@@ -1,5 +1,5 @@
 import { inject, Injectable, InjectionToken, signal, computed } from '@angular/core';
-import { Subject, Observable, timer, takeUntil, filter, take } from 'rxjs';
+import { Subject, timer, takeUntil, filter } from 'rxjs';
 import { PaymentProviderId } from '../../domain/models/payment.types';
 import { PaymentError } from '../../domain/models/payment.errors';
 import { CreatePaymentRequest } from '../../domain/models/payment.requests';
@@ -8,6 +8,8 @@ import {
     FallbackUserResponse,
     FallbackState,
     FallbackConfig,
+    FallbackStatus,
+    FailedAttempt,
     DEFAULT_FALLBACK_CONFIG,
     INITIAL_FALLBACK_STATE,
 } from '../../domain/models/fallback.types';
@@ -21,28 +23,32 @@ export const FALLBACK_CONFIG = new InjectionToken<Partial<FallbackConfig>>('FALL
 /**
  * Servicio de orquestación de fallback entre proveedores.
  * 
- * Este servicio detecta fallos en proveedores de pago y notifica
- * a la UI para que el usuario decida si intentar con otro proveedor.
+ * Este servicio detecta fallos en proveedores de pago y puede:
+ * - Modo manual: Notificar a la UI para que el usuario decida
+ * - Modo automático: Ejecutar fallback automáticamente sin intervención
  * 
- * Flujo:
+ * Flujo Manual:
  * 1. Pago falla con provider A
  * 2. FallbackOrchestrator emite evento con alternativas
  * 3. UI muestra modal/notificación al usuario
  * 4. Usuario confirma o cancela
  * 5. Si confirma, se notifica al componente para reintentar
  * 
+ * Flujo Automático:
+ * 1. Pago falla con provider A
+ * 2. FallbackOrchestrator espera autoFallbackDelay
+ * 3. Automáticamente ejecuta con siguiente provider
+ * 4. Si también falla y hay más providers, repite
+ * 5. Después de maxAutoFallbacks, cambia a modo manual
+ * 
  * @example
  * ```typescript
- * // En el componente
- * fallbackOrchestrator.fallbackAvailable$.subscribe(event => {
- *   this.showFallbackModal(event);
- * });
+ * // Configurar modo automático
+ * { provide: FALLBACK_CONFIG, useValue: { mode: 'auto', autoFallbackDelay: 2000 } }
  * 
- * // Cuando el usuario responde
- * fallbackOrchestrator.respondToFallback({
- *   eventId: event.eventId,
- *   accepted: true,
- *   selectedProvider: 'paypal'
+ * // En el componente
+ * fallbackOrchestrator.fallbackExecute$.subscribe(({ request, provider }) => {
+ *   this.store.startPayment({ request, providerId: provider });
  * });
  * ```
  */
@@ -58,18 +64,28 @@ export class FallbackOrchestratorService {
     private readonly _fallbackAvailable$ = new Subject<FallbackAvailableEvent>();
     private readonly _userResponse$ = new Subject<FallbackUserResponse>();
     private readonly _fallbackExecute$ = new Subject<{ request: CreatePaymentRequest; provider: PaymentProviderId }>();
+    private readonly _autoFallbackStarted$ = new Subject<{ provider: PaymentProviderId; delay: number }>();
     private readonly _cancel$ = new Subject<void>();
 
     // Observables públicos
     readonly fallbackAvailable$ = this._fallbackAvailable$.asObservable();
     readonly userResponse$ = this._userResponse$.asObservable();
     readonly fallbackExecute$ = this._fallbackExecute$.asObservable();
+    
+    /** Emitido cuando se inicia un auto-fallback (para mostrar feedback en UI) */
+    readonly autoFallbackStarted$ = this._autoFallbackStarted$.asObservable();
 
     // Computed signals
     readonly state = this._state.asReadonly();
     readonly isPending = computed(() => this._state().status === 'pending');
+    readonly isAutoExecuting = computed(() => this._state().status === 'auto_executing');
+    readonly isExecuting = computed(() => 
+        this._state().status === 'executing' || this._state().status === 'auto_executing'
+    );
     readonly pendingEvent = computed(() => this._state().pendingEvent);
     readonly failedAttempts = computed(() => this._state().failedAttempts);
+    readonly currentProvider = computed(() => this._state().currentProvider);
+    readonly isAutoFallback = computed(() => this._state().isAutoFallback);
 
     private readonly injectedConfig = inject(FALLBACK_CONFIG, { optional: true });
 
@@ -78,17 +94,26 @@ export class FallbackOrchestratorService {
     }
 
     /**
+     * Obtiene la configuración actual.
+     */
+    getConfig(): Readonly<FallbackConfig> {
+        return this.config;
+    }
+
+    /**
      * Reporta un fallo de pago y determina si hay alternativas disponibles.
      * 
      * @param failedProvider Provider que falló
      * @param error Error que ocurrió
      * @param originalRequest Request original
-     * @returns true si se emitió evento de fallback, false si no hay alternativas
+     * @param wasAutoFallback Si este intento fue un auto-fallback
+     * @returns true si se emitió evento de fallback o se inició auto-fallback
      */
     reportFailure(
         failedProvider: PaymentProviderId,
         error: PaymentError,
-        originalRequest: CreatePaymentRequest
+        originalRequest: CreatePaymentRequest,
+        wasAutoFallback: boolean = false
     ): boolean {
         if (!this.config.enabled) {
             return false;
@@ -113,36 +138,26 @@ export class FallbackOrchestratorService {
         }
 
         // Registrar el intento fallido
-        this._state.update(state => ({
-            ...state,
-            status: 'pending',
-            failedAttempts: [
-                ...state.failedAttempts,
-                { provider: failedProvider, error, timestamp: Date.now() }
-            ],
-        }));
-
-        // Emitir evento de fallback disponible
-        const event: FallbackAvailableEvent = {
-            failedProvider,
+        const failedAttempt: FailedAttempt = {
+            provider: failedProvider,
             error,
-            alternativeProviders: alternatives,
-            originalRequest,
             timestamp: Date.now(),
-            eventId: this.generateEventId(),
+            wasAutoFallback,
         };
 
         this._state.update(state => ({
             ...state,
-            pendingEvent: event,
+            failedAttempts: [...state.failedAttempts, failedAttempt],
         }));
 
-        this._fallbackAvailable$.next(event);
+        // Decidir si usar auto-fallback o manual
+        if (this.config.mode === 'auto' && this.canAutoFallback()) {
+            this.executeAutoFallback(alternatives[0], originalRequest);
+            return true;
+        }
 
-        // Configurar timeout
-        this.setupTimeout(event.eventId);
-
-        return true;
+        // Modo manual: emitir evento para la UI
+        return this.emitFallbackAvailable(failedProvider, error, alternatives, originalRequest);
     }
 
     /**
@@ -167,6 +182,7 @@ export class FallbackOrchestratorService {
                 status: 'executing',
                 pendingEvent: null,
                 currentProvider: response.selectedProvider!,
+                isAutoFallback: false,
             }));
 
             // Emitir evento para que el componente ejecute el pago
@@ -180,6 +196,7 @@ export class FallbackOrchestratorService {
                 ...state,
                 status: 'cancelled',
                 pendingEvent: null,
+                isAutoFallback: false,
             }));
         }
 
@@ -194,20 +211,35 @@ export class FallbackOrchestratorService {
             ...state,
             status: 'completed',
             currentProvider: null,
+            isAutoFallback: false,
         }));
     }
 
     /**
      * Notifica que el fallback también falló.
+     * 
+     * @param provider Provider que falló
+     * @param error Error que ocurrió
+     * @param originalRequest Request original (necesario para continuar fallback)
      */
-    notifyFailure(provider: PaymentProviderId, error: PaymentError): void {
-        // El fallo del fallback se maneja como un nuevo fallo
-        // que podría activar otro fallback si hay más alternativas
+    notifyFailure(
+        provider: PaymentProviderId,
+        error: PaymentError,
+        originalRequest?: CreatePaymentRequest
+    ): void {
+        const wasAutoFallback = this._state().isAutoFallback;
+        
         this._state.update(state => ({
             ...state,
             status: 'failed',
             currentProvider: null,
         }));
+
+        // Si tenemos el request original, intentar reportar el nuevo fallo
+        // para posiblemente activar otro fallback
+        if (originalRequest) {
+            this.reportFailure(provider, error, originalRequest, wasAutoFallback);
+        }
     }
 
     /**
@@ -223,6 +255,13 @@ export class FallbackOrchestratorService {
      */
     getSnapshot(): FallbackState {
         return this._state();
+    }
+
+    /**
+     * Obtiene el número de auto-fallbacks ejecutados en el flujo actual.
+     */
+    getAutoFallbackCount(): number {
+        return this._state().failedAttempts.filter(a => a.wasAutoFallback).length;
     }
 
     // ============================================================
@@ -258,6 +297,81 @@ export class FallbackOrchestratorService {
                     return false;
                 }
             });
+    }
+
+    /**
+     * Verifica si se puede ejecutar un auto-fallback.
+     */
+    private canAutoFallback(): boolean {
+        const autoAttempts = this._state().failedAttempts.filter(a => a.wasAutoFallback).length;
+        return autoAttempts < this.config.maxAutoFallbacks;
+    }
+
+    /**
+     * Ejecuta un fallback automático después de un delay.
+     */
+    private executeAutoFallback(
+        provider: PaymentProviderId,
+        request: CreatePaymentRequest
+    ): void {
+        const delay = this.config.autoFallbackDelay;
+
+        // Actualizar estado a auto_executing
+        this._state.update(state => ({
+            ...state,
+            status: 'auto_executing',
+            currentProvider: provider,
+            pendingEvent: null,
+            isAutoFallback: true,
+        }));
+
+        // Notificar que se inició un auto-fallback (para feedback en UI)
+        this._autoFallbackStarted$.next({ provider, delay });
+
+        // Esperar el delay y luego ejecutar
+        timer(delay)
+            .pipe(
+                takeUntil(this._cancel$),
+                filter(() => this._state().status === 'auto_executing')
+            )
+            .subscribe(() => {
+                // Emitir evento para que el componente ejecute el pago
+                this._fallbackExecute$.next({ request, provider });
+            });
+    }
+
+    /**
+     * Emite evento de fallback disponible para modo manual.
+     */
+    private emitFallbackAvailable(
+        failedProvider: PaymentProviderId,
+        error: PaymentError,
+        alternatives: PaymentProviderId[],
+        originalRequest: CreatePaymentRequest
+    ): boolean {
+        // Emitir evento de fallback disponible
+        const event: FallbackAvailableEvent = {
+            failedProvider,
+            error,
+            alternativeProviders: alternatives,
+            originalRequest,
+            timestamp: Date.now(),
+            eventId: this.generateEventId(),
+        };
+
+        this._state.update(state => ({
+            ...state,
+            status: 'pending',
+            pendingEvent: event,
+            isAutoFallback: false,
+        }));
+
+        this._fallbackAvailable$.next(event);
+
+        // Configurar timeout
+        this.setupTimeout(event.eventId);
+
+        return true;
     }
 
     private setupTimeout(eventId: string): void {

@@ -18,6 +18,7 @@ export interface PaymentDebugSummary {
     intentId: string | null;
     provider: PaymentProviderId | null;
     fallbackStatus: FallbackState['status'];
+    isAutoFallback: boolean;
     historyCount: number;
 }
 
@@ -78,6 +79,15 @@ export interface PaymentStatePort {
 
     /** Si hay un fallback pendiente de respuesta del usuario */
     readonly hasPendingFallback: Signal<boolean>;
+
+    /** Si hay un auto-fallback en progreso */
+    readonly isAutoFallbackInProgress: Signal<boolean>;
+
+    /** Si hay cualquier tipo de fallback en ejecución */
+    readonly isFallbackExecuting: Signal<boolean>;
+
+    /** Si el fallback actual es automático */
+    readonly isAutoFallback: Signal<boolean>;
 
     /** Evento de fallback pendiente (si existe) */
     readonly pendingFallbackEvent: Signal<FallbackAvailableEvent | null>;
