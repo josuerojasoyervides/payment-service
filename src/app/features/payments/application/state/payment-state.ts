@@ -1,9 +1,16 @@
 import { Signal } from '@angular/core';
-import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from '../../domain/models/payment.requests';
-import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
-import { PaymentError } from '../../domain/models/payment.errors';
-import { FallbackAvailableEvent, FallbackState } from '../../domain/models/fallback.types';
-import { PaymentHistoryEntry, PaymentsState, PaymentStatus } from '../store/payments.models';
+import { 
+    CancelPaymentRequest, 
+    ConfirmPaymentRequest, 
+    CreatePaymentRequest, 
+    GetPaymentStatusRequest,
+    PaymentIntent, 
+    PaymentProviderId,
+    PaymentError,
+    FallbackAvailableEvent, 
+    FallbackState,
+} from '../../domain/models';
+import { PaymentHistoryEntry, PaymentsState, PaymentFlowStatus } from '../store/payment.models';
 
 /**
  * Función para cancelar suscripción.
@@ -14,7 +21,7 @@ export type Unsubscribe = () => void;
  * Resumen de debug del estado.
  */
 export interface PaymentDebugSummary {
-    status: PaymentStatus;
+    status: PaymentFlowStatus;
     intentId: string | null;
     provider: PaymentProviderId | null;
     fallbackStatus: FallbackState['status'];
@@ -37,7 +44,7 @@ export interface PaymentDebugSummary {
  * @example
  * ```typescript
  * // En el componente
- * private readonly state = inject(PAYMENTS_STATE);
+ * private readonly state = inject(PAYMENT_STATE);
  * 
  * readonly isLoading = this.state.isLoading;
  * readonly intent = this.state.intent;

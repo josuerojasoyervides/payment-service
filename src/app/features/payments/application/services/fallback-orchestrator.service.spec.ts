@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { FallbackOrchestratorService, FALLBACK_CONFIG } from './fallback-orchestrator.service';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { PaymentProviderId } from '../../domain/models/payment.types';
-import { PaymentError } from '../../domain/models/payment.errors';
-import { CreatePaymentRequest } from '../../domain/models/payment.requests';
-import { DEFAULT_FALLBACK_CONFIG } from '../../domain/models/fallback.types';
+import { 
+    PaymentProviderId, 
+    PaymentError, 
+    CreatePaymentRequest, 
+    DEFAULT_FALLBACK_CONFIG,
+} from '../../domain/models';
 
 describe('FallbackOrchestratorService', () => {
     let service: FallbackOrchestratorService;

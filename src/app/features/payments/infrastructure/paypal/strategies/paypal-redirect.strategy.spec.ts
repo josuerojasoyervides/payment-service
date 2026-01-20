@@ -1,9 +1,9 @@
 import { TestBed } from "@angular/core/testing";
 import { PaypalRedirectStrategy } from "./paypal-redirect.strategy";
 import { PaypalPaymentGateway } from "../gateways/paypal-payment.gateway";
-import { CreatePaymentRequest } from "../../../domain/models/payment.requests";
+import { CreatePaymentRequest } from "../../../domain/models";
 import { firstValueFrom, of } from "rxjs";
-import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
+import { PaymentGateway } from "../../../domain/ports";
 
 describe('PaypalRedirectStrategy', () => {
     let strategy: PaypalRedirectStrategy;

@@ -3,19 +3,19 @@ import { FormControl, ReactiveFormsModule, UntypedFormGroup } from '@angular/for
 import { CommonModule } from '@angular/common';
 
 // Port y token (desacoplado de implementación)
-import { PAYMENTS_STATE } from '../../../application/tokens/payment-state.token';
+import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { LoggerService } from '../../../../../core/services/logger.service';
 
 // Domain types
-import { PaymentProviderId, PaymentMethodType } from '../../../domain/models/payment.types';
-import { FieldRequirements, FieldConfig, PaymentOptions } from '../../../domain/ports/payment-request-builder.port';
+import { PaymentProviderId, PaymentMethodType } from '../../../domain/models';
+import { FieldRequirements, FieldConfig, PaymentOptions } from '../../../domain/ports';
 
 /**
  * Componente de checkout para procesar pagos.
  * 
  * Este componente está desacoplado de la implementación del estado
- * gracias al uso del token PAYMENTS_STATE. Esto permite:
+ * gracias al uso del token PAYMENT_STATE. Esto permite:
  * - Cambiar de NgRx Signals a otra librería sin modificar el componente
  * - Testing más fácil con mocks del port
  * - Menor acoplamiento y mayor mantenibilidad
@@ -29,7 +29,7 @@ import { FieldRequirements, FieldConfig, PaymentOptions } from '../../../domain/
 })
 export class CheckoutComponent {
     // Servicios - estado inyectado vía token (desacoplado)
-    private readonly paymentState = inject(PAYMENTS_STATE);
+    private readonly paymentState = inject(PAYMENT_STATE);
     private readonly registry = inject(ProviderFactoryRegistry);
     private readonly logger = inject(LoggerService);
 

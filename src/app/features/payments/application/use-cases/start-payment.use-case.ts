@@ -1,9 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
-import { CreatePaymentRequest } from '../../domain/models/payment.requests';
+import { PaymentIntent, PaymentProviderId, CreatePaymentRequest } from '../../domain/models';
 import { defer, Observable } from 'rxjs';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { StrategyContext } from '../../domain/ports/payment-strategy.port';
+import { StrategyContext } from '../../domain/ports';
 
 /**
  * Caso de uso: Iniciar un pago.

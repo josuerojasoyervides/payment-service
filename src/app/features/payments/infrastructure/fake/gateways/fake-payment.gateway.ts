@@ -1,8 +1,15 @@
 import { Injectable } from "@angular/core";
 import { delay, Observable, of } from "rxjs";
-import { PaymentIntent, PaymentProviderId, PaymentStatus } from "../../../domain/models/payment.types";
-import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from "../../../domain/models/payment.requests";
-import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
+import { 
+    PaymentIntent, 
+    PaymentProviderId, 
+    PaymentIntentStatus,
+    CancelPaymentRequest, 
+    ConfirmPaymentRequest, 
+    CreatePaymentRequest, 
+    GetPaymentStatusRequest,
+} from "../../../domain/models";
+import { PaymentGateway } from "../../../domain/ports";
 import { StripePaymentIntentDto, StripeSpeiSourceDto } from "../../stripe/dto/stripe.dto";
 import { PaypalOrderDto } from "../../paypal/dto/paypal.dto";
 
@@ -400,7 +407,7 @@ export class FakePaymentGateway extends PaymentGateway {
     // ============ MAPPERS ============
 
     private mapStripeIntent(dto: StripePaymentIntentDto): PaymentIntent {
-        const statusMap: Record<StripePaymentIntentDto['status'], PaymentStatus> = {
+        const statusMap: Record<StripePaymentIntentDto['status'], PaymentIntentStatus> = {
             'requires_payment_method': 'requires_payment_method',
             'requires_confirmation': 'requires_confirmation',
             'requires_action': 'requires_action',
@@ -449,7 +456,7 @@ export class FakePaymentGateway extends PaymentGateway {
     }
 
     private mapPaypalOrder(dto: PaypalOrderDto): PaymentIntent {
-        const statusMap: Record<PaypalOrderDto['status'], PaymentStatus> = {
+        const statusMap: Record<PaypalOrderDto['status'], PaymentIntentStatus> = {
             'CREATED': 'requires_action',
             'SAVED': 'requires_confirmation',
             'APPROVED': 'requires_confirmation',

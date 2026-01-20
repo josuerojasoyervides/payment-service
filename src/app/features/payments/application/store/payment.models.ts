@@ -1,19 +1,23 @@
-import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
-import { PaymentError } from '../../domain/models/payment.errors';
-import { CreatePaymentRequest } from '../../domain/models/payment.requests';
-import { FallbackState, INITIAL_FALLBACK_STATE } from '../../domain/models/fallback.types';
+import { 
+    PaymentIntent, 
+    PaymentProviderId, 
+    PaymentError,
+    CreatePaymentRequest,
+    FallbackState, 
+    INITIAL_FALLBACK_STATE,
+} from '../../domain/models';
 
 /**
- * Estados posibles del flujo de pago.
+ * Estados posibles del flujo de pago en la UI.
  */
-export type PaymentStatus = 'idle' | 'loading' | 'ready' | 'error';
+export type PaymentFlowStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 /**
  * Estado principal del módulo de pagos.
  */
 export interface PaymentsState {
     /** Estado actual del pago */
-    status: PaymentStatus;
+    status: PaymentFlowStatus;
     
     /** Intent del pago actual (si existe) */
     intent: PaymentIntent | null;

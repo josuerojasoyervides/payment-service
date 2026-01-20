@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { GetPaymentStatusRequest } from '../../domain/models/payment.requests';
+import { GetPaymentStatusRequest, PaymentIntent, PaymentProviderId } from '../../domain/models';
 import { defer, Observable } from 'rxjs';
-import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 
 /**

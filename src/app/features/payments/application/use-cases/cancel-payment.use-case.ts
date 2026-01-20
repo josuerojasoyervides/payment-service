@@ -1,6 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { CancelPaymentRequest } from '../../domain/models/payment.requests';
-import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
+import { CancelPaymentRequest, PaymentIntent, PaymentProviderId } from '../../domain/models';
 import { defer, Observable } from 'rxjs';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 

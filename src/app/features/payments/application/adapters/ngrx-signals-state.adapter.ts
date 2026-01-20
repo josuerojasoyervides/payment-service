@@ -1,11 +1,18 @@
 import { computed, effect, inject, Injectable, Signal } from '@angular/core';
 import { PaymentStatePort, PaymentDebugSummary, Unsubscribe } from '../state/payment-state';
-import { PaymentsStore } from '../store/payments.store';
-import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
-import { PaymentError } from '../../domain/models/payment.errors';
-import { FallbackAvailableEvent, FallbackState } from '../../domain/models/fallback.types';
-import { PaymentHistoryEntry, PaymentsState } from '../store/payments.models';
-import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from '../../domain/models/payment.requests';
+import { PaymentsStore } from '../store/payment.store';
+import { 
+    PaymentIntent, 
+    PaymentProviderId,
+    PaymentError,
+    FallbackAvailableEvent, 
+    FallbackState,
+    CancelPaymentRequest, 
+    ConfirmPaymentRequest, 
+    CreatePaymentRequest, 
+    GetPaymentStatusRequest,
+} from '../../domain/models';
+import { PaymentHistoryEntry, PaymentsState } from '../store/payment.models';
 
 /**
  * Adapter que implementa PaymentStatePort usando NgRx Signals.
@@ -22,10 +29,10 @@ import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetP
  * @example
  * ```typescript
  * // En payment.providers.ts
- * { provide: PAYMENTS_STATE, useClass: NgRxSignalsStateAdapter }
+ * { provide: PAYMENT_STATE, useClass: NgRxSignalsStateAdapter }
  * 
  * // En el componente
- * private readonly state = inject(PAYMENTS_STATE);
+ * private readonly state = inject(PAYMENT_STATE);
  * readonly isLoading = this.state.isLoading; // Signal<boolean>
  * ```
  */

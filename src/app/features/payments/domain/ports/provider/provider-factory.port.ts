@@ -1,7 +1,7 @@
-import { PaymentMethodType, PaymentProviderId } from "../models/payment.types";
-import { PaymentGateway } from "./payment-gateway.port";
-import { PaymentRequestBuilder, FieldRequirements } from "./payment-request-builder.port";
-import { PaymentStrategy } from "./payment-strategy.port";
+import { PaymentMethodType, PaymentProviderId } from "../../models/payment/payment-intent.types";
+import { PaymentGateway } from "../payment/payment-gateway.port";
+import { PaymentRequestBuilder, FieldRequirements } from "../payment/payment-request-builder.port";
+import { PaymentStrategy } from "../payment/payment-strategy.port";
 
 /**
  * Port para factories de proveedores de pago.

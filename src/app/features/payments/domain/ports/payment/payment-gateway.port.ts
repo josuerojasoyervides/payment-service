@@ -1,10 +1,10 @@
 import { HttpClient } from "@angular/common/http";
 import { catchError, map, Observable, tap, throwError } from "rxjs";
-import { PaymentIntent, PaymentProviderId } from "../models/payment.types";
-import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from "../models/payment.requests";
-import { PaymentError } from "../models/payment.errors";
+import { PaymentIntent, PaymentProviderId } from "../../models/payment/payment-intent.types";
+import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from "../../models/payment/payment-request.types";
+import { PaymentError } from "../../models/payment/payment-error.types";
 import { inject } from "@angular/core";
-import { LoggerService } from "../../../../core/services/logger.service";
+import { LoggerService } from "../../../../../core/services/logger.service";
 
 export abstract class PaymentGateway<TCreateDto = unknown, TConfirmDto = unknown> {
     abstract readonly providerId: PaymentProviderId;

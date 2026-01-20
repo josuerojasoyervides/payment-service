@@ -3,8 +3,7 @@ import { PaypalPaymentGateway } from "./paypal-payment.gateway";
 import { TestBed } from "@angular/core/testing";
 import { provideHttpClient } from "@angular/common/http";
 import { firstValueFrom } from "rxjs";
-import { CreatePaymentRequest } from "../../../domain/models/payment.requests";
-import { PaymentError } from "../../../domain/models/payment.errors";
+import { CreatePaymentRequest, PaymentError } from "../../../domain/models";
 
 describe('PaypalPaymentGateway', () => {
     let gateway: PaypalPaymentGateway;

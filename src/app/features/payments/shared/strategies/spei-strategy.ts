@@ -1,9 +1,11 @@
 import { map, Observable, tap } from "rxjs";
-import { PaymentStrategy, StrategyContext, StrategyPrepareResult } from "../../domain/ports/payment-strategy.port";
-import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
-import { PaymentIntent, PaymentMethodType } from "../../domain/models/payment.types";
-import { CreatePaymentRequest } from "../../domain/models/payment.requests";
-import { NextActionSpei } from "../../domain/models/payment.actions";
+import { 
+    PaymentStrategy, 
+    StrategyContext, 
+    StrategyPrepareResult,
+    PaymentGateway,
+} from "../../domain/ports";
+import { PaymentIntent, PaymentMethodType, CreatePaymentRequest, NextActionSpei } from "../../domain/models";
 
 /**
  * Estrategia para pagos via SPEI (Sistema de Pagos Electrónicos Interbancarios).

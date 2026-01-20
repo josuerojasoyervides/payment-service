@@ -1,8 +1,8 @@
 import { firstValueFrom, Observable, of, throwError } from 'rxjs';
-import { PaymentProviderId, PaymentIntent, PaymentStatus } from '../models/payment.types';
-import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from '../models/payment.requests';
+import { PaymentProviderId, PaymentIntent, PaymentIntentStatus } from '../../models/payment/payment-intent.types';
+import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from '../../models/payment/payment-request.types';
 import { PaymentGateway } from './payment-gateway.port'
-import { PaymentError } from '../models/payment.errors';
+import { PaymentError } from '../../models/payment/payment-error.types';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -76,7 +76,7 @@ class PaymentGatewayTest extends PaymentGateway {
         return {
             id: dto.id,
             provider: this.providerId,
-            status: dto.status as PaymentStatus,
+            status: dto.status as PaymentIntentStatus,
             amount: dto.amount,
             currency: dto.currency,
             clientSecret: dto.clientSecret,

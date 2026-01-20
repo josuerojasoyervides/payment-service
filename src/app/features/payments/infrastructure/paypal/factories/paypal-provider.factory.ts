@@ -1,11 +1,14 @@
 import { inject, Injectable } from "@angular/core";
-import { PaymentMethodType } from "../../../domain/models/payment.types";
-import { ProviderFactory } from "../../../domain/ports/provider-factory.port";
+import { PaymentMethodType } from "../../../domain/models";
+import { 
+    ProviderFactory, 
+    PaymentStrategy, 
+    PaymentRequestBuilder, 
+    FieldRequirements,
+    PaymentGateway,
+} from "../../../domain/ports";
 import { PaypalPaymentGateway } from "../gateways/paypal-payment.gateway";
 import { PaypalRedirectStrategy } from "../strategies/paypal-redirect.strategy";
-import { PaymentStrategy } from "../../../domain/ports/payment-strategy.port";
-import { PaymentRequestBuilder, FieldRequirements } from "../../../domain/ports/payment-request-builder.port";
-import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
 import { PaypalRedirectRequestBuilder } from "../builders/paypal-redirect-request.builder";
 import { PaypalTokenValidator } from "../validators/paypal-token.validator";
 

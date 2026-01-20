@@ -1,9 +1,16 @@
 import { map, Observable, tap } from "rxjs";
-import { PaymentIntent, PaymentMethodType } from "../../../domain/models/payment.types";
-import { CreatePaymentRequest } from "../../../domain/models/payment.requests";
-import { PaymentStrategy, StrategyContext, StrategyPrepareResult } from "../../../domain/ports/payment-strategy.port";
-import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
-import { NextActionPaypalApprove } from "../../../domain/models/payment.actions";
+import { 
+    PaymentIntent, 
+    PaymentMethodType, 
+    CreatePaymentRequest,
+    NextActionPaypalApprove,
+} from "../../../domain/models";
+import { 
+    PaymentStrategy, 
+    StrategyContext, 
+    StrategyPrepareResult,
+    PaymentGateway,
+} from "../../../domain/ports";
 import { findPaypalLink, PaypalOrderDto } from "../dto/paypal.dto";
 
 /**

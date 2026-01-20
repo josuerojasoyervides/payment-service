@@ -1,9 +1,7 @@
-import { CreatePaymentRequest } from "../../domain/models/payment.requests";
-import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
-import { TokenValidator } from "../../domain/ports/token-validator.port";
+import { CreatePaymentRequest, PaymentIntent } from "../../domain/models";
+import { PaymentGateway, TokenValidator } from "../../domain/ports";
 import { CardStrategy } from "./card-strategy"
 import { firstValueFrom, of } from "rxjs";
-import { PaymentIntent } from "../../domain/models/payment.types";
 
 describe('CardStrategy', () => {
     let strategy: CardStrategy;

@@ -1,10 +1,5 @@
-import { CurrencyCode } from '../../../domain/models/payment.types';
-import { CreatePaymentRequest } from '../../../domain/models/payment.requests';
-import { 
-    PaymentRequestBuilder, 
-    PaymentOptions,
-    FieldRequirements 
-} from '../../../domain/ports/payment-request-builder.port';
+import { CurrencyCode, CreatePaymentRequest } from '../../../domain/models';
+import { PaymentRequestBuilder, PaymentOptions, FieldRequirements } from '../../../domain/ports';
 
 /**
  * Builder específico para pagos vía PayPal (redirect flow).

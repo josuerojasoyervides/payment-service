@@ -1,9 +1,17 @@
 import { Injectable } from '@angular/core';
-import { PaymentIntent, PaymentStatus } from '../../../domain/models/payment.types';
-import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from '../../../domain/models/payment.requests';
-import { PaymentGateway } from '../../../domain/ports/payment-gateway.port';
+import { 
+    PaymentIntent, 
+    PaymentIntentStatus,
+    CancelPaymentRequest, 
+    ConfirmPaymentRequest, 
+    CreatePaymentRequest, 
+    GetPaymentStatusRequest,
+    PaymentError, 
+    PaymentErrorCode,
+    NextActionPaypalApprove,
+} from '../../../domain/models';
+import { PaymentGateway } from '../../../domain/ports';
 import { Observable } from 'rxjs';
-import { PaymentError, PaymentErrorCode } from '../../../domain/models/payment.errors';
 import {
     PaypalOrderDto,
     PaypalOrderStatus,
@@ -11,7 +19,6 @@ import {
     PaypalErrorResponse,
     findPaypalLink
 } from '../dto/paypal.dto';
-import { NextActionPaypalApprove } from '../../../domain/models/payment.actions';
 
 /**
  * Gateway de PayPal (Orders API v2).
@@ -30,7 +37,7 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
     private static readonly API_BASE = '/api/payments/paypal';
 
     // Mapeo de estados PayPal → estados internos
-    private static readonly STATUS_MAP: Record<PaypalOrderStatus, PaymentStatus> = {
+    private static readonly STATUS_MAP: Record<PaypalOrderStatus, PaymentIntentStatus> = {
         'CREATED': 'requires_action',          // Necesita aprobación del usuario
         'SAVED': 'requires_confirmation',       // Guardada, pendiente de captura
         'APPROVED': 'requires_confirmation',    // Aprobada, lista para capturar
