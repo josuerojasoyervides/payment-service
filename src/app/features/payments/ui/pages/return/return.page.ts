@@ -167,4 +167,16 @@ export class ReturnComponent implements OnInit {
     get processingText(): string {
         return this.i18n.t(I18nKeys.ui.processing);
     }
+
+    get intentIdLabel(): string {
+        return this.i18n.t(I18nKeys.ui.intent_id);
+    }
+
+    get paypalTokenLabel(): string {
+        return this.i18n.t(I18nKeys.ui.paypal_token);
+    }
+
+    get paypalPayerIdLabel(): string {
+        return this.i18n.t(I18nKeys.ui.paypal_payer_id);
+    }
 }

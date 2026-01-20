@@ -32,26 +32,26 @@
 
         <!-- Query Params Info -->
         <div class="card mb-6">
-            <h2 class="text-lg font-semibold mb-4">Información del Retorno</h2>
+            <h2 class="text-lg font-semibold mb-4">{{ returnInformationText }}</h2>
             
             <dl class="space-y-3 text-sm">
                 @if (intentId()) {
                     <div class="flex justify-between">
-                        <dt class="text-gray-500">Intent ID</dt>
+                        <dt class="text-gray-500">{{ intentIdLabel }}</dt>
                         <dd class="font-mono text-gray-900">{{ intentId() }}</dd>
                     </div>
                 }
                 
                 @if (paypalToken()) {
                     <div class="flex justify-between">
-                        <dt class="text-gray-500">PayPal Token</dt>
+                        <dt class="text-gray-500">{{ paypalTokenLabel }}</dt>
                         <dd class="font-mono text-gray-900">{{ paypalToken() }}</dd>
                     </div>
                 }
                 
                 @if (paypalPayerId()) {
                     <div class="flex justify-between">
-                        <dt class="text-gray-500">PayPal Payer ID</dt>
+                        <dt class="text-gray-500">{{ paypalPayerIdLabel }}</dt>
                         <dd class="font-mono text-gray-900">{{ paypalPayerId() }}</dd>
                     </div>
                 }

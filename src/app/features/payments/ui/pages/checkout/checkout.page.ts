@@ -283,4 +283,24 @@ export class CheckoutComponent {
     get paymentDataLabel(): string {
         return this.i18n.t(I18nKeys.ui.payment_data);
     }
+
+    get debugInfoLabel(): string {
+        return this.i18n.t(I18nKeys.ui.debug_info);
+    }
+
+    get providerDebugLabel(): string {
+        return this.i18n.t(I18nKeys.ui.provider_debug);
+    }
+
+    get methodDebugLabel(): string {
+        return this.i18n.t(I18nKeys.ui.method_debug);
+    }
+
+    get formValidLabel(): string {
+        return this.i18n.t(I18nKeys.ui.form_valid);
+    }
+
+    get loadingDebugLabel(): string {
+        return this.i18n.t(I18nKeys.ui.loading_debug);
+    }
 }

@@ -109,13 +109,13 @@
             <div class="mt-8 p-4 bg-gray-100 rounded-lg">
                 <details>
                     <summary class="cursor-pointer text-sm text-gray-600 font-medium">
-                        🔍 Debug Info
+                        {{ debugInfoLabel }}
                     </summary>
                     <div class="mt-4 space-y-2 text-xs font-mono">
-                        <p><strong>Provider:</strong> {{ selectedProvider() }}</p>
-                        <p><strong>Method:</strong> {{ selectedMethod() }}</p>
-                        <p><strong>Form Valid:</strong> {{ isFormValid() }}</p>
-                        <p><strong>Loading:</strong> {{ isLoading() }}</p>
+                        <p><strong>{{ providerDebugLabel }}:</strong> {{ selectedProvider() }}</p>
+                        <p><strong>{{ methodDebugLabel }}:</strong> {{ selectedMethod() }}</p>
+                        <p><strong>{{ formValidLabel }}:</strong> {{ isFormValid() }}</p>
+                        <p><strong>{{ loadingDebugLabel }}:</strong> {{ isLoading() }}</p>
                         <pre class="bg-white p-2 rounded mt-2 overflow-auto">{{ debugInfo() | json }}</pre>
                     </div>
                 </details>

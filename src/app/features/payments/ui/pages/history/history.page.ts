@@ -88,4 +88,8 @@ export class HistoryComponent {
     get checkByIdText(): string {
         return this.i18n.t(I18nKeys.ui.check_by_id);
     }
+
+    get checkoutLabel(): string {
+        return this.i18n.t(I18nKeys.ui.checkout);
+    }
 }

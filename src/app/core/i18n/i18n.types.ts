@@ -242,5 +242,39 @@ export interface Translations {
         flow_type: string;
         canceled: string;
         completed: string;
+
+        // Debug y desarrollo
+        debug_info: string;
+        provider_debug: string;
+        method_debug: string;
+        form_valid: string;
+        loading_debug: string;
+
+        // Showcase
+        component_showcase: string;
+        component_showcase_description: string;
+        go_to_checkout: string;
+        preview: string;
+        controls: string;
+        selected: string;
+        disabled: string;
+        show_items_breakdown: string;
+        show_success_state: string;
+        open_fallback_modal: string;
+        fallback_modal_info: string;
+        amount_label_short: string;
+        currency_label: string;
+        clabe_label: string;
+        status_label_short: string;
+        show_actions: string;
+        expanded: string;
+        info: string;
+
+        // Campos técnicos
+        client_secret: string;
+        redirect_url: string;
+        id_label: string;
+        paypal_token: string;
+        paypal_payer_id: string;
     };
 }

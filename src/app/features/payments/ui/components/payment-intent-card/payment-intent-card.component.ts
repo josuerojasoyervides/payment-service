@@ -110,4 +110,16 @@ export class PaymentIntentCardComponent {
     get cancelButtonText(): string {
         return this.i18n.t(I18nKeys.ui.cancel_button);
     }
+
+    get idLabel(): string {
+        return this.i18n.t(I18nKeys.ui.id_label);
+    }
+
+    get clientSecretLabel(): string {
+        return this.i18n.t(I18nKeys.ui.client_secret);
+    }
+
+    get redirectUrlLabel(): string {
+        return this.i18n.t(I18nKeys.ui.redirect_url);
+    }
 }

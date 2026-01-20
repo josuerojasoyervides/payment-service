@@ -45,7 +45,7 @@
     @if (expanded()) {
         <div class="border-t border-gray-100 pt-4 mt-4">
             <dl class="grid grid-cols-2 gap-3 text-sm">
-                <dt class="text-gray-500">ID</dt>
+                <dt class="text-gray-500">{{ idLabel }}</dt>
                 <dd class="font-mono text-gray-900">{{ intent().id }}</dd>
                 
                 <dt class="text-gray-500">{{ providerLabel }}</dt>
@@ -58,12 +58,12 @@
                 <dd class="text-gray-900">{{ intent().amount | currency: intent().currency }}</dd>
                 
                 @if (intent().clientSecret) {
-                    <dt class="text-gray-500">Client Secret</dt>
+                    <dt class="text-gray-500">{{ clientSecretLabel }}</dt>
                     <dd class="font-mono text-xs text-gray-600 truncate">{{ intent().clientSecret }}</dd>
                 }
                 
                 @if (intent().redirectUrl) {
-                    <dt class="text-gray-500">Redirect URL</dt>
+                    <dt class="text-gray-500">{{ redirectUrlLabel }}</dt>
                     <dd class="text-xs text-blue-600 truncate">
                         <a [href]="intent().redirectUrl" target="_blank">{{ intent().redirectUrl }}</a>
                     </dd>
