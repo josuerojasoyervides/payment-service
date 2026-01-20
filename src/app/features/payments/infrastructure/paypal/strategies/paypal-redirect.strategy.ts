@@ -82,18 +82,17 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
      * - Product/service description
      */
     prepare(req: CreatePaymentRequest, context?: StrategyContext): StrategyPrepareResult {
-        // StrategyContext es la fuente principal de URLs
-        // Solo usar req.returnUrl/cancelUrl si vienen explícitamente (no desde autoFill del form)
-        // Si falta returnUrl => throw Error claro (no inventar)
-        const returnUrl = context?.returnUrl ?? req.returnUrl;
-        const cancelUrl = context?.cancelUrl ?? req.cancelUrl ?? returnUrl;
-        
-        if (!returnUrl) {
+        // StrategyContext es la ÚNICA fuente de URLs para PayPal
+        // No usar fallbacks defensivos - si falta returnUrl => error claro y temprano
+        if (!context?.returnUrl) {
             throw new Error(
-                'returnUrl is required for PayPal payments. ' +
-                'It must be provided via StrategyContext or CreatePaymentRequest.'
+                'PayPal requires StrategyContext.returnUrl. ' +
+                'It must be provided by CheckoutComponent when starting the payment.'
             );
         }
+        
+        const returnUrl = context.returnUrl;
+        const cancelUrl = context.cancelUrl ?? returnUrl;
 
         const metadata: Record<string, unknown> = {
             payment_method_type: 'paypal_redirect',
