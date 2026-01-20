@@ -1,6 +1,3 @@
-import { inject } from '@angular/core';
-import { LoggerService } from '../services/logger.service';
-
 /**
  * Decorator para logging automático de métodos.
  * 

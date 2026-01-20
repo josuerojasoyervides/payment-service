@@ -6,7 +6,7 @@ import {
     CorrelationContext,
     DEFAULT_LOGGER_CONFIG,
     LOG_LEVEL_PRIORITY,
-} from '../models/logging.types';
+} from './logging.types';
 
 /**
  * Token para inyectar configuración del logger.

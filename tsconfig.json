@@ -13,7 +13,17 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
-    "module": "preserve"
+    "module": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "@core/*": ["src/app/core/*"],
+      "@payments/*": ["src/app/features/payments/*"],
+      "@payments/domain": ["src/app/features/payments/domain/models/index.ts"],
+      "@payments/domain/*": ["src/app/features/payments/domain/*"],
+      "@payments/ports": ["src/app/features/payments/domain/ports/index.ts"],
+      "@payments/application/*": ["src/app/features/payments/application/*"],
+      "@payments/infrastructure/*": ["src/app/features/payments/infrastructure/*"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

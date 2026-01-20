@@ -1,8 +1,8 @@
 import { HttpInterceptorFn, HttpResponse, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { tap, catchError, throwError } from 'rxjs';
-import { LoggerService } from '../services/logger.service';
-import { HttpLogInfo } from '../models/logging.types';
+import { LoggerService } from './logger.service';
+import { HttpLogInfo } from './logging.types';
 
 /**
  * Interceptor funcional para logging de requests HTTP.

@@ -4,7 +4,7 @@ import { PaymentIntent, PaymentProviderId } from "../../models/payment/payment-i
 import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from "../../models/payment/payment-request.types";
 import { PaymentError } from "../../models/payment/payment-error.types";
 import { inject } from "@angular/core";
-import { LoggerService } from "../../../../../core/services/logger.service";
+import { LoggerService } from "@core/logging";
 
 export abstract class PaymentGateway<TCreateDto = unknown, TConfirmDto = unknown> {
     abstract readonly providerId: PaymentProviderId;

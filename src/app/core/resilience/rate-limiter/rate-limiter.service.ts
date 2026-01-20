@@ -4,8 +4,8 @@ import {
     RateLimiterConfig,
     RateLimitExceededError,
     DEFAULT_RATE_LIMITER_CONFIG,
-} from '../models';
-import { LoggerService } from './logger.service';
+} from './rate-limiter.types';
+import { LoggerService } from '../../logging/logger.service';
 
 /**
  * Token para inyectar configuración del Rate Limiter.

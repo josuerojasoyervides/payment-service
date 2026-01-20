@@ -1,151 +1,184 @@
 # Payment Service
 
-Módulo de pagos multi-proveedor para Angular con arquitectura limpia (Clean Architecture).
+Módulo de pagos multi-proveedor para Angular con arquitectura hexagonal (Ports & Adapters) y Clean Architecture.
 
 ## Objetivo
 
-Construir un sistema de pagos **extensible y desacoplado** que soporte múltiples proveedores (Stripe, PayPal, futuro Square, Conekta, etc.) sin que la UI conozca los detalles de implementación de cada uno.
+Construir un sistema de pagos **extensible, resiliente y desacoplado** que soporte múltiples proveedores (Stripe, PayPal, futuro MercadoPago, Conekta, etc.) sin que la UI conozca los detalles de implementación de cada uno.
 
 **Principios clave:**
-- La UI solo conoce **abstracciones** (interfaces), nunca implementaciones concretas
+- La UI solo conoce **abstracciones** (interfaces/ports), nunca implementaciones concretas
 - Cada provider define sus propios **requisitos de campos** y **builders**
 - Agregar un nuevo provider **no modifica código existente** (Open/Closed)
 - Validación específica de cada provider vive en **Infrastructure**, no en Domain
+- **Resiliencia integrada**: Circuit Breaker, Rate Limiting, Retry con backoff, Fallback entre proveedores
 
 ## Arquitectura
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                              UI                                     │
-│                                                                     │
-│  Solo conoce interfaces:                                            │
-│  - ProviderFactory                                                  │
-│  - PaymentRequestBuilder                                            │
-│  - FieldRequirements                                                │
-│                                                                     │
-│  NO conoce: StripeCardRequestBuilder, PaypalRedirectRequestBuilder  │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│                         Application                                 │
-│                                                                     │
-│  UseCases: StartPayment, ConfirmPayment, CancelPayment, GetStatus   │
-│  Registry: resuelve ProviderFactory por providerId                  │
-│  State: PaymentStatePort (signals)                                  │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│                        Infrastructure                               │
-│                                                                     │
-│  ┌──────────────────┐    ┌──────────────────┐    ┌──────────────┐  │
-│  │      Stripe      │    │      PayPal      │    │   (Square)   │  │
-│  ├──────────────────┤    ├──────────────────┤    ├──────────────┤  │
-│  │ Factory          │    │ Factory          │    │ Factory      │  │
-│  │ Gateway          │    │ Gateway          │    │ Gateway      │  │
-│  │ Builders:        │    │ Builders:        │    │ Builders:    │  │
-│  │  - Card          │    │  - Redirect      │    │  - ...       │  │
-│  │  - SPEI          │    │                  │    │              │  │
-│  └──────────────────┘    └──────────────────┘    └──────────────┘  │
-│                                                                     │
-│  Shared: CardStrategy, SpeiStrategy                                 │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│                           Domain                                    │
-│                                                                     │
-│  Ports (interfaces):                                                │
-│  - PaymentGateway                                                   │
-│  - PaymentStrategy                                                  │
-│  - ProviderFactory                                                  │
-│  - PaymentRequestBuilder                                            │
-│                                                                     │
-│  Models:                                                            │
-│  - PaymentIntent, PaymentError, NextAction                          │
-│  - CreatePaymentRequest (genérico)                                  │
-└─────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                   UI                                        │
+│  Solo conoce interfaces: ProviderFactory, PaymentRequestBuilder, Store      │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│                              Application                                    │
+│                                                                             │
+│  ┌─────────────┐  ┌──────────────────┐  ┌────────────────────────────────┐  │
+│  │  Use Cases  │  │     Registry     │  │     FallbackOrchestrator       │  │
+│  │  - Start    │  │  Resuelve        │  │  - Modo manual/automático      │  │
+│  │  - Confirm  │  │  factories por   │  │  - Prioridad de providers      │  │
+│  │  - Cancel   │  │  providerId      │  │  - Timeout configurable        │  │
+│  │  - GetStatus│  │                  │  │                                │  │
+│  └─────────────┘  └──────────────────┘  └────────────────────────────────┘  │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                    PaymentsStore (NgRx Signals)                     │    │
+│  │  Estado reactivo: intent, status, error, fallback, history          │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│                             Infrastructure                                  │
+│                                                                             │
+│  ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────────┐   │
+│  │      Stripe      │    │      PayPal      │    │    (MercadoPago)     │   │
+│  ├──────────────────┤    ├──────────────────┤    ├──────────────────────┤   │
+│  │ Factory          │    │ Factory          │    │ Factory              │   │
+│  │ Gateway          │    │ Gateway          │    │ Gateway              │   │
+│  │ Builders:        │    │ Builders:        │    │ Builders:            │   │
+│  │  - Card          │    │  - Redirect      │    │  - Card, OXXO...     │   │
+│  │  - SPEI          │    │                  │    │                      │   │
+│  │ Validators:      │    │ Validators:      │    │                      │   │
+│  │  - Token         │    │  - Token         │    │                      │   │
+│  └──────────────────┘    └──────────────────┘    └──────────────────────┘   │
+│                                                                             │
+│  Shared: CardStrategy, SpeiStrategy (reutilizables entre providers)         │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                   │
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│                               Domain                                        │
+│                                                                             │
+│  Ports (contratos):                    Models:                              │
+│  - PaymentGateway                      - PaymentIntent, PaymentError        │
+│  - PaymentStrategy                     - CreatePaymentRequest               │
+│  - ProviderFactory                     - FallbackConfig, FallbackState      │
+│  - PaymentRequestBuilder               - NextAction (3DS, redirect, SPEI)   │
+│  - TokenValidator                                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                   │
+┌──────────────────────────────────▼──────────────────────────────────────────┐
+│                                Core                                         │
+│                                                                             │
+│  Servicios transversales de resiliencia y observabilidad:                   │
+│  - CircuitBreakerService    - RateLimiterService    - RetryService          │
+│  - CacheService             - LoggerService                                 │
+│                                                                             │
+│  Interceptors:                                                              │
+│  - ResilienceInterceptor (Circuit Breaker + Rate Limiting)                  │
+│  - RetryInterceptor (Exponential backoff)                                   │
+│  - CacheInterceptor                                                         │
+│  - LoggingInterceptor                                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Flujo de un Pago
+## Características Principales
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  1. UI consulta requisitos del provider/method                      │
-│                                                                     │
-│     const requirements = factory.getFieldRequirements('card');      │
-│     // → { fields: [{ name: 'token', required: true }, ...] }       │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│  2. UI renderiza formulario dinámico con esos campos                │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│  3. UI obtiene builder específico (sin saber la clase concreta)     │
-│                                                                     │
-│     const builder = factory.createRequestBuilder('card');           │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│  4. UI construye request con el builder                             │
-│                                                                     │
-│     const request = builder                                         │
-│         .forOrder('order_123')                                      │
-│         .withAmount(500, 'MXN')                                     │
-│         .withOptions({ token: 'tok_visa' })                         │
-│         .build();  // Valida campos requeridos                      │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│  5. UseCase ejecuta el pago                                         │
-│                                                                     │
-│     UseCase → Registry → Factory → Strategy → Gateway → API         │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│  6. Respuesta normalizada como PaymentIntent                        │
-└─────────────────────────────────────────────────────────────────────┘
-```
+### Multi-Provider con Fallback Inteligente
+- Soporta múltiples proveedores de pago simultáneamente
+- Fallback automático o manual cuando un provider falla
+- Prioridad configurable de proveedores
+- Detección de errores elegibles para fallback
+
+### Resiliencia Integrada
+- **Circuit Breaker**: Previene llamadas a servicios que están fallando
+- **Rate Limiting**: Controla exceso de requests del cliente
+- **Retry con Backoff**: Reintentos inteligentes con espera exponencial
+- **Logging estructurado**: Trazabilidad con correlationId
+
+### Estado Reactivo
+- NgRx Signals para estado inmutable
+- Computed properties optimizadas
+- Historial de transacciones
+- Integración con RxJS para efectos
 
 ## Estructura del Proyecto
 
 ```
-src/app/features/payments/
-├── application/
-│   ├── registry/              # ProviderFactoryRegistry
-│   ├── use-cases/             # Start, Confirm, Cancel, GetStatus
-│   ├── state/                 # PaymentStatePort (interface)
-│   └── tokens/                # DI tokens
+src/app/
+├── core/                           # Servicios transversales
+│   ├── interceptors/               # HTTP interceptors
+│   │   ├── resilience.interceptor.ts
+│   │   ├── retry.interceptor.ts
+│   │   ├── cache.interceptor.ts
+│   │   └── logging.interceptor.ts
+│   ├── services/                   # Servicios de infraestructura
+│   │   ├── circuit-breaker.service.ts
+│   │   ├── rate-limiter.service.ts
+│   │   ├── cache.service.ts
+│   │   ├── retry.service.ts
+│   │   └── logger.service.ts
+│   ├── models/                     # Tipos de configuración
+│   └── operators/                  # Operadores RxJS custom
 │
-├── config/
-│   └── payment.providers.ts   # Configuración de DI
-│
-├── domain/
-│   ├── models/                # PaymentIntent, PaymentError, Requests
-│   ├── ports/                 # Interfaces: Gateway, Strategy, Factory, Builder
-│   └── builders/              # Builder genérico (deprecated)
-│
-├── infrastructure/
-│   ├── stripe/
-│   │   ├── factories/         # StripeProviderFactory
-│   │   ├── gateways/          # StripePaymentGateway
-│   │   └── builders/          # StripeCardRequestBuilder, StripeSpeiRequestBuilder
-│   ├── paypal/
-│   │   ├── factories/         # PaypalProviderFactory
-│   │   ├── gateways/          # PaypalPaymentGateway
-│   │   ├── strategies/        # PaypalRedirectStrategy
-│   │   └── builders/          # PaypalRedirectRequestBuilder
-│   ├── fake/                  # FakePaymentGateway para desarrollo
-│   └── shared/strategies/     # CardStrategy, SpeiStrategy (reutilizables)
-│
-├── ui/
-│   ├── pages/
-│   │   ├── payments/          # Componente de debug/testing
-│   │   └── checkout/          # Componente de checkout con builders
-│   └── state/                 # Implementación de PaymentStatePort
-│
-└── docs/
-    └── EJEMPLO-USO-BUILDERS.md
+└── features/payments/
+    ├── domain/
+    │   ├── models/                 # PaymentIntent, Errors, Requests, Fallback
+    │   └── ports/                  # Interfaces: Gateway, Strategy, Factory, Builder
+    │
+    ├── application/
+    │   ├── use-cases/              # Start, Confirm, Cancel, GetStatus
+    │   ├── registry/               # ProviderFactoryRegistry
+    │   ├── services/               # FallbackOrchestratorService
+    │   ├── store/                  # PaymentsStore (NgRx Signals)
+    │   ├── adapters/               # NgRxSignalsStateAdapter
+    │   └── tokens/                 # DI tokens
+    │
+    ├── infrastructure/
+    │   ├── stripe/
+    │   │   ├── factories/          # StripeProviderFactory
+    │   │   ├── gateways/           # StripePaymentGateway
+    │   │   ├── builders/           # StripeCardRequestBuilder, StripeSpeiRequestBuilder
+    │   │   ├── validators/         # StripeTokenValidator
+    │   │   └── dto/                # Tipos específicos de Stripe API
+    │   ├── paypal/
+    │   │   ├── factories/          # PaypalProviderFactory
+    │   │   ├── gateways/           # PaypalPaymentGateway
+    │   │   ├── builders/           # PaypalRedirectRequestBuilder
+    │   │   ├── strategies/         # PaypalRedirectStrategy
+    │   │   └── validators/         # PaypalTokenValidator
+    │   └── fake/                   # FakePaymentGateway para desarrollo
+    │
+    ├── shared/strategies/          # CardStrategy, SpeiStrategy (reutilizables)
+    │
+    ├── config/                     # payment.providers.ts
+    │
+    └── ui/pages/                   # Componentes de presentación
+        ├── checkout/
+        └── payments/
 ```
+
+## Path Aliases
+
+El proyecto usa path aliases para imports más limpios:
+
+```typescript
+// Antes
+import { PaymentIntent } from '../../../domain/models/payment/payment-intent.types';
+
+// Después
+import { PaymentIntent } from '@payments/domain';
+import { PaymentGateway } from '@payments/ports';
+import { CircuitBreakerService } from '@core/services/circuit-breaker.service';
+```
+
+Aliases disponibles:
+- `@core/*` → `src/app/core/*`
+- `@payments/*` → `src/app/features/payments/*`
+- `@payments/domain` → Models del dominio
+- `@payments/ports` → Interfaces/contratos
+- `@payments/application/*` → Use cases, registry, store
+- `@payments/infrastructure/*` → Implementaciones de providers
 
 ## Ejecución
 
@@ -164,110 +197,99 @@ bun run test
 bun run build
 ```
 
-## Rutas Disponibles
+## Patrones de Diseño Utilizados
 
-| Ruta | Descripción |
-|------|-------------|
-| `/` | Componente de debug (payments runtime check) |
-| `/checkout` | Componente de checkout con sistema de builders |
+| Patrón | Implementación | Propósito |
+|--------|---------------|-----------|
+| **Abstract Factory** | `ProviderFactory` | Crea familias de objetos relacionados (gateway + strategies + builders) |
+| **Strategy** | `PaymentStrategy` | Encapsula algoritmos de validación/preparación por método de pago |
+| **Builder** | `PaymentRequestBuilder` | Construye requests complejos con validación |
+| **Template Method** | `PaymentGateway` | Define el esqueleto del algoritmo, subclases implementan detalles |
+| **Registry** | `ProviderFactoryRegistry` | Punto único de acceso a factories con cache |
+| **Port/Adapter** | `PaymentGateway` (port) → `StripePaymentGateway` (adapter) | Inversión de dependencias |
+| **Circuit Breaker** | `CircuitBreakerService` | Resiliencia ante servicios que fallan repetidamente |
+| **Observer** | `FallbackOrchestratorService` | Comunicación reactiva de eventos de fallback |
 
 ## Ejemplo de Uso
 
-### En un Componente
+### Iniciar un Pago
 
 ```typescript
-import { ProviderFactoryRegistry } from '@payments/application/registry';
-import { PAYMENTS_STATE } from '@payments/application/tokens';
-import { PaymentOptions } from '@payments/domain/ports';
+import { ProviderFactoryRegistry } from '@payments/application/registry/provider-factory.registry';
+import { PaymentsStore } from '@payments/application/store/payment.store';
 
 @Component({ ... })
 export class CheckoutComponent {
     private readonly registry = inject(ProviderFactoryRegistry);
-    private readonly paymentState = inject(PAYMENTS_STATE);
+    private readonly store = inject(PaymentsStore);
+
+    // Signals del store
+    readonly isLoading = this.store.isLoading;
+    readonly intent = this.store.currentIntent;
+    readonly error = this.store.currentError;
+    readonly hasFallback = this.store.hasPendingFallback;
 
     processPayment(provider: 'stripe' | 'paypal', method: 'card' | 'spei') {
-        // 1. Obtener factory
         const factory = this.registry.get(provider);
-
-        // 2. Consultar qué campos necesita (para renderizar form)
+        
+        // Obtener requisitos de campos para el formulario
         const requirements = factory.getFieldRequirements(method);
-        console.log(requirements.fields);
-
-        // 3. Obtener builder específico
-        const builder = factory.createRequestBuilder(method);
-
-        // 4. Construir request
-        const request = builder
+        
+        // Construir request con el builder
+        const request = factory.createRequestBuilder(method)
             .forOrder('order_123')
             .withAmount(500, 'MXN')
             .withOptions({ token: 'tok_visa_4242' })
             .build();
 
-        // 5. Ejecutar pago
-        this.paymentState.start(request, provider);
+        // Ejecutar pago
+        this.store.startPayment({ request, providerId: provider });
     }
 }
 ```
 
-### Diferencias Entre Providers
+### Configurar Fallback Automático
 
 ```typescript
-// Stripe Card necesita: token
-const stripeReqs = stripeFactory.getFieldRequirements('card');
-// → { fields: [{ name: 'token', required: true }] }
-
-// Stripe SPEI necesita: customerEmail
-const speiReqs = stripeFactory.getFieldRequirements('spei');
-// → { fields: [{ name: 'customerEmail', required: true, type: 'email' }] }
-
-// PayPal necesita: returnUrl (redirect flow)
-const paypalReqs = paypalFactory.getFieldRequirements('card');
-// → { fields: [{ name: 'returnUrl', required: true, autoFill: 'currentUrl' }] }
+// En providers del módulo
+{ 
+    provide: FALLBACK_CONFIG, 
+    useValue: { 
+        mode: 'auto',
+        autoFallbackDelay: 2000,
+        maxAutoFallbacks: 1,
+        providerPriority: ['stripe', 'paypal']
+    } 
+}
 ```
 
 ## Agregar un Nuevo Provider
 
-Para agregar un nuevo provider (ej: Conekta):
+Para agregar un nuevo provider (ej: MercadoPago):
 
-1. **Crear el Gateway** (`infrastructure/conekta/gateways/`)
-   - Implementa `PaymentGateway`
-   - Transforma requests al formato de Conekta API
+1. **Crear estructura en `infrastructure/mercadopago/`:**
+   - `gateways/mercadopago-payment.gateway.ts` - Extiende `PaymentGateway`
+   - `factories/mercadopago-provider.factory.ts` - Implementa `ProviderFactory`
+   - `builders/mercadopago-*-request.builder.ts` - Implementa `PaymentRequestBuilder`
+   - `validators/mercadopago-token.validator.ts` - Implementa `TokenValidator`
 
-2. **Crear los Builders** (`infrastructure/conekta/builders/`)
-   - Un builder por cada método soportado
-   - Define `FIELD_REQUIREMENTS` estático
-   - Implementa `PaymentRequestBuilder`
-
-3. **Crear la Factory** (`infrastructure/conekta/factories/`)
-   - Implementa `ProviderFactory`
-   - Métodos: `createRequestBuilder()`, `getFieldRequirements()`
-
-4. **Registrar en DI** (`config/payment.providers.ts`)
+2. **Registrar en DI** (`config/payment.providers.ts`):
    ```typescript
-   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: ConektaProviderFactory, multi: true }
+   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: MercadoPagoProviderFactory, multi: true }
    ```
 
-**La UI no cambia.** Solo ve un nuevo provider disponible.
-
-## Patrones de Diseño Utilizados
-
-| Patrón | Uso |
-|--------|-----|
-| **Builder** | Construcción de requests específicos por provider |
-| **Abstract Factory** | `ProviderFactory` crea familias de objetos |
-| **Template Method** | `PaymentGateway` define flujo con hooks abstractos |
-| **Strategy** | Diferentes comportamientos por método de pago |
-| **Registry** | Resolución de factories por providerId |
-| **Port/Adapter** | Separación entre contratos e implementaciones |
+**La UI no cambia.** Solo verá un nuevo provider disponible en el registry.
 
 ## Tecnologías
 
 - Angular 19+ (standalone components, signals)
+- NgRx Signals (estado reactivo)
 - TypeScript 5.x
+- RxJS 7+
 - Vitest (testing)
 - Bun (package manager)
 
-## Documentación Adicional
+## Documentación
 
 - [Progreso del módulo](./docs/payments-progress.md)
-- [Ejemplo de uso de builders](./src/app/features/payments/docs/EJEMPLO-USO-BUILDERS.md)
+- [Ejemplo de uso de builders](./docs/EJEMPLO-USO-BUILDERS.md)

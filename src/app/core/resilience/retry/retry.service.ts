@@ -9,8 +9,8 @@ import {
     isRetryableMethod,
     calculateBackoffDelay,
     parseRetryAfterHeader,
-} from '../models/retry.types';
-import { LoggerService } from './logger.service';
+} from './retry.types';
+import { LoggerService } from '../../logging/logger.service';
 
 /**
  * Token para inyectar configuración del Retry.
