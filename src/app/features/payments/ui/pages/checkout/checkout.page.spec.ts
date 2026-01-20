@@ -315,6 +315,17 @@ describe('CheckoutComponent', () => {
             });
         });
 
+        it('sí debe procesar pago si isFormValid es true', () => {
+            component.isFormValid.set(true);
+            component.onFormChange({ token: 'tok_test' });
+            component.processPayment();
+            
+            // Debe procesar el pago (startPayment debe ser llamado)
+            expect(mockPaymentState.startPayment).toHaveBeenCalled();
+            // NO debe haber log de "Form invalid, payment blocked"
+            expect(mockLogger.info).not.toHaveBeenCalledWith('Form invalid, payment blocked', 'CheckoutPage', expect.any(Object));
+        });
+
         it('debe usar token del formulario (PaymentFormComponent maneja autofill en dev)', () => {
             // El token debe venir del formulario, no ser inyectado por CheckoutComponent
             // PaymentFormComponent ya maneja el autofill en modo desarrollo

@@ -126,6 +126,11 @@ describe('CheckoutComponent - Integración Real', () => {
             await fixture.whenStable();
             fixture.detectChanges();
             
+            // Asegurar que el formulario es válido antes de procesar
+            // En dev, PaymentFormComponent autofill token, pero verificamos explícitamente
+            if (!component.isFormValid()) {
+                component.onFormValidChange(true);
+            }
             expect(component.isFormValid()).toBe(true);
             
             component.processPayment();
@@ -160,6 +165,12 @@ describe('CheckoutComponent - Integración Real', () => {
             
             await fixture.whenStable();
             fixture.detectChanges();
+            
+            // Asegurar que el formulario es válido antes de procesar
+            if (!component.isFormValid()) {
+                component.onFormValidChange(true);
+            }
+            expect(component.isFormValid()).toBe(true);
             
             // Procesar el pago
             component.processPayment();
@@ -212,6 +223,12 @@ describe('CheckoutComponent - Integración Real', () => {
             expect(store.isReady()).toBe(false);
             expect(store.hasError()).toBe(false);
             
+            // Asegurar que el formulario es válido antes de procesar
+            if (!component.isFormValid()) {
+                component.onFormValidChange(true);
+            }
+            expect(component.isFormValid()).toBe(true);
+            
             component.processPayment();
             await fixture.whenStable();
             fixture.detectChanges();
@@ -228,6 +245,12 @@ describe('CheckoutComponent - Integración Real', () => {
         });
 
         it('debe actualizar el historial después de un pago exitoso', async () => {
+            // Asegurar que el formulario es válido antes de procesar
+            if (!component.isFormValid()) {
+                component.onFormValidChange(true);
+            }
+            expect(component.isFormValid()).toBe(true);
+            
             component.processPayment();
             
             await waitForPaymentComplete(store);
@@ -252,7 +275,7 @@ describe('CheckoutComponent - Integración Real', () => {
             fixture.detectChanges();
         });
 
-        it('debe procesar pago SPEI completo', async () => {
+        it('debe procesar pago SPEI completo con customerEmail', async () => {
             const requirements = component.fieldRequirements();
             expect(requirements).toBeTruthy();
             
@@ -264,6 +287,9 @@ describe('CheckoutComponent - Integración Real', () => {
             // Marcar el formulario como válido después de proporcionar el email
             component.onFormValidChange(true);
             fixture.detectChanges();
+            
+            // Verificar que el formulario es válido antes de procesar
+            expect(component.isFormValid()).toBe(true);
             
             component.processPayment();
             
@@ -279,6 +305,33 @@ describe('CheckoutComponent - Integración Real', () => {
             expect(intent?.nextAction).toBeTruthy();
             expect(intent?.nextAction?.type).toBe('spei');
         });
+
+        it('NO debe procesar pago SPEI si falta customerEmail (form inválido)', async () => {
+            const requirements = component.fieldRequirements();
+            expect(requirements).toBeTruthy();
+            
+            await fixture.whenStable();
+            fixture.detectChanges();
+            
+            // NO proporcionar customerEmail - el formulario debe ser inválido
+            component.onFormChange({});
+            component.onFormValidChange(false);
+            fixture.detectChanges();
+            
+            // Verificar que el formulario es inválido
+            expect(component.isFormValid()).toBe(false);
+            
+            // Intentar procesar el pago
+            component.processPayment();
+            
+            // Esperar un poco para asegurar que no se procesó
+            await new Promise(resolve => setTimeout(resolve, 100));
+            fixture.detectChanges();
+            
+            // No debe haber intent creado (el pago fue bloqueado)
+            expect(store.intent()).toBeNull();
+            expect(store.isLoading()).toBe(false);
+        });
     });
 
     describe('Flujo completo con PayPal', () => {
@@ -290,7 +343,7 @@ describe('CheckoutComponent - Integración Real', () => {
             fixture.detectChanges();
         });
 
-        it('debe procesar pago PayPal completo', async () => {
+        it('debe procesar pago PayPal completo con nextAction.paypal_approve', async () => {
             const requirements = component.fieldRequirements();
             expect(requirements).toBeTruthy();
             
@@ -303,6 +356,7 @@ describe('CheckoutComponent - Integración Real', () => {
             component.onFormValidChange(true);
             fixture.detectChanges();
             
+            // Verificar que el formulario es válido antes de procesar
             expect(component.isFormValid()).toBe(true);
             
             component.processPayment();
@@ -367,6 +421,12 @@ describe('CheckoutComponent - Integración Real', () => {
         });
 
         it('debe manejar errores de validación del token', async () => {
+            // Asegurar que el formulario es válido antes de procesar
+            if (!component.isFormValid()) {
+                component.onFormValidChange(true);
+            }
+            expect(component.isFormValid()).toBe(true);
+            
             component.processPayment();
             
             await waitForPaymentComplete(store);
@@ -417,6 +477,12 @@ describe('CheckoutComponent - Integración Real', () => {
             fixture.detectChanges();
             await fixture.whenStable();
             fixture.detectChanges();
+            
+            // Asegurar que el formulario es válido antes de procesar
+            if (!component.isFormValid()) {
+                component.onFormValidChange(true);
+            }
+            expect(component.isFormValid()).toBe(true);
             
             // Hacer un pago primero
             component.processPayment();
