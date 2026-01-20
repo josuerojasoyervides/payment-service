@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { delay, Observable, of } from "rxjs";
+import { delay, Observable, of, throwError } from "rxjs";
 import { 
     PaymentIntent, 
     PaymentProviderId, 
@@ -8,10 +8,66 @@ import {
     ConfirmPaymentRequest, 
     CreatePaymentRequest, 
     GetPaymentStatusRequest,
+    PaymentError,
 } from "../../../domain/models";
 import { PaymentGateway } from "../../../domain/ports";
 import { StripePaymentIntentDto, StripeSpeiSourceDto } from "../../stripe/dto/stripe.dto";
 import { PaypalOrderDto } from "../../paypal/dto/paypal.dto";
+
+/**
+ * Tokens especiales para controlar el comportamiento del fake gateway.
+ * 
+ * Uso:
+ * - tok_success: Siempre éxito inmediato
+ * - tok_3ds: Requiere 3D Secure
+ * - tok_fail: Siempre falla
+ * - tok_timeout: Simula timeout (delay largo)
+ * - tok_decline: Tarjeta rechazada
+ * - tok_insufficient: Fondos insuficientes
+ * - tok_expired: Tarjeta expirada
+ * - tok_processing: Estado processing
+ */
+const SPECIAL_TOKENS = {
+    SUCCESS: 'tok_success',
+    THREE_DS: 'tok_3ds',
+    FAIL: 'tok_fail',
+    TIMEOUT: 'tok_timeout',
+    DECLINE: 'tok_decline',
+    INSUFFICIENT: 'tok_insufficient',
+    EXPIRED: 'tok_expired',
+    PROCESSING: 'tok_processing',
+} as const;
+
+/**
+ * Errores predefinidos para testing.
+ */
+const FAKE_ERRORS: Record<string, PaymentError> = {
+    decline: {
+        code: 'card_declined',
+        message: 'La tarjeta fue rechazada. Por favor intenta con otro método de pago.',
+        raw: { originalError: 'card_declined' },
+    },
+    insufficient: {
+        code: 'card_declined',
+        message: 'Fondos insuficientes en la tarjeta.',
+        raw: { originalError: 'insufficient_funds' },
+    },
+    expired: {
+        code: 'card_declined',
+        message: 'La tarjeta ha expirado.',
+        raw: { originalError: 'expired_card' },
+    },
+    provider_error: {
+        code: 'provider_error',
+        message: 'El proveedor de pagos no está disponible temporalmente.',
+        raw: { originalError: 'provider_error' },
+    },
+    timeout: {
+        code: 'provider_error',
+        message: 'La operación ha excedido el tiempo de espera.',
+        raw: { originalError: 'timeout' },
+    },
+};
 
 /**
  * Gateway fake para desarrollo y testing.
@@ -24,6 +80,7 @@ import { PaypalOrderDto } from "../../paypal/dto/paypal.dto";
  * - Simula delays de red (150-300ms)
  * - Respuestas en formato real de cada provider
  * - Simula diferentes flujos (3DS, SPEI, PayPal redirect)
+ * - Tokens especiales para forzar diferentes comportamientos
  */
 @Injectable()
 export class FakePaymentGateway extends PaymentGateway {
@@ -45,15 +102,64 @@ export class FakePaymentGateway extends PaymentGateway {
     /**
      * Simula delay de red realista.
      */
-    private simulateNetworkDelay<T>(data: T): Observable<T> {
-        const delayMs = 150 + Math.random() * 150; // 150-300ms
+    private simulateNetworkDelay<T>(data: T, customDelay?: number): Observable<T> {
+        const delayMs = customDelay ?? (150 + Math.random() * 150); // 150-300ms
         return of(data).pipe(delay(delayMs));
+    }
+
+    /**
+     * Simula un error con delay.
+     */
+    private simulateError(error: PaymentError, delayMs: number = 200): Observable<never> {
+        return of(null).pipe(
+            delay(delayMs),
+            () => throwError(() => error)
+        );
+    }
+
+    /**
+     * Verifica si el token es especial y determina el comportamiento.
+     */
+    private getTokenBehavior(token?: string): 'success' | '3ds' | 'fail' | 'timeout' | 'decline' | 'insufficient' | 'expired' | 'processing' | 'normal' {
+        if (!token) return 'normal';
+        
+        switch (token) {
+            case SPECIAL_TOKENS.SUCCESS: return 'success';
+            case SPECIAL_TOKENS.THREE_DS: return '3ds';
+            case SPECIAL_TOKENS.FAIL: return 'fail';
+            case SPECIAL_TOKENS.TIMEOUT: return 'timeout';
+            case SPECIAL_TOKENS.DECLINE: return 'decline';
+            case SPECIAL_TOKENS.INSUFFICIENT: return 'insufficient';
+            case SPECIAL_TOKENS.EXPIRED: return 'expired';
+            case SPECIAL_TOKENS.PROCESSING: return 'processing';
+            default: return 'normal';
+        }
     }
 
     // ============ CREATE INTENT ============
 
     protected createIntentRaw(req: CreatePaymentRequest): Observable<any> {
         console.log(`[FakeGateway] Creating intent for ${this.providerId}`, req);
+
+        const behavior = this.getTokenBehavior(req.method.token);
+
+        // Manejar tokens especiales de error
+        if (behavior === 'fail') {
+            return throwError(() => FAKE_ERRORS['provider_error']);
+        }
+        if (behavior === 'decline') {
+            return throwError(() => FAKE_ERRORS['decline']);
+        }
+        if (behavior === 'insufficient') {
+            return throwError(() => FAKE_ERRORS['insufficient']);
+        }
+        if (behavior === 'expired') {
+            return throwError(() => FAKE_ERRORS['expired']);
+        }
+        if (behavior === 'timeout') {
+            // Simular timeout con delay muy largo
+            return this.simulateNetworkDelay(this.createFakeStripeIntent(req, 'processing'), 10000);
+        }
 
         // SPEI solo para Stripe
         if (req.method.type === 'spei') {
@@ -65,7 +171,17 @@ export class FakePaymentGateway extends PaymentGateway {
             return this.simulateNetworkDelay(this.createFakePaypalOrder(req));
         }
 
-        return this.simulateNetworkDelay(this.createFakeStripeIntent(req));
+        // Determinar status basado en token
+        let status: StripePaymentIntentDto['status'] = 'requires_confirmation';
+        if (behavior === 'success') {
+            status = 'succeeded';
+        } else if (behavior === '3ds') {
+            status = 'requires_action';
+        } else if (behavior === 'processing') {
+            status = 'processing';
+        }
+
+        return this.simulateNetworkDelay(this.createFakeStripeIntent(req, status));
     }
 
     protected mapIntent(dto: any): PaymentIntent {
@@ -134,22 +250,34 @@ export class FakePaymentGateway extends PaymentGateway {
 
     // ============ FAKE STRIPE RESPONSES ============
 
-    private createFakeStripeIntent(req: CreatePaymentRequest): StripePaymentIntentDto {
+    private createFakeStripeIntent(
+        req: CreatePaymentRequest, 
+        forcedStatus?: StripePaymentIntentDto['status']
+    ): StripePaymentIntentDto {
         const intentId = this.generateId('pi');
         const amountInCents = Math.round(req.amount * 100);
 
-        // Simular 3DS para ciertos tokens
-        const requires3ds = req.method.token?.includes('3ds') ||
-            req.method.token?.includes('auth') ||
-            Math.random() > 0.7; // 30% de probabilidad
+        // Usar status forzado o determinar por probabilidad
+        let status: StripePaymentIntentDto['status'] = forcedStatus ?? 'requires_confirmation';
+        
+        if (!forcedStatus) {
+            // Simular 3DS para ciertos tokens o probabilidad aleatoria
+            const requires3ds = req.method.token?.includes('3ds') ||
+                req.method.token?.includes('auth') ||
+                Math.random() > 0.7; // 30% de probabilidad
+            
+            if (requires3ds) {
+                status = 'requires_action';
+            }
+        }
 
         return {
             id: intentId,
             object: 'payment_intent',
             amount: amountInCents,
-            amount_received: 0,
+            amount_received: status === 'succeeded' ? amountInCents : 0,
             currency: req.currency.toLowerCase(),
-            status: requires3ds ? 'requires_action' : 'requires_confirmation',
+            status,
             client_secret: `${intentId}_secret_${this.generateId('sec')}`,
             created: Math.floor(Date.now() / 1000),
             livemode: false,
@@ -160,11 +288,11 @@ export class FakePaymentGateway extends PaymentGateway {
             payment_method_types: ['card'],
             capture_method: 'automatic',
             confirmation_method: 'automatic',
-            next_action: requires3ds ? {
+            next_action: status === 'requires_action' ? {
                 type: 'redirect_to_url',
                 redirect_to_url: {
                     url: `https://hooks.stripe.com/3d_secure_2/authenticate/${intentId}`,
-                    return_url: `${window.location.origin}/payments/return`,
+                    return_url: `${typeof window !== 'undefined' ? window.location.origin : ''}/payments/return`,
                 },
             } : null,
         };
@@ -478,8 +606,8 @@ export class FakePaymentGateway extends PaymentGateway {
             nextAction: approveLink ? {
                 type: 'paypal_approve',
                 approveUrl: approveLink,
-                returnUrl: `${window.location.origin}/payments/return`,
-                cancelUrl: `${window.location.origin}/payments/cancel`,
+                returnUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}/payments/return`,
+                cancelUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}/payments/cancel`,
                 paypalOrderId: dto.id,
             } : undefined,
             raw: dto,
