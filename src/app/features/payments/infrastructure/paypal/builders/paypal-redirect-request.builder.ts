@@ -73,16 +73,14 @@ export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
         if (!this.currency) {
             throw new Error('currency is required');
         }
-        if (!this.returnUrl) {
-            throw new Error(
-                'PayPal payments require returnUrl. ' +
-                'This is where the user will be redirected after completing payment.'
-            );
-        }
-        try {
-            new URL(this.returnUrl);
-        } catch {
-            throw new Error('returnUrl must be a valid URL');
+        // returnUrl es opcional en el builder - puede venir de StrategyContext
+        // Solo validar formato si está presente
+        if (this.returnUrl) {
+            try {
+                new URL(this.returnUrl);
+            } catch {
+                throw new Error('returnUrl must be a valid URL');
+            }
         }
         if (this.cancelUrl) {
             try {

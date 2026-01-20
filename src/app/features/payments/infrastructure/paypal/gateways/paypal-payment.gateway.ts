@@ -223,14 +223,17 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
      * Builds PayPal approval action.
      * 
      * Note: This method is called from mapOrder which doesn't have access to the original request.
-     * The returnUrl/cancelUrl should come from the request that created the order.
-     * For now, we use a defensive fallback, but ideally this should be passed through.
+     * However, PaypalRedirectStrategy.enrichIntentWithPaypalApproval already sets the correct URLs
+     * from StrategyContext. This method is a fallback only.
+     * 
+     * returnUrl/cancelUrl should come from StrategyContext (via PaypalRedirectStrategy.prepare),
+     * not from window.location.href.
      */
     private buildPaypalApproveAction(dto: PaypalOrderDto, approveUrl: string, returnUrl?: string, cancelUrl?: string): NextActionPaypalApprove {
-        // Fallback defensivo - en la práctica, estos valores deberían venir del request original
-        const fallbackReturnUrl = returnUrl ?? (typeof window !== 'undefined' 
-            ? `${window.location.origin}/payments/return`
-            : 'https://example.com/payments/return');
+        // Usar las URLs proporcionadas (deberían venir del request preparado)
+        // Si no están disponibles, usar un fallback consistente con /payments/return
+        // NO usar window.location.href como fallback
+        const fallbackReturnUrl = returnUrl ?? '/payments/return';
         const fallbackCancelUrl = cancelUrl ?? returnUrl ?? fallbackReturnUrl;
 
         return {
@@ -248,14 +251,18 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
      * Builds the request in PayPal Orders API format.
      */
     private buildPaypalCreateRequest(req: CreatePaymentRequest): PaypalCreateOrderRequest {
-        // Fallback defensivo solo en caso de que el builder/strategy no haya setado returnUrl
-        // En la práctica, el builder debe garantizar que returnUrl siempre esté presente
-        const fallbackDefault = typeof window !== 'undefined' 
-            ? `${window.location.origin}/payments/paypal/return`
-            : 'https://example.com/payments/paypal/return';
+        // returnUrl/cancelUrl deben venir del request preparado (PaypalRedirectStrategy.prepare)
+        // que usa StrategyContext como fuente principal
+        // Si no están, lanzar error (no inventar URLs)
+        if (!req.returnUrl) {
+            throw new Error(
+                'returnUrl is required for PayPal orders. ' +
+                'It must be provided via StrategyContext or CreatePaymentRequest.'
+            );
+        }
         
-        const returnUrl = req.returnUrl ?? fallbackDefault;
-        const cancelUrl = req.cancelUrl ?? req.returnUrl ?? fallbackDefault;
+        const returnUrl = req.returnUrl;
+        const cancelUrl = req.cancelUrl ?? returnUrl;
 
         return {
             intent: 'CAPTURE',

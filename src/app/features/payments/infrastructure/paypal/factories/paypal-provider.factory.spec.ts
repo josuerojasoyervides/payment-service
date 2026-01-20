@@ -56,12 +56,17 @@ describe('PaypalProviderFactory', () => {
         );
 
         const strategy = factory.createStrategy('card');
+        const context = {
+            returnUrl: 'https://example.com/payments/return',
+            cancelUrl: 'https://example.com/payments/cancel',
+            isTest: true,
+        };
         const result = await firstValueFrom(strategy.start({
             orderId: 'o1',
             amount: 100,
             currency: 'MXN',
             method: { type: 'card', token: 'tok' },
-        }));
+        }, context));
 
         expect(gatewayStub.createIntent).toHaveBeenCalledTimes(1);
         expect(result.provider).toBe('paypal');
@@ -80,7 +85,8 @@ describe('PaypalProviderFactory', () => {
             expect(returnUrlField).toBeDefined();
             expect(returnUrlField?.required).toBe(true);
             expect(returnUrlField?.type).toBe('hidden');
-            expect(returnUrlField?.autoFill).toBe('currentUrl');
+            // autoFill puede estar definido, pero PaymentFormComponent lo ignora para returnUrl/cancelUrl
+            // Estas URLs vienen de StrategyContext, no del formulario
         });
 
         it('includes cancelUrl as optional field', () => {

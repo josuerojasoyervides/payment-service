@@ -14,6 +14,8 @@ describe('PaypalPaymentGateway', () => {
         amount: 100,
         currency: 'MXN',
         method: { type: 'card', token: 'tok_123' },
+        returnUrl: 'https://example.com/payments/return',
+        cancelUrl: 'https://example.com/payments/cancel',
     };
 
     beforeEach(() => {
