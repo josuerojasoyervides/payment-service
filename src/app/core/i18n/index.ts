@@ -5,13 +5,17 @@
  * 
  * @example
  * ```typescript
- * import { I18nService } from '@core/i18n';
+ * import { I18nService, I18nKeys } from '@core/i18n';
  * 
  * // En un componente o servicio
  * private readonly i18n = inject(I18nService);
- * const message = this.i18n.t('errors.card_declined');
+ * 
+ * // Uso recomendado: con I18nKeys (autocompletado completo)
+ * const message = this.i18n.t(I18nKeys.errors.card_declined);
+ * const message = this.i18n.t(I18nKeys.ui.loading);
  * ```
  */
 
 export * from './i18n.service';
 export * from './i18n.types';
+export * from './i18n.keys';

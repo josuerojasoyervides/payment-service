@@ -12,7 +12,7 @@ import {
 } from '../../../domain/models';
 import { PaymentGateway } from '../../../domain/ports';
 import { Observable } from 'rxjs';
-import { I18nService } from '@core/i18n';
+import { I18nService, I18nKeys } from '@core/i18n';
 import {
     PaypalOrderDto,
     PaypalOrderStatus,
@@ -169,7 +169,7 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
             if (httpError.status === 401) {
                 return {
                     code: 'provider_error',
-                    message: this.i18n.t('errors.paypal_auth_error'),
+                    message: this.i18n.t(I18nKeys.errors.paypal_auth_error),
                     raw: err,
                 };
             }
@@ -177,7 +177,7 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
             if (httpError.status >= 500) {
                 return {
                     code: 'provider_unavailable',
-                    message: this.i18n.t('errors.paypal_unavailable'),
+                    message: this.i18n.t(I18nKeys.errors.paypal_unavailable),
                     raw: err,
                 };
             }
@@ -289,13 +289,13 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
      * Convierte errores de PayPal a mensajes legibles.
      */
     private humanizePaypalError(error: PaypalErrorResponse): string {
-        const errorKeyMap: Record<string, string> = {
-            'INVALID_REQUEST': 'errors.paypal_invalid_request',
-            'PERMISSION_DENIED': 'errors.paypal_permission_denied',
-            'RESOURCE_NOT_FOUND': 'errors.paypal_resource_not_found',
-            'INSTRUMENT_DECLINED': 'errors.paypal_instrument_declined',
-            'ORDER_NOT_APPROVED': 'errors.paypal_order_not_approved',
-            'INTERNAL_SERVICE_ERROR': 'errors.paypal_internal_error',
+        const errorKeyMap: Partial<Record<string, string>> = {
+            'INVALID_REQUEST': I18nKeys.errors.paypal_invalid_request,
+            'PERMISSION_DENIED': I18nKeys.errors.paypal_permission_denied,
+            'RESOURCE_NOT_FOUND': I18nKeys.errors.paypal_resource_not_found,
+            'INSTRUMENT_DECLINED': I18nKeys.errors.paypal_instrument_declined,
+            'ORDER_NOT_APPROVED': I18nKeys.errors.paypal_order_not_approved,
+            'INTERNAL_SERVICE_ERROR': I18nKeys.errors.paypal_internal_error,
         };
 
         // Buscar mensaje específico en details
@@ -309,6 +309,6 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
             return this.i18n.t(translationKey);
         }
 
-        return error.message ?? this.i18n.t('errors.paypal_error');
+        return error.message ?? this.i18n.t(I18nKeys.errors.paypal_error);
     }
 }

@@ -6,7 +6,7 @@ import { RouterLink } from '@angular/router';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { LoggerService } from '@core/logging';
-import { I18nService } from '@core/i18n';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 // Domain types
 import { PaymentProviderId, PaymentMethodType, CurrencyCode } from '../../../domain/models';
@@ -253,34 +253,34 @@ export class CheckoutComponent {
 
     // ===== Textos para el template =====
     get checkoutTitle(): string {
-        return this.i18n.t('ui.checkout');
+        return this.i18n.t(I18nKeys.ui.checkout);
     }
 
     get paymentSystemSubtitle(): string {
-        return this.i18n.t('ui.payment_system');
+        return this.i18n.t(I18nKeys.ui.payment_system);
     }
 
     get viewHistoryLabel(): string {
-        return this.i18n.t('ui.view_history');
+        return this.i18n.t(I18nKeys.ui.view_history);
     }
 
     get checkStatusLabel(): string {
-        return this.i18n.t('ui.check_status');
+        return this.i18n.t(I18nKeys.ui.check_status);
     }
 
     get showcaseLabel(): string {
-        return this.i18n.t('ui.showcase');
+        return this.i18n.t(I18nKeys.ui.showcase);
     }
 
     get paymentProviderLabel(): string {
-        return this.i18n.t('ui.payment_provider');
+        return this.i18n.t(I18nKeys.ui.payment_provider);
     }
 
     get paymentMethodLabel(): string {
-        return this.i18n.t('ui.payment_method');
+        return this.i18n.t(I18nKeys.ui.payment_method);
     }
 
     get paymentDataLabel(): string {
-        return this.i18n.t('ui.payment_data');
+        return this.i18n.t(I18nKeys.ui.payment_data);
     }
 }

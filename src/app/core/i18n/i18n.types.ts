@@ -9,7 +9,7 @@ export interface Translations {
         provider_error: string;
         invalid_request: string;
         network_error: string;
-        
+
         // Errores de tarjeta
         card_declined: string;
         expired_card: string;
@@ -17,7 +17,7 @@ export interface Translations {
         incorrect_number: string;
         authentication_required: string;
         processing_error: string;
-        
+
         // Errores de validación
         order_id_required: string;
         currency_required: string;
@@ -26,13 +26,13 @@ export interface Translations {
         card_token_required: string;
         intent_id_required: string;
         min_amount: string;
-        
+
         // Errores de proveedores
         stripe_error: string;
         paypal_error: string;
         stripe_unavailable: string;
         paypal_unavailable: string;
-        
+
         // Errores de PayPal específicos
         paypal_invalid_request: string;
         paypal_permission_denied: string;
@@ -42,19 +42,19 @@ export interface Translations {
         paypal_internal_error: string;
         paypal_auth_error: string;
     };
-    
+
     messages: {
         // Mensajes informativos
         payment_created: string;
         payment_confirmed: string;
         payment_canceled: string;
         payment_processing: string;
-        
+
         // Instrucciones
         bank_verification_required: string;
         spei_instructions: string;
         paypal_redirect_required: string;
-        
+
         // Estados
         status_requires_payment_method: string;
         status_requires_confirmation: string;
@@ -64,7 +64,7 @@ export interface Translations {
         status_failed: string;
         status_canceled: string;
     };
-    
+
     ui: {
         // Componentes UI
         loading: string;
@@ -75,20 +75,20 @@ export interface Translations {
         retry: string;
         back: string;
         next: string;
-        
+
         // Formularios
         select_provider: string;
         select_method: string;
         enter_amount: string;
         enter_order_id: string;
-        
+
         // Fallback
         fallback_available: string;
         fallback_question: string;
         fallback_accept: string;
         fallback_cancel: string;
         fallback_auto_executing: string;
-        
+
         // Errores y mensajes
         unknown_error: string;
         payment_error: string;
@@ -103,13 +103,13 @@ export interface Translations {
         view_full_response: string;
         new_payment: string;
         error_code: string;
-        
+
         // Fallback modal
         payment_problem: string;
         provider_unavailable: string;
         try_another_provider: string;
         retry_with: string;
-        
+
         // SPEI
         spei_transfer: string;
         make_transfer_with_data: string;
@@ -123,25 +123,25 @@ export interface Translations {
         transfer_exact_amount: string;
         payment_may_take: string;
         keep_receipt: string;
-        
+
         // 3DS
         '3ds_verification_required': string;
         bank_requires_verification: string;
         '3ds_version': string;
         complete_verification: string;
-        
+
         // PayPal
         paypal_approval_required: string;
         redirected_to_paypal: string;
         order_id: string;
         go_to_paypal: string;
         after_approve_verify: string;
-        
+
         // Acciones
         action_required: string;
         action_requires_attention: string;
         view_action_details: string;
-        
+
         // Páginas
         checkout: string;
         payment_system: string;
@@ -161,13 +161,13 @@ export interface Translations {
         quick_examples: string;
         stripe_intent: string;
         paypal_order: string;
-        
+
         // Proveedores
         provider_stripe: string;
         provider_paypal: string;
         provider_stripe_description: string;
         provider_paypal_description: string;
-        
+
         // Métodos
         method_card: string;
         method_card_description: string;

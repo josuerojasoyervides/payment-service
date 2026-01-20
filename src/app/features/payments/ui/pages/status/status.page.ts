@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { PaymentProviderId, PaymentIntent } from '../../../domain/models';
 import { PaymentIntentCardComponent, NextActionCardComponent } from '../../components';
-import { I18nService } from '@core/i18n';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Página para consultar el estado de un pago por su ID.
@@ -31,8 +31,8 @@ export class StatusComponent {
     readonly isLoading = this.paymentState.isLoading;
 
     readonly examples = [
-        { id: 'pi_fake_abc123', label: this.i18n.t('ui.stripe_intent'), provider: 'stripe' as const },
-        { id: 'ORDER_FAKE_XYZ789', label: this.i18n.t('ui.paypal_order'), provider: 'paypal' as const },
+        { id: 'pi_fake_abc123', label: this.i18n.t(I18nKeys.ui.stripe_intent), provider: 'stripe' as const },
+        { id: 'ORDER_FAKE_XYZ789', label: this.i18n.t(I18nKeys.ui.paypal_order), provider: 'paypal' as const },
     ];
 
     constructor() {
@@ -80,67 +80,67 @@ export class StatusComponent {
         if (typeof error === 'object' && error !== null && 'message' in error) {
             return (error as { message: string }).message;
         }
-        return this.i18n.t('ui.unknown_error');
+        return this.i18n.t(I18nKeys.ui.unknown_error);
     }
 
     // ===== Textos para el template =====
     get consultStatusTitle(): string {
-        return this.i18n.t('ui.consult_status');
+        return this.i18n.t(I18nKeys.ui.consult_status);
     }
 
     get enterPaymentIdText(): string {
-        return this.i18n.t('ui.enter_payment_id');
+        return this.i18n.t(I18nKeys.ui.enter_payment_id);
     }
 
     get intentIdLabel(): string {
-        return this.i18n.t('ui.intent_id');
+        return this.i18n.t(I18nKeys.ui.intent_id);
     }
 
     get intentIdPlaceholder(): string {
-        return this.i18n.t('ui.intent_id_placeholder');
+        return this.i18n.t(I18nKeys.ui.intent_id_placeholder);
     }
 
     get exampleStripeText(): string {
-        return this.i18n.t('ui.example_stripe');
+        return this.i18n.t(I18nKeys.ui.example_stripe);
     }
 
     get providerLabel(): string {
-        return this.i18n.t('ui.provider');
+        return this.i18n.t(I18nKeys.ui.provider);
     }
 
     get stripeProviderLabel(): string {
-        return this.i18n.t('ui.provider_stripe');
+        return this.i18n.t(I18nKeys.ui.provider_stripe);
     }
 
     get paypalProviderLabel(): string {
-        return this.i18n.t('ui.provider_paypal');
+        return this.i18n.t(I18nKeys.ui.provider_paypal);
     }
 
     get consultingLabel(): string {
-        return this.i18n.t('ui.consulting');
+        return this.i18n.t(I18nKeys.ui.consulting);
     }
 
     get checkStatusLabel(): string {
-        return this.i18n.t('ui.check_status');
+        return this.i18n.t(I18nKeys.ui.check_status);
     }
 
     get errorConsultingLabel(): string {
-        return this.i18n.t('ui.error_consulting');
+        return this.i18n.t(I18nKeys.ui.error_consulting);
     }
 
     get resultLabel(): string {
-        return this.i18n.t('ui.result');
+        return this.i18n.t(I18nKeys.ui.result);
     }
 
     get quickExamplesLabel(): string {
-        return this.i18n.t('ui.quick_examples');
+        return this.i18n.t(I18nKeys.ui.quick_examples);
     }
 
     get checkoutLabel(): string {
-        return this.i18n.t('ui.checkout');
+        return this.i18n.t(I18nKeys.ui.checkout);
     }
 
     get historyLabel(): string {
-        return this.i18n.t('ui.view_history');
+        return this.i18n.t(I18nKeys.ui.view_history);
     }
 }

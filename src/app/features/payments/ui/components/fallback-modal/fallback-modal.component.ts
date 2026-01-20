@@ -1,7 +1,7 @@
 import { Component, input, output, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PaymentProviderId, FallbackAvailableEvent, getDefaultProviders } from '../../shared';
-import { I18nService } from '@core/i18n';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Modal que muestra opciones de fallback cuando un proveedor falla.
@@ -75,23 +75,23 @@ export class FallbackModalComponent {
 
     // ===== Textos para el template =====
     get paymentProblemTitle(): string {
-        return this.i18n.t('ui.payment_problem');
+        return this.i18n.t(I18nKeys.ui.payment_problem);
     }
 
     get providerUnavailableText(): string {
-        return this.i18n.t('ui.provider_unavailable');
+        return this.i18n.t(I18nKeys.ui.provider_unavailable);
     }
 
     get tryAnotherProviderText(): string {
-        return this.i18n.t('ui.try_another_provider');
+        return this.i18n.t(I18nKeys.ui.try_another_provider);
     }
 
     get cancelLabel(): string {
-        return this.i18n.t('ui.cancel');
+        return this.i18n.t(I18nKeys.ui.cancel);
     }
 
     get retryWithLabel(): string {
-        return this.i18n.t('ui.retry_with');
+        return this.i18n.t(I18nKeys.ui.retry_with);
     }
 
     selectProvider(providerId: PaymentProviderId): void {

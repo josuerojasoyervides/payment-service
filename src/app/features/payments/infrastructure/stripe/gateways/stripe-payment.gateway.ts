@@ -1,7 +1,7 @@
 import { Injectable, inject } from "@angular/core";
 import { Observable } from "rxjs";
 import { PaymentGateway } from "../../../domain/ports";
-import { I18nService } from "@core/i18n";
+import { I18nService, I18nKeys } from "@core/i18n";
 import {
     PaymentIntent,
     PaymentIntentStatus,
@@ -183,7 +183,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
             if (httpError.status === 402) {
                 return {
                     code: 'card_declined',
-                    message: this.i18n.t('errors.card_declined'),
+                    message: this.i18n.t(I18nKeys.errors.card_declined),
                     raw: err,
                 };
             }
@@ -191,7 +191,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
             if (httpError.status >= 500) {
                 return {
                     code: 'provider_unavailable',
-                    message: this.i18n.t('errors.stripe_unavailable'),
+                    message: this.i18n.t(I18nKeys.errors.stripe_unavailable),
                     raw: err,
                 };
             }
@@ -200,7 +200,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
         // Fallback: usar mensaje genérico de Stripe
         return {
             code: 'provider_error',
-            message: this.i18n.t('errors.stripe_error'),
+            message: this.i18n.t(I18nKeys.errors.stripe_error),
             raw: err,
         };
     }
@@ -346,13 +346,13 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
      * Convierte errores técnicos de Stripe a mensajes legibles.
      */
     private humanizeStripeError(error: StripeErrorResponse['error']): string {
-        const errorKeyMap: Record<string, string> = {
-            'card_declined': 'errors.card_declined',
-            'expired_card': 'errors.expired_card',
-            'incorrect_cvc': 'errors.incorrect_cvc',
-            'processing_error': 'errors.processing_error',
-            'incorrect_number': 'errors.incorrect_number',
-            'authentication_required': 'errors.authentication_required',
+        const errorKeyMap: Partial<Record<string, string>> = {
+            'card_declined': I18nKeys.errors.card_declined,
+            'expired_card': I18nKeys.errors.expired_card,
+            'incorrect_cvc': I18nKeys.errors.incorrect_cvc,
+            'processing_error': I18nKeys.errors.processing_error,
+            'incorrect_number': I18nKeys.errors.incorrect_number,
+            'authentication_required': I18nKeys.errors.authentication_required,
         };
 
         const translationKey = errorKeyMap[error.code];
@@ -360,6 +360,6 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
             return this.i18n.t(translationKey);
         }
 
-        return error.message ?? this.i18n.t('errors.stripe_error');
+        return error.message ?? this.i18n.t(I18nKeys.errors.stripe_error);
     }
 }

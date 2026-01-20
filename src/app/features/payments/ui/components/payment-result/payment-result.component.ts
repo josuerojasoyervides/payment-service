@@ -1,7 +1,7 @@
 import { Component, input, output, computed, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, JsonPipe, DatePipe } from '@angular/common';
 import { PaymentIntent, PaymentError, STATUS_BADGE_MAP } from '../../shared';
-import { I18nService } from '@core/i18n';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Componente que muestra el resultado de un pago.
@@ -55,11 +55,11 @@ export class PaymentResultComponent {
     /** Mensaje de error legible */
     readonly errorMessage = computed(() => {
         const e = this.error();
-        if (!e) return this.i18n.t('ui.payment_error');
+        if (!e) return this.i18n.t(I18nKeys.ui.payment_error);
         if (typeof e === 'object' && 'message' in e) {
             return (e as { message: string }).message;
         }
-        return this.i18n.t('ui.payment_error');
+        return this.i18n.t(I18nKeys.ui.payment_error);
     });
 
     /** Código de error */
@@ -83,56 +83,57 @@ export class PaymentResultComponent {
     readonly statusText = computed(() => {
         const i = this.intent();
         if (!i) return '';
+        // Para claves dinámicas, usamos string literal (no hay otra opción)
         const statusKey = `messages.status_${i.status}`;
         return this.i18n.has(statusKey) ? this.i18n.t(statusKey) : i.status;
     });
 
     // ===== Textos para el template (mantener lógica en el componente) =====
     get paymentErrorTitle(): string {
-        return this.i18n.t('ui.payment_error');
+        return this.i18n.t(I18nKeys.ui.payment_error);
     }
 
     get errorCodeLabel(): string {
-        return this.i18n.t('ui.error_code');
+        return this.i18n.t(I18nKeys.ui.error_code);
     }
 
     get viewTechnicalDetailsLabel(): string {
-        return this.i18n.t('ui.view_technical_details');
+        return this.i18n.t(I18nKeys.ui.view_technical_details);
     }
 
     get tryAgainLabel(): string {
-        return this.i18n.t('ui.try_again');
+        return this.i18n.t(I18nKeys.ui.try_again);
     }
 
     get paymentCompletedTitle(): string {
-        return this.i18n.t('ui.payment_completed');
+        return this.i18n.t(I18nKeys.ui.payment_completed);
     }
 
     get paymentStartedTitle(): string {
-        return this.i18n.t('ui.payment_started_successfully');
+        return this.i18n.t(I18nKeys.ui.payment_started_successfully);
     }
 
     get intentIdLabel(): string {
-        return this.i18n.t('ui.intent_id');
+        return this.i18n.t(I18nKeys.ui.intent_id);
     }
 
     get providerLabel(): string {
-        return this.i18n.t('ui.provider');
+        return this.i18n.t(I18nKeys.ui.provider);
     }
 
     get statusLabel(): string {
-        return this.i18n.t('ui.status');
+        return this.i18n.t(I18nKeys.ui.status);
     }
 
     get amountLabel(): string {
-        return this.i18n.t('ui.amount');
+        return this.i18n.t(I18nKeys.ui.amount);
     }
 
     get viewFullResponseLabel(): string {
-        return this.i18n.t('ui.view_full_response');
+        return this.i18n.t(I18nKeys.ui.view_full_response);
     }
 
     get newPaymentLabel(): string {
-        return this.i18n.t('ui.new_payment');
+        return this.i18n.t(I18nKeys.ui.new_payment);
     }
 }

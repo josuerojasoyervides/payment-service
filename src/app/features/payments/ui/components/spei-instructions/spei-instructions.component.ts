@@ -1,6 +1,6 @@
 import { Component, input, signal, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { I18nService } from '@core/i18n';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Componente que muestra instrucciones para pago SPEI.
@@ -56,51 +56,51 @@ export class SpeiInstructionsComponent {
 
     // ===== Textos para el template =====
     get speiTransferTitle(): string {
-        return this.i18n.t('ui.spei_transfer');
+        return this.i18n.t(I18nKeys.ui.spei_transfer);
     }
 
     get makeTransferText(): string {
-        return this.i18n.t('ui.make_transfer_with_data');
+        return this.i18n.t(I18nKeys.ui.make_transfer_with_data);
     }
 
     get copiedLabel(): string {
-        return this.i18n.t('ui.copied');
+        return this.i18n.t(I18nKeys.ui.copied);
     }
 
     get copyLabel(): string {
-        return this.i18n.t('ui.copy');
+        return this.i18n.t(I18nKeys.ui.copy);
     }
 
     get referenceLabel(): string {
-        return this.i18n.t('ui.reference');
+        return this.i18n.t(I18nKeys.ui.reference);
     }
 
     get exactAmountLabel(): string {
-        return this.i18n.t('ui.exact_amount');
+        return this.i18n.t(I18nKeys.ui.exact_amount);
     }
 
     get destinationBankLabel(): string {
-        return this.i18n.t('ui.destination_bank');
+        return this.i18n.t(I18nKeys.ui.destination_bank);
     }
 
     get beneficiaryLabel(): string {
-        return this.i18n.t('ui.beneficiary');
+        return this.i18n.t(I18nKeys.ui.beneficiary);
     }
 
     get referenceExpiresText(): string {
-        return this.i18n.t('ui.reference_expires');
+        return this.i18n.t(I18nKeys.ui.reference_expires);
     }
 
     get transferExactAmountText(): string {
-        return this.i18n.t('ui.transfer_exact_amount');
+        return this.i18n.t(I18nKeys.ui.transfer_exact_amount);
     }
 
     get paymentMayTakeText(): string {
-        return this.i18n.t('ui.payment_may_take');
+        return this.i18n.t(I18nKeys.ui.payment_may_take);
     }
 
     get keepReceiptText(): string {
-        return this.i18n.t('ui.keep_receipt');
+        return this.i18n.t(I18nKeys.ui.keep_receipt);
     }
 
     // TODO: Extract this into a decorator or utility function or a pipe

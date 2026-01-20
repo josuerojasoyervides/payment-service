@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { Translations } from './i18n.types';
-import esTranslations from './translations/es.json';
-import enTranslations from './translations/en.json';
+import { es } from './translations/es';
+import { en } from './translations/en';
 
 /**
  * Servicio de internacionalización (i18n).
@@ -11,14 +11,21 @@ import enTranslations from './translations/en.json';
  * 
  * @example
  * ```typescript
+ * import { I18nKeys } from '@core/i18n';
+ * 
  * // Inyectar el servicio
  * private readonly i18n = inject(I18nService);
  * 
- * // Obtener traducción
- * const message = this.i18n.t('errors.card_declined');
+ * // Uso recomendado: con I18nKeys (autocompletado completo)
+ * const message = this.i18n.t(I18nKeys.errors.card_declined);
+ * const message = this.i18n.t(I18nKeys.ui.loading);
  * 
  * // Con parámetros
- * const message = this.i18n.t('errors.min_amount', { amount: 10, currency: 'MXN' });
+ * const message = this.i18n.t(I18nKeys.errors.min_amount, { amount: 10, currency: 'MXN' });
+ * 
+ * // También acepta strings literales (para casos dinámicos)
+ * const dynamicKey = `errors.${errorCode}`;
+ * this.i18n.t(dynamicKey);
  * ```
  */
 @Injectable({ providedIn: 'root' })
@@ -28,8 +35,8 @@ export class I18nService {
     
     /** Traducciones disponibles */
     private readonly translationsMap: Record<string, Translations> = {
-        es: esTranslations as Translations,
-        en: enTranslations as Translations,
+        es,
+        en,
     };
     
     /** Traducciones cargadas */
@@ -66,7 +73,7 @@ export class I18nService {
     /**
      * Cambia el idioma actual.
      * 
-     * @param lang Código de idioma (ej: 'es', 'en')
+     * @param lang C?digo de idioma (ej: 'es', 'en')
      */
     setLanguage(lang: string): void {
         if (this.translationsMap[lang]) {
@@ -85,17 +92,20 @@ export class I18nService {
     
     /**
      * Verifica si existe una traducción para una clave.
+     * 
+     * @param key Clave de traducción
+     * @returns true si la clave existe, false en caso contrario
      */
     has(key: string): boolean {
         return this.getTranslation(key) !== undefined;
     }
     
     // ============================================================
-    // MÉTODOS PRIVADOS
+    // M?TODOS PRIVADOS
     // ============================================================
     
     /**
-     * Obtiene una traducción del objeto de traducciones.
+     * Obtiene una traducci?n del objeto de traducciones.
      */
     private getTranslation(key: string): string | undefined {
         const keys = key.split('.');
@@ -113,7 +123,7 @@ export class I18nService {
     }
     
     /**
-     * Interpola parámetros en una cadena de texto.
+     * Interpola par?metros en una cadena de texto.
      * 
      * @example
      * interpolate('Min amount: {{amount}} {{currency}}', { amount: 10, currency: 'MXN' })

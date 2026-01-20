@@ -1,5 +1,6 @@
 import { PaymentProviderId, PaymentMethodType, PaymentIntent, PaymentError, CurrencyCode, FallbackAvailableEvent } from '../../domain/models';
 import { FieldRequirements, PaymentOptions } from '../../domain/ports';
+import { I18nKeys } from '@core/i18n';
 
 /**
  * Item de orden para mostrar en el resumen.
@@ -134,15 +135,15 @@ export function getDefaultProviders(i18n: { t: (key: string) => string }): Provi
     return [
         {
             id: 'stripe',
-            name: i18n.t('ui.provider_stripe'),
+            name: i18n.t(I18nKeys.ui.provider_stripe),
             icon: '💳',
-            description: i18n.t('ui.provider_stripe_description'),
+            description: i18n.t(I18nKeys.ui.provider_stripe_description),
         },
         {
             id: 'paypal',
-            name: i18n.t('ui.provider_paypal'),
+            name: i18n.t(I18nKeys.ui.provider_paypal),
             icon: '🅿️',
-            description: i18n.t('ui.provider_paypal_description'),
+            description: i18n.t(I18nKeys.ui.provider_paypal_description),
         },
     ];
 }
@@ -173,15 +174,15 @@ export function getDefaultMethods(i18n: { t: (key: string) => string }): MethodO
     return [
         {
             type: 'card',
-            name: i18n.t('ui.method_card'),
+            name: i18n.t(I18nKeys.ui.method_card),
             icon: '💳',
-            description: i18n.t('ui.method_card_description'),
+            description: i18n.t(I18nKeys.ui.method_card_description),
         },
         {
             type: 'spei',
-            name: i18n.t('ui.method_spei'),
+            name: i18n.t(I18nKeys.ui.method_spei),
             icon: '🏦',
-            description: i18n.t('ui.method_spei_description'),
+            description: i18n.t(I18nKeys.ui.method_spei_description),
         },
     ];
 }
