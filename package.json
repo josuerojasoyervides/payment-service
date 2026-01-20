@@ -9,7 +9,7 @@
     "test": "ng test",
     "test:coverage": "ng test --coverage",
     "dep:check": "depcruise src",
-    "deps:graph": "depcruise src --include-only '^src' --output-type dot | dot -Tsvg > dependency-graph.svg"
+    "dep:graph": "depcruise src --include-only '^src' --output-type dot | dot -Tsvg > dependency-graph.svg"
   },
   "prettier": {
     "printWidth": 100,
