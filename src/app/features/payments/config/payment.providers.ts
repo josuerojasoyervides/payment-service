@@ -12,6 +12,7 @@ import { StartPaymentUseCase } from "../application/use-cases/start-payment.use-
 import { ConfirmPaymentUseCase } from "../application/use-cases/confirm-payment.use-case";
 import { CancelPaymentUseCase } from "../application/use-cases/cancel-payment.use-case";
 import { GetPaymentStatusUseCase } from "../application/use-cases/get-payment-status.use-case";
+import { FallbackOrchestratorService } from "../application/services/fallback-orchestrator.service";
 
 /**
  * Gateways de cada proveedor.
@@ -59,6 +60,7 @@ const USE_CASE_PROVIDERS: Provider[] = [
 const APPLICATION_PROVIDERS: Provider[] = [
     ProviderFactoryRegistry,
     { provide: PAYMENTS_STATE, useClass: PaymentState },
+    FallbackOrchestratorService,
 ];
 
 /**

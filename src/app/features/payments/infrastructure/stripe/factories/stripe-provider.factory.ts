@@ -9,6 +9,7 @@ import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
 import { PaymentGateway } from '../../../domain/ports/payment-gateway.port';
 import { StripeCardRequestBuilder } from '../builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '../builders/stripe-spei-request.builder';
+import { StripeTokenValidator } from '../validators/stripe-token.validator';
 
 /**
  * Factory de Stripe.
@@ -125,7 +126,8 @@ export class StripeProviderFactory implements ProviderFactory {
     private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
         switch (type) {
             case 'card':
-                return new CardStrategy(this.gateway);
+                // Inyectar el validador de tokens de Stripe
+                return new CardStrategy(this.gateway, new StripeTokenValidator());
             case 'spei':
                 return new SpeiStrategy(this.gateway);
             default:

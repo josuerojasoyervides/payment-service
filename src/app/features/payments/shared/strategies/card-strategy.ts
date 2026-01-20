@@ -1,6 +1,7 @@
 import { map, Observable, tap } from "rxjs";
 import { PaymentStrategy, StrategyContext, StrategyPrepareResult } from "../../domain/ports/payment-strategy.port";
 import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
+import { TokenValidator, NullTokenValidator } from "../../domain/ports/token-validator.port";
 import { PaymentIntent, PaymentMethodType } from "../../domain/models/payment.types";
 import { CreatePaymentRequest } from "../../domain/models/payment.requests";
 
@@ -8,36 +9,39 @@ import { CreatePaymentRequest } from "../../domain/models/payment.requests";
  * Estrategia para pagos con tarjeta de crédito/débito.
  *
  * Características:
- * - Validación de token de tarjeta
+ * - Validación de token delegada al TokenValidator del proveedor
  * - Soporte para 3D Secure (autenticación adicional)
  * - Manejo de tarjetas guardadas vs tokenizadas
  * - Metadata de dispositivo para antifraude
+ * 
+ * Esta estrategia es compartida entre proveedores, pero la validación
+ * de tokens es específica de cada uno gracias al TokenValidator inyectado.
  */
 export class CardStrategy implements PaymentStrategy {
     readonly type: PaymentMethodType = 'card';
 
-    private static readonly TOKEN_PATTERN = /^(tok_|pm_|card_)[a-zA-Z0-9]+$/;
+    /** Patrón genérico para detectar tarjetas guardadas (PaymentMethod) */
     private static readonly SAVED_CARD_PATTERN = /^pm_[a-zA-Z0-9]+$/;
 
-    constructor(private readonly gateway: PaymentGateway) { }
+    constructor(
+        private readonly gateway: PaymentGateway,
+        private readonly tokenValidator: TokenValidator = new NullTokenValidator()
+    ) { }
 
     /**
      * Valida el request para pagos con tarjeta.
      *
      * Reglas:
-     * - Token es obligatorio
-     * - Token debe tener formato válido (tok_*, pm_*, card_*)
+     * - Token es obligatorio si el proveedor lo requiere (delegado a TokenValidator)
      * - Monto mínimo de 10 MXN / 1 USD
      */
     validate(req: CreatePaymentRequest): void {
-        if (!req.method.token) {
-            throw new Error('Card token is required for card payments');
-        }
-
-        if (!CardStrategy.TOKEN_PATTERN.test(req.method.token)) {
-            throw new Error(
-                `Invalid card token format. Expected tok_*, pm_*, or card_* but got: ${req.method.token.substring(0, 10)}...`
-            );
+        // Delegar validación de token al validador del proveedor
+        if (this.tokenValidator.requiresToken()) {
+            if (!req.method.token) {
+                throw new Error('Card token is required for card payments');
+            }
+            this.tokenValidator.validate(req.method.token);
         }
 
         const minAmount = req.currency === 'MXN' ? 10 : 1;

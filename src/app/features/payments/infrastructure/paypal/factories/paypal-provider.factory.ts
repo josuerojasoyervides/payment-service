@@ -7,6 +7,7 @@ import { PaymentStrategy } from "../../../domain/ports/payment-strategy.port";
 import { PaymentRequestBuilder, FieldRequirements } from "../../../domain/ports/payment-request-builder.port";
 import { PaymentGateway } from "../../../domain/ports/payment-gateway.port";
 import { PaypalRedirectRequestBuilder } from "../builders/paypal-redirect-request.builder";
+import { PaypalTokenValidator } from "../validators/paypal-token.validator";
 
 /**
  * Factory de PayPal.

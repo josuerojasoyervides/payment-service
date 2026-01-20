@@ -1,12 +1,21 @@
 import { Routes } from '@angular/router';
 
+/**
+ * Rutas principales de la aplicación.
+ * 
+ * El módulo de pagos se carga de forma lazy cuando el usuario
+ * navega a /payments/* para mejor performance inicial.
+ */
 export const routes: Routes = [
     {
         path: 'payments',
-        loadComponent: () => import('./features/payments/ui/pages/payments/payments.component').then(m => m.PaymentsComponent)
+        loadChildren: () => import('./features/payments/payments.routes')
+            .then(m => m.PAYMENT_ROUTES),
     },
     {
+        // Ruta raíz redirige al checkout
         path: '',
-        loadComponent: () => import('./features/payments/ui/pages/checkout/checkout.component').then(m => m.CheckoutComponent)
+        redirectTo: 'payments',
+        pathMatch: 'full',
     },
 ];
