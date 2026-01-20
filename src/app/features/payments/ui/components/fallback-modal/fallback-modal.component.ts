@@ -1,4 +1,4 @@
-import { Component, input, output, signal, computed, inject } from '@angular/core';
+import { Component, input, output, signal, computed, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PaymentProviderId, FallbackAvailableEvent, getDefaultProviders } from '../../shared';
 import { I18nService, I18nKeys } from '@core/i18n';
@@ -42,6 +42,32 @@ export class FallbackModalComponent {
 
     /** Selected provider */
     readonly selectedProvider = signal<PaymentProviderId | null>(null);
+
+    /** Track previous eventId to detect changes */
+    private previousEventId: string | null = null;
+
+    constructor() {
+        // Reset selectedProvider when modal closes
+        effect(() => {
+            const isOpen = this.open();
+            if (!isOpen) {
+                this.selectedProvider.set(null);
+            }
+        });
+
+        // Reset selectedProvider when eventId changes (new fallback event)
+        effect(() => {
+            const currentEvent = this.event();
+            const currentEventId = currentEvent?.eventId ?? null;
+            
+            if (this.previousEventId !== null && currentEventId !== this.previousEventId) {
+                // EventId changed - reset selection
+                this.selectedProvider.set(null);
+            }
+            
+            this.previousEventId = currentEventId;
+        });
+    }
 
     /** Error message from event */
     readonly errorMessage = computed(() => {
