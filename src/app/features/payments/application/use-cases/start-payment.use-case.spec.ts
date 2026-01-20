@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { StartPaymentUseCase } from './start-payment.use-case'
-import { PaymentIntent, PaymentMethodType, PaymentProviderId, CreatePaymentRequest } from '../../domain/models';
+import { PaymentIntent, PaymentMethodType, PaymentProviderId, CreatePaymentRequest, PaymentError } from '../../domain/models';
 import { PaymentStrategy, StrategyContext } from '../../domain/ports';
 import { firstValueFrom, of, throwError } from 'rxjs';
+import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 
 describe('StartPaymentUseCase', () => {
     let useCase: StartPaymentUseCase;
@@ -47,11 +48,20 @@ describe('StartPaymentUseCase', () => {
         getProvidersForMethod: vi.fn((): PaymentProviderId[] => ['stripe']),
     };
 
+    const fallbackOrchestratorMock = {
+        reportFailure: vi.fn(() => false), // Por defecto no hay fallback
+        notifySuccess: vi.fn(),
+        notifyFailure: vi.fn(),
+        reset: vi.fn(),
+        getSnapshot: vi.fn(() => ({ status: 'idle', failedAttempts: [], pendingEvent: null, currentProvider: null, isAutoFallback: false })),
+    };
+
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 StartPaymentUseCase,
-                { provide: ProviderFactoryRegistry, useValue: registryMock }
+                { provide: ProviderFactoryRegistry, useValue: registryMock },
+                { provide: FallbackOrchestratorService, useValue: fallbackOrchestratorMock }
             ]
         });
         useCase = TestBed.inject(StartPaymentUseCase);
@@ -115,13 +125,40 @@ describe('StartPaymentUseCase', () => {
                 .rejects.toThrowError('Strategy creation failed');
         });
 
-        it('propagates observable errors from strategy.start()', async () => {
+        it('propagates observable errors from strategy.start() when no fallback available', async () => {
+            const error: PaymentError = { code: 'provider_error', message: 'boom', raw: {} };
             (strategyMock.start as any).mockReturnValueOnce(
-                throwError(() => new Error('boom'))
+                throwError(() => error)
             );
+            fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(false);
 
             await expect(firstValueFrom(useCase.execute(req, 'stripe')))
                 .rejects.toThrow('boom');
+            
+            expect(fallbackOrchestratorMock.reportFailure).toHaveBeenCalledWith(
+                'stripe',
+                error,
+                req,
+                false
+            );
+        });
+
+        it('calls reportFailure when strategy.start() fails', async () => {
+            const error: PaymentError = { code: 'provider_error', message: 'boom', raw: {} };
+            (strategyMock.start as any).mockReturnValueOnce(
+                throwError(() => error)
+            );
+            fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(true);
+
+            await expect(firstValueFrom(useCase.execute(req, 'stripe')))
+                .rejects.toThrow('boom');
+            
+            expect(fallbackOrchestratorMock.reportFailure).toHaveBeenCalledWith(
+                'stripe',
+                error,
+                req,
+                false
+            );
         });
 
         it('throws when providerId is not registered', async () => {
