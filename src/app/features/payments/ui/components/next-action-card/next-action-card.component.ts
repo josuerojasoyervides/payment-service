@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NextAction } from '../../../domain/models/payment/payment-action.types';
-import { SpeiInstructionsComponent } from '../spei-instructions';
+import { SpeiInstructionsComponent } from '../spei-instructions/spei-instructions.component';
 
 /**
  * Componente que muestra la acción requerida para completar un pago.

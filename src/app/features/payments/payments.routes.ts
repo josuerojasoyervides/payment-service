@@ -36,46 +36,46 @@ export const PAYMENT_ROUTES: Routes = [
             },
             {
                 path: 'checkout',
-                loadComponent: () => import('./ui/pages/checkout/checkout.component')
+                loadComponent: () => import('./ui/pages/checkout/checkout.page')
                     .then(m => m.CheckoutComponent),
                 title: 'Checkout - Pago',
             },
             {
                 path: 'return',
-                loadComponent: () => import('./ui/pages/return/return.component')
+                loadComponent: () => import('./ui/pages/return/return.page')
                     .then(m => m.ReturnComponent),
                 title: 'Pago Completado',
                 data: { returnFlow: true },
             },
             {
                 path: 'cancel',
-                loadComponent: () => import('./ui/pages/return/return.component')
+                loadComponent: () => import('./ui/pages/return/return.page')
                     .then(m => m.ReturnComponent),
                 title: 'Pago Cancelado',
                 data: { cancelFlow: true },
             },
             {
                 path: 'history',
-                loadComponent: () => import('./ui/pages/history/history.component')
+                loadComponent: () => import('./ui/pages/history/history.page')
                     .then(m => m.HistoryComponent),
                 title: 'Historial de Pagos',
             },
             {
                 path: 'status',
-                loadComponent: () => import('./ui/pages/status/status.component')
+                loadComponent: () => import('./ui/pages/status/status.page')
                     .then(m => m.StatusComponent),
                 title: 'Consultar Estado',
             },
             {
                 path: 'showcase',
-                loadComponent: () => import('./ui/pages/showcase/showcase.component')
+                loadComponent: () => import('./ui/pages/showcase/showcase.page')
                     .then(m => m.ShowcaseComponent),
                 title: 'Component Showcase',
             },
             // Ruta legacy - mantener por compatibilidad
             {
                 path: 'debug',
-                loadComponent: () => import('./ui/pages/payments/payments.component')
+                loadComponent: () => import('./ui/pages/payments/payments.page')
                     .then(m => m.PaymentsComponent),
                 title: 'Debug - Payments',
             },
