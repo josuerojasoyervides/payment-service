@@ -76,6 +76,16 @@ export interface RateLimiterConfig {
 }
 
 /**
+ * Configuración del Retry con backoff exponencial.
+ * 
+ * Re-exportada desde retry.types.ts para conveniencia.
+ */
+export type { RetryConfig } from './retry.types';
+export { DEFAULT_RETRY_CONFIG } from './retry.types';
+import type { RetryConfig } from './retry.types';
+import { DEFAULT_RETRY_CONFIG } from './retry.types';
+
+/**
  * Configuración completa de resiliencia.
  */
 export interface ResilienceConfig {
@@ -85,11 +95,17 @@ export interface ResilienceConfig {
     /** Si habilitar rate limiting */
     enableRateLimiting: boolean;
     
+    /** Si habilitar retry automático */
+    enableRetry: boolean;
+    
     /** Configuración del circuit breaker */
     circuitBreaker: CircuitBreakerConfig;
     
     /** Configuración del rate limiter */
     rateLimiter: RateLimiterConfig;
+    
+    /** Configuración del retry */
+    retry: RetryConfig;
     
     /** Patrones de URL a excluir de la resiliencia */
     excludePatterns: RegExp[];
@@ -147,8 +163,10 @@ export const DEFAULT_RATE_LIMITER_CONFIG: RateLimiterConfig = {
 export const DEFAULT_RESILIENCE_CONFIG: ResilienceConfig = {
     enableCircuitBreaker: true,
     enableRateLimiting: true,
+    enableRetry: true,
     circuitBreaker: DEFAULT_CIRCUIT_BREAKER_CONFIG,
     rateLimiter: DEFAULT_RATE_LIMITER_CONFIG,
+    retry: DEFAULT_RETRY_CONFIG,
     excludePatterns: [
         /\/health$/,           // Health checks
         /\/metrics$/,          // Metrics
