@@ -107,29 +107,8 @@ describe('StripeCardRequestBuilder', () => {
         });
     });
 
-    describe('FIELD_REQUIREMENTS', () => {
-        it('defines token as required hidden field', () => {
-            const tokenField = StripeCardRequestBuilder.FIELD_REQUIREMENTS.fields
-                .find(f => f.name === 'token');
-
-            expect(tokenField).toBeDefined();
-            expect(tokenField?.required).toBe(true);
-            expect(tokenField?.type).toBe('hidden');
-        });
-
-        it('defines saveForFuture as optional field', () => {
-            const saveField = StripeCardRequestBuilder.FIELD_REQUIREMENTS.fields
-                .find(f => f.name === 'saveForFuture');
-
-            expect(saveField).toBeDefined();
-            expect(saveField?.required).toBe(false);
-        });
-
-        it('includes description and instructions', () => {
-            expect(StripeCardRequestBuilder.FIELD_REQUIREMENTS.description).toBeDefined();
-            expect(StripeCardRequestBuilder.FIELD_REQUIREMENTS.instructions).toBeDefined();
-        });
-    });
+    // Nota: FIELD_REQUIREMENTS ahora está en StripeProviderFactory.getFieldRequirements()
+    // Los tests de field requirements deben estar en stripe-provider.factory.spec.ts
 
     describe('fluent interface', () => {
         it('returns this from all setter methods for chaining', () => {

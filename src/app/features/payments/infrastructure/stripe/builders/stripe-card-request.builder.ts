@@ -1,5 +1,5 @@
 import { CurrencyCode, CreatePaymentRequest } from '../../../domain/models';
-import { PaymentRequestBuilder, PaymentOptions, FieldRequirements } from '../../../domain/ports';
+import { PaymentRequestBuilder, PaymentOptions } from '../../../domain/ports';
 
 /**
  * Builder específico para pagos con tarjeta vía Stripe.
@@ -20,33 +20,6 @@ export class StripeCardRequestBuilder implements PaymentRequestBuilder {
     private token?: string;
     private saveForFuture?: boolean;
 
-    /**
-     * Requisitos de campos para Stripe Card.
-     * 
-     * @deprecated Este campo estático ya no se usa. 
-     * Las factories ahora generan FieldRequirements dinámicamente usando i18n.
-     * Ver: StripeProviderFactory.getFieldRequirements()
-     */
-    static readonly FIELD_REQUIREMENTS: FieldRequirements = {
-        description: 'Pago con tarjeta de crédito o débito', // Deprecated: usar i18n
-        instructions: 'Ingresa los datos de tu tarjeta de forma segura', // Deprecated: usar i18n
-        fields: [
-            {
-                name: 'token',
-                label: 'Token de tarjeta', // Deprecated: usar i18n
-                required: true,
-                type: 'hidden',
-                placeholder: '',
-            },
-            {
-                name: 'saveForFuture',
-                label: 'Guardar tarjeta para futuras compras', // Deprecated: usar i18n
-                required: false,
-                type: 'text',
-                defaultValue: 'false',
-            },
-        ],
-    };
 
     forOrder(orderId: string): this {
         this.orderId = orderId;

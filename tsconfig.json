@@ -18,6 +18,7 @@
     "baseUrl": ".",
     "paths": {
       "@core/*": ["src/app/core/*"],
+      "@shared/*": ["src/app/shared/*"],
       "@payments/*": ["src/app/features/payments/*"],
       "@payments/domain": ["src/app/features/payments/domain/models/index.ts"],
       "@payments/domain/*": ["src/app/features/payments/domain/*"],

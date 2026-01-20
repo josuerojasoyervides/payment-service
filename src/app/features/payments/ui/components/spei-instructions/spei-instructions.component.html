@@ -14,7 +14,7 @@
                 <div>
                     <p class="text-xs text-gray-500 uppercase tracking-wide">CLABE</p>
                     <p class="text-lg font-mono font-semibold text-gray-900 tracking-wider">
-                        {{ formatClabe(clabe()) }}
+                        {{ clabe() | clabeFormat }}
                     </p>
                 </div>
                 <button 
