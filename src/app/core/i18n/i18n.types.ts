@@ -276,5 +276,9 @@ export interface Translations {
         id_label: string;
         paypal_token: string;
         paypal_payer_id: string;
+        pay_with_paypal: string;
+        return_url_label: string;
+        cancel_url_label: string;
+        paypal_redirect_secure_message: string;
     };
 }

@@ -24,22 +24,27 @@ export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
 
     /**
      * Requisitos de campos para PayPal.
+     * 
+     * @deprecated Este campo estático ya no se usa. 
+     * Las factories ahora generan FieldRequirements dinámicamente usando i18n.
+     * Ver: PaypalProviderFactory.getFieldRequirements()
      */
+    // TODO: Revisar si esto está bien deprecarlo o es mejor usar i18n para las descripciones y instrucciones.
     static readonly FIELD_REQUIREMENTS: FieldRequirements = {
-        description: 'Pagar con PayPal',
-        instructions: 'Serás redirigido a PayPal para completar el pago de forma segura',
+        description: 'Pagar con PayPal', // Deprecated: usar i18n
+        instructions: 'Serás redirigido a PayPal para completar el pago de forma segura', // Deprecated: usar i18n
         fields: [
             {
                 name: 'returnUrl',
-                label: 'URL de retorno',
+                label: 'URL de retorno', // Deprecated: usar i18n
                 required: true,
-                type: 'hidden',      // La UI lo provee automáticamente
-                autoFill: 'currentUrl',  // Usar la URL actual
+                type: 'hidden',
+                autoFill: 'currentUrl',
                 placeholder: '',
             },
             {
                 name: 'cancelUrl',
-                label: 'URL de cancelación',
+                label: 'URL de cancelación', // Deprecated: usar i18n
                 required: false,
                 type: 'hidden',
                 autoFill: 'currentUrl',

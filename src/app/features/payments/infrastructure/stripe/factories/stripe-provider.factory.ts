@@ -13,7 +13,7 @@ import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
 import { StripeCardRequestBuilder } from '../builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '../builders/stripe-spei-request.builder';
 import { StripeTokenValidator } from '../validators/stripe-token.validator';
-import { I18nService } from '@core/i18n';
+import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Factory de Stripe.
@@ -107,7 +107,26 @@ export class StripeProviderFactory implements ProviderFactory {
 
         switch (type) {
             case 'card':
-                return StripeCardRequestBuilder.FIELD_REQUIREMENTS;
+                return {
+                    description: this.i18n.t(I18nKeys.ui.card_payment_description),
+                    instructions: this.i18n.t(I18nKeys.ui.enter_card_data),
+                    fields: [
+                        {
+                            name: 'token',
+                            label: this.i18n.t(I18nKeys.ui.card_token),
+                            required: true,
+                            type: 'hidden',
+                            placeholder: '',
+                        },
+                        {
+                            name: 'saveForFuture',
+                            label: this.i18n.t(I18nKeys.ui.save_card_future),
+                            required: false,
+                            type: 'text',
+                            defaultValue: 'false',
+                        },
+                    ],
+                };
             case 'spei':
                 return StripeSpeiRequestBuilder.FIELD_REQUIREMENTS;
             default:

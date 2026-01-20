@@ -223,6 +223,10 @@ export const en: Translations = {
         method_debug: 'Method',
         form_valid: 'Form Valid',
         loading_debug: 'Loading',
+        pay_with_paypal: 'Pay with PayPal',
+        return_url_label: 'Return URL',
+        cancel_url_label: 'Cancel URL',
+        paypal_redirect_secure_message: 'You will be redirected to PayPal to complete your payment securely',
     },
 };
 

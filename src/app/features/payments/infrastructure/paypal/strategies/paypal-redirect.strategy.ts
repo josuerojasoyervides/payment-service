@@ -13,7 +13,7 @@ import {
     PaymentGateway,
 } from "../../../domain/ports";
 import { findPaypalLink, PaypalOrderDto } from "../dto/paypal.dto";
-import { I18nService } from "@core/i18n";
+import { I18nService, I18nKeys } from "@core/i18n";
 
 /**
  * Estrategia de redirección para PayPal.
@@ -168,14 +168,9 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
         }
 
         return [
-            'Serás redirigido a PayPal para completar tu pago de forma segura.',
+            this.i18n.t(I18nKeys.ui.paypal_redirect_secure_message),
             '',
-            'En PayPal podrás:',
-            '• Pagar con tu cuenta PayPal',
-            '• Pagar con tarjeta de crédito o débito',
-            '• Usar PayPal Credit (si está disponible)',
-            '',
-            'Después de aprobar, regresarás automáticamente.',
+            this.i18n.t(I18nKeys.ui.redirected_to_paypal),
         ].join('\n');
     }
 
