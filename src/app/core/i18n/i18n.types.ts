@@ -226,6 +226,7 @@ export interface Translations {
         retry_payment: string;
         view_all_params: string;
         flow_type: string;
+        flow_unknown: string;
         canceled: string;
         completed: string;
 

@@ -193,6 +193,7 @@ export const en: Translations = {
         retry_payment: 'Retry Payment',
         view_all_params: 'View all parameters',
         flow_type: 'Flow Type',
+        flow_unknown: 'Unknown',
         canceled: 'Canceled',
         completed: 'Completed',
         debug_info: '🔍 Debug Info',

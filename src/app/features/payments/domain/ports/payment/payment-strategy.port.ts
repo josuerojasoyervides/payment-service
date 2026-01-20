@@ -1,6 +1,7 @@
 import { Observable } from "rxjs";
 import { PaymentIntent, PaymentMethodType } from "../../models/payment/payment-intent.types";
 import { CreatePaymentRequest } from "../../models/payment/payment-request.types";
+import { PaymentFlowContext } from "../../models/payment/payment-flow-context.types";
 
 /**
  * Strategy preparation result.
@@ -15,23 +16,9 @@ export interface StrategyPrepareResult {
 
 /**
  * Strategy execution context.
- * Allows passing additional information to the flow.
+ * Alias de PaymentFlowContext para mantener compatibilidad.
  */
-export interface StrategyContext {
-    /** Return URL after 3DS or redirect */
-    returnUrl?: string;
-    /** Cancel URL (for PayPal) */
-    cancelUrl?: string;
-    /** Indicates if it's a test environment */
-    isTest?: boolean;
-    /** Device information for fraud prevention */
-    deviceData?: {
-        ipAddress?: string;
-        userAgent?: string;
-        screenWidth?: number;
-        screenHeight?: number;
-    };
-}
+export type StrategyContext = PaymentFlowContext;
 
 /**
  * Port for payment strategies.

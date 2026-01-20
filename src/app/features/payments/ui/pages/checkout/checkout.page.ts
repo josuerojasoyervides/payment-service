@@ -10,7 +10,7 @@ import { I18nService, I18nKeys } from '@core/i18n';
 
 // Domain types
 import { PaymentProviderId, PaymentMethodType, CurrencyCode } from '../../../domain/models';
-import { FieldRequirements, PaymentOptions } from '../../../domain/ports';
+import { FieldRequirements, PaymentOptions, StrategyContext } from '../../../domain/ports';
 
 // UI Components
 import {
@@ -200,7 +200,19 @@ export class CheckoutComponent {
                 method: request.method.type
             });
 
-            this.paymentState.startPayment(request, provider);
+            // Construir PaymentFlowContext
+            const context: StrategyContext = {
+                returnUrl: this.buildReturnUrl(),
+                cancelUrl: this.buildCancelUrl(),
+                isTest: isDevMode(),
+                deviceData: {
+                    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+                    screenWidth: typeof window !== 'undefined' ? window.screen.width : undefined,
+                    screenHeight: typeof window !== 'undefined' ? window.screen.height : undefined,
+                },
+            };
+
+            this.paymentState.startPayment(request, provider, context);
 
         } catch (error) {
             this.logger.error('Failed to build payment request', 'CheckoutPage', error);
@@ -277,5 +289,17 @@ export class CheckoutComponent {
 
     get loadingDebugLabel(): string {
         return this.i18n.t(I18nKeys.ui.loading_debug);
+    }
+
+    private buildReturnUrl(): string {
+        if (typeof window === 'undefined') return '';
+        const baseUrl = window.location.origin;
+        return `${baseUrl}/payments/return`;
+    }
+
+    private buildCancelUrl(): string {
+        if (typeof window === 'undefined') return '';
+        const baseUrl = window.location.origin;
+        return `${baseUrl}/payments/cancel`;
     }
 }

@@ -12,6 +12,7 @@ import {
     CreatePaymentRequest,
     GetPaymentStatusRequest,
 } from '../../domain/models';
+import { StrategyContext } from '../../domain/ports';
 import { PaymentHistoryEntry, PaymentsState } from '../store/payment.models';
 
 /**
@@ -105,8 +106,8 @@ export class NgRxSignalsStateAdapter implements PaymentStatePort {
     // ACCIONES DE PAGO
     // ============================================================
 
-    startPayment(request: CreatePaymentRequest, providerId: PaymentProviderId): void {
-        this.store['startPayment']({ request, providerId });
+    startPayment(request: CreatePaymentRequest, providerId: PaymentProviderId, context?: StrategyContext): void {
+        this.store['startPayment']({ request, providerId, context });
     }
 
     confirmPayment(request: ConfirmPaymentRequest, providerId: PaymentProviderId): void {

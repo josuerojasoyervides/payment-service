@@ -4,6 +4,7 @@ import { signal } from '@angular/core';
 import { ReturnComponent } from './return.page';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { PaymentProviderId, PaymentIntent } from '../../../domain/models';
+import { I18nService } from '@core/i18n';
 
 describe('ReturnComponent', () => {
     let component: ReturnComponent;
@@ -37,11 +38,24 @@ describe('ReturnComponent', () => {
             refreshPayment: vi.fn(),
         };
 
+        // Mock del I18nService
+        const mockI18n: I18nService = {
+            t: vi.fn((key: string) => {
+                // Retornar la traducción en español para el test
+                if (key === 'ui.flow_unknown') return 'Desconocido';
+                return key;
+            }),
+            has: vi.fn(() => true),
+            setLanguage: vi.fn(),
+            getLanguage: vi.fn(() => 'es'),
+        } as any;
+
         await TestBed.configureTestingModule({
             imports: [ReturnComponent, RouterLink],
             providers: [
                 { provide: PAYMENT_STATE, useValue: mockPaymentState },
                 { provide: ActivatedRoute, useValue: mockActivatedRoute },
+                { provide: I18nService, useValue: mockI18n },
             ],
         }).compileComponents();
 

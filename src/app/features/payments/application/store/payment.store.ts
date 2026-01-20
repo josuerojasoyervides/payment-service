@@ -25,6 +25,7 @@ import {
     GetPaymentStatusRequest,
     INITIAL_FALLBACK_STATE,
 } from '../../domain/models';
+import { StrategyContext } from '../../domain/ports';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 
@@ -106,7 +107,7 @@ export const PaymentsStore = signalStore(
         const fallbackOrchestrator = inject(FallbackOrchestratorService);
         
         return {
-            startPayment: rxMethod<{ request: CreatePaymentRequest; providerId: PaymentProviderId }>(
+            startPayment: rxMethod<{ request: CreatePaymentRequest; providerId: PaymentProviderId; context?: StrategyContext }>(
                 pipe(
                     tap(({ providerId }) => {
                         patchState(store, {
@@ -115,13 +116,13 @@ export const PaymentsStore = signalStore(
                             selectedProvider: providerId,
                         });
                     }),
-                    switchMap(({ request, providerId }) => {
+                    switchMap(({ request, providerId, context }) => {
                         const factory = registry.get(providerId);
                         const strategy = factory.createStrategy(request.method.type);
                         
                         patchState(store, { currentRequest: request });
                         
-                        return strategy.start(request).pipe(
+                        return strategy.start(request, context).pipe(
                             tap((intent) => {
                                 patchState(store, {
                                     status: 'ready',

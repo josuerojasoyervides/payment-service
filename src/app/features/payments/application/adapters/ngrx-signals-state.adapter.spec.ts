@@ -152,7 +152,14 @@ describe('NgRxSignalsStateAdapter', () => {
         it('delegates startPayment to store', () => {
             const request = { orderId: 'o1', amount: 100, currency: 'MXN' as const, method: { type: 'card' as const } };
             adapter.startPayment(request, 'stripe');
-            expect(storeMock.startPayment).toHaveBeenCalledWith({ request, providerId: 'stripe' });
+            expect(storeMock.startPayment).toHaveBeenCalledWith({ request, providerId: 'stripe', context: undefined });
+        });
+
+        it('delegates startPayment with context to store', () => {
+            const request = { orderId: 'o1', amount: 100, currency: 'MXN' as const, method: { type: 'card' as const } };
+            const context = { returnUrl: 'https://return.com', isTest: true };
+            adapter.startPayment(request, 'stripe', context);
+            expect(storeMock.startPayment).toHaveBeenCalledWith({ request, providerId: 'stripe', context });
         });
 
         it('delegates confirmPayment to store', () => {

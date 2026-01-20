@@ -55,7 +55,7 @@ export class ReturnComponent implements OnInit {
     readonly flowType = computed(() => {
         if (this.paypalToken()) return 'PayPal Redirect';
         if (this.intentId()) return '3D Secure';
-        return 'Unknown';
+        return this.i18n.t(I18nKeys.ui.flow_unknown);
     });
 
     ngOnInit(): void {

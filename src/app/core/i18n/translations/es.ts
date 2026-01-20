@@ -194,6 +194,7 @@ export const es: Translations = {
         retry_payment: 'Reintentar Pago',
         view_all_params: 'Ver todos los parámetros',
         flow_type: 'Tipo de Flujo',
+        flow_unknown: 'Desconocido',
         canceled: 'Cancelado',
         completed: 'Completado',
         debug_info: '🔍 Información de Depuración',

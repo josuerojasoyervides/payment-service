@@ -6,3 +6,4 @@ export * from './payment-error.types';
 export * from './payment-method.types';
 export * from './payment-request.types';
 export * from './payment-action.types';
+export * from './payment-flow-context.types';
