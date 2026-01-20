@@ -5,7 +5,7 @@ import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { ProviderFactory } from '../../domain/ports/provider-factory.port';
 import { PaymentGateway } from '../../domain/ports/payment-gateway.port';
 import { ConfirmPaymentRequest } from '../../domain/models/payment.requests';
-import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment.types';
+import { PaymentIntent, PaymentMethodType, PaymentProviderId } from '../../domain/models/payment.types';
 
 describe('ConfirmPaymentUseCase', () => {
     let useCase: ConfirmPaymentUseCase;
@@ -27,11 +27,15 @@ describe('ConfirmPaymentUseCase', () => {
         ),
     } as Pick<PaymentGateway, 'confirmIntent'>;
 
-    const providerFactoryMock = {
+    const providerFactoryMock: ProviderFactory = {
         providerId: 'stripe' as const,
         getGateway: vi.fn(() => gatewayMock as unknown as PaymentGateway),
         createStrategy: vi.fn(),
-    } satisfies ProviderFactory;
+        supportsMethod: vi.fn(() => true),
+        getSupportedMethods: vi.fn((): PaymentMethodType[] => ['card', 'spei']),
+        createRequestBuilder: vi.fn(),
+        getFieldRequirements: vi.fn(() => ({ fields: [] })),
+    };
 
     const registryMock = {
         get: vi.fn((providerId: PaymentProviderId) => providerFactoryMock),

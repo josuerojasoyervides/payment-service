@@ -58,7 +58,7 @@ describe('StripeProviderFactory', () => {
             orderId: 'o1',
             amount: 100,
             currency: 'MXN',
-            method: { type: 'card', token: 'tok_valid123' }, // Token válido
+            method: { type: 'card', token: 'tok_test1234567890abc' }, // Token válido (14+ chars)
         }));
 
         expect(gatewayStub.createIntent).toHaveBeenCalledTimes(1);

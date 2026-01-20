@@ -3,7 +3,7 @@ import { PAYMENT_PROVIDER_FACTORIES } from '../application/tokens/payment-provid
 import { PAYMENTS_STATE } from '../application/tokens/payment-state.token';
 import { StripeProviderFactory } from '../infrastructure/stripe/factories/stripe-provider.factory';
 import { PaypalProviderFactory } from '../infrastructure/paypal/factories/paypal-provider.factory';
-import { PaymentState } from '../ui/state/payments-state';
+import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
 
 describe('providePayments', () => {
     it('registers payment providers and state', () => {
@@ -20,6 +20,6 @@ describe('providePayments', () => {
 
         expect(factoryClasses).toContain(StripeProviderFactory);
         expect(factoryClasses).toContain(PaypalProviderFactory);
-        expect(factoryClasses).toContain(PaymentState);
+        expect(factoryClasses).toContain(NgRxSignalsStateAdapter);
     });
 });

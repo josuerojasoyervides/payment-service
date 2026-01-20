@@ -13,6 +13,8 @@ describe('ProviderFactoryRegistry', () => {
         createStrategy: vi.fn(),
         supportsMethod: vi.fn(() => true),
         getSupportedMethods: vi.fn((): PaymentMethodType[] => ['card', 'spei']),
+        createRequestBuilder: vi.fn(),
+        getFieldRequirements: vi.fn(() => ({ fields: [] })),
     };
 
     const paypalFactoryMock: ProviderFactory = {
@@ -21,6 +23,8 @@ describe('ProviderFactoryRegistry', () => {
         createStrategy: vi.fn(),
         supportsMethod: vi.fn((type) => type === 'card'),
         getSupportedMethods: vi.fn((): PaymentMethodType[] => ['card']),
+        createRequestBuilder: vi.fn(),
+        getFieldRequirements: vi.fn(() => ({ fields: [] })),
     };
 
     beforeEach(() => {
@@ -102,12 +106,28 @@ describe('ProviderFactoryRegistry', () => {
                         ProviderFactoryRegistry,
                         {
                             provide: PAYMENT_PROVIDER_FACTORIES,
-                            useValue: { providerId: 'stripe', getGateway: vi.fn(), createStrategy: vi.fn() },
+                            useValue: {
+                                providerId: 'stripe',
+                                getGateway: vi.fn(),
+                                createStrategy: vi.fn(),
+                                supportsMethod: vi.fn(),
+                                getSupportedMethods: vi.fn(),
+                                createRequestBuilder: vi.fn(),
+                                getFieldRequirements: vi.fn(),
+                            },
                             multi: true
                         },
                         {
                             provide: PAYMENT_PROVIDER_FACTORIES,
-                            useValue: { providerId: 'stripe', getGateway: vi.fn(), createStrategy: vi.fn() },
+                            useValue: {
+                                providerId: 'stripe',
+                                getGateway: vi.fn(),
+                                createStrategy: vi.fn(),
+                                supportsMethod: vi.fn(),
+                                getSupportedMethods: vi.fn(),
+                                createRequestBuilder: vi.fn(),
+                                getFieldRequirements: vi.fn(),
+                            },
                             multi: true
                         },
                     ],

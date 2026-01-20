@@ -1,5 +1,6 @@
 import { CreatePaymentRequest } from "../../domain/models/payment.requests";
 import { PaymentGateway } from "../../domain/ports/payment-gateway.port";
+import { TokenValidator } from "../../domain/ports/token-validator.port";
 import { CardStrategy } from "./card-strategy"
 import { firstValueFrom, of } from "rxjs";
 import { PaymentIntent } from "../../domain/models/payment.types";
@@ -7,12 +8,16 @@ import { PaymentIntent } from "../../domain/models/payment.types";
 describe('CardStrategy', () => {
     let strategy: CardStrategy;
     let gatewayMock: Pick<PaymentGateway, 'createIntent' | 'providerId'>;
+    let tokenValidatorMock: TokenValidator;
+
+    // Token válido con formato correcto (14+ caracteres después del prefijo)
+    const validToken = 'tok_test1234567890abc';
 
     const validReq: CreatePaymentRequest = {
         orderId: 'order_1',
         amount: 100,
         currency: 'MXN',
-        method: { type: 'card', token: 'tok_123' },
+        method: { type: 'card', token: validToken },
     };
 
     const intentResponse: PaymentIntent = {
@@ -29,7 +34,20 @@ describe('CardStrategy', () => {
             createIntent: vi.fn(() => of(intentResponse))
         } as any;
 
-        strategy = new CardStrategy(gatewayMock as any);
+        // Mock de TokenValidator que valida formato
+        tokenValidatorMock = {
+            requiresToken: vi.fn(() => true),
+            validate: vi.fn((token: string) => {
+                if (!token) throw new Error('Card token is required for card payments');
+                if (!/^(tok_|pm_|card_)[a-zA-Z0-9]+$/.test(token)) {
+                    throw new Error('Invalid card token format');
+                }
+            }),
+            isValid: vi.fn((token: string) => /^(tok_|pm_|card_)[a-zA-Z0-9]+$/.test(token)),
+            getAcceptedPatterns: vi.fn(() => ['tok_*', 'pm_*', 'card_*']),
+        };
+
+        strategy = new CardStrategy(gatewayMock as any, tokenValidatorMock);
     });
 
     describe('validate()', () => {
@@ -44,9 +62,9 @@ describe('CardStrategy', () => {
         });
 
         it('accepts valid token formats (tok_, pm_, card_)', () => {
-            expect(() => strategy.validate({ ...validReq, method: { type: 'card', token: 'tok_abc123' } })).not.toThrow();
-            expect(() => strategy.validate({ ...validReq, method: { type: 'card', token: 'pm_abc123' } })).not.toThrow();
-            expect(() => strategy.validate({ ...validReq, method: { type: 'card', token: 'card_abc123' } })).not.toThrow();
+            expect(() => strategy.validate({ ...validReq, method: { type: 'card', token: 'tok_test1234567890' } })).not.toThrow();
+            expect(() => strategy.validate({ ...validReq, method: { type: 'card', token: 'pm_test1234567890x' } })).not.toThrow();
+            expect(() => strategy.validate({ ...validReq, method: { type: 'card', token: 'card_test123456789' } })).not.toThrow();
         });
 
         it('throws if amount is below minimum for MXN', () => {
@@ -71,7 +89,7 @@ describe('CardStrategy', () => {
         });
 
         it('detects saved cards (pm_ prefix)', () => {
-            const req = { ...validReq, method: { type: 'card' as const, token: 'pm_saved123' } };
+            const req = { ...validReq, method: { type: 'card' as const, token: 'pm_saved12345678901' } };
             const result = strategy.prepare(req);
 
             expect(result.metadata['is_saved_card']).toBe(true);
