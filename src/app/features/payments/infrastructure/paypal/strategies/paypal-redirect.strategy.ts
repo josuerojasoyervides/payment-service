@@ -82,8 +82,15 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
      * - Product/service description
      */
     prepare(req: CreatePaymentRequest, context?: StrategyContext): StrategyPrepareResult {
-        const returnUrl = context?.returnUrl ?? `${window.location.origin}/payments/return`;
-        const cancelUrl = context?.cancelUrl ?? `${window.location.origin}/payments/cancel`;
+        // Preferir returnUrl/cancelUrl del request (seteados por el builder)
+        // Si no están, usar el context como fallback
+        // Fallback defensivo final solo si nada está disponible
+        const fallbackDefault = typeof window !== 'undefined' 
+            ? `${window.location.origin}/payments/return`
+            : 'https://example.com/payments/return';
+        
+        const returnUrl = req.returnUrl ?? context?.returnUrl ?? fallbackDefault;
+        const cancelUrl = req.cancelUrl ?? context?.cancelUrl ?? req.returnUrl ?? returnUrl;
 
         const metadata: Record<string, unknown> = {
             payment_method_type: 'paypal_redirect',
@@ -104,6 +111,9 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
             preparedRequest: {
                 ...req,
                 method: { type: 'card' },
+                // Asegurar que returnUrl y cancelUrl estén en el request
+                returnUrl,
+                cancelUrl,
             },
             metadata,
         };

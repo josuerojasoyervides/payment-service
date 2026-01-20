@@ -221,13 +221,23 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
 
     /**
      * Builds PayPal approval action.
+     * 
+     * Note: This method is called from mapOrder which doesn't have access to the original request.
+     * The returnUrl/cancelUrl should come from the request that created the order.
+     * For now, we use a defensive fallback, but ideally this should be passed through.
      */
-    private buildPaypalApproveAction(dto: PaypalOrderDto, approveUrl: string): NextActionPaypalApprove {
+    private buildPaypalApproveAction(dto: PaypalOrderDto, approveUrl: string, returnUrl?: string, cancelUrl?: string): NextActionPaypalApprove {
+        // Fallback defensivo - en la práctica, estos valores deberían venir del request original
+        const fallbackReturnUrl = returnUrl ?? (typeof window !== 'undefined' 
+            ? `${window.location.origin}/payments/return`
+            : 'https://example.com/payments/return');
+        const fallbackCancelUrl = cancelUrl ?? returnUrl ?? fallbackReturnUrl;
+
         return {
             type: 'paypal_approve',
             approveUrl,
-            returnUrl: window.location.origin + '/payments/return',
-            cancelUrl: window.location.origin + '/payments/cancel',
+            returnUrl: fallbackReturnUrl,
+            cancelUrl: fallbackCancelUrl,
             paypalOrderId: dto.id,
         };
     }
@@ -238,6 +248,15 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
      * Builds the request in PayPal Orders API format.
      */
     private buildPaypalCreateRequest(req: CreatePaymentRequest): PaypalCreateOrderRequest {
+        // Fallback defensivo solo en caso de que el builder/strategy no haya setado returnUrl
+        // En la práctica, el builder debe garantizar que returnUrl siempre esté presente
+        const fallbackDefault = typeof window !== 'undefined' 
+            ? `${window.location.origin}/payments/paypal/return`
+            : 'https://example.com/payments/paypal/return';
+        
+        const returnUrl = req.returnUrl ?? fallbackDefault;
+        const cancelUrl = req.cancelUrl ?? req.returnUrl ?? fallbackDefault;
+
         return {
             intent: 'CAPTURE',
             purchase_units: [{
@@ -253,8 +272,8 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
                 brand_name: 'Payment Service',
                 landing_page: 'LOGIN',
                 user_action: 'PAY_NOW',
-                return_url: `${window.location.origin}/payments/paypal/return`,
-                cancel_url: `${window.location.origin}/payments/paypal/cancel`,
+                return_url: returnUrl,
+                cancel_url: cancelUrl,
             },
         };
     }
