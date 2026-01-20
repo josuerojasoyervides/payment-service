@@ -179,6 +179,12 @@ export class FakePaymentGateway extends PaymentGateway {
             status = 'requires_action';
         } else if (behavior === 'processing') {
             status = 'processing';
+        } else {
+            // En modo desarrollo, si el token es el token de desarrollo, retornar succeeded directamente
+            // para facilitar el testing sin necesidad de confirmar manualmente
+            if (req.method.token === 'tok_visa_1234567890abcdef') {
+                status = 'succeeded';
+            }
         }
 
         return this.simulateNetworkDelay(this.createFakeStripeIntent(req, status));
@@ -257,10 +263,16 @@ export class FakePaymentGateway extends PaymentGateway {
         const intentId = this.generateId('pi');
         const amountInCents = Math.round(req.amount * 100);
 
-        // Usar status forzado o determinar por probabilidad
-        let status: StripePaymentIntentDto['status'] = forcedStatus ?? 'requires_confirmation';
+        // Usar status forzado si está definido, de lo contrario determinar por lógica
+        let status: StripePaymentIntentDto['status'];
         
-        if (!forcedStatus) {
+        if (forcedStatus !== undefined) {
+            // Si hay un status forzado, usarlo directamente
+            status = forcedStatus;
+        } else {
+            // Determinar status por defecto
+            status = 'requires_confirmation';
+            
             // Simular 3DS para ciertos tokens o probabilidad aleatoria
             const requires3ds = req.method.token?.includes('3ds') ||
                 req.method.token?.includes('auth') ||

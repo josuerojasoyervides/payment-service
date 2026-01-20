@@ -200,8 +200,9 @@ export class CheckoutComponent {
             let options = this.formOptions();
             
             // En desarrollo, auto-generar token si es requerido y no existe
+            // El token debe cumplir el formato de Stripe: tok_ seguido de al menos 14 caracteres alfanuméricos
             if (isDevMode() && method === 'card' && !options.token) {
-                options = { ...options, token: 'tok_visa_dev' };
+                options = { ...options, token: 'tok_visa_1234567890abcdef' };
                 this.logger.debug('Auto-generated dev token', 'CheckoutPage');
             }
 

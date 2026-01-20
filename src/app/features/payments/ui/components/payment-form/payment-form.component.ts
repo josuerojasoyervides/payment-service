@@ -1,4 +1,4 @@
-import { Component, input, output, effect, OnDestroy } from '@angular/core';
+import { Component, input, output, effect, OnDestroy, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subject, takeUntil, debounceTime } from 'rxjs';
@@ -111,7 +111,28 @@ export class PaymentFormComponent implements OnDestroy {
                 defaultValue = typeof window !== 'undefined' ? window.location.href : '';
             }
 
-            const validators = field.required ? [Validators.required] : [];
+            // En modo desarrollo, auto-rellenar token si es requerido y está vacío
+            // El token debe cumplir el formato de Stripe: tok_ seguido de al menos 14 caracteres alfanuméricos
+            if (isDevMode() && field.name === 'token' && field.required && !defaultValue) {
+                defaultValue = 'tok_visa_1234567890abcdef';
+            }
+
+            // Para saveForFuture, usar boolean false como default
+            let controlValue: any = defaultValue;
+            if (field.name === 'saveForFuture') {
+                if (defaultValue === 'false' || defaultValue === '' || !defaultValue) {
+                    controlValue = false;
+                } else if (defaultValue === 'true') {
+                    controlValue = true;
+                } else {
+                    controlValue = !!defaultValue;
+                }
+            }
+
+            // Validadores: campos requeridos necesitan Validators.required
+            // En modo desarrollo, el token hidden se auto-rellena, así que no necesita ser requerido en el form
+            const isRequired = field.required && !(isDevMode() && field.type === 'hidden' && field.name === 'token');
+            const validators = isRequired ? [Validators.required] : [];
             
             if (field.type === 'email') {
                 validators.push(Validators.email);
@@ -119,7 +140,7 @@ export class PaymentFormComponent implements OnDestroy {
 
             this.form.addControl(
                 field.name,
-                new FormControl(defaultValue, { validators, nonNullable: true })
+                new FormControl(controlValue, { validators, nonNullable: true })
             );
         }
 
@@ -146,7 +167,18 @@ export class PaymentFormComponent implements OnDestroy {
         if (values['returnUrl']) options.returnUrl = values['returnUrl'];
         if (values['cancelUrl']) options.cancelUrl = values['cancelUrl'];
         if (values['customerEmail']) options.customerEmail = values['customerEmail'];
-        if (values['saveForFuture']) options.saveForFuture = values['saveForFuture'] === 'true';
+        
+        // Manejar saveForFuture: puede venir como boolean (checkbox) o string 'true'/'false'
+        if (values['saveForFuture'] !== undefined && values['saveForFuture'] !== null) {
+            if (typeof values['saveForFuture'] === 'boolean') {
+                options.saveForFuture = values['saveForFuture'];
+            } else if (typeof values['saveForFuture'] === 'string') {
+                options.saveForFuture = values['saveForFuture'] === 'true';
+            } else {
+                // Para checkbox, puede venir como true/false directamente
+                options.saveForFuture = !!values['saveForFuture'];
+            }
+        }
 
         this.formChange.emit(options);
         this.formValidChange.emit(this.form.valid);
