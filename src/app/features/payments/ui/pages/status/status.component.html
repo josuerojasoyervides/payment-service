@@ -1,0 +1,142 @@
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-xl mx-auto px-4">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-900">Consultar Estado</h1>
+            <p class="text-gray-600 mt-2">
+                Ingresa el ID del pago para ver su estado actual
+            </p>
+        </div>
+
+        <!-- Search Form -->
+        <div class="card mb-6">
+            <div class="space-y-4">
+                <!-- Intent ID Input -->
+                <div>
+                    <label for="intentId" class="label">
+                        Intent ID
+                    </label>
+                    <input
+                        id="intentId"
+                        type="text"
+                        class="input font-mono"
+                        placeholder="pi_xxxxx o ORDER-xxxxx"
+                        [(ngModel)]="intentId"
+                        (keyup.enter)="searchIntent()"
+                    />
+                    <p class="text-xs text-gray-500 mt-1">
+                        Ej: pi_fake_xxxxx (Stripe) o ORDER_FAKE_XXXXX (PayPal)
+                    </p>
+                </div>
+
+                <!-- Provider Selection -->
+                <div>
+                    <label class="label">Proveedor</label>
+                    <div class="flex gap-3">
+                        <button
+                            type="button"
+                            class="flex-1 py-2 px-4 rounded-lg border-2 transition-all"
+                            [class.border-stripe-primary]="selectedProvider() === 'stripe'"
+                            [class.bg-purple-50]="selectedProvider() === 'stripe'"
+                            [class.border-gray-200]="selectedProvider() !== 'stripe'"
+                            (click)="selectedProvider.set('stripe')"
+                        >
+                            <span class="font-medium">Stripe</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="flex-1 py-2 px-4 rounded-lg border-2 transition-all"
+                            [class.border-paypal-primary]="selectedProvider() === 'paypal'"
+                            [class.bg-blue-50]="selectedProvider() === 'paypal'"
+                            [class.border-gray-200]="selectedProvider() !== 'paypal'"
+                            (click)="selectedProvider.set('paypal')"
+                        >
+                            <span class="font-medium">PayPal</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Button -->
+                <button
+                    class="btn-primary w-full"
+                    [disabled]="!intentId || isLoading()"
+                    (click)="searchIntent()"
+                >
+                    @if (isLoading()) {
+                        <div class="spinner mr-2"></div>
+                        Consultando...
+                    } @else {
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        Consultar Estado
+                    }
+                </button>
+            </div>
+        </div>
+
+        <!-- Error -->
+        @if (error(); as err) {
+            <div class="alert-error mb-6">
+                <div class="flex items-start gap-3">
+                    <svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <div>
+                        <p class="font-medium">Error al consultar</p>
+                        <p class="text-sm mt-1">{{ getErrorMessage(err) }}</p>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Result -->
+        @if (result(); as intent) {
+            <div class="space-y-4">
+                <h2 class="text-lg font-semibold text-gray-900">Resultado</h2>
+                
+                <app-payment-intent-card
+                    [intent]="intent"
+                    [showActions]="true"
+                    [expanded]="true"
+                    (confirm)="confirmPayment($event)"
+                    (cancel)="cancelPayment($event)"
+                    (refresh)="refreshPayment($event)"
+                />
+
+                @if (intent.nextAction) {
+                    <app-next-action-card
+                        [nextAction]="intent.nextAction"
+                    />
+                }
+            </div>
+        }
+
+        <!-- Quick Examples -->
+        <div class="mt-8">
+            <h3 class="text-sm font-medium text-gray-700 mb-3">Ejemplos rápidos</h3>
+            <div class="flex flex-wrap gap-2">
+                @for (example of examples; track example.id) {
+                    <button
+                        class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-700 transition-colors"
+                        (click)="useExample(example)"
+                    >
+                        {{ example.label }}
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="mt-8 flex justify-center gap-4 text-sm">
+            <a routerLink="/payments/checkout" class="text-blue-600 hover:underline">
+                Checkout
+            </a>
+            <a routerLink="/payments/history" class="text-blue-600 hover:underline">
+                Historial
+            </a>
+        </div>
+    </div>
+</div>

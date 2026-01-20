@@ -1,0 +1,65 @@
+<div class="space-y-4">
+    @if (requirements(); as reqs) {
+        @if (reqs.description) {
+            <p class="text-sm text-gray-600">{{ reqs.description }}</p>
+        }
+        
+        @if (reqs.instructions) {
+            <div class="alert-info flex items-start gap-2">
+                <span class="text-lg">💡</span>
+                <span class="text-sm">{{ reqs.instructions }}</span>
+            </div>
+        }
+
+        <form [formGroup]="form" class="space-y-4">
+            @for (field of visibleFields(); track field.name) {
+                <div class="space-y-1">
+                    <label [for]="field.name" class="label">
+                        {{ field.label }}
+                        @if (field.required) {
+                            <span class="text-red-500 ml-0.5">*</span>
+                        }
+                    </label>
+                    
+                    <input
+                        [id]="field.name"
+                        [type]="field.type"
+                        [formControlName]="field.name"
+                        [placeholder]="field.placeholder ?? ''"
+                        class="input"
+                        [class.input-error]="isFieldInvalid(field.name)"
+                    />
+                    
+                    @if (isFieldInvalid(field.name)) {
+                        <p class="text-sm text-red-500">
+                            Este campo es requerido
+                        </p>
+                    }
+                </div>
+            }
+
+            @if (hiddenFields().length > 0) {
+                <div class="text-xs text-gray-400 space-y-1">
+                    @for (field of hiddenFields(); track field.name) {
+                        <div class="flex items-center gap-2">
+                            <span>{{ field.label }}:</span>
+                            <code class="bg-gray-100 px-1 rounded">
+                                {{ form.get(field.name)?.value || '(auto)' }}
+                            </code>
+                        </div>
+                    }
+                </div>
+            }
+        </form>
+
+        @if (reqs.fields.length === 0) {
+            <p class="text-sm text-gray-500 italic">
+                Este método no requiere datos adicionales.
+            </p>
+        }
+    } @else {
+        <p class="text-sm text-gray-500 italic">
+            Selecciona un proveedor y método de pago.
+        </p>
+    }
+</div>

@@ -1,0 +1,287 @@
+<div class="min-h-screen bg-gray-100 py-8">
+    <div class="max-w-6xl mx-auto px-4">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-3xl font-bold text-gray-900">Component Showcase</h1>
+            <p class="text-gray-600 mt-2">
+                Galería interactiva de componentes de pago reutilizables
+            </p>
+            <div class="flex justify-center gap-4 mt-4 text-sm">
+                <a routerLink="/payments/checkout" class="text-blue-600 hover:underline">
+                    Ir al Checkout
+                </a>
+            </div>
+        </div>
+
+        <!-- Components Grid -->
+        <div class="space-y-12">
+            
+            <!-- Order Summary -->
+            <section class="card">
+                <h2 class="text-xl font-bold mb-4 pb-4 border-b">OrderSummaryComponent</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-medium mb-3">Preview</h3>
+                        <app-order-summary
+                            [orderId]="orderSummary.orderId"
+                            [amount]="orderSummary.amount"
+                            [currency]="orderSummary.currency"
+                            [items]="orderSummary.showItems ? orderSummary.items : undefined"
+                        />
+                    </div>
+                    <div>
+                        <h3 class="font-medium mb-3">Controls</h3>
+                        <div class="space-y-3 text-sm">
+                            <div>
+                                <label class="label">Amount</label>
+                                <input type="number" class="input" [(ngModel)]="orderSummary.amount" />
+                            </div>
+                            <div>
+                                <label class="label">Currency</label>
+                                <select class="input" [(ngModel)]="orderSummary.currency">
+                                    <option value="MXN">MXN</option>
+                                    <option value="USD">USD</option>
+                                </select>
+                            </div>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" [(ngModel)]="orderSummary.showItems" />
+                                Show items breakdown
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Provider Selector -->
+            <section class="card">
+                <h2 class="text-xl font-bold mb-4 pb-4 border-b">ProviderSelectorComponent</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-medium mb-3">Preview</h3>
+                        <app-provider-selector
+                            [providers]="providerSelector.providers"
+                            [selected]="providerSelector.selected"
+                            [disabled]="providerSelector.disabled"
+                            (providerChange)="providerSelector.selected = $event"
+                        />
+                    </div>
+                    <div>
+                        <h3 class="font-medium mb-3">Controls</h3>
+                        <div class="space-y-3 text-sm">
+                            <p>Selected: <code class="bg-gray-100 px-2 py-1 rounded">{{ providerSelector.selected }}</code></p>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" [(ngModel)]="providerSelector.disabled" />
+                                Disabled
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Method Selector -->
+            <section class="card">
+                <h2 class="text-xl font-bold mb-4 pb-4 border-b">MethodSelectorComponent</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-medium mb-3">Preview</h3>
+                        <app-method-selector
+                            [methods]="methodSelector.methods"
+                            [selected]="methodSelector.selected"
+                            [disabled]="methodSelector.disabled"
+                            (methodChange)="methodSelector.selected = $event"
+                        />
+                    </div>
+                    <div>
+                        <h3 class="font-medium mb-3">Controls</h3>
+                        <div class="space-y-3 text-sm">
+                            <p>Selected: <code class="bg-gray-100 px-2 py-1 rounded">{{ methodSelector.selected }}</code></p>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" [(ngModel)]="methodSelector.disabled" />
+                                Disabled
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Payment Button -->
+            <section class="card">
+                <h2 class="text-xl font-bold mb-4 pb-4 border-b">PaymentButtonComponent</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-medium mb-3">Preview</h3>
+                        <app-payment-button
+                            [amount]="paymentButton.amount"
+                            [currency]="paymentButton.currency"
+                            [provider]="paymentButton.provider"
+                            [loading]="paymentButton.loading"
+                            [disabled]="paymentButton.disabled"
+                            [buttonState]="paymentButton.state"
+                            (pay)="onPayClick()"
+                        />
+                    </div>
+                    <div>
+                        <h3 class="font-medium mb-3">Controls</h3>
+                        <div class="space-y-3 text-sm">
+                            <div>
+                                <label class="label">Provider</label>
+                                <select class="input" [(ngModel)]="paymentButton.provider">
+                                    <option value="stripe">Stripe</option>
+                                    <option value="paypal">PayPal</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label">State</label>
+                                <select class="input" [(ngModel)]="paymentButton.state">
+                                    <option value="idle">Idle</option>
+                                    <option value="loading">Loading</option>
+                                    <option value="success">Success</option>
+                                    <option value="error">Error</option>
+                                </select>
+                            </div>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" [(ngModel)]="paymentButton.disabled" />
+                                Disabled
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Payment Result -->
+            <section class="card">
+                <h2 class="text-xl font-bold mb-4 pb-4 border-b">PaymentResultComponent</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-medium mb-3">Preview</h3>
+                        @if (paymentResult.showSuccess) {
+                            <app-payment-result
+                                [intent]="sampleIntent"
+                                [error]="null"
+                                (retry)="onRetry()"
+                                (newPayment)="onNewPayment()"
+                            />
+                        } @else {
+                            <app-payment-result
+                                [intent]="null"
+                                [error]="sampleError"
+                                (retry)="onRetry()"
+                                (newPayment)="onNewPayment()"
+                            />
+                        }
+                    </div>
+                    <div>
+                        <h3 class="font-medium mb-3">Controls</h3>
+                        <div class="space-y-3 text-sm">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" [(ngModel)]="paymentResult.showSuccess" />
+                                Show success state
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SPEI Instructions -->
+            <section class="card">
+                <h2 class="text-xl font-bold mb-4 pb-4 border-b">SpeiInstructionsComponent</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-medium mb-3">Preview</h3>
+                        <app-spei-instructions
+                            [clabe]="speiInstructions.clabe"
+                            [reference]="speiInstructions.reference"
+                            [bank]="speiInstructions.bank"
+                            [beneficiary]="speiInstructions.beneficiary"
+                            [amount]="speiInstructions.amount"
+                            [currency]="speiInstructions.currency"
+                            [expiresAt]="speiInstructions.expiresAt"
+                        />
+                    </div>
+                    <div>
+                        <h3 class="font-medium mb-3">Controls</h3>
+                        <div class="space-y-3 text-sm">
+                            <div>
+                                <label class="label">Amount</label>
+                                <input type="number" class="input" [(ngModel)]="speiInstructions.amount" />
+                            </div>
+                            <div>
+                                <label class="label">CLABE</label>
+                                <input type="text" class="input font-mono" [(ngModel)]="speiInstructions.clabe" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Payment Intent Card -->
+            <section class="card">
+                <h2 class="text-xl font-bold mb-4 pb-4 border-b">PaymentIntentCardComponent</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-medium mb-3">Preview</h3>
+                        <app-payment-intent-card
+                            [intent]="intentCard.intent"
+                            [showActions]="intentCard.showActions"
+                            [expanded]="intentCard.expanded"
+                            (confirm)="onIntentAction('confirm', $event)"
+                            (cancel)="onIntentAction('cancel', $event)"
+                            (refresh)="onIntentAction('refresh', $event)"
+                        />
+                    </div>
+                    <div>
+                        <h3 class="font-medium mb-3">Controls</h3>
+                        <div class="space-y-3 text-sm">
+                            <div>
+                                <label class="label">Status</label>
+                                <select class="input" [(ngModel)]="intentCard.intent.status">
+                                    <option value="requires_confirmation">Requires Confirmation</option>
+                                    <option value="requires_action">Requires Action</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="succeeded">Succeeded</option>
+                                    <option value="failed">Failed</option>
+                                    <option value="canceled">Canceled</option>
+                                </select>
+                            </div>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" [(ngModel)]="intentCard.showActions" />
+                                Show actions
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" [(ngModel)]="intentCard.expanded" />
+                                Expanded
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Fallback Modal -->
+            <section class="card">
+                <h2 class="text-xl font-bold mb-4 pb-4 border-b">FallbackModalComponent</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-medium mb-3">Preview</h3>
+                        <button class="btn-primary" (click)="fallbackModal.open = true">
+                            Open Fallback Modal
+                        </button>
+                        <app-fallback-modal
+                            [event]="fallbackModal.event"
+                            [open]="fallbackModal.open"
+                            (confirm)="onFallbackConfirm($event)"
+                            (cancel)="fallbackModal.open = false"
+                        />
+                    </div>
+                    <div>
+                        <h3 class="font-medium mb-3">Info</h3>
+                        <p class="text-sm text-gray-600">
+                            Este modal aparece cuando un proveedor falla y hay alternativas disponibles.
+                            Permite al usuario seleccionar otro proveedor para reintentar el pago.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>

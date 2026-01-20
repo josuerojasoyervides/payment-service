@@ -24,43 +24,7 @@ import { PaymentProviderId, CurrencyCode, PaymentButtonState } from '../../share
     selector: 'app-payment-button',
     standalone: true,
     imports: [CommonModule, CurrencyPipe],
-    template: `
-        <button
-            type="button"
-            class="w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-3"
-            [class]="buttonClasses()"
-            [disabled]="disabled() || loading()"
-            (click)="handleClick()"
-        >
-            @switch (state()) {
-                @case ('loading') {
-                    <div class="spinner"></div>
-                    <span>Procesando...</span>
-                }
-                @case ('success') {
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
-                    <span>Pago exitoso</span>
-                }
-                @case ('error') {
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                    <span>Error en el pago</span>
-                }
-                @default {
-                    <span class="text-xl">💳</span>
-                    <span>
-                        Pagar {{ amount() | currency: currency() }}
-                        @if (provider()) {
-                            con {{ providerName() }}
-                        }
-                    </span>
-                }
-            }
-        </button>
-    `,
+    templateUrl: './payment-button.component.html',
 })
 export class PaymentButtonComponent {
     /** Monto a pagar */
