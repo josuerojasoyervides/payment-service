@@ -86,6 +86,16 @@ import type { RetryConfig } from './retry.types';
 import { DEFAULT_RETRY_CONFIG } from './retry.types';
 
 /**
+ * Configuración del Cache HTTP.
+ * 
+ * Re-exportada desde cache.types.ts para conveniencia.
+ */
+export type { CacheConfig } from './cache.types';
+export { DEFAULT_CACHE_CONFIG } from './cache.types';
+import type { CacheConfig } from './cache.types';
+import { DEFAULT_CACHE_CONFIG } from './cache.types';
+
+/**
  * Configuración completa de resiliencia.
  */
 export interface ResilienceConfig {
@@ -98,6 +108,9 @@ export interface ResilienceConfig {
     /** Si habilitar retry automático */
     enableRetry: boolean;
     
+    /** Si habilitar caching de respuestas */
+    enableCaching: boolean;
+    
     /** Configuración del circuit breaker */
     circuitBreaker: CircuitBreakerConfig;
     
@@ -106,6 +119,9 @@ export interface ResilienceConfig {
     
     /** Configuración del retry */
     retry: RetryConfig;
+    
+    /** Configuración del cache */
+    cache: CacheConfig;
     
     /** Patrones de URL a excluir de la resiliencia */
     excludePatterns: RegExp[];
@@ -164,9 +180,11 @@ export const DEFAULT_RESILIENCE_CONFIG: ResilienceConfig = {
     enableCircuitBreaker: true,
     enableRateLimiting: true,
     enableRetry: true,
+    enableCaching: true,
     circuitBreaker: DEFAULT_CIRCUIT_BREAKER_CONFIG,
     rateLimiter: DEFAULT_RATE_LIMITER_CONFIG,
     retry: DEFAULT_RETRY_CONFIG,
+    cache: DEFAULT_CACHE_CONFIG,
     excludePatterns: [
         /\/health$/,           // Health checks
         /\/metrics$/,          // Metrics
