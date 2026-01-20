@@ -5,8 +5,8 @@ import { StripePaymentGateway } from "../infrastructure/stripe/gateways/stripe-p
 import { PaypalProviderFactory } from "../infrastructure/paypal/factories/paypal-provider.factory";
 import { PaypalPaymentGateway } from "../infrastructure/paypal/gateways/paypal-payment.gateway";
 import { FakePaymentGateway } from "../infrastructure/fake/gateway/fake-payment.gateway";
-import { PaymentState } from "../ui/state/payments-state";
 import { PAYMENTS_STATE } from "../application/tokens/payment-state.token";
+import { NgRxSignalsStateAdapter } from "../application/adapters/ngrx-signals-state.adapter";
 import { ProviderFactoryRegistry } from "../application/registry/provider-factory.registry";
 import { StartPaymentUseCase } from "../application/use-cases/start-payment.use-case";
 import { ConfirmPaymentUseCase } from "../application/use-cases/confirm-payment.use-case";
@@ -57,13 +57,18 @@ const USE_CASE_PROVIDERS: Provider[] = [
 
 /**
  * Servicios de infraestructura de la aplicación.
+ * 
+ * IMPORTANTE: El estado se inyecta vía token PAYMENTS_STATE.
+ * Esto permite cambiar la implementación (NgRx Signals, Akita, etc.)
+ * sin modificar los componentes que consumen el estado.
  */
 const APPLICATION_PROVIDERS: Provider[] = [
     ProviderFactoryRegistry,
     FallbackOrchestratorService,
     PaymentsStore,
-    // Legacy adapter para retrocompatibilidad
-    { provide: PAYMENTS_STATE, useClass: PaymentState },
+    // Adapter que implementa PaymentStatePort usando NgRx Signals
+    // Si se decide cambiar de manejador de estado, solo cambiar este provider
+    { provide: PAYMENTS_STATE, useClass: NgRxSignalsStateAdapter },
 ];
 
 /**

@@ -2,16 +2,24 @@ import { Component, computed, effect, inject, isDevMode, signal } from '@angular
 import { FormControl, ReactiveFormsModule, UntypedFormGroup } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
-// Store y servicios
-import { PaymentsStore } from '../../../application/store/payments.store';
+// Port y token (desacoplado de implementación)
+import { PAYMENTS_STATE } from '../../../application/tokens/payment-state.token';
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
-import { FallbackOrchestratorService } from '../../../application/services/fallback-orchestrator.service';
 import { LoggerService } from '../../../../../core/services/logger.service';
 
 // Domain types
 import { PaymentProviderId, PaymentMethodType } from '../../../domain/models/payment.types';
 import { FieldRequirements, FieldConfig, PaymentOptions } from '../../../domain/ports/payment-request-builder.port';
 
+/**
+ * Componente de checkout para procesar pagos.
+ * 
+ * Este componente está desacoplado de la implementación del estado
+ * gracias al uso del token PAYMENTS_STATE. Esto permite:
+ * - Cambiar de NgRx Signals a otra librería sin modificar el componente
+ * - Testing más fácil con mocks del port
+ * - Menor acoplamiento y mayor mantenibilidad
+ */
 @Component({
     selector: 'app-checkout',
     standalone: true,
@@ -20,10 +28,9 @@ import { FieldRequirements, FieldConfig, PaymentOptions } from '../../../domain/
     styleUrls: ['./checkout.component.scss']
 })
 export class CheckoutComponent {
-    // Servicios
-    private readonly store = inject(PaymentsStore);
+    // Servicios - estado inyectado vía token (desacoplado)
+    private readonly paymentState = inject(PAYMENTS_STATE);
     private readonly registry = inject(ProviderFactoryRegistry);
-    private readonly fallbackOrchestrator = inject(FallbackOrchestratorService);
     private readonly logger = inject(LoggerService);
 
     // === Datos de la orden (simulados) ===
@@ -38,16 +45,16 @@ export class CheckoutComponent {
     // === Formulario dinámico ===
     readonly paymentForm = new UntypedFormGroup({});
 
-    // === Estado del store ===
-    readonly isLoading = this.store.isLoading;
-    readonly isReady = this.store.isReady;
-    readonly hasError = this.store.hasError;
-    readonly currentIntent = this.store.currentIntent;
-    readonly currentError = this.store.currentError;
+    // === Estado del store (vía port) ===
+    readonly isLoading = this.paymentState.isLoading;
+    readonly isReady = this.paymentState.isReady;
+    readonly hasError = this.paymentState.hasError;
+    readonly currentIntent = this.paymentState.intent;
+    readonly currentError = this.paymentState.error;
 
     // === Estado del fallback ===
-    readonly hasPendingFallback = this.store.hasPendingFallback;
-    readonly pendingFallbackEvent = this.store.pendingFallbackEvent;
+    readonly hasPendingFallback = this.paymentState.hasPendingFallback;
+    readonly pendingFallbackEvent = this.paymentState.pendingFallbackEvent;
     readonly selectedFallbackProvider = signal<PaymentProviderId | null>(null);
 
     // === Providers disponibles ===
@@ -76,7 +83,7 @@ export class CheckoutComponent {
     });
 
     // === Debug info ===
-    readonly debugInfo = this.store.debugSummary;
+    readonly debugInfo = this.paymentState.debugSummary;
 
     constructor() {
         // Efecto: Reconstruir formulario cuando cambian los requisitos
@@ -105,8 +112,8 @@ export class CheckoutComponent {
 
     selectProvider(provider: PaymentProviderId): void {
         this.selectedProvider.set(provider);
-        this.store.selectProvider(provider);
-        this.store.clearError();
+        this.paymentState.selectProvider(provider);
+        this.paymentState.clearError();
 
         // Auto-seleccionar primer método disponible
         const methods = this.availableMethods();
@@ -119,7 +126,7 @@ export class CheckoutComponent {
 
     selectMethod(method: PaymentMethodType): void {
         this.selectedMethod.set(method);
-        this.store.clearError();
+        this.paymentState.clearError();
 
         this.logger.info('Method selected', 'CheckoutComponent', { method });
     }
@@ -154,11 +161,8 @@ export class CheckoutComponent {
                 method: request.method.type
             });
 
-            // Ejecutar pago via store
-            this.store.startPayment({
-                request,
-                providerId: this.selectedProvider()
-            });
+            // Ejecutar pago via state port
+            this.paymentState.startPayment(request, this.selectedProvider());
 
         } catch (error) {
             this.logger.error('Failed to build payment request', 'CheckoutComponent', error);
@@ -178,20 +182,20 @@ export class CheckoutComponent {
         if (!provider) return;
 
         this.logger.info('Fallback confirmed', 'CheckoutComponent', { provider });
-        this.store.executeFallback(provider);
+        this.paymentState.executeFallback(provider);
         this.selectedFallbackProvider.set(null);
     }
 
     cancelFallback(): void {
         this.logger.info('Fallback cancelled', 'CheckoutComponent');
-        this.store.cancelFallback();
+        this.paymentState.cancelFallback();
         this.selectedFallbackProvider.set(null);
     }
 
     // === Reset ===
 
     resetPayment(): void {
-        this.store.reset();
+        this.paymentState.reset();
         this.orderId.set('order_' + Math.random().toString(36).substring(7));
         this.logger.info('Payment reset', 'CheckoutComponent');
     }

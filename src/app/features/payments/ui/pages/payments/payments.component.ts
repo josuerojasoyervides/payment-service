@@ -20,7 +20,12 @@ type SelfTestRow = {
     smokeResult?: any;
 };
 
-
+/**
+ * Componente de estado de pagos y testing.
+ * 
+ * Este componente está desacoplado de la implementación del estado
+ * gracias al uso del token PAYMENTS_STATE.
+ */
 @Component({
     selector: 'app-payments',
     templateUrl: './payments.component.html',
@@ -31,11 +36,14 @@ export class PaymentsComponent implements OnDestroy {
     private readonly registry = inject(ProviderFactoryRegistry);
     private readonly paymentState = inject(PAYMENTS_STATE);
 
-    // UI state local (derivado del port)
-    private readonly _state = signal(this.paymentState.getSnapshot());
+    // UI state derivado del port (usando signals directamente)
+    readonly isLoading = this.paymentState.isLoading;
+    readonly intent = this.paymentState.intent;
+    readonly error = this.paymentState.error;
+
+    // Suscripción para código legacy/imperativo
     private readonly unsubscribe = this.paymentState.subscribe(() => {
         const snapshot = this.paymentState.getSnapshot();
-        this._state.set(snapshot);
 
         if (this.actionLoading() && snapshot.status !== 'loading') {
             if (snapshot.status === 'ready') {
@@ -46,18 +54,6 @@ export class PaymentsComponent implements OnDestroy {
             }
             this.actionLoading.set(false);
         }
-    });
-
-    readonly isLoading = computed(() => this._state().status === 'loading');
-    readonly intent = computed(() => {
-        const state = this._state();
-        if (state.status === 'ready') return state.intent;
-        return null;
-    });
-    readonly error = computed(() => {
-        const state = this._state();
-        if (state.status === 'error') return state.error;
-        return null;
     });
 
     // Providers disponibles (del multi token)
@@ -146,7 +142,7 @@ export class PaymentsComponent implements OnDestroy {
         this.resetActionState();
     }
 
-    // ✅ Prueba de pipeline completo (StartPaymentUseCase etc.)
+    // Prueba de pipeline completo
     startTestPayment() {
         const providerId = this.selectedProviderId();
         const method = this.selectedMethodType();
@@ -158,7 +154,7 @@ export class PaymentsComponent implements OnDestroy {
             method: method === 'card' ? { type: 'card', token: 'tok_demo' } : { type: 'spei' },
         };
 
-        this.paymentState.start(req, providerId);
+        this.paymentState.startPayment(req, providerId);
     }
 
     onIntentIdInput(value: string) {
@@ -292,10 +288,10 @@ export class PaymentsComponent implements OnDestroy {
             };
 
             try {
-                // Usamos el Facade para probar la cadena completa:
-                // Facade → UseCase → Registry → Factory → Strategy → Gateway
+                // Usamos el Port para probar la cadena completa:
+                // Port → Store → UseCase → Registry → Factory → Strategy → Gateway
                 this.paymentState.reset();
-                this.paymentState.start(req, row.providerId as any);
+                this.paymentState.startPayment(req, row.providerId as PaymentProviderId);
 
                 // esperamos un poquito a que actualice state (por si hay async real)
                 // Nota: si tu backend no existe, caerá en error y también es válido
@@ -308,7 +304,7 @@ export class PaymentsComponent implements OnDestroy {
                     row.smokeStart = 'error';
                     row.smokeResult = this.error();
                 } else {
-                    // Si quedó loading o nada pasó, lo marcamos como error “inconcluso”
+                    // Si quedó loading o nada pasó, lo marcamos como error "inconcluso"
                     row.smokeStart = 'error';
                     row.smokeResult = { message: 'No intent/error after timeout (inconclusive)' };
                 }
@@ -343,7 +339,7 @@ export class PaymentsComponent implements OnDestroy {
         this.actionError.set(null);
         this.actionResult.set(null);
 
-        this.paymentState.confirm({ intentId }, this.selectedProviderId());
+        this.paymentState.confirmPayment({ intentId }, this.selectedProviderId());
     }
 
     cancelIntent() {
@@ -354,7 +350,7 @@ export class PaymentsComponent implements OnDestroy {
         this.actionError.set(null);
         this.actionResult.set(null);
 
-        this.paymentState.cancel({ intentId }, this.selectedProviderId());
+        this.paymentState.cancelPayment({ intentId }, this.selectedProviderId());
     }
 
     refreshStatus() {
@@ -365,7 +361,7 @@ export class PaymentsComponent implements OnDestroy {
         this.actionError.set(null);
         this.actionResult.set(null);
 
-        this.paymentState.refresh({ intentId }, this.selectedProviderId());
+        this.paymentState.refreshPayment({ intentId }, this.selectedProviderId());
     }
 
     private getIntentIdForActions(): string | null {
