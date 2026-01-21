@@ -48,7 +48,7 @@ export interface ProviderFactory {
      * Returns the list of supported payment methods.
      */
     getSupportedMethods(): PaymentMethodType[];
-    
+
     /**
      * Creates a builder specific to this provider and method.
      * 
@@ -69,7 +69,7 @@ export interface ProviderFactory {
      *     .build();
      */
     createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilder;
-    
+
     /**
      * Returns field requirements for a payment method.
      * 

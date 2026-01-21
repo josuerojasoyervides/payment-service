@@ -15,19 +15,16 @@
 
         <!-- Components Grid -->
         <div class="space-y-12">
-            
+
             <!-- Order Summary -->
             <section class="card">
                 <h2 class="text-xl font-bold mb-4 pb-4 border-b">OrderSummaryComponent</h2>
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
                         <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
-                        <app-order-summary
-                            [orderId]="orderSummary.orderId"
-                            [amount]="orderSummary.amount"
+                        <app-order-summary [orderId]="orderSummary.orderId" [amount]="orderSummary.amount"
                             [currency]="orderSummary.currency"
-                            [items]="orderSummary.showItems ? orderSummary.items : undefined"
-                        />
+                            [items]="orderSummary.showItems ? orderSummary.items : undefined" />
                     </div>
                     <div>
                         <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
@@ -58,17 +55,15 @@
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
                         <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
-                        <app-provider-selector
-                            [providers]="providerSelector.providers"
-                            [selected]="providerSelector.selected"
-                            [disabled]="providerSelector.disabled"
-                            (providerChange)="providerSelector.selected = $event"
-                        />
+                        <app-provider-selector [providers]="providerSelector.providers"
+                            [selected]="providerSelector.selected" [disabled]="providerSelector.disabled"
+                            (providerChange)="providerSelector.selected = $event" />
                     </div>
                     <div>
                         <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
                         <div class="space-y-3 text-sm">
-                            <p>{{ selectedLabel }}: <code class="bg-gray-100 px-2 py-1 rounded">{{ providerSelector.selected }}</code></p>
+                            <p>{{ selectedLabel }}: <code
+                                    class="bg-gray-100 px-2 py-1 rounded">{{ providerSelector.selected }}</code></p>
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" [(ngModel)]="providerSelector.disabled" />
                                 {{ disabledLabel }}
@@ -84,17 +79,14 @@
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
                         <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
-                        <app-method-selector
-                            [methods]="methodSelector.methods"
-                            [selected]="methodSelector.selected"
-                            [disabled]="methodSelector.disabled"
-                            (methodChange)="methodSelector.selected = $event"
-                        />
+                        <app-method-selector [methods]="methodSelector.methods" [selected]="methodSelector.selected"
+                            [disabled]="methodSelector.disabled" (methodChange)="methodSelector.selected = $event" />
                     </div>
                     <div>
                         <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
                         <div class="space-y-3 text-sm">
-                            <p>{{ selectedLabel }}: <code class="bg-gray-100 px-2 py-1 rounded">{{ methodSelector.selected }}</code></p>
+                            <p>{{ selectedLabel }}: <code
+                                    class="bg-gray-100 px-2 py-1 rounded">{{ methodSelector.selected }}</code></p>
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" [(ngModel)]="methodSelector.disabled" />
                                 {{ disabledLabel }}
@@ -110,15 +102,10 @@
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
                         <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
-                        <app-payment-button
-                            [amount]="paymentButton.amount"
-                            [currency]="paymentButton.currency"
-                            [provider]="paymentButton.provider"
-                            [loading]="paymentButton.loading"
-                            [disabled]="paymentButton.disabled"
-                            [buttonState]="paymentButton.state"
-                            (pay)="onPayClick()"
-                        />
+                        <app-payment-button [amount]="paymentButton.amount" [currency]="paymentButton.currency"
+                            [provider]="paymentButton.provider" [loading]="paymentButton.loading"
+                            [disabled]="paymentButton.disabled" [buttonState]="paymentButton.state"
+                            (pay)="onPayClick()" />
                     </div>
                     <div>
                         <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
@@ -155,19 +142,11 @@
                     <div>
                         <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
                         @if (paymentResult.showSuccess) {
-                            <app-payment-result
-                                [intent]="sampleIntent"
-                                [error]="null"
-                                (retry)="onRetry()"
-                                (newPayment)="onNewPayment()"
-                            />
+                        <app-payment-result [intent]="sampleIntent" [error]="null" (retry)="onRetry()"
+                            (newPayment)="onNewPayment()" />
                         } @else {
-                            <app-payment-result
-                                [intent]="null"
-                                [error]="sampleError"
-                                (retry)="onRetry()"
-                                (newPayment)="onNewPayment()"
-                            />
+                        <app-payment-result [intent]="null" [error]="sampleError" (retry)="onRetry()"
+                            (newPayment)="onNewPayment()" />
                         }
                     </div>
                     <div>
@@ -188,15 +167,10 @@
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
                         <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
-                        <app-spei-instructions
-                            [clabe]="speiInstructions.clabe"
-                            [reference]="speiInstructions.reference"
-                            [bank]="speiInstructions.bank"
-                            [beneficiary]="speiInstructions.beneficiary"
-                            [amount]="speiInstructions.amount"
-                            [currency]="speiInstructions.currency"
-                            [expiresAt]="speiInstructions.expiresAt"
-                        />
+                        <app-spei-instructions [clabe]="speiInstructions.clabe" [reference]="speiInstructions.reference"
+                            [bank]="speiInstructions.bank" [beneficiary]="speiInstructions.beneficiary"
+                            [amount]="speiInstructions.amount" [currency]="speiInstructions.currency"
+                            [expiresAt]="speiInstructions.expiresAt" />
                     </div>
                     <div>
                         <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
@@ -220,14 +194,9 @@
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
                         <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
-                        <app-payment-intent-card
-                            [intent]="intentCard.intent"
-                            [showActions]="intentCard.showActions"
-                            [expanded]="intentCard.expanded"
-                            (confirm)="onIntentAction('confirm', $event)"
-                            (cancel)="onIntentAction('cancel', $event)"
-                            (refresh)="onIntentAction('refresh', $event)"
-                        />
+                        <app-payment-intent-card [intent]="intentCard.intent" [showActions]="intentCard.showActions"
+                            [expanded]="intentCard.expanded" (confirm)="onIntentAction('confirm', $event)"
+                            (cancel)="onIntentAction('cancel', $event)" (refresh)="onIntentAction('refresh', $event)" />
                     </div>
                     <div>
                         <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
@@ -265,12 +234,8 @@
                         <button class="btn-primary" (click)="fallbackModal.open = true">
                             {{ openFallbackModalLabel }}
                         </button>
-                        <app-fallback-modal
-                            [event]="fallbackModal.event"
-                            [open]="fallbackModal.open"
-                            (confirm)="onFallbackConfirm($event)"
-                            (cancel)="fallbackModal.open = false"
-                        />
+                        <app-fallback-modal [event]="fallbackModal.event" [open]="fallbackModal.open"
+                            (confirm)="onFallbackConfirm($event)" (cancel)="fallbackModal.open = false" />
                     </div>
                     <div>
                         <h3 class="font-medium mb-3">{{ infoLabel }}</h3>

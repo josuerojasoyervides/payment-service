@@ -1,71 +1,67 @@
 import { inject, Injectable } from '@angular/core';
-import { PaymentIntent, PaymentProviderId, CreatePaymentRequest, PaymentError } from '../../domain/models';
-import { defer, Observable, catchError, throwError } from 'rxjs';
+import { defer, EMPTY, Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { StrategyContext } from '../../domain/ports';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+
+import {
+    CreatePaymentRequest,
+    PaymentProviderId,
+    PaymentError,
+    PaymentIntent,
+    PaymentFlowContext,
+} from '../../domain/models';
+
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 
-/**
- * Caso de uso: Iniciar un pago.
- *
- * Orquesta el flujo completo:
- * 1. Obtiene la factory del provider
- * 2. Crea la estrategia para el método de pago
- * 3. Ejecuta el flujo de inicio (validate → prepare → createIntent)
- * 4. Maneja errores y fallback automático/manual
- *
- * No usa providedIn: 'root' para:
- * - Permitir testing más fácil con diferentes configuraciones
- * - Evitar singletons globales que persisten estado
- * - Dar control explícito del lifecycle al módulo de payments
- */
-@Injectable()
+function isPaymentError(e: unknown): e is PaymentError {
+    return typeof e === 'object' && e !== null && 'code' in e && 'message' in e;
+}
+
+@Injectable({ providedIn: 'root' })
 export class StartPaymentUseCase {
     private readonly registry = inject(ProviderFactoryRegistry);
-    private readonly fallbackOrchestrator = inject(FallbackOrchestratorService);
-    private readonly idempotencyKeyFactory = inject(IdempotencyKeyFactory);
+    private readonly fallback = inject(FallbackOrchestratorService);
+    private readonly idempotency = inject(IdempotencyKeyFactory);
 
-    /**
-     * Inicia un nuevo pago.
-     *
-     * @param req Request con los datos del pago
-     * @param providerId Proveedor a usar (stripe, paypal)
-     * @param context Contexto opcional (returnUrl, deviceData, etc.)
-     * @param wasAutoFallback Indica si este intento es un auto-fallback
-     */
     execute(
-        req: CreatePaymentRequest,
+        request: CreatePaymentRequest,
         providerId: PaymentProviderId,
-        context?: StrategyContext,
-        wasAutoFallback: boolean = false
+        context?: PaymentFlowContext,
+        wasAutoFallback?: boolean
     ): Observable<PaymentIntent> {
         return defer(() => {
-            // Generate idempotency key if not already provided
-            // This ensures retries use the same key
-            const requestWithIdempotency: CreatePaymentRequest = {
-                ...req,
-                idempotencyKey: req.idempotencyKey ?? this.idempotencyKeyFactory.generateForStart(providerId, req),
+            // ✅ TODO ocurre dentro del stream (errores sync quedan capturados)
+            const factory = this.registry.get(providerId);
+
+            const strategy = factory.createStrategy(request.method.type);
+
+            const enrichedRequest: CreatePaymentRequest = {
+                ...request,
+                idempotencyKey: this.idempotency.generateForStart(providerId, request),
             };
 
-            const providerFactory = this.registry.get(providerId);
-            const strategy = providerFactory.createStrategy(req.method.type);
-            return strategy.start(requestWithIdempotency, context);
+            return strategy.start(enrichedRequest, context);
         }).pipe(
-            catchError((error: PaymentError) => {
-                // Reportar fallo al orchestrator
-                // El orchestrator determinará si hay fallback disponible (auto o manual)
-                this.fallbackOrchestrator.reportFailure(
-                    providerId,
-                    error,
-                    req,
-                    wasAutoFallback
-                );
+            catchError((error: unknown) => {
+                // ✅ Solo intentamos fallback si es PaymentError real
+                if (isPaymentError(error)) {
+                    const didFallback = this.fallback.reportFailure({
+                        providerId,
+                        error,
+                        request: {
+                            ...request,
+                            idempotencyKey: this.idempotency.generateForStart(providerId, request),
+                        },
+                        wasAutoFallback,
+                    });
 
-                // Siempre propagar el error
-                // El store verificará si hay fallback disponible antes de mostrar el error
-                // Si hay fallback auto, el orchestrator emitirá fallbackExecute$ y el store lo manejará
-                // Si hay fallback manual, el orchestrator emitirá fallbackAvailable$ y la UI lo manejará
+                    // ✅ si fallback se encarga, no propagamos error
+                    if (didFallback) return EMPTY;
+                }
+
+                // ✅ si no hubo fallback (o no era PaymentError), se propaga
                 return throwError(() => error);
             })
         );

@@ -3,7 +3,7 @@ import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { StartPaymentUseCase } from './start-payment.use-case'
 import { PaymentIntent, PaymentMethodType, PaymentProviderId, CreatePaymentRequest, PaymentError } from '../../domain/models';
 import { PaymentStrategy, StrategyContext } from '../../domain/ports';
-import { firstValueFrom, of, throwError } from 'rxjs';
+import { defaultIfEmpty, firstValueFrom, of, throwError } from 'rxjs';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 
@@ -136,38 +136,38 @@ describe('StartPaymentUseCase', () => {
 
         it('propagates observable errors from strategy.start() when no fallback available', async () => {
             const error: PaymentError = { code: 'provider_error', message: 'boom', raw: {} };
-            (strategyMock.start as any).mockReturnValueOnce(
-                throwError(() => error)
-            );
+
+            (strategyMock.start as any).mockReturnValueOnce(throwError(() => error));
             fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(false);
 
             await expect(firstValueFrom(useCase.execute(req, 'stripe')))
                 .rejects.toThrow('boom');
-            
+
             expect(fallbackOrchestratorMock.reportFailure).toHaveBeenCalledWith(
-                'stripe',
-                error,
-                req,
-                false
+                expect.objectContaining({
+                    providerId: 'stripe',
+                    error,
+                    request: expect.objectContaining({
+                        ...req,
+                        idempotencyKey: expect.stringContaining('stripe:start:o1:100:MXN:card'),
+                    }),
+                })
             );
         });
 
-        it('calls reportFailure when strategy.start() fails', async () => {
+        it('calls reportFailure when strategy.start() fails and fallback handles it', async () => {
             const error: PaymentError = { code: 'provider_error', message: 'boom', raw: {} };
-            (strategyMock.start as any).mockReturnValueOnce(
-                throwError(() => error)
-            );
+
+            (strategyMock.start as any).mockReturnValueOnce(throwError(() => error));
             fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(true);
 
-            await expect(firstValueFrom(useCase.execute(req, 'stripe')))
-                .rejects.toThrow('boom');
-            
-            expect(fallbackOrchestratorMock.reportFailure).toHaveBeenCalledWith(
-                'stripe',
-                error,
-                req,
-                false
+            const result = await firstValueFrom(
+                useCase.execute(req, 'stripe').pipe(defaultIfEmpty(null))
             );
+
+            expect(result).toBeNull();
+
+            expect(fallbackOrchestratorMock.reportFailure).toHaveBeenCalled();
         });
 
         it('throws when providerId is not registered', async () => {

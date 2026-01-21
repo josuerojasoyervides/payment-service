@@ -3,7 +3,8 @@ export type PaymentErrorCode =
     | 'card_declined'
     | 'requires_action'
     | 'provider_unavailable'
-    | 'provider_error';
+    | 'provider_error'
+    | 'unknown_error';
 
 export interface PaymentError {
     code: PaymentErrorCode;
