@@ -7,27 +7,12 @@ import {
     ConfirmPaymentRequest,
     CreatePaymentRequest,
     GetPaymentStatusRequest,
-    PaymentError,
-} from "../../../domain/models";
-import {
-    StripePaymentIntentDto,
-    StripeCreateIntentRequest,
-    StripeConfirmIntentRequest,
-    StripeSpeiSourceDto,
-    StripeCreateResponseDto
-} from "../dto/stripe.dto";
-import { BasePaymentGateway } from "@payments/shared/base-payment.gateway";
-import { ERROR_CODE_MAP } from "../mappers/error-code.mapper";
-import { SpeiSourceMapper } from "../mappers/spei-source.mapper";
-import { mapPaymentIntent } from "../mappers/payment-intent.mapper";
-import { getIdempotencyHeaders } from "../validators/get-idempotency-headers";
-import { isStripeErrorResponse } from "../mappers/error-response.mapper";
-import { ErrorKeyMapper } from "../mappers/error-key.mapper";
+} from "@payments/domain/models";
 import { PaymentGateway } from "@payments/domain/ports";
-import { StripeCreateIntentGateway } from "./intent/create-intent.gateway";
-import { StripeConfirmIntentGateway } from "./intent/confirm-intent.gateway";
-import { StripeCancelIntentGateway } from "./intent/cancel-intent.gateway";
-import { StripeGetIntentGateway } from "./intent/get-intent.gateway";
+import { StripeCreateIntentGateway } from "./create-intent.gateway";
+import { StripeConfirmIntentGateway } from "./confirm-intent.gateway";
+import { StripeCancelIntentGateway } from "./cancel-intent.gateway";
+import { StripeGetIntentGateway } from "./get-intent.gateway";
 
 
 /**

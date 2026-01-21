@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { StripeProviderFactory } from './stripe-provider.factory';
-import { StripePaymentGateway } from '../gateways/stripe-payment.gateway';
+import { StripePaymentGateway } from '../gateways/intent/stripe-payment.gateway';
 import { firstValueFrom, of } from 'rxjs';
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
@@ -78,12 +78,12 @@ describe('StripeProviderFactory', () => {
     describe('getFieldRequirements', () => {
         it('returns field requirements for card method', () => {
             const requirements = factory.getFieldRequirements('card');
-            
+
             expect(requirements.fields).toBeDefined();
             expect(requirements.fields.length).toBeGreaterThan(0);
             expect(requirements.description).toBeDefined();
             expect(requirements.instructions).toBeDefined();
-            
+
             const tokenField = requirements.fields.find(f => f.name === 'token');
             expect(tokenField).toBeDefined();
             expect(tokenField?.required).toBe(true);
@@ -92,12 +92,12 @@ describe('StripeProviderFactory', () => {
 
         it('returns field requirements for spei method', () => {
             const requirements = factory.getFieldRequirements('spei');
-            
+
             expect(requirements.fields).toBeDefined();
             expect(requirements.fields.length).toBeGreaterThan(0);
             expect(requirements.description).toBeDefined();
             expect(requirements.instructions).toBeDefined();
-            
+
             const emailField = requirements.fields.find(f => f.name === 'customerEmail');
             expect(emailField).toBeDefined();
             expect(emailField?.required).toBe(true);

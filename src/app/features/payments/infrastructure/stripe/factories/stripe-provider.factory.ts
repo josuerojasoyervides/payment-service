@@ -7,7 +7,7 @@ import {
     PaymentGateway,
 } from '../../../domain/ports';
 import { PaymentMethodType } from '../../../domain/models';
-import { StripePaymentGateway } from '../gateways/stripe-payment.gateway';
+import { StripePaymentGateway } from '../gateways/intent/stripe-payment.gateway';
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
 import { StripeCardRequestBuilder } from '../builders/stripe-card-request.builder';

@@ -2,10 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
 import { StripePaymentGateway } from './stripe-payment.gateway';
-import { StripeCreateIntentGateway } from './intent/create-intent.gateway';
-import { StripeConfirmIntentGateway } from './intent/confirm-intent.gateway';
-import { StripeCancelIntentGateway } from './intent/cancel-intent.gateway';
-import { StripeGetIntentGateway } from './intent/get-intent.gateway';
+import { StripeCreateIntentGateway } from './create-intent.gateway';
+import { StripeConfirmIntentGateway } from './confirm-intent.gateway';
+import { StripeCancelIntentGateway } from './cancel-intent.gateway';
+import { StripeGetIntentGateway } from './get-intent.gateway';
 
 import { CreatePaymentRequest } from '@payments/domain/models';
 
