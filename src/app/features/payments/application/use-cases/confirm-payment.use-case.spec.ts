@@ -2,8 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { ConfirmPaymentUseCase } from './confirm-payment.use-case';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { ProviderFactory, PaymentGateway } from '../../domain/ports';
-import { ConfirmPaymentRequest, PaymentIntent, PaymentMethodType, PaymentProviderId } from '../../domain/models';
+import { ConfirmPaymentRequest, PaymentIntent, PaymentMethodType, PaymentProviderId, PaymentError } from '../../domain/models';
 
 describe('ConfirmPaymentUseCase', () => {
     let useCase: ConfirmPaymentUseCase;
@@ -39,11 +40,20 @@ describe('ConfirmPaymentUseCase', () => {
         get: vi.fn((providerId: PaymentProviderId) => providerFactoryMock),
     } satisfies Pick<ProviderFactoryRegistry, 'get'>;
 
+    const fallbackOrchestratorMock = {
+        reportFailure: vi.fn(() => false),
+        notifySuccess: vi.fn(),
+        notifyFailure: vi.fn(),
+        reset: vi.fn(),
+        getSnapshot: vi.fn(() => ({ status: 'idle' as const, pendingEvent: null, failedAttempts: [], currentProvider: null, isAutoFallback: false })),
+    };
+
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
                 ConfirmPaymentUseCase,
                 { provide: ProviderFactoryRegistry, useValue: registryMock },
+                { provide: FallbackOrchestratorService, useValue: fallbackOrchestratorMock },
             ],
         });
 
@@ -70,13 +80,26 @@ describe('ConfirmPaymentUseCase', () => {
                 .rejects.toThrowError('Registry failed');
         });
 
-        it('propagates observable errors from gateway.confirmIntent()', async () => {
+        it('propagates observable errors from gateway.confirmIntent() and reports to orchestrator', async () => {
+            const error: PaymentError = { code: 'provider_error', message: 'boom', raw: {} };
             (gatewayMock.confirmIntent as any).mockReturnValueOnce(
-                throwError(() => new Error('boom'))
+                throwError(() => error)
             );
 
             await expect(firstValueFrom(useCase.execute(req, 'stripe')))
-                .rejects.toThrowError('boom');
+                .rejects.toThrow('boom');
+            
+            expect(fallbackOrchestratorMock.reportFailure).toHaveBeenCalledWith(
+                'stripe',
+                error,
+                expect.objectContaining({
+                    orderId: 'pi_1',
+                    amount: 0,
+                    currency: 'MXN',
+                    method: { type: 'card' },
+                }),
+                false
+            );
         });
     });
 });

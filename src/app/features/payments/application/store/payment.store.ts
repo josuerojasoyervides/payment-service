@@ -26,9 +26,11 @@ import {
     INITIAL_FALLBACK_STATE,
 } from '../../domain/models';
 import { StrategyContext } from '../../domain/ports';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { StartPaymentUseCase } from '../use-cases/start-payment.use-case';
+import { ConfirmPaymentUseCase } from '../use-cases/confirm-payment.use-case';
+import { CancelPaymentUseCase } from '../use-cases/cancel-payment.use-case';
+import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
 
 /**
  * Signal Store for payments module.
@@ -125,9 +127,11 @@ export const PaymentsStore = signalStore(
     })),
 
     withMethods((store) => {
-        const registry = inject(ProviderFactoryRegistry);
         const fallbackOrchestrator = inject(FallbackOrchestratorService);
         const startPaymentUseCase = inject(StartPaymentUseCase);
+        const confirmPaymentUseCase = inject(ConfirmPaymentUseCase);
+        const cancelPaymentUseCase = inject(CancelPaymentUseCase);
+        const getPaymentStatusUseCase = inject(GetPaymentStatusUseCase);
 
         // Suscribirse a fallbackExecute$ para ejecutar auto-fallback
         // Solo ejecutar si el estado es 'auto_executing' para evitar loops infinitos
@@ -197,10 +201,7 @@ export const PaymentsStore = signalStore(
                         patchState(store, { status: 'loading', error: null });
                     }),
                     switchMap(({ request, providerId }) => {
-                        const factory = registry.get(providerId);
-                        const gateway = factory.getGateway();
-
-                        return gateway.confirmIntent(request).pipe(
+                        return confirmPaymentUseCase.execute(request, providerId).pipe(
                             tap((intent) => {
                                 patchState(store, {
                                     status: 'ready',
@@ -208,12 +209,28 @@ export const PaymentsStore = signalStore(
                                     error: null,
                                 });
                                 addToHistory(store, intent, providerId);
+                                fallbackOrchestrator.notifySuccess();
+                                patchState(store, {
+                                    fallback: fallbackOrchestrator.getSnapshot(),
+                                });
                             }),
                             catchError((error: PaymentError) => {
+                                // El use case ya llamó a reportFailure
+                                // Actualizar snapshot del fallback primero
+                                const fallbackSnapshot = fallbackOrchestrator.getSnapshot();
                                 patchState(store, {
-                                    status: 'error',
-                                    error,
+                                    fallback: fallbackSnapshot,
                                 });
+
+                                // Solo setear error si no hay fallback disponible
+                                if (fallbackSnapshot.status === 'idle' || fallbackSnapshot.status === 'failed') {
+                                    patchState(store, {
+                                        status: 'error',
+                                        error,
+                                        intent: null,
+                                    });
+                                }
+
                                 return of(null);
                             })
                         );
@@ -227,10 +244,7 @@ export const PaymentsStore = signalStore(
                         patchState(store, { status: 'loading', error: null });
                     }),
                     switchMap(({ request, providerId }) => {
-                        const factory = registry.get(providerId);
-                        const gateway = factory.getGateway();
-
-                        return gateway.cancelIntent(request).pipe(
+                        return cancelPaymentUseCase.execute(request, providerId).pipe(
                             tap((intent) => {
                                 patchState(store, {
                                     status: 'ready',
@@ -238,12 +252,28 @@ export const PaymentsStore = signalStore(
                                     error: null,
                                 });
                                 addToHistory(store, intent, providerId);
+                                fallbackOrchestrator.notifySuccess();
+                                patchState(store, {
+                                    fallback: fallbackOrchestrator.getSnapshot(),
+                                });
                             }),
                             catchError((error: PaymentError) => {
+                                // El use case ya llamó a reportFailure
+                                // Actualizar snapshot del fallback primero
+                                const fallbackSnapshot = fallbackOrchestrator.getSnapshot();
                                 patchState(store, {
-                                    status: 'error',
-                                    error,
+                                    fallback: fallbackSnapshot,
                                 });
+
+                                // Solo setear error si no hay fallback disponible
+                                if (fallbackSnapshot.status === 'idle' || fallbackSnapshot.status === 'failed') {
+                                    patchState(store, {
+                                        status: 'error',
+                                        error,
+                                        intent: null,
+                                    });
+                                }
+
                                 return of(null);
                             })
                         );
@@ -254,25 +284,38 @@ export const PaymentsStore = signalStore(
             refreshPayment: rxMethod<{ request: GetPaymentStatusRequest; providerId: PaymentProviderId }>(
                 pipe(
                     tap(() => {
-                        patchState(store, { status: 'loading' });
+                        patchState(store, { status: 'loading', error: null });
                     }),
                     switchMap(({ request, providerId }) => {
-                        const factory = registry.get(providerId);
-                        const gateway = factory.getGateway();
-
-                        return gateway.getIntent(request).pipe(
+                        return getPaymentStatusUseCase.execute(request, providerId).pipe(
                             tap((intent) => {
                                 patchState(store, {
                                     status: 'ready',
                                     intent,
                                     error: null,
                                 });
+                                fallbackOrchestrator.notifySuccess();
+                                patchState(store, {
+                                    fallback: fallbackOrchestrator.getSnapshot(),
+                                });
                             }),
                             catchError((error: PaymentError) => {
+                                // El use case ya llamó a reportFailure
+                                // Actualizar snapshot del fallback primero
+                                const fallbackSnapshot = fallbackOrchestrator.getSnapshot();
                                 patchState(store, {
-                                    status: 'error',
-                                    error,
+                                    fallback: fallbackSnapshot,
                                 });
+
+                                // Solo setear error si no hay fallback disponible
+                                if (fallbackSnapshot.status === 'idle' || fallbackSnapshot.status === 'failed') {
+                                    patchState(store, {
+                                        status: 'error',
+                                        error,
+                                        intent: null,
+                                    });
+                                }
+
                                 return of(null);
                             })
                         );

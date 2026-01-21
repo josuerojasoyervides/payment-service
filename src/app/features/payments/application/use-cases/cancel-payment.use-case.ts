@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { CancelPaymentRequest, PaymentIntent, PaymentProviderId } from '../../domain/models';
-import { defer, Observable } from 'rxjs';
+import { CancelPaymentRequest, PaymentIntent, PaymentProviderId, PaymentError } from '../../domain/models';
+import { defer, Observable, catchError, throwError } from 'rxjs';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 
 /**
  * Caso de uso: Cancelar un pago.
@@ -9,10 +10,14 @@ import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
  * Cancela un PaymentIntent que aún no ha sido completado.
  * - En Stripe: Cancela el PaymentIntent
  * - En PayPal: Voida la Order (si no ha sido capturada)
+ *
+ * Maneja errores recuperables y reporta al orchestrator para consistencia,
+ * aunque el fallback no aplica directamente (el intent ya existe en un provider específico).
  */
 @Injectable()
 export class CancelPaymentUseCase {
     private readonly registry = inject(ProviderFactoryRegistry);
+    private readonly fallbackOrchestrator = inject(FallbackOrchestratorService);
 
     /**
      * Cancela un pago existente.
@@ -24,6 +29,28 @@ export class CancelPaymentUseCase {
         return defer(() => {
             const gateway = this.registry.get(providerId).getGateway();
             return gateway.cancelIntent(req);
-        });
+        }).pipe(
+            catchError((error: PaymentError) => {
+                // Reportar fallo al orchestrator para consistencia
+                // Aunque el fallback no aplica directamente para cancel (el intent ya existe),
+                // reportamos para tracking y posibles acciones futuras
+                this.fallbackOrchestrator.reportFailure(
+                    providerId,
+                    error,
+                    // Para cancel, no hay un CreatePaymentRequest original
+                    // Pasamos un request mínimo para mantener la estructura
+                    {
+                        orderId: req.intentId, // Usamos intentId como orderId temporal
+                        amount: 0, // No disponible en cancel request
+                        currency: 'MXN', // Default
+                        method: { type: 'card' }, // Default
+                    },
+                    false
+                );
+
+                // Siempre propagar el error
+                return throwError(() => error);
+            })
+        );
     }
 }
