@@ -4,6 +4,7 @@ import { defer, Observable, catchError, throwError } from 'rxjs';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
+import { safeDefer } from '../helpers/safe-defer';
 
 /**
  * Caso de uso: Obtener estado de un pago.
@@ -30,13 +31,13 @@ export class GetPaymentStatusUseCase {
      * @param providerId Proveedor del pago
      */
     execute(req: GetPaymentStatusRequest, providerId: PaymentProviderId): Observable<PaymentIntent> {
-        return defer(() => {
+        return safeDefer(() => {
             // Generate idempotency key if not already provided (although GET typically doesn't need it)
             const requestWithIdempotency: GetPaymentStatusRequest = {
                 ...req,
                 idempotencyKey: req.idempotencyKey ?? this.idempotencyKeyFactory.generateForGet(providerId, req.intentId),
             };
-            
+
             const gateway = this.registry.get(providerId).getGateway();
             return gateway.getIntent(requestWithIdempotency);
         }).pipe(

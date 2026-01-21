@@ -14,6 +14,7 @@ import {
 } from '../../domain/models';
 
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
+import { safeDefer } from '../helpers/safe-defer';
 
 function isPaymentError(e: unknown): e is PaymentError {
     return typeof e === 'object' && e !== null && 'code' in e && 'message' in e;
@@ -31,7 +32,7 @@ export class StartPaymentUseCase {
         context?: PaymentFlowContext,
         wasAutoFallback?: boolean
     ): Observable<PaymentIntent> {
-        return defer(() => {
+        return safeDefer(() => {
             const factory = this.registry.get(providerId);
             const strategy = factory.createStrategy(request.method.type);
 
