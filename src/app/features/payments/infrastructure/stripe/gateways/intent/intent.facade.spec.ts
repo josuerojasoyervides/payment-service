@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
-import { StripePaymentGateway } from './stripe-payment.gateway';
+import { IntentFacade } from './intent.facade';
 import { StripeCreateIntentGateway } from './create-intent.gateway';
 import { StripeConfirmIntentGateway } from './confirm-intent.gateway';
 import { StripeCancelIntentGateway } from './cancel-intent.gateway';
@@ -9,8 +9,8 @@ import { StripeGetIntentGateway } from './get-intent.gateway';
 
 import { CreatePaymentRequest } from '@payments/domain/models';
 
-describe('StripePaymentGateway (adapter)', () => {
-    let gateway: StripePaymentGateway;
+describe('IntentFacade (adapter)', () => {
+    let gateway: IntentFacade;
 
     // Mocks de operaciones (NO HTTP)
     const createIntentOp = { execute: vi.fn() };
@@ -28,7 +28,7 @@ describe('StripePaymentGateway (adapter)', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
-                StripePaymentGateway,
+                IntentFacade,
 
                 { provide: StripeCreateIntentGateway, useValue: createIntentOp },
                 { provide: StripeConfirmIntentGateway, useValue: confirmIntentOp },
@@ -37,7 +37,7 @@ describe('StripePaymentGateway (adapter)', () => {
             ],
         });
 
-        gateway = TestBed.inject(StripePaymentGateway);
+        gateway = TestBed.inject(IntentFacade);
     });
 
     it('delegates createIntent to StripeCreateIntentGateway.execute', async () => {

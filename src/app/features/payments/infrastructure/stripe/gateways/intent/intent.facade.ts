@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { inject, Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { I18nKeys } from "@core/i18n";
 import {
@@ -27,14 +27,13 @@ import { StripeGetIntentGateway } from "./get-intent.gateway";
  * - Idempotency keys for safe operations
  */
 @Injectable()
-export class StripePaymentGateway implements PaymentGateway {
+export class IntentFacade implements PaymentGateway {
     readonly providerId = 'stripe' as const;
-    constructor(
-        private readonly createIntentOp: StripeCreateIntentGateway,
-        private readonly confirmIntentOp: StripeConfirmIntentGateway,
-        private readonly cancelIntentOp: StripeCancelIntentGateway,
-        private readonly getIntentOp: StripeGetIntentGateway,
-    ) { }
+
+    private readonly createIntentOp = inject(StripeCreateIntentGateway);
+    private readonly confirmIntentOp = inject(StripeConfirmIntentGateway);
+    private readonly cancelIntentOp = inject(StripeCancelIntentGateway);
+    private readonly getIntentOp = inject(StripeGetIntentGateway);
 
     createIntent(req: CreatePaymentRequest): Observable<PaymentIntent> {
         return this.createIntentOp.execute(req);

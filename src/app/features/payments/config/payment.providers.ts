@@ -1,7 +1,7 @@
 import { EnvironmentProviders, Provider } from "@angular/core";
 import { PAYMENT_PROVIDER_FACTORIES } from "../application/tokens/payment-provider-factories.token";
 import { StripeProviderFactory } from "../infrastructure/stripe/factories/stripe-provider.factory";
-import { StripePaymentGateway } from "../infrastructure/stripe/gateways/intent/stripe-payment.gateway";
+import { IntentFacade } from "../infrastructure/stripe/gateways/intent/intent.facade";
 import { PaypalProviderFactory } from "../infrastructure/paypal/factories/paypal-provider.factory";
 import { PaypalPaymentGateway } from "../infrastructure/paypal/gateways/paypal-payment.gateway";
 import { FakePaymentGateway } from "../infrastructure/fake/gateways/fake-payment.gateway";
@@ -32,7 +32,7 @@ const GATEWAY_PROVIDERS: Provider[] = [
      * ! las clases concretas de gateways no deberían importarse en config si quieres reemplazabilidad total.
      */
     {
-        provide: StripePaymentGateway,
+        provide: IntentFacade,
         useFactory: () => FakePaymentGateway.create('stripe')
     },
     {
@@ -130,7 +130,7 @@ export function providePaymentsWithConfig(options: {
     const providers: Provider[] = [];
 
     if (options.useRealGateways) {
-        providers.push(StripePaymentGateway, PaypalPaymentGateway);
+        providers.push(IntentFacade, PaypalPaymentGateway);
     } else {
         providers.push(...GATEWAY_PROVIDERS);
     }

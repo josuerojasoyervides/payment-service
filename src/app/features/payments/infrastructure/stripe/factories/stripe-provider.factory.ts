@@ -7,7 +7,7 @@ import {
     PaymentGateway,
 } from '../../../domain/ports';
 import { PaymentMethodType } from '../../../domain/models';
-import { StripePaymentGateway } from '../gateways/intent/stripe-payment.gateway';
+import { IntentFacade } from '../gateways/intent/intent.facade';
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
 import { StripeCardRequestBuilder } from '../builders/stripe-card-request.builder';
@@ -32,7 +32,7 @@ import { I18nService, I18nKeys } from '@core/i18n';
 export class StripeProviderFactory implements ProviderFactory {
     readonly providerId = 'stripe' as const;
 
-    private readonly gateway = inject(StripePaymentGateway);
+    private readonly gateway = inject(IntentFacade);
     private readonly i18n = inject(I18nService);
 
     /**

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { StripeProviderFactory } from './stripe-provider.factory';
-import { StripePaymentGateway } from '../gateways/intent/stripe-payment.gateway';
+import { IntentFacade } from '../gateways/intent/intent.facade';
 import { firstValueFrom, of } from 'rxjs';
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
@@ -12,7 +12,7 @@ describe('StripeProviderFactory', () => {
     let gatewayStub = {
         providerId: 'stripe',
         createIntent: vi.fn(),
-    } satisfies Partial<StripePaymentGateway>;
+    } satisfies Partial<IntentFacade>;
 
     beforeEach(() => {
         const i18nMock = {
@@ -26,7 +26,7 @@ describe('StripeProviderFactory', () => {
         TestBed.configureTestingModule({
             providers: [
                 StripeProviderFactory,
-                { provide: StripePaymentGateway, useValue: gatewayStub },
+                { provide: IntentFacade, useValue: gatewayStub },
                 { provide: I18nService, useValue: i18nMock },
             ]
         })
