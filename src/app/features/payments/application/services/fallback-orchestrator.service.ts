@@ -146,7 +146,7 @@ export class FallbackOrchestratorService {
 
         // ✅ no hay alternativas => terminal
         if (alternatives.length === 0) {
-            this._state.update(s => ({ ...s, status: 'failed', currentProvider: null }));
+            this.finish('failed');
             return false;
         }
 
@@ -191,11 +191,7 @@ export class FallbackOrchestratorService {
             });
 
             // Limpiar evento expirado
-            this._state.update(state => ({
-                ...state,
-                status: 'cancelled',
-                pendingEvent: null,
-            }));
+            this.finish('cancelled');
 
             return;
         }
@@ -212,11 +208,7 @@ export class FallbackOrchestratorService {
                 });
 
                 // Limpiar estado
-                this._state.update(state => ({
-                    ...state,
-                    status: 'idle',
-                    pendingEvent: null,
-                }));
+                this.finish('cancelled');
                 return;
             }
 
@@ -234,12 +226,7 @@ export class FallbackOrchestratorService {
                 provider: response.selectedProvider,
             });
         } else {
-            this._state.update(state => ({
-                ...state,
-                status: 'cancelled',
-                pendingEvent: null,
-                isAutoFallback: false,
-            }));
+            this.finish('cancelled');
         }
 
         this._userResponse$.next(response);
@@ -249,12 +236,7 @@ export class FallbackOrchestratorService {
      * Notifies that fallback completed successfully.
      */
     notifySuccess(): void {
-        this._state.update(state => ({
-            ...state,
-            status: 'completed',
-            currentProvider: null,
-            isAutoFallback: false,
-        }));
+        this.finish('completed');
     }
 
     /**
@@ -431,13 +413,7 @@ export class FallbackOrchestratorService {
 
                     // Si realmente expiró, limpiar el estado
                     if (eventAge >= this.config.userResponseTimeout) {
-                        this._state.update(state => ({
-                            ...state,
-                            status: 'cancelled',
-                            pendingEvent: null,
-                            currentProvider: null,
-                            isAutoFallback: false,
-                        }));
+                        this.finish('cancelled');
                     }
                 }
             });
@@ -478,5 +454,23 @@ export class FallbackOrchestratorService {
             currentProvider: providerId,
         }));
     }
+
+    private finish(status: 'completed' | 'cancelled' | 'failed') {
+        this._cancel$.next();
+
+        this._state.update(s => ({
+            ...s,
+            status,
+            pendingEvent: null,
+            currentProvider: null,
+            isAutoFallback: false,
+        }));
+
+        // ✅ reset después (microtask) para que UI alcance a ver el estado final
+        queueMicrotask(() => {
+            this.reset();
+        });
+    }
+
 
 }

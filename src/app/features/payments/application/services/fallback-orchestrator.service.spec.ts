@@ -396,7 +396,7 @@ describe('FallbackOrchestratorService', () => {
             vi.useRealTimers();
         });
 
-        it('rejects provider not in alternativeProviders', () => {
+        it('rejects provider not in alternativeProviders', async () => {
             vi.useFakeTimers();
             const baseTime = 1000000;
             vi.setSystemTime(baseTime);
@@ -410,12 +410,16 @@ describe('FallbackOrchestratorService', () => {
                 timestamp: baseTime,
             });
 
-            // Debe limpiar el estado pero no ejecutar
+            // ✅ Estado terminal inmediato
+            expect(service.state().status).toBe('cancelled');
+
+            // ✅ después del microtask se resetea a idle
+            await Promise.resolve();
             expect(service.state().status).toBe('idle');
-            expect(service.pendingEvent()).toBeNull();
 
             vi.useRealTimers();
         });
+
 
         it('uses originalRequest when executing fallback', () => {
             vi.useFakeTimers();
