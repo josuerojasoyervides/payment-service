@@ -166,9 +166,9 @@ describe('StartPaymentUseCase', () => {
             );
 
             expect(result).toBeNull();
-
             expect(fallbackOrchestratorMock.reportFailure).toHaveBeenCalled();
         });
+
 
         it('throws when providerId is not registered', async () => {
             registryMock.get.mockImplementationOnce((providerId: any) => {
@@ -201,5 +201,32 @@ describe('StartPaymentUseCase', () => {
 
             expect(strategyMock.start).not.toHaveBeenCalled();
         });
+
+        it('cuando fallback maneja el fallo debe completar sin emitir valores', async () => {
+            const error: PaymentError = { code: 'provider_error', message: 'boom', raw: {} };
+
+            (strategyMock.start as any).mockReturnValueOnce(throwError(() => error));
+            fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(true);
+
+            const result = await firstValueFrom(
+                useCase.execute(req, 'stripe').pipe(defaultIfEmpty('NO_EMIT'))
+            );
+
+            expect(result).toBe('NO_EMIT');
+        });
+
+        it('NO debe tragar errores no-domino (unknown)', async () => {
+            const error = new Error('weird');
+
+            (strategyMock.start as any).mockReturnValueOnce(throwError(() => error));
+            fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(true); // aunque diga true, NO debería usarse
+
+            await expect(firstValueFrom(useCase.execute(req, 'stripe')))
+                .rejects.toThrow('weird');
+
+            expect(fallbackOrchestratorMock.reportFailure).not.toHaveBeenCalled();
+        });
+
+
     });
 });

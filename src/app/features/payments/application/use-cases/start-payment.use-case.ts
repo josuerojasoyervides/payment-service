@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import { defer, EMPTY, Observable, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { EMPTY, Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
@@ -36,26 +36,27 @@ export class StartPaymentUseCase {
             const factory = this.registry.get(providerId);
             const strategy = factory.createStrategy(request.method.type);
 
-            const enrichedRequest = {
+            const enrichedRequest: CreatePaymentRequest = {
                 ...request,
                 idempotencyKey: this.idempotency.generateForStart(providerId, request),
             };
 
             return strategy.start(enrichedRequest, context).pipe(
-                catchError((error) => {
+                catchError((error: unknown) => {
                     if (isPaymentError(error)) {
                         const didFallback = this.fallback.reportFailure({
                             providerId,
                             error,
-                            request: enrichedRequest, // ✅ ya lista
+                            request: enrichedRequest,
                             wasAutoFallback,
                         });
+
                         if (didFallback) return EMPTY;
                     }
+
                     return throwError(() => error);
                 })
             );
         });
-
     }
 }
