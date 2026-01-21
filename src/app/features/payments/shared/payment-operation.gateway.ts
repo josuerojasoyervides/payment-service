@@ -2,7 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import { inject } from "@angular/core";
 import { I18nKeys, I18nService } from "@core/i18n";
 import { LoggerService } from "@core/logging";
-import { CreatePaymentRequest, PaymentError, PaymentProviderId } from "@payments/domain/models";
+import { PaymentError, PaymentProviderId } from "@payments/domain/models";
 import { PaymentGatewayRefactor } from "@payments/domain/ports";
 import { catchError, map, Observable, throwError } from "rxjs";
 

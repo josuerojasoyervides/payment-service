@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ConfirmPaymentRequest, GetPaymentStatusRequest, PaymentIntent, PaymentProviderId } from '@payments/domain/models';
+import { GetPaymentStatusRequest, PaymentIntent, PaymentProviderId } from '@payments/domain/models';
 import { PaymentGatewayOperation } from '@payments/shared/payment-operation.gateway';
 import { StripePaymentIntentDto } from '../../dto/stripe.dto';
 import { Observable } from 'rxjs';

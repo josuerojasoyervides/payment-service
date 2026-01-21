@@ -1,8 +1,8 @@
 import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest, PaymentIntent } from "@payments/domain/models";
 import { PaymentGatewayOperation } from "@payments/shared/payment-operation.gateway";
-import { StripePaymentIntentDto } from "../../dto/stripe.dto";
+import { StripePaymentIntentDto, StripeSpeiSourceDto } from "../../dto/stripe.dto";
 
-export type CreateIntentOp = PaymentGatewayOperation<CreatePaymentRequest, StripePaymentIntentDto, PaymentIntent>;
+export type CreateIntentOp = PaymentGatewayOperation<CreatePaymentRequest, StripePaymentIntentDto | StripeSpeiSourceDto, PaymentIntent>;
 export type ConfirmIntentOp = PaymentGatewayOperation<ConfirmPaymentRequest, StripePaymentIntentDto, PaymentIntent>;
 export type CancelIntentOp = PaymentGatewayOperation<CancelPaymentRequest, StripePaymentIntentDto, PaymentIntent>;
 export type GetIntentStatusOp = PaymentGatewayOperation<GetPaymentStatusRequest, StripePaymentIntentDto, PaymentIntent>;

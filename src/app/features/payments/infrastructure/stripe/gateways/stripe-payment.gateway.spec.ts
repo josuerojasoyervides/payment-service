@@ -1,14 +1,22 @@
 import { TestBed } from '@angular/core/testing';
-import { StripePaymentGateway } from './stripe-payment.gateway';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
-import { CreatePaymentRequest, PaymentError } from '../../../domain/models';
-import { I18nService } from '@core/i18n';
+import { of } from 'rxjs';
 
-describe('StripePaymentGateway', () => {
+import { StripePaymentGateway } from './stripe-payment.gateway';
+import { StripeCreateIntentGateway } from './intent/create-intent.gateway';
+import { StripeConfirmIntentGateway } from './intent/confirm-intent.gateway';
+import { StripeCancelIntentGateway } from './intent/cancel-intent.gateway';
+import { StripeGetIntentGateway } from './intent/get-intent.gateway';
+
+import { CreatePaymentRequest } from '@payments/domain/models';
+
+describe('StripePaymentGateway (adapter)', () => {
     let gateway: StripePaymentGateway;
-    let httpMock: HttpTestingController;
+
+    // Mocks de operaciones (NO HTTP)
+    const createIntentOp = { execute: vi.fn() };
+    const confirmIntentOp = { execute: vi.fn() };
+    const cancelIntentOp = { execute: vi.fn() };
+    const getIntentOp = { execute: vi.fn() };
 
     const req: CreatePaymentRequest = {
         orderId: 'order_1',
@@ -18,193 +26,26 @@ describe('StripePaymentGateway', () => {
     };
 
     beforeEach(() => {
-        const i18nMock = {
-            t: vi.fn((key: string) => {
-                const translations: Record<string, string> = {
-                    'errors.card_declined': 'Tu tarjeta fue rechazada. Contacta a tu banco o usa otra tarjeta.',
-                    'errors.stripe_error': 'Error procesando el pago con Stripe.',
-                    'errors.stripe_unavailable': 'Stripe no está disponible en este momento. Intenta más tarde.',
-                    'errors.order_id_required': 'orderId is required',
-                    'errors.provider_error': 'Payment provider error',
-                };
-                return translations[key] || key;
-            }),
-            setLanguage: vi.fn(),
-            getLanguage: vi.fn(() => 'es'),
-            has: vi.fn(() => true),
-            currentLang: { asReadonly: vi.fn() } as any,
-        } as any;
-
         TestBed.configureTestingModule({
             providers: [
-                provideHttpClient(),
-                provideHttpClientTesting(),
                 StripePaymentGateway,
-                { provide: I18nService, useValue: i18nMock },
+
+                { provide: StripeCreateIntentGateway, useValue: createIntentOp },
+                { provide: StripeConfirmIntentGateway, useValue: confirmIntentOp },
+                { provide: StripeCancelIntentGateway, useValue: cancelIntentOp },
+                { provide: StripeGetIntentGateway, useValue: getIntentOp },
             ],
         });
 
         gateway = TestBed.inject(StripePaymentGateway);
-        httpMock = TestBed.inject(HttpTestingController);
     });
 
-    afterEach(() => {
-        httpMock.verify();
-    });
+    it('delegates createIntent to StripeCreateIntentGateway.execute', async () => {
+        createIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
 
-    it('throws synchronously when request is invalid (base validation)', () => {
-        expect(() =>
-            gateway.createIntent({
-                ...req,
-                orderId: '',
-            })
-        ).toThrowError('orderId is required');
-    });
+        gateway.createIntent(req).subscribe();
 
-    describe('createIntent', () => {
-        it('POSTs to /api/payments/stripe/intents with transformed body', async () => {
-            const promise = firstValueFrom(gateway.createIntent(req));
-
-            const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
-            expect(httpReq.request.method).toBe('POST');
-            // Body is transformed to Stripe format (centavos, lowercase currency, etc.)
-            expect(httpReq.request.body.amount).toBe(10000); // 100 * 100 centavos
-            expect(httpReq.request.body.currency).toBe('mxn');
-            expect(httpReq.request.body.payment_method).toBe('tok_123');
-            
-            // Should have idempotency header (fallback to timestamp-based if no key provided)
-            expect(httpReq.request.headers.has('Idempotency-Key')).toBe(true);
-
-            // Respond with Stripe-like DTO
-            httpReq.flush({
-                id: 'pi_123',
-                object: 'payment_intent',
-                status: 'requires_payment_method',
-                amount: 10000,
-                currency: 'mxn',
-                client_secret: 'pi_123_secret_test',
-            });
-
-            const result = await promise;
-
-            expect(result).toEqual(
-                expect.objectContaining({
-                    id: 'pi_123',
-                    provider: 'stripe',
-                    status: 'requires_payment_method',
-                    amount: 100, // Converted back from centavos
-                    currency: 'MXN',
-                    clientSecret: 'pi_123_secret_test',
-                })
-            );
-
-            expect(result.raw).toBeTruthy();
-            
-            // Should have idempotency header (fallback to timestamp-based if no key provided)
-            expect(httpReq.request.headers.has('Idempotency-Key')).toBe(true);
-        });
-
-        it('uses provided idempotency key from request', async () => {
-            const reqWithKey: CreatePaymentRequest = {
-                ...req,
-                idempotencyKey: 'stripe:start:order_1:100:MXN:card',
-            };
-
-            const promise = firstValueFrom(gateway.createIntent(reqWithKey));
-            const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
-            
-            expect(httpReq.request.headers.get('Idempotency-Key')).toBe('stripe:start:order_1:100:MXN:card');
-            
-            httpReq.flush({
-                id: 'pi_123',
-                object: 'payment_intent',
-                status: 'requires_payment_method',
-                amount: 10000,
-                currency: 'mxn',
-                client_secret: 'pi_123_secret_test',
-            });
-
-            await promise;
-        });
-
-        it('uses stable idempotency key for retries (same request = same key)', async () => {
-            const reqWithKey: CreatePaymentRequest = {
-                ...req,
-                idempotencyKey: 'stripe:start:order_1:100:MXN:card',
-            };
-
-            // First request
-            const promise1 = firstValueFrom(gateway.createIntent(reqWithKey));
-            const httpReq1 = httpMock.expectOne('/api/payments/stripe/intents');
-            expect(httpReq1.request.headers.get('Idempotency-Key')).toBe('stripe:start:order_1:100:MXN:card');
-            
-            httpReq1.flush({
-                id: 'pi_123',
-                object: 'payment_intent',
-                status: 'requires_payment_method',
-                amount: 10000,
-                currency: 'mxn',
-                client_secret: 'pi_123_secret_test',
-            });
-            await promise1;
-
-            // Retry with same request - should use same idempotency key
-            const promise2 = firstValueFrom(gateway.createIntent(reqWithKey));
-            const httpReq2 = httpMock.expectOne('/api/payments/stripe/intents');
-            expect(httpReq2.request.headers.get('Idempotency-Key')).toBe('stripe:start:order_1:100:MXN:card');
-            
-            httpReq2.flush({
-                id: 'pi_123',
-                object: 'payment_intent',
-                status: 'requires_payment_method',
-                amount: 10000,
-                currency: 'mxn',
-                client_secret: 'pi_123_secret_test',
-            });
-            await promise2;
-        });
-
-        it('normalizes Stripe-like errors with human-readable messages', async () => {
-            const promise = firstValueFrom(gateway.createIntent(req));
-            const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
-
-            httpReq.flush(
-                { error: { type: 'card_error', code: 'card_declined', message: 'Card declined' } },
-                { status: 402, statusText: 'Payment Required' }
-            );
-
-            try {
-                await promise;
-                throw new Error('Expected promise to reject');
-            } catch (error) {
-                const paymentError = error as PaymentError;
-
-                expect(paymentError.code).toBe('card_declined');
-                // Message is humanized in Spanish
-                expect(paymentError.message).toContain('rechazada');
-            }
-        });
-
-        it('falls back to generic error message when error shape is not Stripe-like', async () => {
-            const promise = firstValueFrom(gateway.createIntent(req));
-            const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
-
-            httpReq.error(new ProgressEvent('error'), {
-                status: 0,
-                statusText: 'Unknown Error'
-            });
-
-            try {
-                await promise;
-                throw new Error('Expected promise to reject');
-            } catch (error) {
-                const paymentErr = error as PaymentError;
-
-                expect(paymentErr.code).toBe('provider_error');
-                // Generic Spanish message
-                expect(paymentErr.message).toContain('Stripe');
-                expect(paymentErr.raw).toBeTruthy();
-            }
-        });
+        expect(createIntentOp.execute).toHaveBeenCalledTimes(1);
+        expect(createIntentOp.execute).toHaveBeenCalledWith(req);
     });
 });

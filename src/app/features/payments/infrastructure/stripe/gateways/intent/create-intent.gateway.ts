@@ -5,8 +5,6 @@ import { StripeCreateIntentRequest, StripePaymentIntentDto, StripeSpeiSourceDto 
 import { Observable } from 'rxjs';
 import { getIdempotencyHeaders } from '../../validators/get-idempotency-headers';
 import { SpeiSourceMapper } from '../../mappers/spei-source.mapper';
-import { STATUS_MAP } from '../../mappers/internal-status.mapper';
-import { mapStripeNextAction } from '../../mappers/next-action.mapper';
 import { mapPaymentIntent } from '../../mappers/payment-intent.mapper';
 
 @Injectable()

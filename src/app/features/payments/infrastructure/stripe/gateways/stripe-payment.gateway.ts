@@ -23,6 +23,11 @@ import { mapPaymentIntent } from "../mappers/payment-intent.mapper";
 import { getIdempotencyHeaders } from "../validators/get-idempotency-headers";
 import { isStripeErrorResponse } from "../mappers/error-response.mapper";
 import { ErrorKeyMapper } from "../mappers/error-key.mapper";
+import { PaymentGateway } from "@payments/domain/ports";
+import { StripeCreateIntentGateway } from "./intent/create-intent.gateway";
+import { StripeConfirmIntentGateway } from "./intent/confirm-intent.gateway";
+import { StripeCancelIntentGateway } from "./intent/cancel-intent.gateway";
+import { StripeGetIntentGateway } from "./intent/get-intent.gateway";
 
 
 /**
@@ -37,159 +42,28 @@ import { ErrorKeyMapper } from "../mappers/error-key.mapper";
  * - Idempotency keys for safe operations
  */
 @Injectable()
-export class StripePaymentGateway extends BasePaymentGateway<StripeCreateResponseDto, StripePaymentIntentDto> {
+export class StripePaymentGateway implements PaymentGateway {
     readonly providerId = 'stripe' as const;
+    constructor(
+        private readonly createIntentOp: StripeCreateIntentGateway,
+        private readonly confirmIntentOp: StripeConfirmIntentGateway,
+        private readonly cancelIntentOp: StripeCancelIntentGateway,
+        private readonly getIntentOp: StripeGetIntentGateway,
+    ) { }
 
-    private static readonly API_BASE = '/api/payments/stripe';
-
-    /**
-     * Creates a PaymentIntent in Stripe.
-     */
-    protected createIntentRaw(req: CreatePaymentRequest): Observable<StripePaymentIntentDto | StripeSpeiSourceDto> {
-        const stripeRequest = this.buildStripeCreateRequest(req);
-
-        if (req.method.type === 'spei') {
-            return this.http.post<StripeSpeiSourceDto>(
-                `${StripePaymentGateway.API_BASE}/sources`,
-                stripeRequest,
-                { headers: getIdempotencyHeaders(req.orderId, 'create', req.idempotencyKey) }
-            );
-        }
-
-        return this.http.post<StripePaymentIntentDto>(
-            `${StripePaymentGateway.API_BASE}/intents`,
-            stripeRequest,
-            { headers: getIdempotencyHeaders(req.orderId, 'create', req.idempotencyKey) }
-        );
+    createIntent(req: CreatePaymentRequest): Observable<PaymentIntent> {
+        return this.createIntentOp.execute(req);
     }
 
-    protected mapIntent(dto: StripePaymentIntentDto | StripeSpeiSourceDto): PaymentIntent {
-        if ('spei' in dto) {
-            const mapper = new SpeiSourceMapper(this.providerId);
-            return mapper.mapSpeiSource(dto as StripeSpeiSourceDto);
-        }
-        return mapPaymentIntent(dto as StripePaymentIntentDto, this.providerId);
+    confirmIntent(req: ConfirmPaymentRequest): Observable<PaymentIntent> {
+        return this.confirmIntentOp.execute(req);
     }
 
-    /**
-     * Confirms an existing PaymentIntent.
-     */
-    protected confirmIntentRaw(req: ConfirmPaymentRequest): Observable<StripePaymentIntentDto> {
-        const stripeRequest: StripeConfirmIntentRequest = {
-            return_url: req.returnUrl,
-        };
-
-        return this.http.post<StripePaymentIntentDto>(
-            `${StripePaymentGateway.API_BASE}/intents/${req.intentId}/confirm`,
-            stripeRequest,
-            { headers: getIdempotencyHeaders(req.intentId, 'confirm', req.idempotencyKey) }
-        );
+    cancelIntent(req: CancelPaymentRequest): Observable<PaymentIntent> {
+        return this.cancelIntentOp.execute(req);
     }
 
-    protected mapConfirmIntent(dto: StripePaymentIntentDto): PaymentIntent {
-        return mapPaymentIntent(dto, this.providerId);
-    }
-
-    /**
-     * Cancels a PaymentIntent.
-     */
-    protected cancelIntentRaw(req: CancelPaymentRequest): Observable<StripePaymentIntentDto> {
-        return this.http.post<StripePaymentIntentDto>(
-            `${StripePaymentGateway.API_BASE}/intents/${req.intentId}/cancel`,
-            {},
-            { headers: getIdempotencyHeaders(req.intentId, 'cancel', req.idempotencyKey) }
-        );
-    }
-
-    protected mapCancelIntent(dto: StripePaymentIntentDto): PaymentIntent {
-        return mapPaymentIntent(dto, this.providerId);
-    }
-
-    /**
-     * Gets the current status of a PaymentIntent.
-     */
-    protected getIntentRaw(req: GetPaymentStatusRequest): Observable<StripePaymentIntentDto> {
-        return this.http.get<StripePaymentIntentDto>(
-            `${StripePaymentGateway.API_BASE}/intents/${req.intentId}`
-        );
-    }
-
-    protected mapGetIntent(dto: StripePaymentIntentDto): PaymentIntent {
-        return mapPaymentIntent(dto, this.providerId);
-    }
-
-    /**
-     * Normalizes Stripe errors to our format.
-     */
-    protected override normalizeError(err: unknown): PaymentError {
-        let stripeError: any = null;
-
-        if (err && typeof err === 'object') {
-            if (isStripeErrorResponse(err)) {
-                stripeError = (err as any).error;
-            }
-            else if ('error' in err && (err as any).error) {
-                const errorBody = (err as any).error;
-                if (errorBody && typeof errorBody === 'object' && 'error' in errorBody) {
-                    const innerError = errorBody.error;
-                    if (innerError && typeof innerError === 'object' && 'type' in innerError && 'code' in innerError) {
-                        stripeError = innerError;
-                    }
-                }
-            }
-        }
-
-        if (stripeError && typeof stripeError === 'object' && 'code' in stripeError) {
-
-            const mapper = new ErrorKeyMapper();
-            return {
-                code: ERROR_CODE_MAP[stripeError.code] ?? 'provider_error',
-                message: mapper.mapErrorKey(stripeError),
-                raw: err,
-            };
-        }
-
-        if (err && typeof err === 'object' && 'status' in err) {
-            const httpError = err as { status: number; message?: string };
-
-            if (httpError.status === 402) {
-                return {
-                    code: 'card_declined',
-                    message: this.i18n.t(I18nKeys.errors.card_declined),
-                    raw: err,
-                };
-            }
-
-            if (httpError.status >= 500) {
-                return {
-                    code: 'provider_unavailable',
-                    message: this.i18n.t(I18nKeys.errors.stripe_unavailable),
-                    raw: err,
-                };
-            }
-        }
-
-        return {
-            code: 'provider_error',
-            message: this.i18n.t(I18nKeys.errors.stripe_error),
-            raw: err,
-        };
-    }
-
-    /**
-     * Builds the request in Stripe format.
-     */
-    private buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreateIntentRequest {
-        return {
-            amount: Math.round(req.amount * 100),
-            currency: req.currency.toLowerCase(),
-            payment_method_types: [req.method.type === 'spei' ? 'spei' : 'card'],
-            payment_method: req.method.token,
-            metadata: {
-                order_id: req.orderId,
-                created_at: new Date().toISOString(),
-            },
-            description: `Orden ${req.orderId}`,
-        };
+    getIntent(req: GetPaymentStatusRequest): Observable<PaymentIntent> {
+        return this.getIntentOp.execute(req);
     }
 }

@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { 
-    ProviderFactory, 
-    PaymentStrategy, 
-    PaymentRequestBuilder, 
+import {
+    ProviderFactory,
+    PaymentStrategy,
+    PaymentRequestBuilder,
     FieldRequirements,
     PaymentGateway,
 } from '../../../domain/ports';
@@ -56,9 +56,7 @@ export class StripeProviderFactory implements ProviderFactory {
         this.assertSupported(type);
 
         const cached = this.strategyCache.get(type);
-        if (cached) {
-            return cached;
-        }
+        if (cached) return cached;
 
         const strategy = this.instantiateStrategy(type);
         this.strategyCache.set(type, strategy);

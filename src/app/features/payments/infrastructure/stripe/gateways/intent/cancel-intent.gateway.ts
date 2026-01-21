@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { CancelPaymentRequest, PaymentIntent, PaymentProviderId } from '@payments/domain/models';
-import { PaymentGatewayOperation as PaymentOperationGateway } from '@payments/shared/payment-operation.gateway';
+import { PaymentGatewayOperation } from '@payments/shared/payment-operation.gateway';
 import { StripePaymentIntentDto } from '../../dto/stripe.dto';
 import { Observable } from 'rxjs';
 import { getIdempotencyHeaders } from '../../validators/get-idempotency-headers';
 import { mapPaymentIntent } from '../../mappers/payment-intent.mapper';
 
 @Injectable()
-export class StripeCancelIntentGateway extends PaymentOperationGateway<CancelPaymentRequest, StripePaymentIntentDto, PaymentIntent> {
+export class StripeCancelIntentGateway extends PaymentGatewayOperation<CancelPaymentRequest, StripePaymentIntentDto, PaymentIntent> {
 
     readonly providerId: PaymentProviderId = 'stripe' as const;
 
