@@ -1,31 +1,28 @@
-import { Injectable, inject } from "@angular/core";
+import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
-import { PaymentGateway } from "../../../domain/ports";
-import { I18nService, I18nKeys } from "@core/i18n";
+import { I18nKeys } from "@core/i18n";
 import {
     PaymentIntent,
-    PaymentIntentStatus,
     CancelPaymentRequest,
     ConfirmPaymentRequest,
     CreatePaymentRequest,
     GetPaymentStatusRequest,
     PaymentError,
-    PaymentErrorCode,
-    NextActionSpei,
-    NextActionThreeDs,
 } from "../../../domain/models";
 import {
     StripePaymentIntentDto,
-    StripePaymentIntentStatus,
     StripeCreateIntentRequest,
     StripeConfirmIntentRequest,
-    StripeErrorResponse,
     StripeSpeiSourceDto,
     StripeCreateResponseDto
 } from "../dto/stripe.dto";
 import { BasePaymentGateway } from "@payments/shared/base-payment.gateway";
 import { ERROR_CODE_MAP } from "../mappers/error-code.mapper";
-import { STATUS_MAP } from "../mappers/internal-status.mapper";
+import { SpeiSourceMapper } from "../mappers/spei-source.mapper";
+import { mapPaymentIntent } from "../mappers/payment-intent.mapper";
+import { getIdempotencyHeaders } from "../validators/get-idempotency-headers";
+import { isStripeErrorResponse } from "../mappers/error-response.mapper";
+import { ErrorKeyMapper } from "../mappers/error-key.mapper";
 
 
 /**
@@ -55,22 +52,23 @@ export class StripePaymentGateway extends BasePaymentGateway<StripeCreateRespons
             return this.http.post<StripeSpeiSourceDto>(
                 `${StripePaymentGateway.API_BASE}/sources`,
                 stripeRequest,
-                { headers: this.getIdempotencyHeaders(req.orderId, 'create', req.idempotencyKey) }
+                { headers: getIdempotencyHeaders(req.orderId, 'create', req.idempotencyKey) }
             );
         }
 
         return this.http.post<StripePaymentIntentDto>(
             `${StripePaymentGateway.API_BASE}/intents`,
             stripeRequest,
-            { headers: this.getIdempotencyHeaders(req.orderId, 'create', req.idempotencyKey) }
+            { headers: getIdempotencyHeaders(req.orderId, 'create', req.idempotencyKey) }
         );
     }
 
     protected mapIntent(dto: StripePaymentIntentDto | StripeSpeiSourceDto): PaymentIntent {
         if ('spei' in dto) {
-            return this.mapSpeiSource(dto as StripeSpeiSourceDto);
+            const mapper = new SpeiSourceMapper(this.providerId);
+            return mapper.mapSpeiSource(dto as StripeSpeiSourceDto);
         }
-        return this.mapPaymentIntent(dto as StripePaymentIntentDto);
+        return mapPaymentIntent(dto as StripePaymentIntentDto, this.providerId);
     }
 
     /**
@@ -84,12 +82,12 @@ export class StripePaymentGateway extends BasePaymentGateway<StripeCreateRespons
         return this.http.post<StripePaymentIntentDto>(
             `${StripePaymentGateway.API_BASE}/intents/${req.intentId}/confirm`,
             stripeRequest,
-            { headers: this.getIdempotencyHeaders(req.intentId, 'confirm', req.idempotencyKey) }
+            { headers: getIdempotencyHeaders(req.intentId, 'confirm', req.idempotencyKey) }
         );
     }
 
     protected mapConfirmIntent(dto: StripePaymentIntentDto): PaymentIntent {
-        return this.mapPaymentIntent(dto);
+        return mapPaymentIntent(dto, this.providerId);
     }
 
     /**
@@ -99,12 +97,12 @@ export class StripePaymentGateway extends BasePaymentGateway<StripeCreateRespons
         return this.http.post<StripePaymentIntentDto>(
             `${StripePaymentGateway.API_BASE}/intents/${req.intentId}/cancel`,
             {},
-            { headers: this.getIdempotencyHeaders(req.intentId, 'cancel', req.idempotencyKey) }
+            { headers: getIdempotencyHeaders(req.intentId, 'cancel', req.idempotencyKey) }
         );
     }
 
     protected mapCancelIntent(dto: StripePaymentIntentDto): PaymentIntent {
-        return this.mapPaymentIntent(dto);
+        return mapPaymentIntent(dto, this.providerId);
     }
 
     /**
@@ -117,7 +115,7 @@ export class StripePaymentGateway extends BasePaymentGateway<StripeCreateRespons
     }
 
     protected mapGetIntent(dto: StripePaymentIntentDto): PaymentIntent {
-        return this.mapPaymentIntent(dto);
+        return mapPaymentIntent(dto, this.providerId);
     }
 
     /**
@@ -127,7 +125,7 @@ export class StripePaymentGateway extends BasePaymentGateway<StripeCreateRespons
         let stripeError: any = null;
 
         if (err && typeof err === 'object') {
-            if (this.isStripeErrorResponse(err)) {
+            if (isStripeErrorResponse(err)) {
                 stripeError = (err as any).error;
             }
             else if ('error' in err && (err as any).error) {
@@ -142,9 +140,11 @@ export class StripePaymentGateway extends BasePaymentGateway<StripeCreateRespons
         }
 
         if (stripeError && typeof stripeError === 'object' && 'code' in stripeError) {
+
+            const mapper = new ErrorKeyMapper();
             return {
                 code: ERROR_CODE_MAP[stripeError.code] ?? 'provider_error',
-                message: this.humanizeStripeError(stripeError),
+                message: mapper.mapErrorKey(stripeError),
                 raw: err,
             };
         }
@@ -176,101 +176,6 @@ export class StripePaymentGateway extends BasePaymentGateway<StripeCreateRespons
         };
     }
 
-    // ============ PRIVATE MAPPING ============
-
-    /**
-     * Maps a Stripe PaymentIntent to our model.
-     */
-    private mapPaymentIntent(dto: StripePaymentIntentDto): PaymentIntent {
-        const status = STATUS_MAP[dto.status] ?? 'processing';
-
-        const intent: PaymentIntent = {
-            id: dto.id,
-            provider: this.providerId,
-            status,
-            amount: dto.amount / 100,
-            currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
-            clientSecret: dto.client_secret,
-            raw: dto,
-        };
-
-        if (dto.next_action) {
-            intent.nextAction = this.mapStripeNextAction(dto);
-        }
-
-        return intent;
-    }
-
-    /**
-     * Maps a Stripe SPEI Source to our model.
-     */
-    private mapSpeiSource(dto: StripeSpeiSourceDto): PaymentIntent {
-        const speiAction: NextActionSpei = {
-            type: 'spei',
-            instructions: this.i18n.t(I18nKeys.messages.spei_instructions),
-            clabe: dto.spei.clabe,
-            reference: dto.spei.reference,
-            bank: dto.spei.bank,
-            beneficiary: this.i18n.t(I18nKeys.ui.stripe_beneficiary),
-            amount: dto.amount / 100,
-            currency: dto.currency.toUpperCase(),
-            expiresAt: new Date(dto.expires_at * 1000).toISOString(),
-        };
-
-        return {
-            id: dto.id,
-            provider: this.providerId,
-            status: this.mapSpeiStatus(dto.status),
-            amount: dto.amount / 100,
-            currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
-            nextAction: speiAction,
-            raw: dto,
-        };
-    }
-
-    /**
-     * Maps Stripe next_action to our model.
-     */
-    private mapStripeNextAction(dto: StripePaymentIntentDto): NextActionThreeDs | undefined {
-        if (!dto.next_action) return undefined;
-
-        if (dto.next_action.type === 'redirect_to_url' && dto.next_action.redirect_to_url) {
-            return {
-                type: '3ds',
-                clientSecret: dto.client_secret,
-                returnUrl: dto.next_action.redirect_to_url.return_url,
-                threeDsVersion: '2.0',
-            };
-        }
-
-        if (dto.next_action.type === 'use_stripe_sdk') {
-            return {
-                type: '3ds',
-                clientSecret: dto.client_secret,
-                returnUrl: '',
-                threeDsVersion: '2.0',
-            };
-        }
-
-        return undefined;
-    }
-
-    /**
-     * Maps SPEI Source statuses to our statuses.
-     */
-    private mapSpeiStatus(status: StripeSpeiSourceDto['status']): PaymentIntentStatus {
-        const map: Record<StripeSpeiSourceDto['status'], PaymentIntentStatus> = {
-            'pending': 'requires_action',
-            'chargeable': 'requires_confirmation',
-            'consumed': 'succeeded',
-            'canceled': 'canceled',
-            'failed': 'failed',
-        };
-        return map[status] ?? 'processing';
-    }
-
-    // ============ HELPERS ============
-
     /**
      * Builds the request in Stripe format.
      */
@@ -286,54 +191,5 @@ export class StripePaymentGateway extends BasePaymentGateway<StripeCreateRespons
             },
             description: `Orden ${req.orderId}`,
         };
-    }
-
-    /**
-     * Generates idempotency headers for safe operations.
-     * 
-     * Uses the idempotency key from the request if available (stable for retries),
-     * otherwise falls back to generating a key based on operation and identifier.
-     */
-    private getIdempotencyHeaders(
-        key: string,
-        operation: string,
-        idempotencyKey?: string
-    ): Record<string, string> {
-        const finalKey = idempotencyKey ?? `${key}-${operation}-${Date.now()}`;
-        return {
-            'Idempotency-Key': finalKey,
-        };
-    }
-
-    /**
-     * Type guard for Stripe errors.
-     */
-    private isStripeErrorResponse(err: unknown): err is { error: StripeErrorResponse['error'] } {
-        return err !== null &&
-            typeof err === 'object' &&
-            'error' in err &&
-            typeof (err as any).error === 'object' &&
-            'type' in (err as any).error;
-    }
-
-    /**
-     * Converts technical Stripe errors to readable messages.
-     */
-    private humanizeStripeError(error: StripeErrorResponse['error']): string {
-        const errorKeyMap: Partial<Record<string, string>> = {
-            'card_declined': I18nKeys.errors.card_declined,
-            'expired_card': I18nKeys.errors.expired_card,
-            'incorrect_cvc': I18nKeys.errors.incorrect_cvc,
-            'processing_error': I18nKeys.errors.processing_error,
-            'incorrect_number': I18nKeys.errors.incorrect_number,
-            'authentication_required': I18nKeys.errors.authentication_required,
-        };
-
-        const translationKey = errorKeyMap[error.code];
-        if (translationKey) {
-            return this.i18n.t(translationKey);
-        }
-
-        return error.message ?? this.i18n.t(I18nKeys.errors.stripe_error);
     }
 }

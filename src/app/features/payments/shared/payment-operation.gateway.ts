@@ -6,7 +6,7 @@ import { CreatePaymentRequest, PaymentError, PaymentProviderId } from "@payments
 import { PaymentGatewayRefactor } from "@payments/domain/ports";
 import { catchError, map, Observable, throwError } from "rxjs";
 
-export abstract class BasePaymentRefactorGateway<TRequest, TDto, TResponse>
+export abstract class PaymentGatewayOperation<TRequest, TDto, TResponse>
     implements PaymentGatewayRefactor<TRequest, TResponse> {
 
     abstract readonly providerId: PaymentProviderId;
