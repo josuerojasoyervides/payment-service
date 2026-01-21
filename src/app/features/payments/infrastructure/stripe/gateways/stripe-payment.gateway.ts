@@ -23,6 +23,7 @@ import {
     StripeSpeiSourceDto,
     StripeCreateResponseDto
 } from "../dto/stripe.dto";
+import { BasePaymentGateway } from "@payments/shared/base-payment.gateway";
 
 
 /**
@@ -37,7 +38,7 @@ import {
  * - Idempotency keys for safe operations
  */
 @Injectable()
-export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto, StripePaymentIntentDto> {
+export class StripePaymentGateway extends BasePaymentGateway<StripeCreateResponseDto, StripePaymentIntentDto> {
     readonly providerId = 'stripe' as const;
 
     private static readonly API_BASE = '/api/payments/stripe';
@@ -315,7 +316,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
      * otherwise falls back to generating a key based on operation and identifier.
      */
     private getIdempotencyHeaders(
-        key: string, 
+        key: string,
         operation: string,
         idempotencyKey?: string
     ): Record<string, string> {

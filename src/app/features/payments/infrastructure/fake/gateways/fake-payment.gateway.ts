@@ -13,6 +13,7 @@ import {
 import { PaymentGateway } from "../../../domain/ports";
 import { StripePaymentIntentDto, StripeSpeiSourceDto } from "../../stripe/dto/stripe.dto";
 import { PaypalOrderDto } from "../../paypal/dto/paypal.dto";
+import { BasePaymentGateway } from "@payments/shared/base-payment.gateway";
 
 /**
  * Special tokens to control fake gateway behavior.
@@ -83,7 +84,7 @@ const FAKE_ERRORS: Record<string, PaymentError> = {
  * - Special tokens to force different behaviors
  */
 @Injectable()
-export class FakePaymentGateway extends PaymentGateway {
+export class FakePaymentGateway extends BasePaymentGateway<any, any> {
     readonly providerId: PaymentProviderId = 'stripe';
 
     /**
@@ -313,8 +314,8 @@ export class FakePaymentGateway extends PaymentGateway {
 
             // Check token for explicit 3DS indicators (deterministic)
             const token = req.method.token ?? '';
-            const requires3ds = token.includes('3ds') || token.includes('auth') || 
-                                token.startsWith(SPECIAL_TOKENS.THREE_DS);
+            const requires3ds = token.includes('3ds') || token.includes('auth') ||
+                token.startsWith(SPECIAL_TOKENS.THREE_DS);
 
             if (requires3ds) {
                 status = 'requires_action';

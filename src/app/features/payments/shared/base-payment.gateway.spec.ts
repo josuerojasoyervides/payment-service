@@ -1,14 +1,15 @@
 import { firstValueFrom, Observable, of, throwError } from 'rxjs';
-import { PaymentProviderId, PaymentIntent, PaymentIntentStatus } from '../../models/payment/payment-intent.types';
-import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from '../../models/payment/payment-request.types';
-import { PaymentGateway } from './payment-gateway.port'
-import { PaymentError } from '../../models/payment/payment-error.types';
+import { PaymentProviderId, PaymentIntent, PaymentIntentStatus } from '../domain/models/payment/payment-intent.types';
+import { CancelPaymentRequest, ConfirmPaymentRequest, CreatePaymentRequest, GetPaymentStatusRequest } from '../domain/models/payment/payment-request.types';
+import { PaymentGateway } from '../domain/ports/payment/payment-gateway.port'
+import { PaymentError } from '../domain/models/payment/payment-error.types';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { I18nService } from '@core/i18n';
+import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
 
-class PaymentGatewayTest extends PaymentGateway {
+class PaymentGatewayTest extends BasePaymentGateway<any, any> {
     readonly providerId = 'paypal' as const;
 
     public mode: 'ok' | 'raw-error' = 'ok';
@@ -95,7 +96,7 @@ class PaymentGatewayTest extends PaymentGateway {
     }
 }
 
-class PaymentGatewayBaseErrorTest extends PaymentGateway {
+class PaymentGatewayBaseErrorTest extends BasePaymentGateway<any, any> {
     providerId: PaymentProviderId = 'paypal';
 
     protected createIntentRaw(req: CreatePaymentRequest): Observable<unknown> {

@@ -1,12 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { 
-    PaymentIntent, 
+import {
+    PaymentIntent,
     PaymentIntentStatus,
-    CancelPaymentRequest, 
-    ConfirmPaymentRequest, 
-    CreatePaymentRequest, 
+    CancelPaymentRequest,
+    ConfirmPaymentRequest,
+    CreatePaymentRequest,
     GetPaymentStatusRequest,
-    PaymentError, 
+    PaymentError,
     PaymentErrorCode,
     NextActionPaypalApprove,
 } from '../../../domain/models';
@@ -20,6 +20,7 @@ import {
     PaypalErrorResponse,
     findPaypalLink
 } from '../dto/paypal.dto';
+import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
 
 /**
  * PayPal gateway (Orders API v2).
@@ -32,7 +33,7 @@ import {
  * - No client_secret, uses session cookies
  */
 @Injectable()
-export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalOrderDto> {
+export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, PaypalOrderDto> {
     readonly providerId = 'paypal' as const;
 
     private static readonly API_BASE = '/api/payments/paypal';
@@ -268,7 +269,7 @@ export class PaypalPaymentGateway extends PaymentGateway<PaypalOrderDto, PaypalO
                 'Check that CheckoutComponent provides StrategyContext.returnUrl when starting payment.'
             );
         }
-        
+
         const returnUrl = req.returnUrl;
         const cancelUrl = req.cancelUrl ?? returnUrl;
 
