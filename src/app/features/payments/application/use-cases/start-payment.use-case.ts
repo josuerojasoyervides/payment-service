@@ -4,6 +4,7 @@ import { defer, Observable, catchError, throwError } from 'rxjs';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { StrategyContext } from '../../domain/ports';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 
 /**
  * Caso de uso: Iniciar un pago.
@@ -23,6 +24,7 @@ import { FallbackOrchestratorService } from '../services/fallback-orchestrator.s
 export class StartPaymentUseCase {
     private readonly registry = inject(ProviderFactoryRegistry);
     private readonly fallbackOrchestrator = inject(FallbackOrchestratorService);
+    private readonly idempotencyKeyFactory = inject(IdempotencyKeyFactory);
 
     /**
      * Inicia un nuevo pago.
@@ -39,9 +41,16 @@ export class StartPaymentUseCase {
         wasAutoFallback: boolean = false
     ): Observable<PaymentIntent> {
         return defer(() => {
+            // Generate idempotency key if not already provided
+            // This ensures retries use the same key
+            const requestWithIdempotency: CreatePaymentRequest = {
+                ...req,
+                idempotencyKey: req.idempotencyKey ?? this.idempotencyKeyFactory.generateForStart(providerId, req),
+            };
+
             const providerFactory = this.registry.get(providerId);
             const strategy = providerFactory.createStrategy(req.method.type);
-            return strategy.start(req, context);
+            return strategy.start(requestWithIdempotency, context);
         }).pipe(
             catchError((error: PaymentError) => {
                 // Reportar fallo al orchestrator

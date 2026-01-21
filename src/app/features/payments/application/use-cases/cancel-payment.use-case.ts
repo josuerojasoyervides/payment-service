@@ -3,6 +3,7 @@ import { CancelPaymentRequest, PaymentIntent, PaymentProviderId, PaymentError } 
 import { defer, Observable, catchError, throwError } from 'rxjs';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 
 /**
  * Caso de uso: Cancelar un pago.
@@ -18,6 +19,7 @@ import { FallbackOrchestratorService } from '../services/fallback-orchestrator.s
 export class CancelPaymentUseCase {
     private readonly registry = inject(ProviderFactoryRegistry);
     private readonly fallbackOrchestrator = inject(FallbackOrchestratorService);
+    private readonly idempotencyKeyFactory = inject(IdempotencyKeyFactory);
 
     /**
      * Cancela un pago existente.
@@ -27,8 +29,14 @@ export class CancelPaymentUseCase {
      */
     execute(req: CancelPaymentRequest, providerId: PaymentProviderId): Observable<PaymentIntent> {
         return defer(() => {
+            // Generate idempotency key if not already provided
+            const requestWithIdempotency: CancelPaymentRequest = {
+                ...req,
+                idempotencyKey: req.idempotencyKey ?? this.idempotencyKeyFactory.generateForCancel(providerId, req.intentId),
+            };
+            
             const gateway = this.registry.get(providerId).getGateway();
-            return gateway.cancelIntent(req);
+            return gateway.cancelIntent(requestWithIdempotency);
         }).pipe(
             catchError((error: PaymentError) => {
                 // Reportar fallo al orchestrator para consistencia

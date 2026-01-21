@@ -71,6 +71,9 @@ describe('StripePaymentGateway', () => {
             expect(httpReq.request.body.amount).toBe(10000); // 100 * 100 centavos
             expect(httpReq.request.body.currency).toBe('mxn');
             expect(httpReq.request.body.payment_method).toBe('tok_123');
+            
+            // Should have idempotency header (fallback to timestamp-based if no key provided)
+            expect(httpReq.request.headers.has('Idempotency-Key')).toBe(true);
 
             // Respond with Stripe-like DTO
             httpReq.flush({
@@ -96,6 +99,69 @@ describe('StripePaymentGateway', () => {
             );
 
             expect(result.raw).toBeTruthy();
+            
+            // Should have idempotency header (fallback to timestamp-based if no key provided)
+            expect(httpReq.request.headers.has('Idempotency-Key')).toBe(true);
+        });
+
+        it('uses provided idempotency key from request', async () => {
+            const reqWithKey: CreatePaymentRequest = {
+                ...req,
+                idempotencyKey: 'stripe:start:order_1:100:MXN:card',
+            };
+
+            const promise = firstValueFrom(gateway.createIntent(reqWithKey));
+            const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
+            
+            expect(httpReq.request.headers.get('Idempotency-Key')).toBe('stripe:start:order_1:100:MXN:card');
+            
+            httpReq.flush({
+                id: 'pi_123',
+                object: 'payment_intent',
+                status: 'requires_payment_method',
+                amount: 10000,
+                currency: 'mxn',
+                client_secret: 'pi_123_secret_test',
+            });
+
+            await promise;
+        });
+
+        it('uses stable idempotency key for retries (same request = same key)', async () => {
+            const reqWithKey: CreatePaymentRequest = {
+                ...req,
+                idempotencyKey: 'stripe:start:order_1:100:MXN:card',
+            };
+
+            // First request
+            const promise1 = firstValueFrom(gateway.createIntent(reqWithKey));
+            const httpReq1 = httpMock.expectOne('/api/payments/stripe/intents');
+            expect(httpReq1.request.headers.get('Idempotency-Key')).toBe('stripe:start:order_1:100:MXN:card');
+            
+            httpReq1.flush({
+                id: 'pi_123',
+                object: 'payment_intent',
+                status: 'requires_payment_method',
+                amount: 10000,
+                currency: 'mxn',
+                client_secret: 'pi_123_secret_test',
+            });
+            await promise1;
+
+            // Retry with same request - should use same idempotency key
+            const promise2 = firstValueFrom(gateway.createIntent(reqWithKey));
+            const httpReq2 = httpMock.expectOne('/api/payments/stripe/intents');
+            expect(httpReq2.request.headers.get('Idempotency-Key')).toBe('stripe:start:order_1:100:MXN:card');
+            
+            httpReq2.flush({
+                id: 'pi_123',
+                object: 'payment_intent',
+                status: 'requires_payment_method',
+                amount: 10000,
+                currency: 'mxn',
+                client_secret: 'pi_123_secret_test',
+            });
+            await promise2;
         });
 
         it('normalizes Stripe-like errors with human-readable messages', async () => {

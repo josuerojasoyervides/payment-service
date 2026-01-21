@@ -3,6 +3,7 @@ import { GetPaymentStatusRequest, PaymentIntent, PaymentProviderId, PaymentError
 import { defer, Observable, catchError, throwError } from 'rxjs';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 
 /**
  * Caso de uso: Obtener estado de un pago.
@@ -20,6 +21,7 @@ import { FallbackOrchestratorService } from '../services/fallback-orchestrator.s
 export class GetPaymentStatusUseCase {
     private readonly registry = inject(ProviderFactoryRegistry);
     private readonly fallbackOrchestrator = inject(FallbackOrchestratorService);
+    private readonly idempotencyKeyFactory = inject(IdempotencyKeyFactory);
 
     /**
      * Obtiene el estado actual de un pago.
@@ -29,8 +31,14 @@ export class GetPaymentStatusUseCase {
      */
     execute(req: GetPaymentStatusRequest, providerId: PaymentProviderId): Observable<PaymentIntent> {
         return defer(() => {
+            // Generate idempotency key if not already provided (although GET typically doesn't need it)
+            const requestWithIdempotency: GetPaymentStatusRequest = {
+                ...req,
+                idempotencyKey: req.idempotencyKey ?? this.idempotencyKeyFactory.generateForGet(providerId, req.intentId),
+            };
+            
             const gateway = this.registry.get(providerId).getGateway();
-            return gateway.getIntent(req);
+            return gateway.getIntent(requestWithIdempotency);
         }).pipe(
             catchError((error: PaymentError) => {
                 // Reportar fallo al orchestrator para consistencia

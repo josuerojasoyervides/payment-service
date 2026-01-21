@@ -3,6 +3,7 @@ import { firstValueFrom, of, throwError } from 'rxjs';
 import { CancelPaymentUseCase } from './cancel-payment.use-case';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 import { ProviderFactory, PaymentGateway } from '../../domain/ports';
 import { CancelPaymentRequest, PaymentIntent, PaymentMethodType, PaymentProviderId, PaymentError } from '../../domain/models';
 
@@ -53,6 +54,7 @@ describe('CancelPaymentUseCase', () => {
                 CancelPaymentUseCase,
                 { provide: ProviderFactoryRegistry, useValue: registryMock },
                 { provide: FallbackOrchestratorService, useValue: fallbackOrchestratorMock },
+                IdempotencyKeyFactory,
             ],
         });
 
@@ -60,12 +62,17 @@ describe('CancelPaymentUseCase', () => {
         vi.clearAllMocks();
     });
 
-    it('resolves provider and calls gateway.cancelIntent', async () => {
+    it('resolves provider and calls gateway.cancelIntent with idempotency key', async () => {
         const result = await firstValueFrom(useCase.execute(req, 'stripe'));
 
         expect(registryMock.get).toHaveBeenCalledWith('stripe');
         expect(providerFactoryMock.getGateway).toHaveBeenCalledTimes(1);
-        expect(gatewayMock.cancelIntent).toHaveBeenCalledWith(req);
+        expect(gatewayMock.cancelIntent).toHaveBeenCalledWith(
+            expect.objectContaining({
+                ...req,
+                idempotencyKey: 'stripe:cancel:pi_1',
+            })
+        );
         expect(result.id).toBe('pi_1');
     });
 

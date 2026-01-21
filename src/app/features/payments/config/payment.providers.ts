@@ -14,6 +14,7 @@ import { CancelPaymentUseCase } from "../application/use-cases/cancel-payment.us
 import { GetPaymentStatusUseCase } from "../application/use-cases/get-payment-status.use-case";
 import { FallbackOrchestratorService } from "../application/services/fallback-orchestrator.service";
 import { PaymentsStore } from "../application/store/payment.store";
+import { IdempotencyKeyFactory } from "../shared/idempotency/idempotency-key.factory";
 
 /**
  * Gateways for each provider.
@@ -85,6 +86,13 @@ const APPLICATION_PROVIDERS: Provider[] = [
 ];
 
 /**
+ * Shared services (utilities used across layers).
+ */
+const SHARED_PROVIDERS: Provider[] = [
+    IdempotencyKeyFactory,
+];
+
+/**
  * Function to provide all payment infrastructure.
  *
  * Usage:
@@ -104,6 +112,7 @@ export default function providePayments(): (Provider | EnvironmentProviders)[] {
         ...FACTORY_PROVIDERS,
         ...USE_CASE_PROVIDERS,
         ...APPLICATION_PROVIDERS,
+        ...SHARED_PROVIDERS,
     ];
 }
 
@@ -130,6 +139,7 @@ export function providePaymentsWithConfig(options: {
         ...FACTORY_PROVIDERS,
         ...USE_CASE_PROVIDERS,
         ...APPLICATION_PROVIDERS,
+        ...SHARED_PROVIDERS,
     );
 
     if (options.extraProviders) {

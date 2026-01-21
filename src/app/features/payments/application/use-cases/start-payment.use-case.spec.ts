@@ -5,6 +5,7 @@ import { PaymentIntent, PaymentMethodType, PaymentProviderId, CreatePaymentReque
 import { PaymentStrategy, StrategyContext } from '../../domain/ports';
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 
 describe('StartPaymentUseCase', () => {
     let useCase: StartPaymentUseCase;
@@ -61,7 +62,8 @@ describe('StartPaymentUseCase', () => {
             providers: [
                 StartPaymentUseCase,
                 { provide: ProviderFactoryRegistry, useValue: registryMock },
-                { provide: FallbackOrchestratorService, useValue: fallbackOrchestratorMock }
+                { provide: FallbackOrchestratorService, useValue: fallbackOrchestratorMock },
+                IdempotencyKeyFactory,
             ]
         });
         useCase = TestBed.inject(StartPaymentUseCase);
@@ -84,12 +86,19 @@ describe('StartPaymentUseCase', () => {
             expect(providerFactoryMock.createStrategy).toHaveBeenCalledWith(req.method.type);
         });
 
-        it('calls strategy.start with request and context', async () => {
+        it('calls strategy.start with request (with idempotency key) and context', async () => {
             const context: StrategyContext = { returnUrl: 'https://return.com' };
             await firstValueFrom(useCase.execute(req, 'stripe', context));
 
             expect(strategyMock.start).toHaveBeenCalledTimes(1);
-            expect(strategyMock.start).toHaveBeenCalledWith(req, context);
+            // The request should have idempotencyKey added
+            expect(strategyMock.start).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    ...req,
+                    idempotencyKey: expect.stringContaining('stripe:start:o1:100:MXN:card'),
+                }),
+                context
+            );
         });
 
         it('returns the PaymentIntent from strategy.start', async () => {

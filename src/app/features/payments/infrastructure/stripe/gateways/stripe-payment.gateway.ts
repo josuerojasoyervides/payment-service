@@ -75,14 +75,14 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
             return this.http.post<StripeSpeiSourceDto>(
                 `${StripePaymentGateway.API_BASE}/sources`,
                 stripeRequest,
-                { headers: this.getIdempotencyHeaders(req.orderId, 'create') }
+                { headers: this.getIdempotencyHeaders(req.orderId, 'create', req.idempotencyKey) }
             );
         }
 
         return this.http.post<StripePaymentIntentDto>(
             `${StripePaymentGateway.API_BASE}/intents`,
             stripeRequest,
-            { headers: this.getIdempotencyHeaders(req.orderId, 'create') }
+            { headers: this.getIdempotencyHeaders(req.orderId, 'create', req.idempotencyKey) }
         );
     }
 
@@ -104,7 +104,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
         return this.http.post<StripePaymentIntentDto>(
             `${StripePaymentGateway.API_BASE}/intents/${req.intentId}/confirm`,
             stripeRequest,
-            { headers: this.getIdempotencyHeaders(req.intentId, 'confirm') }
+            { headers: this.getIdempotencyHeaders(req.intentId, 'confirm', req.idempotencyKey) }
         );
     }
 
@@ -119,7 +119,7 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
         return this.http.post<StripePaymentIntentDto>(
             `${StripePaymentGateway.API_BASE}/intents/${req.intentId}/cancel`,
             {},
-            { headers: this.getIdempotencyHeaders(req.intentId, 'cancel') }
+            { headers: this.getIdempotencyHeaders(req.intentId, 'cancel', req.idempotencyKey) }
         );
     }
 
@@ -310,10 +310,18 @@ export class StripePaymentGateway extends PaymentGateway<StripeCreateResponseDto
 
     /**
      * Generates idempotency headers for safe operations.
+     * 
+     * Uses the idempotency key from the request if available (stable for retries),
+     * otherwise falls back to generating a key based on operation and identifier.
      */
-    private getIdempotencyHeaders(key: string, operation: string): Record<string, string> {
+    private getIdempotencyHeaders(
+        key: string, 
+        operation: string,
+        idempotencyKey?: string
+    ): Record<string, string> {
+        const finalKey = idempotencyKey ?? `${key}-${operation}-${Date.now()}`;
         return {
-            'Idempotency-Key': `${key}-${operation}-${Date.now()}`,
+            'Idempotency-Key': finalKey,
         };
     }
 
