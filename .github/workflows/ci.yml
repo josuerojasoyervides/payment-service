@@ -2,58 +2,49 @@ name: CI
 
 on:
   pull_request:
-    branches: [ main, dev ]
+    branches: [main, dev]
   push:
-    branches: [ main, dev ]
+    branches: [main, dev]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
-    name: ci / test
+  ci:
+    name: ci / all
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+
+      - name: Cache Bun
+        uses: actions/cache@v4
         with:
-          bun-version: "latest"
+          path: |
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
 
       - name: Install deps
         run: bun install --frozen-lockfile
 
-      - name: Run tests
-        run: bun run test
+      - name: Format check
+        run: bun run format:check
 
-  lint:
-    name: ci / lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: "latest"
-
-      - name: Install deps
-        run: bun install --frozen-lockfile
-
-      - name: Run lint
+      - name: Lint
         run: bun run lint
 
-  depcruise:
-    name: ci / depcruise
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      - name: Tests
+        run: bun run test -- --watch=false --browsers=ChromeHeadless
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: "latest"
-
-      - name: Install deps
-        run: bun install --frozen-lockfile
-
-      - name: Run dependency-cruiser
+      - name: DepCruise
         run: bun run dep:check
+
+      - name: Build (prod)
+        run: bun run build -- --configuration production
+
