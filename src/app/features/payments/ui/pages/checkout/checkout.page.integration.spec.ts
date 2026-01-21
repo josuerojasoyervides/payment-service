@@ -3,9 +3,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { CheckoutComponent } from './checkout.page';
 import providePayments from '../../../config/payment.providers';
-import { PaymentsStore, type PaymentsStoreType } from '../../../application/store/payment.store';
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { LoggerService } from '@core/logging';
+import type { PaymentStatePort } from '../../../application/state/payment-state.port';
+import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 
 /**
  * Espera a que el store complete el flujo:
@@ -15,7 +16,7 @@ import { LoggerService } from '@core/logging';
  * Si se pasa del timeout, arroja error con snapshot del estado final.
  */
 async function waitForPaymentComplete(
-    store: PaymentsStoreType,
+    store: PaymentStatePort,
     maxWaitMs = 2000,
     pollMs = 50
 ): Promise<void> {
@@ -37,7 +38,7 @@ async function waitForPaymentComplete(
         isLoading: store.isLoading(),
         isReady: store.isReady(),
         hasError: store.hasError(),
-        error: store.error?.() ?? null, // si existe error() en tu store
+        error: store.error(),
         historyCount: store.history().length,
     };
 
@@ -88,7 +89,7 @@ async function settle(fixture: ComponentFixture<any>): Promise<void> {
 describe('CheckoutComponent - Integración Real', () => {
     let component: CheckoutComponent;
     let fixture: ComponentFixture<CheckoutComponent>;
-    let store: PaymentsStoreType;
+    let store: PaymentStatePort;
     let registry: ProviderFactoryRegistry;
     let logger: LoggerService;
 
@@ -105,7 +106,8 @@ describe('CheckoutComponent - Integración Real', () => {
         fixture = TestBed.createComponent(CheckoutComponent);
         component = fixture.componentInstance;
 
-        store = TestBed.inject(PaymentsStore) as PaymentsStoreType;
+        store = TestBed.inject<PaymentStatePort>(PAYMENT_STATE);
+
         registry = TestBed.inject(ProviderFactoryRegistry);
         logger = TestBed.inject(LoggerService);
 

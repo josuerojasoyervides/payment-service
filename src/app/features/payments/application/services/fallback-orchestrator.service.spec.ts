@@ -6,6 +6,7 @@ import {
     PaymentError,
     CreatePaymentRequest,
     DEFAULT_FALLBACK_CONFIG,
+    FallbackConfig,
 } from '../../domain/models';
 
 describe('FallbackOrchestratorService', () => {
@@ -47,6 +48,17 @@ describe('FallbackOrchestratorService', () => {
             providers: [
                 FallbackOrchestratorService,
                 { provide: ProviderFactoryRegistry, useValue: registryMock },
+                {
+                    provide: FALLBACK_CONFIG,
+                    useValue: {
+                        enabled: true,
+                        mode: 'manual',
+                        maxAttempts: 2,
+                        triggerErrorCodes: ['provider_unavailable'],
+                        userResponseTimeout: 5000,
+                        providerPriority: ['stripe', 'paypal'],
+                    } satisfies Partial<FallbackConfig>
+                }
             ],
         });
 
@@ -128,27 +140,46 @@ describe('FallbackOrchestratorService', () => {
             expect(attempts[0].wasAutoFallback).toBe(false);
         });
 
-        it('respects maxAttempts configuration', () => {
-            vi.useFakeTimers();
-            const baseTime = 1000000;
-            vi.setSystemTime(baseTime);
+        it('respects maxAttempts configuration (real flow)', () => {
+            // 1) stripe falla
+            expect(service.reportFailure('stripe', providerUnavailableError, mockRequest)).toBe(true);
 
-            // First failure
-            service.reportFailure('stripe', providerUnavailableError, mockRequest);
+            // 2) user acepta paypal
             service.respondToFallback({
                 eventId: service.pendingEvent()!.eventId,
                 accepted: true,
                 selectedProvider: 'paypal',
-                timestamp: baseTime,
+                timestamp: Date.now(),
             });
 
-            // Second failure - should hit max attempts (default is 2)
-            service['_state'].update(s => ({ ...s, status: 'idle', pendingEvent: null }));
-            const result = service.reportFailure('paypal', providerUnavailableError, mockRequest);
+            // 3) paypal falla (esto intenta seguir fallback y ya no hay alternativas)
+            service.notifyFailure('paypal', providerUnavailableError, mockRequest);
 
-            expect(result).toBe(false);
+            // Aquí ya traes 2 intentos registrados
+            expect(service.failedAttempts().length).toBe(2);
 
-            vi.useRealTimers();
+            // 4) tercer intento -> debería resetear
+            const third = service.reportFailure('stripe', providerUnavailableError, mockRequest);
+            expect(third).toBe(false);
+
+            expect(service.state().status).toBe('idle');
+            expect(service.failedAttempts()).toEqual([]);
+        });
+
+
+        it('resets when maxAttempts reached', () => {
+            // 1) falla stripe
+            expect(service.reportFailure('stripe', providerUnavailableError, mockRequest)).toBe(true);
+
+            // 2) falla paypal (ya no hay alternativas -> false)
+            expect(service.reportFailure('paypal', providerUnavailableError, mockRequest)).toBe(false);
+
+            // 3) vuelve a fallar stripe, aquí debería resetear porque ya llegaste al límite
+            const third = service.reportFailure('stripe', providerUnavailableError, mockRequest);
+            expect(third).toBe(false);
+
+            expect(service.state().status).toBe('idle');
+            expect(service.failedAttempts()).toEqual([]);
         });
 
         it('excludes failedProvider from alternativeProviders', () => {
@@ -165,26 +196,15 @@ describe('FallbackOrchestratorService', () => {
         });
 
         it('excludes previously failed providers from alternativeProviders', () => {
-            vi.useFakeTimers();
-
-            // Primer fallo con stripe
+            // Primer fallo con stripe => failedAttempts = [stripe]
             const first = service.reportFailure('stripe', providerUnavailableError, mockRequest);
             expect(first).toBe(true);
 
-            // Resetear solo el pending event, PERO NO duplicar el failedAttempts
-            service['_state'].update(s => ({ ...s, status: 'idle', pendingEvent: null }));
-
-            let emittedEvent: any = null;
-            service.fallbackAvailable$.subscribe(e => emittedEvent = e);
-
-            // Segundo fallo con paypal
+            // Segundo fallo con paypal => stripe ya está en failedAttempts,
+            // entonces no hay alternativas disponibles
             const second = service.reportFailure('paypal', providerUnavailableError, mockRequest);
 
-            // ✅ Ya no hay alternativas → false y no emite
             expect(second).toBe(false);
-            expect(emittedEvent).toBeNull();
-
-            vi.useRealTimers();
         });
 
 
@@ -370,7 +390,7 @@ describe('FallbackOrchestratorService', () => {
             });
 
             // Debe limpiar el estado pero no ejecutar fallback
-            expect(service.state().status).toBe('idle');
+            expect(service.state().status).toBe('cancelled');
             expect(service.pendingEvent()).toBeNull();
 
             vi.useRealTimers();
@@ -456,7 +476,7 @@ describe('FallbackOrchestratorService', () => {
         it('clears pending event after TTL expires', () => {
             expect(service.state().status).toBe('pending');
 
-            vi.advanceTimersByTime(DEFAULT_FALLBACK_CONFIG.userResponseTimeout + 100);
+            vi.advanceTimersByTime(service.getConfig().userResponseTimeout + 100);
 
             expect(service.state().status).toBe('cancelled'); // esto depende del punto 3 (ver abajo)
             expect(service.pendingEvent()).toBeNull();
@@ -727,8 +747,10 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
 
         it('should record failed attempt with wasAutoFallback=true on subsequent failures', async () => {
             // First failure triggers auto-fallback to paypal
+            vi.useFakeTimers();
             service.reportFailure('stripe', providerUnavailableError, mockRequest);
-            await new Promise(r => setTimeout(r, 150));
+
+            vi.advanceTimersByTime(100);
 
             // Simulate paypal failure
             service.notifyFailure('paypal', providerUnavailableError, mockRequest);
@@ -736,23 +758,27 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
             const attempts = service.failedAttempts();
             // After auto-fallback, if paypal fails and triggers manual, wasAutoFallback should be tracked
             expect(attempts.length).toBeGreaterThanOrEqual(1);
+            vi.useRealTimers();
         });
 
         it('should fall back to manual mode after maxAutoFallbacks', async () => {
+            vi.useFakeTimers();
             // Configure with multiple providers
             registryMock.getAvailableProviders.mockReturnValue(['stripe', 'paypal', 'mercadopago'] as PaymentProviderId[]);
 
             // First failure triggers auto-fallback
             service.reportFailure('stripe', providerUnavailableError, mockRequest);
             expect(service.state().status).toBe('auto_executing');
-            await new Promise(r => setTimeout(r, 150));
+            vi.advanceTimersByTime(100);
 
             // Notify failure after auto-fallback
             service.notifyFailure('paypal', providerUnavailableError, mockRequest);
 
             // Second failure should now be manual (maxAutoFallbacks = 1)
             // Because we've already done 1 auto-fallback
-            expect(service.getAutoFallbackCount()).toBe(0); // It tracks failed attempts with wasAutoFallback
+            expect(service.getAutoFallbackCount()).toBe(1); // It tracks failed attempts with wasAutoFallback
+            expect(service.state().status).toBe('failed');
+            vi.useRealTimers();
         });
 
         it('should not emit fallbackAvailable$ in auto mode', () => {
@@ -790,21 +816,21 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
 
     describe('cancellation during auto-fallback', () => {
         it('should stop auto-fallback when reset is called', async () => {
-            let emittedData: any = null;
-            service.fallbackExecute$.subscribe(data => {
-                emittedData = data;
-            });
+            vi.useFakeTimers();
+            let emitted: any = null;
+            service.fallbackExecute$.subscribe(v => emitted = v);
 
             service.reportFailure('stripe', providerUnavailableError, mockRequest);
 
             // Reset before delay completes
-            await new Promise(r => setTimeout(r, 50));
+            vi.advanceTimersByTime(50);
             service.reset();
-            await new Promise(r => setTimeout(r, 100));
+            vi.advanceTimersByTime(100);
 
             // Should not have emitted
-            expect(emittedData).toBeNull();
+            expect(emitted).toBeNull();
             expect(service.state().status).toBe('idle');
+            vi.useRealTimers();
         });
     });
 });

@@ -123,11 +123,6 @@ export class FallbackOrchestratorService {
             return false;
         }
 
-        const alternatives = this.getAlternativeProviders(failedProvider, originalRequest);
-        if (alternatives.length === 0) {
-            return false;
-        }
-
         const failedAttempt: FailedAttempt = {
             provider: failedProvider,
             error,
@@ -139,6 +134,11 @@ export class FallbackOrchestratorService {
             ...state,
             failedAttempts: [...state.failedAttempts, failedAttempt],
         }));
+
+        const alternatives = this.getAlternativeProviders(failedProvider, originalRequest);
+        if (alternatives.length === 0) {
+            return false;
+        }
 
         if (this.config.mode === 'auto' && this.canAutoFallback()) {
             this.executeAutoFallback(alternatives[0], originalRequest);
@@ -179,7 +179,7 @@ export class FallbackOrchestratorService {
             // Limpiar evento expirado
             this._state.update(state => ({
                 ...state,
-                status: 'idle',
+                status: 'cancelled',
                 pendingEvent: null,
             }));
 
@@ -310,22 +310,6 @@ export class FallbackOrchestratorService {
             .filter(provider => {
                 try {
                     const factory = this.registry.get(provider);
-                    /* 
-                        ! TODO FallbackOrchestrator filtra por método usando request.method.type
-                        ! Si falla Stripe con SPEI:
-                        ! request.method.type = 'spei'
-                        ! entonces PayPal queda fuera ✅ (porque PayPal no soporta spei)
-                        ! Pero si falla Stripe con CARD token:
-                        ! request.method.type = 'card'
-                        ! PayPal sí es alternativa ✅
-                        ! Pero PayPal para “card” no es token-card, es redirect-card.
-                        ! Eso significa que “fallback de card” hoy realmente está diciendo:
-                        ! “fallback entre flows distintos”
-                        ! ✅ ¿fallback permite cambiar de flow?
-                        ! o solo cambiar de provider manteniendo el mismo flow?
-                        ! Y si no lo defines, luego se siente como:
-                        ! “por qué carajos me mandaste a PayPal si yo estaba pagando con tarjeta normal”
-                    */
                     return factory.supportsMethod(request.method.type);
                 } catch {
                     return false;
