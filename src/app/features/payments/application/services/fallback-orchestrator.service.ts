@@ -20,6 +20,13 @@ import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
  */
 export const FALLBACK_CONFIG = new InjectionToken<Partial<FallbackConfig>>('FALLBACK_CONFIG');
 
+type ReportFailurePayload = {
+    providerId: PaymentProviderId;
+    error: PaymentError;
+    request: CreatePaymentRequest;
+    wasAutoFallback?: boolean;
+};
+
 /**
  * Fallback orchestration service between providers.
  * 
@@ -94,59 +101,66 @@ export class FallbackOrchestratorService {
         return this.config;
     }
 
-    /**
-     * Reports a payment failure and determines if alternatives are available.
-     * 
-     * @param failedProvider Provider that failed
-     * @param error Error that occurred
-     * @param originalRequest Original request
-     * @param wasAutoFallback Whether this attempt was an auto-fallback
-     * @returns true if fallback event was emitted or auto-fallback was started
-     */
+
+    reportFailure(payload: ReportFailurePayload): boolean;
     reportFailure(
-        failedProvider: PaymentProviderId,
+        providerId: PaymentProviderId,
         error: PaymentError,
-        originalRequest: CreatePaymentRequest,
-        wasAutoFallback: boolean = false
+        request: CreatePaymentRequest,
+        wasAutoFallback?: boolean
+    ): boolean;
+
+    reportFailure(
+        arg1: ReportFailurePayload | PaymentProviderId,
+        arg2?: PaymentError,
+        arg3?: CreatePaymentRequest,
+        arg4?: boolean
     ): boolean {
-        if (!this.config.enabled) {
-            return false;
-        }
+        const payload: ReportFailurePayload =
+            typeof arg1 === 'string'
+                ? { providerId: arg1, error: arg2!, request: arg3!, wasAutoFallback: arg4 }
+                : arg1;
 
-        if (!this.isEligibleForFallback(error)) {
-            return false;
-        }
+        return this._reportFailure(payload);
+    }
 
-        const currentAttempts = this._state().failedAttempts.length;
-        if (currentAttempts >= this.config.maxAttempts) {
+    private _reportFailure({ providerId, error, request, wasAutoFallback }: ReportFailurePayload): boolean {
+
+        if (!this.config.enabled) return false;
+
+        if (this._state().failedAttempts.length >= this.config.maxAttempts) {
             this.reset();
             return false;
         }
 
-        const failedAttempt: FailedAttempt = {
-            provider: failedProvider,
-            error,
-            timestamp: Date.now(),
-            wasAutoFallback,
-        };
-
-        this._state.update(state => ({
-            ...state,
-            failedAttempts: [...state.failedAttempts, failedAttempt],
-        }));
-
-        const alternatives = this.getAlternativeProviders(failedProvider, originalRequest);
-        if (alternatives.length === 0) {
+        // ✅ elegibilidad
+        if (!this.isEligibleForFallback(error)) {
             return false;
         }
 
-        if (this.config.mode === 'auto' && this.canAutoFallback()) {
-            this.executeAutoFallback(alternatives[0], originalRequest);
-            return true;
+        // ✅ registrar intento fallido (AHORA sí existe)
+        this.registerFailure(providerId, error, !!wasAutoFallback);
+
+        // ✅ buscar alternativas
+        const alternatives = this.getAlternativeProviders(providerId, request);
+
+        // ✅ no hay alternativas => terminal
+        if (alternatives.length === 0) {
+            this._state.update(s => ({ ...s, status: 'failed', currentProvider: null }));
+            return false;
         }
 
-        return this.emitFallbackAvailable(failedProvider, error, alternatives, originalRequest);
+        // ✅ decidir auto/manual
+        if (this.shouldAutoFallback()) {
+            this.startAutoFallback(alternatives[0], request);
+        } else {
+            this.emitManualFallbackEvent(providerId, error, alternatives, request);
+        }
+
+        return true;
     }
+
+
 
     /**
      * Responds to fallback event (from UI).
@@ -251,21 +265,20 @@ export class FallbackOrchestratorService {
      * @param originalRequest Original request (needed to continue fallback)
      */
     notifyFailure(
-        provider: PaymentProviderId,
+        providerId: PaymentProviderId,
         error: PaymentError,
-        originalRequest?: CreatePaymentRequest
-    ): void {
-        const wasAutoFallback = this._state().isAutoFallback;
-
-        this._state.update(state => ({
-            ...state,
-            status: 'failed',
-            currentProvider: null,
-        }));
-
-        if (originalRequest) {
-            this.reportFailure(provider, error, originalRequest, wasAutoFallback);
+        originalRequest?: CreatePaymentRequest,
+        wasAutoFallback?: boolean
+    ) {
+        if (!originalRequest) {
+            this._state.update(s => ({ ...s, status: 'failed', currentProvider: null }));
+            return;
         }
+
+        // 👇 inferencia automática si no lo pasan
+        const inferredAuto = wasAutoFallback ?? this._state().isAutoFallback;
+
+        this.reportFailure(providerId, error, originalRequest, inferredAuto);
     }
 
     /**
@@ -433,4 +446,37 @@ export class FallbackOrchestratorService {
     private generateEventId(): string {
         return `fb_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`;
     }
+
+    private shouldAutoFallback(): boolean {
+        return this.config.mode === 'auto' && this.canAutoFallback();
+    }
+
+    private startAutoFallback(provider: PaymentProviderId, request: CreatePaymentRequest): void {
+        this.executeAutoFallback(provider, request);
+    }
+
+    private emitManualFallbackEvent(
+        failedProvider: PaymentProviderId,
+        error: PaymentError,
+        alternatives: PaymentProviderId[],
+        originalRequest: CreatePaymentRequest
+    ): void {
+        this.emitFallbackAvailable(failedProvider, error, alternatives, originalRequest);
+    }
+
+    private registerFailure(providerId: PaymentProviderId, error: PaymentError, wasAutoFallback: boolean): void {
+        const attempt: FailedAttempt = {
+            provider: providerId,
+            error,
+            timestamp: Date.now(),
+            wasAutoFallback,
+        };
+
+        this._state.update(s => ({
+            ...s,
+            failedAttempts: [...s.failedAttempts, attempt],
+            currentProvider: providerId,
+        }));
+    }
+
 }
