@@ -99,19 +99,21 @@ export class FakePaymentGateway extends PaymentGateway {
 
     /**
      * Generates a unique ID to simulate provider IDs.
+     * Uses counter for determinism (still unique per call).
      */
     private generateId(prefix: string): string {
         FakePaymentGateway.counter++;
         const timestamp = Date.now().toString(36);
-        const random = Math.random().toString(36).substring(2, 8);
-        return `${prefix}_fake_${timestamp}${random}`;
+        const counterStr = FakePaymentGateway.counter.toString(36).padStart(6, '0');
+        return `${prefix}_fake_${timestamp}${counterStr}`;
     }
 
     /**
      * Simulates realistic network delay.
+     * Uses fixed delay for determinism in tests.
      */
     private simulateNetworkDelay<T>(data: T, customDelay?: number): Observable<T> {
-        const delayMs = customDelay ?? (150 + Math.random() * 150);
+        const delayMs = customDelay ?? 200; // Fixed delay for determinism
         return of(data).pipe(delay(delayMs));
     }
 
@@ -141,6 +143,11 @@ export class FakePaymentGateway extends PaymentGateway {
 
     /**
      * Checks if token is special and determines behavior.
+     * 
+     * Supports:
+     * - Exact match: tok_3ds
+     * - With underscore: tok_3ds_abc
+     * - Without underscore: tok_3ds123 (for backward compatibility)
      */
     private getTokenBehavior(token?: string):
         | 'success'
@@ -154,15 +161,25 @@ export class FakePaymentGateway extends PaymentGateway {
         | 'normal' {
         if (!token) return 'normal';
 
-        // ✅ Soporta exact match Y prefijos (super útil para tests)
-        if (token === SPECIAL_TOKENS.SUCCESS || token.startsWith(`${SPECIAL_TOKENS.SUCCESS}_`)) return 'success';
-        if (token === SPECIAL_TOKENS.THREE_DS || token.startsWith(`${SPECIAL_TOKENS.THREE_DS}`)) return '3ds';
-        if (token === SPECIAL_TOKENS.FAIL || token.startsWith(`${SPECIAL_TOKENS.FAIL}_`)) return 'fail';
-        if (token === SPECIAL_TOKENS.TIMEOUT || token.startsWith(`${SPECIAL_TOKENS.TIMEOUT}_`)) return 'timeout';
-        if (token === SPECIAL_TOKENS.DECLINE || token.startsWith(`${SPECIAL_TOKENS.DECLINE}_`)) return 'decline';
-        if (token === SPECIAL_TOKENS.INSUFFICIENT || token.startsWith(`${SPECIAL_TOKENS.INSUFFICIENT}_`)) return 'insufficient';
-        if (token === SPECIAL_TOKENS.EXPIRED || token.startsWith(`${SPECIAL_TOKENS.EXPIRED}_`)) return 'expired';
-        if (token === SPECIAL_TOKENS.PROCESSING || token.startsWith(`${SPECIAL_TOKENS.PROCESSING}_`)) return 'processing';
+        // Check exact match first
+        if (token === SPECIAL_TOKENS.SUCCESS) return 'success';
+        if (token === SPECIAL_TOKENS.THREE_DS) return '3ds';
+        if (token === SPECIAL_TOKENS.FAIL) return 'fail';
+        if (token === SPECIAL_TOKENS.TIMEOUT) return 'timeout';
+        if (token === SPECIAL_TOKENS.DECLINE) return 'decline';
+        if (token === SPECIAL_TOKENS.INSUFFICIENT) return 'insufficient';
+        if (token === SPECIAL_TOKENS.EXPIRED) return 'expired';
+        if (token === SPECIAL_TOKENS.PROCESSING) return 'processing';
+
+        // Check prefix match (with or without underscore)
+        if (token.startsWith(SPECIAL_TOKENS.SUCCESS)) return 'success';
+        if (token.startsWith(SPECIAL_TOKENS.THREE_DS)) return '3ds';
+        if (token.startsWith(SPECIAL_TOKENS.FAIL)) return 'fail';
+        if (token.startsWith(SPECIAL_TOKENS.TIMEOUT)) return 'timeout';
+        if (token.startsWith(SPECIAL_TOKENS.DECLINE)) return 'decline';
+        if (token.startsWith(SPECIAL_TOKENS.INSUFFICIENT)) return 'insufficient';
+        if (token.startsWith(SPECIAL_TOKENS.EXPIRED)) return 'expired';
+        if (token.startsWith(SPECIAL_TOKENS.PROCESSING)) return 'processing';
 
         return 'normal';
     }
@@ -290,11 +307,14 @@ export class FakePaymentGateway extends PaymentGateway {
         if (forcedStatus !== undefined) {
             status = forcedStatus;
         } else {
+            // Deterministic behavior: default to requires_confirmation
+            // Only change to requires_action if token explicitly indicates 3DS
             status = 'requires_confirmation';
 
-            const requires3ds = req.method.token?.includes('3ds') ||
-                req.method.token?.includes('auth') ||
-                Math.random() > 0.7;
+            // Check token for explicit 3DS indicators (deterministic)
+            const token = req.method.token ?? '';
+            const requires3ds = token.includes('3ds') || token.includes('auth') || 
+                                token.startsWith(SPECIAL_TOKENS.THREE_DS);
 
             if (requires3ds) {
                 status = 'requires_action';
@@ -332,11 +352,13 @@ export class FakePaymentGateway extends PaymentGateway {
         const sourceId = this.generateId('src');
         const amountInCents = Math.round(req.amount * 100);
 
-        const clabe = '646180' + Array.from({ length: 12 }, () =>
-            Math.floor(Math.random() * 10)
-        ).join('');
+        // Deterministic CLABE based on orderId hash
+        const orderHash = this.hashString(req.orderId);
+        const clabe = '646180' + String(orderHash).padStart(12, '0').substring(0, 12);
 
-        const reference = String(Math.floor(Math.random() * 10000000)).padStart(7, '0');
+        // Deterministic reference based on orderId hash
+        const referenceHash = Math.abs(this.hashString(req.orderId + '_ref'));
+        const reference = String(referenceHash % 10000000).padStart(7, '0');
 
         const expiresAt = Math.floor(Date.now() / 1000) + (72 * 60 * 60);
 
@@ -356,6 +378,19 @@ export class FakePaymentGateway extends PaymentGateway {
             },
             expires_at: expiresAt,
         };
+    }
+
+    /**
+     * Simple hash function for deterministic values.
+     */
+    private hashString(str: string): number {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+        return Math.abs(hash);
     }
 
     private createConfirmedStripeIntent(intentId: string): StripePaymentIntentDto {
@@ -395,13 +430,16 @@ export class FakePaymentGateway extends PaymentGateway {
     }
 
     private createFakeStripeIntentStatus(intentId: string): StripePaymentIntentDto {
-        // Simular diferentes estados aleatorios
+        // Deterministic status based on intentId hash
+        // This ensures the same intentId always returns the same status
+        const hash = this.hashString(intentId);
         const statuses: StripePaymentIntentDto['status'][] = [
             'requires_confirmation',
             'processing',
             'succeeded',
         ];
-        const status = statuses[Math.floor(Math.random() * statuses.length)];
+        const statusIndex = hash % statuses.length;
+        const status = statuses[statusIndex];
 
         return {
             id: intentId,
