@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main, dev ]
+  push:
+    branches: [ main, dev ]
+
+jobs:
+  test:
+    name: ci / test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Run tests
+        run: bun run test
+
+  lint:
+    name: ci / lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Run lint
+        run: bun run lint
+
+  depcruise:
+    name: ci / depcruise
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "latest"
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Run dependency-cruiser
+        run: bun run dep:check
