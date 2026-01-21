@@ -24,6 +24,8 @@ import {
     StripeCreateResponseDto
 } from "../dto/stripe.dto";
 import { BasePaymentGateway } from "@payments/shared/base-payment.gateway";
+import { ERROR_CODE_MAP } from "../mappers/error-code.mapper";
+import { STATUS_MAP } from "../mappers/internal-status.mapper";
 
 
 /**
@@ -42,29 +44,6 @@ export class StripePaymentGateway extends BasePaymentGateway<StripeCreateRespons
     readonly providerId = 'stripe' as const;
 
     private static readonly API_BASE = '/api/payments/stripe';
-
-    // Stripe status → internal status mapping
-    private static readonly STATUS_MAP: Record<StripePaymentIntentStatus, PaymentIntentStatus> = {
-        'requires_payment_method': 'requires_payment_method',
-        'requires_confirmation': 'requires_confirmation',
-        'requires_action': 'requires_action',
-        'processing': 'processing',
-        'requires_capture': 'processing',
-        'canceled': 'canceled',
-        'succeeded': 'succeeded',
-    };
-
-    // Stripe error codes → internal codes mapping
-    private static readonly ERROR_CODE_MAP: Record<string, PaymentErrorCode> = {
-        'card_declined': 'card_declined',
-        'expired_card': 'card_declined',
-        'incorrect_cvc': 'card_declined',
-        'processing_error': 'provider_error',
-        'incorrect_number': 'invalid_request',
-        'invalid_expiry_month': 'invalid_request',
-        'invalid_expiry_year': 'invalid_request',
-        'authentication_required': 'requires_action',
-    };
 
     /**
      * Creates a PaymentIntent in Stripe.
@@ -164,7 +143,7 @@ export class StripePaymentGateway extends BasePaymentGateway<StripeCreateRespons
 
         if (stripeError && typeof stripeError === 'object' && 'code' in stripeError) {
             return {
-                code: StripePaymentGateway.ERROR_CODE_MAP[stripeError.code] ?? 'provider_error',
+                code: ERROR_CODE_MAP[stripeError.code] ?? 'provider_error',
                 message: this.humanizeStripeError(stripeError),
                 raw: err,
             };
@@ -203,7 +182,7 @@ export class StripePaymentGateway extends BasePaymentGateway<StripeCreateRespons
      * Maps a Stripe PaymentIntent to our model.
      */
     private mapPaymentIntent(dto: StripePaymentIntentDto): PaymentIntent {
-        const status = StripePaymentGateway.STATUS_MAP[dto.status] ?? 'processing';
+        const status = STATUS_MAP[dto.status] ?? 'processing';
 
         const intent: PaymentIntent = {
             id: dto.id,

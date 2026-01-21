@@ -12,11 +12,3 @@ export interface PaymentError {
     message: string;
     raw: unknown;
 }
-
-export function fallbackHandledError(raw?: unknown): PaymentError {
-    return {
-        code: 'fallback_handled',
-        message: 'Fallback handled',
-        raw,
-    };
-}

@@ -204,6 +204,36 @@ module.exports = {
       to: { path: '^src/app/features/payments/(application|infrastructure|ui|config|shared)' }
     },
     {
+      name: 'domain-no-angular',
+      severity: 'error',
+      comment:
+        'Domain debe ser puro. No puede importar Angular (@angular/*). Mueve estas dependencias a infrastructure/shared.',
+      from: { path: '^src/app/features/payments/domain' },
+      to: { path: '^node_modules/@angular' }
+    },
+    {
+      name: 'domain-no-rxjs',
+      severity: 'error',
+      comment:
+        'Domain debe ser puro. No puede importar rxjs. RxJS es parte del orchestration layer (application/ui).',
+      from: { path: '^src/app/features/payments/domain' },
+      to: { path: '^node_modules/rxjs' }
+    },
+    {
+      name: 'domain-no-app-core-or-shared',
+      severity: 'error',
+      comment:
+        'Domain del feature no debe depender de @core o @shared del app. Mantén el domain aislado y transportable.',
+      from: { path: '^src/app/features/payments/domain' },
+      to: { path: '^src/app/(core|shared)' }
+    },
+    {
+      name: 'domain-no-shared',
+      severity: 'error',
+      from: { path: '^src/app/features/payments/domain' },
+      to: { path: '^src/app/features/payments/shared' }
+    },
+    {
       name: 'application-no-infra',
       severity: 'error',
       from: { path: '^src/app/features/payments/application' },
@@ -221,12 +251,6 @@ module.exports = {
       from: { path: '^src/app/features/payments/infrastructure' },
       to: { path: '^src/app/features/payments/ui' }
     },
-    {
-      name: 'domain-no-shared',
-      severity: 'error',
-      from: { path: '^src/app/features/payments/domain' },
-      to: { path: '^src/app/features/payments/shared' }
-    }
   ],
   options: {
     // Which modules not to follow further when encountered
