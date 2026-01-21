@@ -296,7 +296,13 @@ export class FallbackOrchestratorService {
         const allProviders = this.registry.getAvailableProviders();
         const failedProviderIds = this._state().failedAttempts.map(a => a.provider);
 
-        return this.config.providerPriority
+        // ✅ Prioridad + “fallback” a providers reales del registry
+        const priority = Array.from(new Set([
+            ...this.config.providerPriority,
+            ...allProviders,
+        ]));
+
+        return priority
             .filter(provider =>
                 provider !== failedProvider &&
                 !failedProviderIds.includes(provider) &&
@@ -311,6 +317,7 @@ export class FallbackOrchestratorService {
                 }
             });
     }
+
 
     /**
      * Verifica si se puede ejecutar un auto-fallback.

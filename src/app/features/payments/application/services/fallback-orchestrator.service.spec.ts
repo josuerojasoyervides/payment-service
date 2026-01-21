@@ -780,8 +780,11 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
 
             // Second failure should now be manual (maxAutoFallbacks = 1)
             // Because we've already done 1 auto-fallback
-            expect(service.getAutoFallbackCount()).toBe(1); // It tracks failed attempts with wasAutoFallback
-            expect(service.state().status).toBe('failed');
+            expect(service.getAutoFallbackCount()).toBe(1);
+            expect(service.state().status).toBe('pending');
+            expect(service.pendingEvent()).not.toBeNull();
+            expect(service.pendingEvent()!.alternativeProviders).toContain('mercadopago');
+
             vi.useRealTimers();
         });
 
