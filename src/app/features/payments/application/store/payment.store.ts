@@ -1,6 +1,6 @@
-import { computed, inject } from '@angular/core';
+import { computed, effect, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { signalStore, withState, withComputed, withMethods, patchState } from '@ngrx/signals';
+import { signalStore, withState, withComputed, withMethods, patchState, withHooks } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { Observable, filter, of, pipe, switchMap, tap, catchError } from 'rxjs';
 
@@ -27,7 +27,7 @@ import { FallbackOrchestratorService } from '../services/fallback-orchestrator.s
 import { StartPaymentUseCase } from '../use-cases/start-payment.use-case';
 import { ConfirmPaymentUseCase } from '../use-cases/confirm-payment.use-case';
 import { CancelPaymentUseCase } from '../use-cases/cancel-payment.use-case';
-import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
+import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case'
 
 export const PaymentsStore = signalStore(
     withState<PaymentsState>(initialPaymentsState),
@@ -83,12 +83,8 @@ export const PaymentsStore = signalStore(
         // Helpers (limpieza)
         // -----------------------------
 
-        const syncFallbackSnapshot = () => {
-            patchState(store, { fallback: fallbackOrchestrator.getSnapshot() });
-        };
-
         const canSurfaceErrorToUI = () => {
-            const snap = fallbackOrchestrator.getSnapshot();
+            const snap = store.fallback();
             return snap.status === 'idle' || snap.status === 'failed';
         };
 
@@ -98,11 +94,9 @@ export const PaymentsStore = signalStore(
             if (providerId) addToHistory(store, intent, providerId);
 
             fallbackOrchestrator.notifySuccess();
-            syncFallbackSnapshot();
         };
 
         const applyError = (error: PaymentError) => {
-            syncFallbackSnapshot();
 
             if (canSurfaceErrorToUI()) {
                 patchState(store, { status: 'error', error, intent: null });
@@ -177,7 +171,10 @@ export const PaymentsStore = signalStore(
 
         fallbackOrchestrator.fallbackExecute$
             .pipe(
-                filter(() => store.fallback().status === 'auto_executing' || store.fallback().status === 'executing'),
+                filter(() =>
+                    store.fallback().status === 'auto_executing'
+                    || store.fallback().status === 'executing'
+                ),
                 takeUntilDestroyed()
             )
             .subscribe(({ request, provider }) => {
@@ -217,7 +214,6 @@ export const PaymentsStore = signalStore(
                     timestamp: Date.now(),
                 });
 
-                syncFallbackSnapshot();
             },
 
             cancelFallback() {
@@ -229,12 +225,11 @@ export const PaymentsStore = signalStore(
                         accepted: false,
                         timestamp: Date.now(),
                     });
-
-                    syncFallbackSnapshot();
                     return;
                 }
 
-                patchState(store, { fallback: INITIAL_FALLBACK_STATE });
+                fallbackOrchestrator.reset();
+
             },
 
             clearError() {
@@ -247,10 +242,21 @@ export const PaymentsStore = signalStore(
 
             reset() {
                 fallbackOrchestrator.reset();
-                patchState(store, { ...initialPaymentsState, fallback: fallbackOrchestrator.getSnapshot() });
+                patchState(store, { ...initialPaymentsState });
             },
         };
-    })
+    }),
+
+    withHooks((store) => ({
+        onInit() {
+
+            const fallbackOrchestrator = inject(FallbackOrchestratorService);
+
+            effect(() => {
+                patchState(store, { fallback: fallbackOrchestrator.state() });
+            });
+        },
+    }))
 );
 
 // -----------------------------
