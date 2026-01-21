@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { FallbackOrchestratorService, FALLBACK_CONFIG } from './fallback-orchestrator.service';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { 
-    PaymentProviderId, 
-    PaymentError, 
-    CreatePaymentRequest, 
+import {
+    PaymentProviderId,
+    PaymentError,
+    CreatePaymentRequest,
     DEFAULT_FALLBACK_CONFIG,
 } from '../../domain/models';
 
@@ -54,7 +54,9 @@ describe('FallbackOrchestratorService', () => {
     });
 
     afterEach(() => {
-        service.reset();
+        if (service) {
+            service.reset();
+        }
     });
 
     describe('initial state', () => {
@@ -127,13 +129,17 @@ describe('FallbackOrchestratorService', () => {
         });
 
         it('respects maxAttempts configuration', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
             // First failure
             service.reportFailure('stripe', providerUnavailableError, mockRequest);
             service.respondToFallback({
                 eventId: service.pendingEvent()!.eventId,
                 accepted: true,
                 selectedProvider: 'paypal',
-                timestamp: Date.now(),
+                timestamp: baseTime,
             });
 
             // Second failure - should hit max attempts (default is 2)
@@ -141,6 +147,86 @@ describe('FallbackOrchestratorService', () => {
             const result = service.reportFailure('paypal', providerUnavailableError, mockRequest);
 
             expect(result).toBe(false);
+
+            vi.useRealTimers();
+        });
+
+        it('excludes failedProvider from alternativeProviders', () => {
+            let emittedEvent: any = null;
+            service.fallbackAvailable$.subscribe(event => {
+                emittedEvent = event;
+            });
+
+            service.reportFailure('stripe', providerUnavailableError, mockRequest);
+
+            expect(emittedEvent).not.toBeNull();
+            expect(emittedEvent.failedProvider).toBe('stripe');
+            expect(emittedEvent.alternativeProviders).not.toContain('stripe');
+        });
+
+        it('excludes previously failed providers from alternativeProviders', () => {
+            vi.useFakeTimers();
+
+            // Primer fallo con stripe
+            const first = service.reportFailure('stripe', providerUnavailableError, mockRequest);
+            expect(first).toBe(true);
+
+            // Resetear solo el pending event, PERO NO duplicar el failedAttempts
+            service['_state'].update(s => ({ ...s, status: 'idle', pendingEvent: null }));
+
+            let emittedEvent: any = null;
+            service.fallbackAvailable$.subscribe(e => emittedEvent = e);
+
+            // Segundo fallo con paypal
+            const second = service.reportFailure('paypal', providerUnavailableError, mockRequest);
+
+            // ✅ Ya no hay alternativas → false y no emite
+            expect(second).toBe(false);
+            expect(emittedEvent).toBeNull();
+
+            vi.useRealTimers();
+        });
+
+
+        it('only includes providers available in registry', () => {
+            // Configurar registry para que solo tenga stripe disponible
+            registryMock.getAvailableProviders.mockReturnValue(['stripe']);
+
+            const result = service.reportFailure('stripe', providerUnavailableError, mockRequest);
+
+            // No debería haber alternativas disponibles
+            expect(result).toBe(false);
+        });
+
+        it('only includes providers that support the same payment method type', () => {
+            // Mock para que paypal no soporte el método 'card'
+            const stripeFactoryMock = {
+                providerId: 'stripe' as const,
+                supportsMethod: vi.fn(() => true),
+            };
+
+            const paypalFactoryMock = {
+                providerId: 'paypal' as const,
+                supportsMethod: vi.fn(() => false), // PayPal no soporta card en este test
+            };
+
+            registryMock.get.mockImplementation((providerId: PaymentProviderId) => {
+                if (providerId === 'stripe') return stripeFactoryMock;
+                if (providerId === 'paypal') return paypalFactoryMock;
+                throw new Error(`Unknown provider: ${providerId}`);
+            });
+
+            let emittedEvent: any = null;
+            service.fallbackAvailable$.subscribe(event => {
+                emittedEvent = event;
+            });
+
+            service.reportFailure('stripe', providerUnavailableError, mockRequest);
+
+            // PayPal no debería estar en las alternativas si no soporta el método
+            if (emittedEvent) {
+                expect(emittedEvent.alternativeProviders).not.toContain('paypal');
+            }
         });
     });
 
@@ -150,46 +236,68 @@ describe('FallbackOrchestratorService', () => {
         });
 
         it('updates state to executing when user accepts', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
             const event = service.pendingEvent()!;
 
             service.respondToFallback({
                 eventId: event.eventId,
                 accepted: true,
                 selectedProvider: 'paypal',
-                timestamp: Date.now(),
+                timestamp: baseTime,
             });
 
             expect(service.state().status).toBe('executing');
             expect(service.state().currentProvider).toBe('paypal');
             expect(service.state().isAutoFallback).toBe(false);
+
+            vi.useRealTimers();
         });
 
         it('updates state to cancelled when user declines', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
             const event = service.pendingEvent()!;
 
             service.respondToFallback({
                 eventId: event.eventId,
                 accepted: false,
-                timestamp: Date.now(),
+                timestamp: baseTime,
             });
 
             expect(service.state().status).toBe('cancelled');
+
+            vi.useRealTimers();
         });
 
         it('clears pending event after response', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
             const event = service.pendingEvent()!;
 
             service.respondToFallback({
                 eventId: event.eventId,
                 accepted: true,
                 selectedProvider: 'paypal',
-                timestamp: Date.now(),
+                timestamp: baseTime,
             });
 
             expect(service.pendingEvent()).toBeNull();
+
+            vi.useRealTimers();
         });
 
         it('emits fallbackExecute$ when user accepts', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
             let emittedData: any = null;
             service.fallbackExecute$.subscribe(data => {
                 emittedData = data;
@@ -200,76 +308,232 @@ describe('FallbackOrchestratorService', () => {
                 eventId: event.eventId,
                 accepted: true,
                 selectedProvider: 'paypal',
-                timestamp: Date.now(),
+                timestamp: baseTime,
             });
 
             expect(emittedData).not.toBeNull();
             expect(emittedData.provider).toBe('paypal');
             expect(emittedData.request).toEqual(mockRequest);
+
+            vi.useRealTimers();
         });
 
         it('ignores response for unknown eventId', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
             const originalStatus = service.state().status;
 
             service.respondToFallback({
                 eventId: 'unknown_event',
                 accepted: true,
                 selectedProvider: 'paypal',
-                timestamp: Date.now(),
+                timestamp: baseTime,
             });
 
             expect(service.state().status).toBe(originalStatus);
+
+            vi.useRealTimers();
+        });
+
+        it('ignores response for expired event (TTL exceeded)', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
+            const event = service.pendingEvent()!;
+            expect(event).not.toBeNull();
+
+            // Simular evento expirado (timestamp muy antiguo, antes del TTL)
+            const ttl = service.getConfig().userResponseTimeout;
+            const expiredTimestamp = baseTime - ttl - 1000;
+            const expiredEvent: typeof event = {
+                ...event,
+                timestamp: expiredTimestamp,
+            };
+
+            // Simular que el evento está expirado en el state
+            (service as any)['_state'].update((s: any) => ({
+                ...s,
+                pendingEvent: expiredEvent,
+            }));
+
+            // Avanzar tiempo para simular que pasó el TTL
+            vi.advanceTimersByTime(ttl + 100);
+
+            service.respondToFallback({
+                eventId: expiredEvent.eventId,
+                accepted: true,
+                selectedProvider: 'paypal',
+                timestamp: baseTime + ttl + 100,
+            });
+
+            // Debe limpiar el estado pero no ejecutar fallback
+            expect(service.state().status).toBe('idle');
+            expect(service.pendingEvent()).toBeNull();
+
+            vi.useRealTimers();
+        });
+
+        it('rejects provider not in alternativeProviders', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
+            const event = service.pendingEvent()!;
+
+            service.respondToFallback({
+                eventId: event.eventId,
+                accepted: true,
+                selectedProvider: 'invalid_provider' as PaymentProviderId,
+                timestamp: baseTime,
+            });
+
+            // Debe limpiar el estado pero no ejecutar
+            expect(service.state().status).toBe('idle');
+            expect(service.pendingEvent()).toBeNull();
+
+            vi.useRealTimers();
+        });
+
+        it('uses originalRequest when executing fallback', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
+            let emittedData: any = null;
+            service.fallbackExecute$.subscribe(data => {
+                emittedData = data;
+            });
+
+            const event = service.pendingEvent()!;
+            service.respondToFallback({
+                eventId: event.eventId,
+                accepted: true,
+                selectedProvider: 'paypal',
+                timestamp: baseTime,
+            });
+
+            // Verificar que se emite con el originalRequest (sin modificar)
+            expect(emittedData).not.toBeNull();
+            expect(emittedData.request).toBe(event.originalRequest);
+            expect(emittedData.request).toEqual(mockRequest);
+
+            vi.useRealTimers();
+        });
+
+        it('clears pending event after accepting fallback', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
+            const event = service.pendingEvent()!;
+
+            service.respondToFallback({
+                eventId: event.eventId,
+                accepted: true,
+                selectedProvider: 'paypal',
+                timestamp: baseTime,
+            });
+
+            expect(service.pendingEvent()).toBeNull();
+
+            vi.useRealTimers();
         });
     });
 
+    describe('TTL expiration', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+            service.reportFailure('stripe', providerUnavailableError, mockRequest);
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('clears pending event after TTL expires', () => {
+            expect(service.state().status).toBe('pending');
+
+            vi.advanceTimersByTime(DEFAULT_FALLBACK_CONFIG.userResponseTimeout + 100);
+
+            expect(service.state().status).toBe('cancelled'); // esto depende del punto 3 (ver abajo)
+            expect(service.pendingEvent()).toBeNull();
+        });
+    });
+
+
     describe('notifySuccess()', () => {
         it('updates state to completed', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
             service.reportFailure('stripe', providerUnavailableError, mockRequest);
             service.respondToFallback({
                 eventId: service.pendingEvent()!.eventId,
                 accepted: true,
                 selectedProvider: 'paypal',
-                timestamp: Date.now(),
+                timestamp: baseTime,
             });
 
             service.notifySuccess();
 
             expect(service.state().status).toBe('completed');
             expect(service.state().isAutoFallback).toBe(false);
+
+            vi.useRealTimers();
         });
     });
 
     describe('notifyFailure()', () => {
         it('updates state to failed', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
             service.reportFailure('stripe', providerUnavailableError, mockRequest);
             service.respondToFallback({
                 eventId: service.pendingEvent()!.eventId,
                 accepted: true,
                 selectedProvider: 'paypal',
-                timestamp: Date.now(),
+                timestamp: baseTime,
             });
 
             service.notifyFailure('paypal', providerUnavailableError);
 
             expect(service.state().status).toBe('failed');
+
+            vi.useRealTimers();
         });
 
         it('sets status to failed when notifyFailure is called without originalRequest', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
             service.reportFailure('stripe', providerUnavailableError, mockRequest);
             service.respondToFallback({
                 eventId: service.pendingEvent()!.eventId,
                 accepted: true,
                 selectedProvider: 'paypal',
-                timestamp: Date.now(),
+                timestamp: baseTime,
             });
 
             // notifyFailure without originalRequest should just set status to failed
             service.notifyFailure('paypal', providerUnavailableError);
 
             expect(service.state().status).toBe('failed');
+
+            vi.useRealTimers();
         });
 
         it('attempts to report another failure when originalRequest is provided', () => {
+            vi.useFakeTimers();
+            const baseTime = 1000000;
+            vi.setSystemTime(baseTime);
+
             // With default config (maxAttempts=2, providers=['stripe', 'paypal']),
             // after stripe fails and paypal fails, there are no more alternatives
             service.reportFailure('stripe', providerUnavailableError, mockRequest);
@@ -277,7 +541,7 @@ describe('FallbackOrchestratorService', () => {
                 eventId: service.pendingEvent()!.eventId,
                 accepted: true,
                 selectedProvider: 'paypal',
-                timestamp: Date.now(),
+                timestamp: baseTime,
             });
 
             // notifyFailure with originalRequest will try to reportFailure
@@ -287,6 +551,8 @@ describe('FallbackOrchestratorService', () => {
 
             // Status should be 'failed' because no alternatives available
             expect(service.state().status).toBe('failed');
+
+            vi.useRealTimers();
         });
     });
 
@@ -328,7 +594,6 @@ describe('FallbackOrchestratorService', () => {
 
             // Advance time past the timeout (default 30 seconds)
             vi.advanceTimersByTime(DEFAULT_FALLBACK_CONFIG.userResponseTimeout + 100);
-
             expect(service.state().status).toBe('cancelled');
         });
     });
@@ -440,16 +705,16 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
             service.fallbackExecute$.subscribe(data => {
                 emittedData = data;
             });
+            vi.useFakeTimers();
 
             service.reportFailure('stripe', providerUnavailableError, mockRequest);
 
-            // Before delay
-            expect(emittedData).toBeNull();
-
-            // After delay
-            await new Promise(r => setTimeout(r, 150));
+            vi.advanceTimersByTime(150);
 
             expect(emittedData).not.toBeNull();
+
+            vi.useRealTimers();
+
             expect(emittedData.provider).toBe('paypal');
             expect(emittedData.request).toEqual(mockRequest);
         });

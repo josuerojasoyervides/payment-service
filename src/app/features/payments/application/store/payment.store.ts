@@ -281,14 +281,46 @@ export const PaymentsStore = signalStore(
             ),
 
             executeFallback(providerId: PaymentProviderId): void {
-                const currentRequest = store.currentRequest();
-                if (!currentRequest) {
-                    console.warn('[PaymentsStore] No current request for fallback');
+                const pendingEvent = store.fallback().pendingEvent;
+
+                if (!pendingEvent) {
+                    // Si no hay evento pendiente, usar currentRequest como fallback
+                    const currentRequest = store.currentRequest();
+                    if (!currentRequest) {
+                        console.warn('[PaymentsStore] No original request available for fallback');
+                        return;
+                    }
+
+                    // Ejecutar directamente con currentRequest
+                    this.startPayment({ request: currentRequest, providerId });
                     return;
                 }
 
-                // Usar el método startPayment que ahora usa el use case
-                this.startPayment({ request: currentRequest, providerId });
+                // Validar que el provider seleccionado esté en las alternativas
+                if (!pendingEvent.alternativeProviders.includes(providerId)) {
+                    console.warn('[PaymentsStore] Selected provider not in alternatives', {
+                        selectedProvider: providerId,
+                        alternatives: pendingEvent.alternativeProviders,
+                    });
+                    return;
+                }
+
+                // Responder al orchestrator - esto emitirá fallbackExecute$ con originalRequest
+                // y limpiará el pending event state
+                fallbackOrchestrator.respondToFallback({
+                    eventId: pendingEvent.eventId,
+                    accepted: true,
+                    selectedProvider: providerId,
+                    timestamp: Date.now(),
+                });
+
+                // Actualizar snapshot del fallback después de responder
+                patchState(store, {
+                    fallback: fallbackOrchestrator.getSnapshot(),
+                });
+
+                // El orchestrator ya emitió fallbackExecute$ con originalRequest
+                // El store se suscribe y ejecutará automáticamente a través de la suscripción
             },
 
             cancelFallback(): void {
@@ -344,7 +376,10 @@ export const PaymentsStore = signalStore(
         fallbackOrchestrator.fallbackExecute$
             .pipe(
                 takeUntil(destroy$),
-                filter(() => store.fallback().status === 'auto_executing')
+                filter(() =>
+                    store.fallback().status === 'auto_executing' ||
+                    store.fallback().status === 'executing'
+                )
             )
             .subscribe(({ request, provider }) => {
                 // Ejecutar el pago con el provider alternativo usando el use case

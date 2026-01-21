@@ -150,18 +150,62 @@ export class FallbackOrchestratorService {
 
     /**
      * Responds to fallback event (from UI).
+     * 
+     * Maneja eventos expirados de forma segura sin romper el flujo.
      */
     respondToFallback(response: FallbackUserResponse): void {
         const currentEvent = this._state().pendingEvent;
 
+        // Verificar que el evento existe y coincide
         if (!currentEvent || currentEvent.eventId !== response.eventId) {
-            console.warn('[FallbackOrchestrator] Response for unknown or expired event');
+            // Evento desconocido o expirado - ignorar sin romper
+            console.warn('[FallbackOrchestrator] Response for unknown or expired event', {
+                responseEventId: response.eventId,
+                currentEventId: currentEvent?.eventId ?? null,
+            });
             return;
         }
 
+        // Verificar TTL: si el evento expiró, limpiarlo y ignorar
+        const now = Date.now();
+        const eventAge = now - currentEvent.timestamp;
+        if (eventAge > this.config.userResponseTimeout) {
+            console.warn('[FallbackOrchestrator] Response for expired event (TTL exceeded)', {
+                eventId: currentEvent.eventId,
+                eventAge,
+                ttl: this.config.userResponseTimeout,
+            });
+
+            // Limpiar evento expirado
+            this._state.update(state => ({
+                ...state,
+                status: 'idle',
+                pendingEvent: null,
+            }));
+
+            return;
+        }
+
+        // Cancelar timers pendientes
         this._cancel$.next();
 
         if (response.accepted && response.selectedProvider) {
+            // Validar que el provider seleccionado esté en las alternativas
+            if (!currentEvent.alternativeProviders.includes(response.selectedProvider)) {
+                console.warn('[FallbackOrchestrator] Selected provider not in alternatives', {
+                    selectedProvider: response.selectedProvider,
+                    alternativeProviders: currentEvent.alternativeProviders,
+                });
+
+                // Limpiar estado
+                this._state.update(state => ({
+                    ...state,
+                    status: 'idle',
+                    pendingEvent: null,
+                }));
+                return;
+            }
+
             this._state.update(state => ({
                 ...state,
                 status: 'executing',
@@ -170,6 +214,7 @@ export class FallbackOrchestratorService {
                 isAutoFallback: false,
             }));
 
+            // Emitir evento con el originalRequest (sin modificar)
             this._fallbackExecute$.next({
                 request: currentEvent.originalRequest,
                 provider: response.selectedProvider,
@@ -363,19 +408,41 @@ export class FallbackOrchestratorService {
         return true;
     }
 
+    /**
+     * Configura timeout para limpiar eventos expirados.
+     * 
+     * Cuando expira el TTL, limpia el pending event para evitar
+     * que la UI quede colgada esperando una respuesta.
+     */
     private setupTimeout(eventId: string): void {
         timer(this.config.userResponseTimeout)
             .pipe(
                 takeUntil(this._cancel$),
-                filter(() => this._state().pendingEvent?.eventId === eventId)
+                filter(() => {
+                    const pendingEvent = this._state().pendingEvent;
+                    // Solo procesar si el evento sigue siendo el mismo y no ha sido respondido
+                    return pendingEvent?.eventId === eventId &&
+                        this._state().status === 'pending';
+                })
             )
             .subscribe(() => {
-                // Timeout: tratar como cancelación
-                this.respondToFallback({
-                    eventId,
-                    accepted: false,
-                    timestamp: Date.now(),
-                });
+                // Verificar que el evento sigue siendo válido antes de limpiar
+                const currentEvent = this._state().pendingEvent;
+                if (currentEvent?.eventId === eventId) {
+                    const now = Date.now();
+                    const eventAge = now - currentEvent.timestamp;
+
+                    // Si realmente expiró, limpiar el estado
+                    if (eventAge >= this.config.userResponseTimeout) {
+                        this._state.update(state => ({
+                            ...state,
+                            status: 'cancelled',
+                            pendingEvent: null,
+                            currentProvider: null,
+                            isAutoFallback: false,
+                        }));
+                    }
+                }
             });
     }
 
