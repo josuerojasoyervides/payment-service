@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { defer, EMPTY, Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
@@ -32,38 +32,29 @@ export class StartPaymentUseCase {
         wasAutoFallback?: boolean
     ): Observable<PaymentIntent> {
         return defer(() => {
-            // ✅ TODO ocurre dentro del stream (errores sync quedan capturados)
             const factory = this.registry.get(providerId);
-
             const strategy = factory.createStrategy(request.method.type);
 
-            const enrichedRequest: CreatePaymentRequest = {
+            const enrichedRequest = {
                 ...request,
                 idempotencyKey: this.idempotency.generateForStart(providerId, request),
             };
 
-            return strategy.start(enrichedRequest, context);
-        }).pipe(
-            catchError((error: unknown) => {
-                // ✅ Solo intentamos fallback si es PaymentError real
-                if (isPaymentError(error)) {
-                    const didFallback = this.fallback.reportFailure({
-                        providerId,
-                        error,
-                        request: {
-                            ...request,
-                            idempotencyKey: this.idempotency.generateForStart(providerId, request),
-                        },
-                        wasAutoFallback,
-                    });
+            return strategy.start(enrichedRequest, context).pipe(
+                catchError((error) => {
+                    if (isPaymentError(error)) {
+                        const didFallback = this.fallback.reportFailure({
+                            providerId,
+                            error,
+                            request: enrichedRequest, // ✅ ya lista
+                            wasAutoFallback,
+                        });
+                        if (didFallback) return EMPTY;
+                    }
+                    return throwError(() => error);
+                })
+            );
+        });
 
-                    // ✅ si fallback se encarga, no propagamos error
-                    if (didFallback) return EMPTY;
-                }
-
-                // ✅ si no hubo fallback (o no era PaymentError), se propaga
-                return throwError(() => error);
-            })
-        );
     }
 }
