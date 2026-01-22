@@ -159,7 +159,7 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
 
       return {
         code,
-        message: this.humanizePaypalError(err),
+        message: err.message ?? I18nKeys.errors.paypal_error,
         messageKey: I18nKeys.errors.paypal_error,
         params: {
           reason: err.name, // opcional, por si UI quiere mostrarlo o logs
@@ -174,7 +174,7 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
       if (httpError.status === 401) {
         return {
           code: 'provider_error',
-          message: this.i18n.t(I18nKeys.errors.paypal_auth_error),
+          message: I18nKeys.errors.paypal_auth_error,
           messageKey: I18nKeys.errors.paypal_auth_error,
           raw: err,
         };
@@ -183,7 +183,7 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
       if (httpError.status >= 500) {
         return {
           code: 'provider_unavailable',
-          message: this.i18n.t(I18nKeys.errors.paypal_unavailable),
+          message: I18nKeys.errors.paypal_unavailable,
           messageKey: I18nKeys.errors.paypal_unavailable,
           raw: err,
         };
@@ -323,31 +323,5 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
    */
   private isPaypalErrorResponse(err: unknown): err is PaypalErrorResponse {
     return err !== null && typeof err === 'object' && 'name' in err && 'message' in err;
-  }
-
-  /**
-   * Converts PayPal errors to readable messages.
-   */
-  private humanizePaypalError(error: PaypalErrorResponse): string {
-    const errorKeyMap: Partial<Record<string, string>> = {
-      INVALID_REQUEST: I18nKeys.errors.paypal_invalid_request,
-      PERMISSION_DENIED: I18nKeys.errors.paypal_permission_denied,
-      RESOURCE_NOT_FOUND: I18nKeys.errors.paypal_resource_not_found,
-      INSTRUMENT_DECLINED: I18nKeys.errors.paypal_instrument_declined,
-      ORDER_NOT_APPROVED: I18nKeys.errors.paypal_order_not_approved,
-      INTERNAL_SERVICE_ERROR: I18nKeys.errors.paypal_internal_error,
-    };
-
-    if (error.details?.length) {
-      const detail = error.details[0];
-      return detail.description || detail.issue || error.message;
-    }
-
-    const translationKey = errorKeyMap[error.name];
-    if (translationKey) {
-      return this.i18n.t(translationKey);
-    }
-
-    return error.message ?? this.i18n.t(I18nKeys.errors.paypal_error);
   }
 }

@@ -18,6 +18,7 @@ export const en: Translations = {
     card_token_required: 'card token is required',
     intent_id_required: 'intentId is required',
     min_amount: 'Minimum amount for card payments is {{amount}} {{currency}}',
+    max_amount: 'Maximum amount for SPEI payments is {{amount}} {{currency}}',
     stripe_error: 'Error processing payment with Stripe.',
     paypal_error: 'Error processing payment with PayPal.',
     stripe_unavailable: 'Stripe is not available at this time. Please try again later.',
