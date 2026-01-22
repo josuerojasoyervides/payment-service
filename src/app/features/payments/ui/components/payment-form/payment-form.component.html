@@ -1,80 +1,78 @@
 <div class="space-y-4">
-    @if (requirements(); as reqs) {
-        @if (reqs.description) {
-            <p class="text-sm text-gray-600">{{ translateDescription(reqs.description) }}</p>
-        }
-        
-        @if (reqs.instructions) {
-            <div class="alert-info flex items-start gap-2">
-                <span class="text-lg">💡</span>
-                <span class="text-sm">{{ translateInstructions(reqs.instructions) }}</span>
-            </div>
-        }
-
-        <form [formGroup]="form" class="space-y-4">
-            @for (field of visibleFields(); track field.name) {
-                <div class="space-y-1">
-                    @if (field.name === 'saveForFuture') {
-                        <!-- Checkbox para saveForFuture -->
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                [formControlName]="field.name"
-                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            />
-                            <span class="label cursor-pointer">
-                                {{ field.label }}
-                            </span>
-                        </label>
-                    } @else {
-                        <!-- Input normal para otros campos -->
-                        <label [for]="field.name" class="label">
-                            {{ translateFieldLabel(field) }}
-                            @if (field.required) {
-                                <span class="text-red-500 ml-0.5">*</span>
-                            }
-                        </label>
-                        
-                        <input
-                            [id]="field.name"
-                            [type]="field.type"
-                            [formControlName]="field.name"
-                            [placeholder]="field.placeholder ?? ''"
-                            class="input"
-                            [class.input-error]="isFieldInvalid(field.name)"
-                        />
-                        
-                        @if (isFieldInvalid(field.name)) {
-                            <p class="text-sm text-red-500">
-                                {{ fieldRequiredText }}
-                            </p>
-                        }
-                    }
-                </div>
-            }
-
-            @if (hiddenFields().length > 0) {
-                <div class="text-xs text-gray-400 space-y-1">
-                    @for (field of hiddenFields(); track field.name) {
-                        <div class="flex items-center gap-2">
-                            <span>{{ field.label }}:</span>
-                            <code class="bg-gray-100 px-1 rounded">
-                                {{ form.get(field.name)?.value || '(auto)' }}
-                            </code>
-                        </div>
-                    }
-                </div>
-            }
-        </form>
-
-        @if (reqs.fields.length === 0) {
-            <p class="text-sm text-gray-500 italic">
-                {{ methodNoAdditionalDataText }}
-            </p>
-        }
-    } @else {
-        <p class="text-sm text-gray-500 italic">
-            {{ selectProviderMethodText }}
-        </p>
+  @if (requirements(); as reqs) {
+    @if (reqs.description) {
+      <p class="text-sm text-gray-600">{{ translateDescription(reqs.description) }}</p>
     }
+
+    @if (reqs.instructions) {
+      <div class="alert-info flex items-start gap-2">
+        <span class="text-lg">💡</span>
+        <span class="text-sm">{{ translateInstructions(reqs.instructions) }}</span>
+      </div>
+    }
+
+    <form [formGroup]="form" class="space-y-4">
+      @for (field of visibleFields(); track field.name) {
+        <div class="space-y-1">
+          @if (field.name === 'saveForFuture') {
+            <!-- Checkbox para saveForFuture -->
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                [formControlName]="field.name"
+                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+              <span class="label cursor-pointer">
+                {{ field.label }}
+              </span>
+            </label>
+          } @else {
+            <!-- Input normal para otros campos -->
+            <label [for]="field.name" class="label">
+              {{ translateFieldLabel(field) }}
+              @if (field.required) {
+                <span class="text-red-500 ml-0.5">*</span>
+              }
+            </label>
+
+            <input
+              [id]="field.name"
+              [type]="field.type"
+              [formControlName]="field.name"
+              [placeholder]="field.placeholder ?? ''"
+              class="input"
+              [class.input-error]="isFieldInvalid(field.name)" />
+
+            @if (isFieldInvalid(field.name)) {
+              <p class="text-sm text-red-500">
+                {{ fieldRequiredText }}
+              </p>
+            }
+          }
+        </div>
+      }
+
+      @if (hiddenFields().length > 0) {
+        <div class="text-xs text-gray-400 space-y-1">
+          @for (field of hiddenFields(); track field.name) {
+            <div class="flex items-center gap-2">
+              <span>{{ field.label }}:</span>
+              <code class="bg-gray-100 px-1 rounded">
+                {{ form.get(field.name)?.value || '(auto)' }}
+              </code>
+            </div>
+          }
+        </div>
+      }
+    </form>
+
+    @if (reqs.fields.length === 0) {
+      <p class="text-sm text-gray-500 italic">
+        {{ methodNoAdditionalDataText }}
+      </p>
+    }
+  } @else {
+    <p class="text-sm text-gray-500 italic">
+      {{ selectProviderMethodText }}
+    </p>
+  }
 </div>

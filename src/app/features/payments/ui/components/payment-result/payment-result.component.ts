@@ -1,14 +1,14 @@
 import { Component, input, output, computed, inject } from '@angular/core';
-import { CommonModule, CurrencyPipe, JsonPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe, JsonPipe } from '@angular/common';
 import { PaymentIntent, PaymentError, STATUS_BADGE_MAP } from '../../shared';
 import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Component that displays payment result.
- * 
+ *
  * Can show a successful payment with intent details,
  * or an error with message and retry option.
- * 
+ *
  * @example
  * ```html
  * <app-payment-result
@@ -20,117 +20,117 @@ import { I18nService, I18nKeys } from '@core/i18n';
  * ```
  */
 @Component({
-    selector: 'app-payment-result',
-    standalone: true,
-    imports: [CommonModule, CurrencyPipe, JsonPipe],
-    templateUrl: './payment-result.component.html',
+  selector: 'app-payment-result',
+  standalone: true,
+  imports: [CommonModule, CurrencyPipe, JsonPipe],
+  templateUrl: './payment-result.component.html',
 })
 export class PaymentResultComponent {
-    private readonly i18n = inject(I18nService);
+  private readonly i18n = inject(I18nService);
 
-    /** Payment intent (if successful) */
-    readonly intent = input<PaymentIntent | null>(null);
+  /** Payment intent (if successful) */
+  readonly intent = input<PaymentIntent | null>(null);
 
-    /** Payment error (if failed) */
-    readonly error = input<PaymentError | null>(null);
+  /** Payment error (if failed) */
+  readonly error = input<PaymentError | null>(null);
 
-    /** Emits when user wants to retry */
-    readonly retry = output<void>();
+  /** Emits when user wants to retry */
+  readonly retry = output<void>();
 
-    /** Emits when user wants to make a new payment */
-    readonly newPayment = output<void>();
+  /** Emits when user wants to make a new payment */
+  readonly newPayment = output<void>();
 
-    /** Whether there is a valid intent */
-    readonly hasIntent = computed(() => this.intent() !== null);
+  /** Whether there is a valid intent */
+  readonly hasIntent = computed(() => this.intent() !== null);
 
-    /** Whether there is an error */
-    readonly hasError = computed(() => this.error() !== null);
+  /** Whether there is an error */
+  readonly hasError = computed(() => this.error() !== null);
 
-    /** Whether payment was successful */
-    readonly isSucceeded = computed(() => {
-        const i = this.intent();
-        return i !== null && i.status === 'succeeded';
-    });
+  /** Whether payment was successful */
+  readonly isSucceeded = computed(() => {
+    const i = this.intent();
+    return i !== null && i.status === 'succeeded';
+  });
 
-    /** Readable error message */
-    readonly errorMessage = computed(() => {
-        const e = this.error();
-        if (!e) return this.i18n.t(I18nKeys.ui.payment_error);
-        if (typeof e === 'object' && 'message' in e) {
-            return (e as { message: string }).message;
-        }
-        return this.i18n.t(I18nKeys.ui.payment_error);
-    });
-
-    /** Error code */
-    readonly errorCode = computed(() => {
-        const e = this.error();
-        if (!e) return null;
-        if (typeof e === 'object' && 'code' in e) {
-            return (e as { code: string }).code;
-        }
-        return null;
-    });
-
-    /** CSS class for status badge */
-    readonly statusBadgeClass = computed(() => {
-        const i = this.intent();
-        if (!i) return 'badge';
-        return STATUS_BADGE_MAP[i.status] || 'badge';
-    });
-
-    /** Status text */
-    readonly statusText = computed(() => {
-        const i = this.intent();
-        if (!i) return '';
-        const statusKey = `messages.status_${i.status}`;
-        return this.i18n.has(statusKey) ? this.i18n.t(statusKey) : i.status;
-    });
-    get paymentErrorTitle(): string {
-        return this.i18n.t(I18nKeys.ui.payment_error);
+  /** Readable error message */
+  readonly errorMessage = computed(() => {
+    const e = this.error();
+    if (!e) return this.i18n.t(I18nKeys.ui.payment_error);
+    if (typeof e === 'object' && 'message' in e) {
+      return (e as { message: string }).message;
     }
+    return this.i18n.t(I18nKeys.ui.payment_error);
+  });
 
-    get errorCodeLabel(): string {
-        return this.i18n.t(I18nKeys.ui.error_code);
+  /** Error code */
+  readonly errorCode = computed(() => {
+    const e = this.error();
+    if (!e) return null;
+    if (typeof e === 'object' && 'code' in e) {
+      return (e as { code: string }).code;
     }
+    return null;
+  });
 
-    get viewTechnicalDetailsLabel(): string {
-        return this.i18n.t(I18nKeys.ui.view_technical_details);
-    }
+  /** CSS class for status badge */
+  readonly statusBadgeClass = computed(() => {
+    const i = this.intent();
+    if (!i) return 'badge';
+    return STATUS_BADGE_MAP[i.status] || 'badge';
+  });
 
-    get tryAgainLabel(): string {
-        return this.i18n.t(I18nKeys.ui.try_again);
-    }
+  /** Status text */
+  readonly statusText = computed(() => {
+    const i = this.intent();
+    if (!i) return '';
+    const statusKey = `messages.status_${i.status}`;
+    return this.i18n.has(statusKey) ? this.i18n.t(statusKey) : i.status;
+  });
+  get paymentErrorTitle(): string {
+    return this.i18n.t(I18nKeys.ui.payment_error);
+  }
 
-    get paymentCompletedTitle(): string {
-        return this.i18n.t(I18nKeys.ui.payment_completed);
-    }
+  get errorCodeLabel(): string {
+    return this.i18n.t(I18nKeys.ui.error_code);
+  }
 
-    get paymentStartedTitle(): string {
-        return this.i18n.t(I18nKeys.ui.payment_started_successfully);
-    }
+  get viewTechnicalDetailsLabel(): string {
+    return this.i18n.t(I18nKeys.ui.view_technical_details);
+  }
 
-    get intentIdLabel(): string {
-        return this.i18n.t(I18nKeys.ui.intent_id);
-    }
+  get tryAgainLabel(): string {
+    return this.i18n.t(I18nKeys.ui.try_again);
+  }
 
-    get providerLabel(): string {
-        return this.i18n.t(I18nKeys.ui.provider);
-    }
+  get paymentCompletedTitle(): string {
+    return this.i18n.t(I18nKeys.ui.payment_completed);
+  }
 
-    get statusLabel(): string {
-        return this.i18n.t(I18nKeys.ui.status);
-    }
+  get paymentStartedTitle(): string {
+    return this.i18n.t(I18nKeys.ui.payment_started_successfully);
+  }
 
-    get amountLabel(): string {
-        return this.i18n.t(I18nKeys.ui.amount);
-    }
+  get intentIdLabel(): string {
+    return this.i18n.t(I18nKeys.ui.intent_id);
+  }
 
-    get viewFullResponseLabel(): string {
-        return this.i18n.t(I18nKeys.ui.view_full_response);
-    }
+  get providerLabel(): string {
+    return this.i18n.t(I18nKeys.ui.provider);
+  }
 
-    get newPaymentLabel(): string {
-        return this.i18n.t(I18nKeys.ui.new_payment);
-    }
+  get statusLabel(): string {
+    return this.i18n.t(I18nKeys.ui.status);
+  }
+
+  get amountLabel(): string {
+    return this.i18n.t(I18nKeys.ui.amount);
+  }
+
+  get viewFullResponseLabel(): string {
+    return this.i18n.t(I18nKeys.ui.view_full_response);
+  }
+
+  get newPaymentLabel(): string {
+    return this.i18n.t(I18nKeys.ui.new_payment);
+  }
 }

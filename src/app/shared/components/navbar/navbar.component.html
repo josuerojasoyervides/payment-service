@@ -1,30 +1,24 @@
 <nav class="bg-white border-b border-gray-200 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-            <!-- Logo / App Name -->
-            <div class="flex items-center">
-                <div class="flex-shrink-0 flex items-center gap-2">
-                    <svg
-                        class="w-8 h-8 text-blue-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                        />
-                    </svg>
-                    <h1 class="text-xl font-bold text-gray-900">{{ appName }}</h1>
-                </div>
-            </div>
-
-            <!-- Right side: Language Selector -->
-            <div class="flex items-center gap-4">
-                <app-language-selector />
-            </div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <!-- Logo / App Name -->
+      <div class="flex items-center">
+        <div class="flex-shrink-0 flex items-center gap-2">
+          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+          <h1 class="text-xl font-bold text-gray-900">{{ appName }}</h1>
         </div>
+      </div>
+
+      <!-- Right side: Language Selector -->
+      <div class="flex items-center gap-4">
+        <app-language-selector />
+      </div>
     </div>
+  </div>
 </nav>

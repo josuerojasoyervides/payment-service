@@ -14,13 +14,15 @@ export const PAYMENT_STRATEGIES = new InjectionToken<PaymentStrategy[]>('PAYMENT
  * Interface to register strategies with metadata.
  */
 export interface RegisteredStrategy {
-    /** Provider this strategy belongs to */
-    providerId: PaymentProviderId;
-    /** The strategy itself */
-    strategy: PaymentStrategy;
+  /** Provider this strategy belongs to */
+  providerId: PaymentProviderId;
+  /** The strategy itself */
+  strategy: PaymentStrategy;
 }
 
 /**
  * Token for strategies with their metadata.
  */
-export const REGISTERED_PAYMENT_STRATEGIES = new InjectionToken<RegisteredStrategy[]>('REGISTERED_PAYMENT_STRATEGIES');
+export const REGISTERED_PAYMENT_STRATEGIES = new InjectionToken<RegisteredStrategy[]>(
+  'REGISTERED_PAYMENT_STRATEGIES',
+);
