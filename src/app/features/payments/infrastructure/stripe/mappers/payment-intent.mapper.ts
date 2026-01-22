@@ -1,4 +1,7 @@
-import { PaymentIntent, PaymentProviderId } from '@payments/domain/models';
+import {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
 
 import { StripePaymentIntentDto } from '../dto/stripe.dto';
 import { STATUS_MAP } from './internal-status.mapper';

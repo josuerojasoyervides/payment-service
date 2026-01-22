@@ -1,13 +1,13 @@
 import { inject } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
-import { map, Observable, tap } from 'rxjs';
-
+import { NextActionPaypalApprove } from '@payments/domain/models/payment/payment-action.types';
 import {
-  CreatePaymentRequest,
-  NextActionPaypalApprove,
   PaymentIntent,
   PaymentMethodType,
-} from '../../../domain/models';
+} from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { map, Observable, tap } from 'rxjs';
+
 import {
   PaymentGateway,
   PaymentStrategy,

@@ -10,18 +10,20 @@ import {
   WritableStateSource,
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { catchError, filter, Observable, of, pipe, switchMap, tap } from 'rxjs';
-
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
 import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-  PaymentError,
-  PaymentIntent,
-  PaymentProviderId,
-} from '../../domain/models';
-import { StrategyContext } from '../../domain/ports';
+} from '@payments/domain/models/payment/payment-request.types';
+import { StrategyContext } from '@payments/domain/ports';
+import { catchError, filter, Observable, of, pipe, switchMap, tap } from 'rxjs';
+
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { CancelPaymentUseCase } from '../use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '../use-cases/confirm-payment.use-case';

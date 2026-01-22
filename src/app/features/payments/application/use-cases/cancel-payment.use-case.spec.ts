@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom, of, throwError } from 'rxjs';
-
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
-  CancelPaymentRequest,
-  PaymentError,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '../../domain/models';
+} from '@payments/domain/models/payment/payment-intent.types';
+import { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { firstValueFrom, of, throwError } from 'rxjs';
+
 import { PaymentGateway, ProviderFactory } from '../../domain/ports';
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';

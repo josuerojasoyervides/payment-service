@@ -3,15 +3,15 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
-
+import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
   CurrencyCode,
-  FallbackAvailableEvent,
-  PaymentError,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '../../../domain/models';
+} from '@payments/domain/models/payment/payment-intent.types';
+
 import {
   FallbackModalComponent,
   MethodSelectorComponent,

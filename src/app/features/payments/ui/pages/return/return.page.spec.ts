@@ -2,9 +2,9 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { I18nService } from '@core/i18n';
+import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { PaymentIntent } from '../../../domain/models';
 import { ReturnComponent } from './return.page';
 
 describe('ReturnComponent', () => {

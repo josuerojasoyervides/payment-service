@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-
-import { CreatePaymentRequest, PaymentProviderId } from '../../domain/models';
+import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
 export type IdempotencyOperation = 'start' | 'confirm' | 'cancel' | 'get';
 

@@ -1,18 +1,22 @@
 import { computed, inject, Injectable, InjectionToken, signal } from '@angular/core';
+import {
+  DEFAULT_FALLBACK_CONFIG,
+  FallbackConfig,
+} from '@payments/domain/models/fallback/fallback-config.types';
+import {
+  FallbackAvailableEvent,
+  FallbackUserResponse,
+} from '@payments/domain/models/fallback/fallback-event.types';
+import {
+  FailedAttempt,
+  FallbackState,
+  INITIAL_FALLBACK_STATE,
+} from '@payments/domain/models/fallback/fallback-state.types';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { filter, Subject, takeUntil, timer } from 'rxjs';
 
-import {
-  CreatePaymentRequest,
-  DEFAULT_FALLBACK_CONFIG,
-  FailedAttempt,
-  FallbackAvailableEvent,
-  FallbackConfig,
-  FallbackState,
-  FallbackUserResponse,
-  INITIAL_FALLBACK_STATE,
-  PaymentError,
-  PaymentProviderId,
-} from '../../domain/models';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 
 /**

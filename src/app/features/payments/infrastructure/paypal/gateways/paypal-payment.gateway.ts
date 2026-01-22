@@ -1,19 +1,23 @@
 import { Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
-import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
-import { Observable } from 'rxjs';
-
+import { NextActionPaypalApprove } from '@payments/domain/models/payment/payment-action.types';
+import {
+  PaymentError,
+  PaymentErrorCode,
+} from '@payments/domain/models/payment/payment-error.types';
+import {
+  PaymentIntent,
+  PaymentIntentStatus,
+} from '@payments/domain/models/payment/payment-intent.types';
 import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-  NextActionPaypalApprove,
-  PaymentError,
-  PaymentErrorCode,
-  PaymentIntent,
-  PaymentIntentStatus,
-} from '../../../domain/models';
+} from '@payments/domain/models/payment/payment-request.types';
+import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
+import { Observable } from 'rxjs';
+
 import {
   findPaypalLink,
   PaypalCreateOrderRequest,

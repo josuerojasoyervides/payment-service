@@ -3,12 +3,16 @@ import { Component, computed, effect, inject, isDevMode, signal } from '@angular
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+// Domain types
+import {
+  CurrencyCode,
+  PaymentMethodType,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
 
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 // Port and token (decoupled from implementation)
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-// Domain types
-import { CurrencyCode, PaymentMethodType, PaymentProviderId } from '../../../domain/models';
 import { FieldRequirements, PaymentOptions, StrategyContext } from '../../../domain/ports';
 // UI Components
 import {

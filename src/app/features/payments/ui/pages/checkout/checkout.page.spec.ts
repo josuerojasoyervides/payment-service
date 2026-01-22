@@ -2,16 +2,16 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { LoggerService } from '@core/logging';
-
-import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
+import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
-  FallbackAvailableEvent,
-  PaymentError,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '../../../domain/models';
+} from '@payments/domain/models/payment/payment-intent.types';
+
+import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
+import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { FieldRequirements, PaymentOptions } from '../../../domain/ports';
 import { CheckoutComponent } from './checkout.page';
 

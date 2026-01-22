@@ -1,11 +1,11 @@
 import { inject, Injectable } from '@angular/core';
+import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-  PaymentIntent,
-} from '@payments/domain/models';
+} from '@payments/domain/models/payment/payment-request.types';
 import { PaymentGateway } from '@payments/domain/ports';
 import { Observable } from 'rxjs';
 

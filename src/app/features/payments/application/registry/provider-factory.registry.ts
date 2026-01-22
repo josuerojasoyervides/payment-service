@@ -1,7 +1,10 @@
 import { inject, Injectable } from '@angular/core';
+import {
+  PaymentMethodType,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
+import { ProviderFactory } from '@payments/domain/ports';
 
-import { PaymentMethodType, PaymentProviderId } from '../../domain/models';
-import { ProviderFactory } from '../../domain/ports';
 import { PAYMENT_PROVIDER_FACTORIES } from '../tokens/payment-provider-factories.token';
 
 /**

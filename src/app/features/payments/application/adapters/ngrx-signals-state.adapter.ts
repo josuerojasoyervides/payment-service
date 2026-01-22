@@ -1,17 +1,19 @@
 import { computed, effect, inject, Injectable, Signal } from '@angular/core';
-
+import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
+import { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
 import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
-  FallbackAvailableEvent,
-  FallbackState,
   GetPaymentStatusRequest,
-  PaymentError,
-  PaymentIntent,
-  PaymentProviderId,
-} from '../../domain/models';
-import { StrategyContext } from '../../domain/ports';
+} from '@payments/domain/models/payment/payment-request.types';
+import { StrategyContext } from '@payments/domain/ports';
+
 import { PaymentDebugSummary, PaymentStatePort, Unsubscribe } from '../state/payment-state.port';
 import { PaymentHistoryEntry, PaymentsState } from '../store/payment.models';
 import { PaymentsStore } from '../store/payment.store';

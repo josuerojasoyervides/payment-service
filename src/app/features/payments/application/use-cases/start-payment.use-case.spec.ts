@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
-import { defaultIfEmpty, firstValueFrom, of, throwError } from 'rxjs';
-
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
-  CreatePaymentRequest,
-  PaymentError,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '../../domain/models';
+} from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { defaultIfEmpty, firstValueFrom, of, throwError } from 'rxjs';
+
 import { PaymentStrategy, StrategyContext } from '../../domain/ports';
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';

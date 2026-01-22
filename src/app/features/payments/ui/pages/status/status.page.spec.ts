@@ -1,9 +1,10 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { PaymentError, PaymentIntent } from '../../../domain/models';
 import { StatusComponent } from './status.page';
 
 describe('StatusComponent', () => {

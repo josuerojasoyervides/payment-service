@@ -1,4 +1,6 @@
-import { CreatePaymentRequest, CurrencyCode } from '../../../domain/models';
+import { CurrencyCode } from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+
 import { PaymentOptions, PaymentRequestBuilder } from '../../../domain/ports';
 
 /**

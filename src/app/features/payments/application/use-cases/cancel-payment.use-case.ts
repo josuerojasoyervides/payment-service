@@ -1,12 +1,12 @@
 import { inject, Injectable } from '@angular/core';
-import { catchError, Observable, throwError } from 'rxjs';
-
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
-  CancelPaymentRequest,
-  PaymentError,
   PaymentIntent,
   PaymentProviderId,
-} from '../../domain/models';
+} from '@payments/domain/models/payment/payment-intent.types';
+import { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { catchError, Observable, throwError } from 'rxjs';
+
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 import { safeDefer } from '../helpers/safe-defer';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';

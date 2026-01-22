@@ -1,7 +1,8 @@
 import { I18nService } from '@core/i18n';
+import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of } from 'rxjs';
 
-import { CreatePaymentRequest, PaymentIntent } from '../../domain/models';
 import { PaymentGateway, TokenValidator } from '../../domain/ports';
 import { CardStrategy } from './card-strategy';
 

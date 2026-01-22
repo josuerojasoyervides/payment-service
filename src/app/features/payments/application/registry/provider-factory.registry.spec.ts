@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PaymentMethodType } from '../../domain/models';
 import { ProviderFactory } from '../../domain/ports';
 import { PAYMENT_PROVIDER_FACTORIES } from '../tokens/payment-provider-factories.token';
 import { ProviderFactoryRegistry } from './provider-factory.registry';

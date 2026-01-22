@@ -1,5 +1,9 @@
 import { I18nKeys } from '@core/i18n';
-import { NextActionSpei, PaymentIntent, PaymentProviderId } from '@payments/domain/models';
+import { NextActionSpei } from '@payments/domain/models/payment/payment-action.types';
+import {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
 
 import { StripeSpeiSourceDto } from '../dto/stripe.dto';
 import { SpeiStatusMapper } from './spei-status.mapper';

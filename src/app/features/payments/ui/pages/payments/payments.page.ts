@@ -1,15 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
+import {
+  PaymentIntent,
+  PaymentMethodType,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { PAYMENT_PROVIDER_FACTORIES } from '../../../application/tokens/payment-provider-factories.token';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import {
-  CreatePaymentRequest,
-  PaymentIntent,
-  PaymentMethodType,
-  PaymentProviderId,
-} from '../../../domain/models';
 import { ProviderFactory } from '../../../domain/ports';
 
 type SmokeStartStatus = 'skipped' | 'ok' | 'error';

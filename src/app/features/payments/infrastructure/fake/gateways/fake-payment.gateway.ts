@@ -1,17 +1,19 @@
 import { Injectable } from '@angular/core';
-import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
-import { delay, Observable, of, throwError } from 'rxjs';
-
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import {
+  PaymentIntent,
+  PaymentIntentStatus,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
 import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-  PaymentError,
-  PaymentIntent,
-  PaymentIntentStatus,
-  PaymentProviderId,
-} from '../../../domain/models';
+} from '@payments/domain/models/payment/payment-request.types';
+import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
+import { delay, Observable, of, throwError } from 'rxjs';
+
 import { PaypalOrderDto } from '../../paypal/dto/paypal.dto';
 import { StripePaymentIntentDto, StripeSpeiSourceDto } from '../../stripe/dto/stripe.dto';
 

@@ -2,15 +2,17 @@ import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
 import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-  PaymentError,
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/models';
+} from '@payments/domain/models/payment/payment-request.types';
 import { PaymentGateway } from '@payments/domain/ports';
 import { catchError, map, Observable, tap, throwError } from 'rxjs';
 

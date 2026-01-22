@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PaymentMethodType } from '../../../domain/models';
 import {
   FieldRequirements,
   PaymentGateway,

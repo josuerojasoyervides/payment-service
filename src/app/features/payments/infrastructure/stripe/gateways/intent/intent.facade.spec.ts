@@ -4,7 +4,7 @@ import {
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/models';
+} from '@payments/domain/models/payment/payment-request.types';
 import { of } from 'rxjs';
 
 import { StripeCancelIntentGateway } from './cancel-intent.gateway';
