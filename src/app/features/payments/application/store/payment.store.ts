@@ -10,6 +10,7 @@ import {
   WritableStateSource,
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { StrategyContext } from '@payments/application/ports/payment-strategy.port';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
   PaymentIntent,
@@ -21,7 +22,6 @@ import {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
-import { StrategyContext } from '@payments/domain/ports/payment/payment-strategy.port';
 import { catchError, filter, Observable, of, pipe, switchMap, tap } from 'rxjs';
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';

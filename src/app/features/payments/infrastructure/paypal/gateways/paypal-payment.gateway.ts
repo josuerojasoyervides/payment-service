@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
+import { BasePaymentGateway } from '@payments/application/ports/base-payment.gateway';
 import { NextActionPaypalApprove } from '@payments/domain/models/payment/payment-action.types';
 import {
   PaymentError,
@@ -15,7 +16,6 @@ import {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
-import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
 import { Observable } from 'rxjs';
 
 import {

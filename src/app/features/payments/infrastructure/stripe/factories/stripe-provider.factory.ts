@@ -3,12 +3,12 @@ import { I18nKeys, I18nService } from '@core/i18n';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 import { ProviderFactory } from '@payments/domain/ports/provider/provider-factory.port';
 
-import { PaymentGateway } from '../../../domain/ports/payment/payment-gateway.port';
+import { PaymentGateway } from '../../../application/ports/payment-gateway.port';
+import { PaymentStrategy } from '../../../application/ports/payment-strategy.port';
 import {
   FieldRequirements,
   PaymentRequestBuilder,
 } from '../../../domain/ports/payment/payment-request-builder.port';
-import { PaymentStrategy } from '../../../domain/ports/payment/payment-strategy.port';
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
 import { StripeCardRequestBuilder } from '../builders/stripe-card-request.builder';

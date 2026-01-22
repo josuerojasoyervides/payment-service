@@ -18,14 +18,14 @@ import { PaymentFormComponent } from '@payments/ui/components/payment-form/payme
 import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
 
-import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 // Port and token (decoupled from implementation)
+import { StrategyContext } from '../../../application/ports/payment-strategy.port';
+import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import {
   FieldRequirements,
   PaymentOptions,
 } from '../../../domain/ports/payment/payment-request-builder.port';
-import { StrategyContext } from '../../../domain/ports/payment/payment-strategy.port';
 
 /**
  * Checkout page for processing payments.

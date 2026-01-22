@@ -2,21 +2,21 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { I18nService } from '@core/i18n';
-import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
-import { firstValueFrom, Observable, of, throwError } from 'rxjs';
-
-import { PaymentError } from '../domain/models/payment/payment-error.types';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
   PaymentIntent,
   PaymentIntentStatus,
   PaymentProviderId,
-} from '../domain/models/payment/payment-intent.types';
+} from '@payments/domain/models/payment/payment-intent.types';
 import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '../domain/models/payment/payment-request.types';
+} from '@payments/domain/models/payment/payment-request.types';
+import { firstValueFrom, Observable, of, throwError } from 'rxjs';
+
+import { BasePaymentGateway } from './base-payment.gateway';
 
 class PaymentGatewayTest extends BasePaymentGateway<any, any> {
   readonly providerId = 'paypal' as const;

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { BasePaymentGateway } from '@payments/application/ports/base-payment.gateway';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
   PaymentIntent,
@@ -11,7 +12,6 @@ import {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
-import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
 import { delay, Observable, of, throwError } from 'rxjs';
 
 import { PaypalOrderDto } from '../../paypal/dto/paypal.dto';

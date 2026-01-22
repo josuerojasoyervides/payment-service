@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
+import { PaymentGatewayPort } from '@payments/application/ports/payment-operation.port';
 import {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { PaymentGatewayOperation } from '@payments/shared/payment-operation.gateway';
 import { Observable } from 'rxjs';
 
 import { StripeConfirmIntentRequest, StripePaymentIntentDto } from '../../dto/stripe.dto';
@@ -12,7 +12,7 @@ import { mapPaymentIntent } from '../../mappers/payment-intent.mapper';
 import { getIdempotencyHeaders } from '../../validators/get-idempotency-headers';
 
 @Injectable()
-export class StripeConfirmIntentGateway extends PaymentGatewayOperation<
+export class StripeConfirmIntentGateway extends PaymentGatewayPort<
   ConfirmPaymentRequest,
   StripePaymentIntentDto,
   PaymentIntent

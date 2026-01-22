@@ -11,12 +11,12 @@ import {
 } from '@payments/domain/ports/provider/token-validator.port';
 import { map, Observable, tap } from 'rxjs';
 
-import { PaymentGateway } from '../../domain/ports/payment/payment-gateway.port';
+import { PaymentGateway } from '../../application/ports/payment-gateway.port';
 import {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
-} from '../../domain/ports/payment/payment-strategy.port';
+} from '../../application/ports/payment-strategy.port';
 
 /**
  * Strategy for credit/debit card payments.
