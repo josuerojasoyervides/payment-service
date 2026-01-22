@@ -1,4 +1,5 @@
 import { computed, inject, Injectable, InjectionToken, signal } from '@angular/core';
+import { LoggerService } from '@core/logging/logger.service';
 import {
   DEFAULT_FALLBACK_CONFIG,
   FallbackConfig,
@@ -65,6 +66,7 @@ interface ReportFailurePayload {
 export class FallbackOrchestratorService {
   private readonly config: FallbackConfig;
   private readonly registry = inject(ProviderFactoryRegistry);
+  private readonly logger = inject(LoggerService);
 
   private readonly _state = signal<FallbackState>(INITIAL_FALLBACK_STATE);
 
@@ -184,10 +186,15 @@ export class FallbackOrchestratorService {
     // Verificar que el evento existe y coincide
     if (!currentEvent || currentEvent.eventId !== response.eventId) {
       // Evento desconocido o expirado - ignorar sin romper
-      console.warn('[FallbackOrchestrator] Response for unknown or expired event', {
-        responseEventId: response.eventId,
-        currentEventId: currentEvent?.eventId ?? null,
-      });
+      this.logger.warn(
+        '[FallbackOrchestrator] Response for unknown or expired event',
+        'fallback-orchestrator',
+        {
+          responseEventId: response.eventId,
+          currentEventId: currentEvent?.eventId ?? null,
+          ttl: this.config.userResponseTimeout,
+        },
+      );
       return;
     }
 
@@ -195,11 +202,15 @@ export class FallbackOrchestratorService {
     const now = Date.now();
     const eventAge = now - currentEvent.timestamp;
     if (eventAge > this.config.userResponseTimeout) {
-      console.warn('[FallbackOrchestrator] Response for expired event (TTL exceeded)', {
-        eventId: currentEvent.eventId,
-        eventAge,
-        ttl: this.config.userResponseTimeout,
-      });
+      this.logger.warn(
+        '[FallbackOrchestrator] Response for expired event (TTL exceeded)',
+        'fallback-orchestrator',
+        {
+          currentEventId: currentEvent.eventId,
+          eventAge,
+          ttl: this.config.userResponseTimeout,
+        },
+      );
 
       // Limpiar evento expirado
       this.finish('cancelled');
@@ -213,10 +224,14 @@ export class FallbackOrchestratorService {
     if (response.accepted && response.selectedProvider) {
       // Validar que el provider seleccionado esté en las alternativas
       if (!currentEvent.alternativeProviders.includes(response.selectedProvider)) {
-        console.warn('[FallbackOrchestrator] Selected provider not in alternatives', {
-          selectedProvider: response.selectedProvider,
-          alternativeProviders: currentEvent.alternativeProviders,
-        });
+        this.logger.warn(
+          '[FallbackOrchestrator] Selected provider not in alternatives',
+          'fallback-orchestrator',
+          {
+            selectedProvider: response.selectedProvider,
+            alternativeProviders: currentEvent.alternativeProviders,
+          },
+        );
 
         // Limpiar estado
         this.finish('cancelled');

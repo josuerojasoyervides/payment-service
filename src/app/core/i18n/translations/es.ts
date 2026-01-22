@@ -5,6 +5,7 @@ export const es: Translations = {
     provider_error: 'Error del proveedor de pago',
     invalid_request: 'Solicitud inválida',
     network_error: 'Error de red',
+    timeout: 'La solicitud tardó demasiado. Intenta de nuevo.',
     card_declined: 'Tu tarjeta fue rechazada. Contacta a tu banco o usa otra tarjeta.',
     expired_card: 'Tu tarjeta ha expirado. Por favor usa otra tarjeta.',
     incorrect_cvc: 'El código de seguridad (CVC) es incorrecto.',
