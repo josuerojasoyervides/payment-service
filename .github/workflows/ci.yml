@@ -40,7 +40,7 @@ jobs:
         run: bun run lint
 
       - name: Tests
-        run: bun run test -- --watch=false --browsers=ChromeHeadless
+        run: bun run test:ci
 
       - name: DepCruise
         run: bun run dep:check
