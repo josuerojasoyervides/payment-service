@@ -18,7 +18,7 @@ function isPaymentError(e: unknown): e is PaymentError {
   return typeof e === 'object' && e !== null && 'code' in e && 'message' in e;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class StartPaymentUseCase {
   private readonly registry = inject(ProviderFactoryRegistry);
   private readonly fallback = inject(FallbackOrchestratorService);
