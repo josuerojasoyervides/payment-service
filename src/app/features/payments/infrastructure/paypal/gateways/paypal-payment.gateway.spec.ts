@@ -103,7 +103,7 @@ describe('PaypalPaymentGateway', () => {
 
         // El error se normaliza aunque el formato HTTP lo envuelve
         expect(paymentError.code).toBeDefined();
-        expect(paymentError.message).toBeDefined();
+        expect(paymentError.messageKey).toBeDefined();
         expect(paymentError.raw).toBeTruthy();
       }
     });
@@ -124,7 +124,7 @@ describe('PaypalPaymentGateway', () => {
         const paymentErr = error as PaymentError;
 
         expect(paymentErr.code).toBe('provider_error');
-        expect(paymentErr.message).toBeDefined();
+        expect(paymentErr.messageKey).toBeDefined();
         expect(paymentErr.raw).toBeTruthy();
       }
     });

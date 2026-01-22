@@ -1,5 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, input, isDevMode, OnDestroy, output } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  isDevMode,
+  OnDestroy,
+  output,
+} from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
@@ -181,57 +190,33 @@ export class PaymentFormComponent implements OnDestroy {
 
   /** Translates a field label using i18n if needed */
   translateFieldLabel(field: FieldConfig): string {
-    const labelMap: Record<string, string> = {
-      'Token de tarjeta': I18nKeys.ui.card_token,
-      'Guardar tarjeta para futuras compras': I18nKeys.ui.save_card_future,
-      'Correo electrónico': I18nKeys.ui.email_label,
+    const labelKeyByName: Partial<Record<FieldConfig['name'], string>> = {
+      token: I18nKeys.ui.card_token,
+      saveForFuture: I18nKeys.ui.save_card_future,
+      customerEmail: I18nKeys.ui.email_label,
     };
 
-    const translationKey = labelMap[field.label];
-    if (translationKey) {
-      return this.i18n.t(translationKey);
-    }
+    const key = labelKeyByName[field.name];
+    if (key) return this.i18n.t(key);
+
+    // fallback: si provider ya manda label, úsalo
     return field.label;
   }
 
   /** Translates the method description */
   translateDescription(description: string | undefined): string {
-    if (!description) return '';
-    const descMap: Record<string, string> = {
-      'Pago con tarjeta de crédito o débito': I18nKeys.ui.card_payment_description,
-      'Transferencia bancaria SPEI': I18nKeys.ui.spei_bank_transfer,
-    };
-    const translationKey = descMap[description];
-    if (translationKey) {
-      return this.i18n.t(translationKey);
-    }
-    return description;
+    return description ?? '';
   }
 
-  /** Translates the instructions */
   translateInstructions(instructions: string | undefined): string {
-    if (!instructions) return '';
-    const instMap: Record<string, string> = {
-      'Ingresa los datos de tu tarjeta de forma segura': I18nKeys.ui.enter_card_data,
-      'Recibirás instrucciones de pago en tu correo electrónico':
-        I18nKeys.ui.spei_email_instructions,
-    };
-    const translationKey = instMap[instructions];
-    if (translationKey) {
-      return this.i18n.t(translationKey);
-    }
-    return instructions;
+    return instructions ?? '';
   }
 
-  get fieldRequiredText(): string {
-    return this.i18n.t(I18nKeys.ui.field_required);
-  }
-
-  get selectProviderMethodText(): string {
-    return this.i18n.t(I18nKeys.ui.select_provider_method);
-  }
-
-  get methodNoAdditionalDataText(): string {
-    return this.i18n.t(I18nKeys.ui.method_no_additional_data);
-  }
+  readonly fieldRequiredText = computed(() => this.i18n.t(I18nKeys.ui.field_required));
+  readonly selectProviderMethodText = computed(() =>
+    this.i18n.t(I18nKeys.ui.select_provider_method),
+  );
+  readonly methodNoAdditionalDataText = computed(() =>
+    this.i18n.t(I18nKeys.ui.method_no_additional_data),
+  );
 }

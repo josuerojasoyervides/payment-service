@@ -38,7 +38,7 @@ describe('CheckoutComponent', () => {
 
   const mockError: PaymentError = {
     code: 'card_declined',
-    message: 'La tarjeta fue rechazada',
+    messageKey: 'La tarjeta fue rechazada',
     raw: { originalError: 'declined' },
   };
 
@@ -143,6 +143,7 @@ describe('CheckoutComponent', () => {
     mockLogger = {
       info: vi.fn(),
       debug: vi.fn(),
+      warn: vi.fn(),
       error: vi.fn(),
       startCorrelation: vi.fn(() => 'correlation_id'),
       endCorrelation: vi.fn(),

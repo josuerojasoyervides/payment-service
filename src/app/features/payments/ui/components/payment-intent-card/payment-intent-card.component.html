@@ -64,25 +64,25 @@
   @if (expanded()) {
     <div class="border-t border-gray-100 pt-4 mt-4">
       <dl class="grid grid-cols-2 gap-3 text-sm">
-        <dt class="text-gray-500">{{ idLabel }}</dt>
+        <dt class="text-gray-500">{{ idLabel() }}</dt>
         <dd class="font-mono text-gray-900">{{ intent().id }}</dd>
 
-        <dt class="text-gray-500">{{ providerLabel }}</dt>
+        <dt class="text-gray-500">{{ providerLabel() }}</dt>
         <dd class="capitalize text-gray-900">{{ intent().provider }}</dd>
 
-        <dt class="text-gray-500">{{ statusLabel }}</dt>
+        <dt class="text-gray-500">{{ statusLabel() }}</dt>
         <dd class="text-gray-900">{{ intent().status }}</dd>
 
-        <dt class="text-gray-500">{{ amountLabel }}</dt>
+        <dt class="text-gray-500">{{ amountLabel() }}</dt>
         <dd class="text-gray-900">{{ intent().amount | currency: intent().currency }}</dd>
 
         @if (intent().clientSecret) {
-          <dt class="text-gray-500">{{ clientSecretLabel }}</dt>
+          <dt class="text-gray-500">{{ clientSecretLabel() }}</dt>
           <dd class="font-mono text-xs text-gray-600 truncate">{{ intent().clientSecret }}</dd>
         }
 
         @if (intent().redirectUrl) {
-          <dt class="text-gray-500">{{ redirectUrlLabel }}</dt>
+          <dt class="text-gray-500">{{ redirectUrlLabel() }}</dt>
           <dd class="text-xs text-blue-600 truncate">
             <a [href]="intent().redirectUrl" target="_blank">{{ intent().redirectUrl }}</a>
           </dd>
@@ -92,7 +92,7 @@
       @if (intent().nextAction) {
         <div class="mt-4 p-3 bg-amber-50 rounded-lg">
           <p class="text-sm font-medium text-amber-800">
-            {{ actionRequiredLabel }} {{ intent().nextAction!.type }}
+            {{ actionRequiredLabel() }} {{ intent().nextAction!.type }}
           </p>
         </div>
       }
@@ -104,13 +104,13 @@
     <div class="flex gap-2 mt-4 pt-4 border-t border-gray-100">
       @if (canConfirm()) {
         <button class="btn-primary text-sm flex-1" (click)="confirm.emit(intent().id)">
-          {{ confirmButtonText }}
+          {{ confirmButtonText() }}
         </button>
       }
 
       @if (canCancel()) {
         <button class="btn-danger text-sm flex-1" (click)="canceled.emit(intent().id)">
-          {{ cancelButtonText }}
+          {{ cancelButtonText() }}
         </button>
       }
 

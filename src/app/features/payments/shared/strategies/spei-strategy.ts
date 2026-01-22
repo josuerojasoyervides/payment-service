@@ -1,5 +1,5 @@
-import { inject } from '@angular/core';
-import { I18nKeys, I18nService } from '@core/i18n';
+import { I18nKeys } from '@core/i18n';
+import { PaymentValidationError } from '@payments/application/errors/payment-validation.error';
 import { NextActionSpei } from '@payments/domain/models/payment/payment-action.types';
 import {
   PaymentIntent,
@@ -40,10 +40,7 @@ export class SpeiStrategy implements PaymentStrategy {
     openpay: 'BBVA México',
   };
 
-  constructor(
-    private readonly gateway: PaymentGateway,
-    private readonly i18n: I18nService = inject(I18nService),
-  ) {}
+  constructor(private readonly gateway: PaymentGateway) {}
 
   /**
    * Validates the request for SPEI payments.
@@ -55,26 +52,24 @@ export class SpeiStrategy implements PaymentStrategy {
    */
   validate(req: CreatePaymentRequest): void {
     if (req.currency !== 'MXN') {
-      throw new Error(
-        this.i18n.t(I18nKeys.errors.invalid_request) +
-          `: SPEI only supports MXN currency. Received: ${req.currency}`,
-      );
+      throw new PaymentValidationError(I18nKeys.errors.invalid_request, {
+        reason: 'spei_only_mxn',
+        currency: req.currency,
+      });
     }
 
     if (req.amount < SpeiStrategy.MIN_AMOUNT_MXN) {
-      throw new Error(
-        this.i18n.t(I18nKeys.errors.min_amount, {
-          amount: SpeiStrategy.MIN_AMOUNT_MXN,
-          currency: 'MXN',
-        }),
-      );
+      throw new PaymentValidationError(I18nKeys.errors.min_amount, {
+        amount: SpeiStrategy.MIN_AMOUNT_MXN,
+        currency: req.currency,
+      });
     }
 
     if (req.amount > SpeiStrategy.MAX_AMOUNT_MXN) {
-      throw new Error(
-        `Maximum amount for SPEI is ${SpeiStrategy.MAX_AMOUNT_MXN.toLocaleString()} MXN. ` +
-          `For larger amounts, consider wire transfer.`,
-      );
+      throw new PaymentValidationError(I18nKeys.errors.max_amount, {
+        amount: SpeiStrategy.MAX_AMOUNT_MXN,
+        currency: req.currency,
+      });
     }
 
     if (req.method.token) {
@@ -159,18 +154,18 @@ export class SpeiStrategy implements PaymentStrategy {
     const speiAction = intent.nextAction as NextActionSpei;
 
     return [
-      `${this.i18n.t(I18nKeys.ui.spei_instructions_title)} $${intent.amount.toLocaleString()} ${intent.currency}:`,
+      `${I18nKeys.ui.spei_instructions_title} $${intent.amount.toLocaleString()} ${intent.currency}:`,
       '',
-      `1. ${this.i18n.t(I18nKeys.ui.spei_step_1)}`,
-      `2. ${this.i18n.t(I18nKeys.ui.spei_step_2)}`,
-      `3. ${this.i18n.t(I18nKeys.ui.spei_step_3)} ${speiAction.clabe}`,
-      `4. ${this.i18n.t(I18nKeys.ui.spei_step_4)} $${speiAction.amount.toLocaleString()} ${speiAction.currency}`,
-      `5. ${this.i18n.t(I18nKeys.ui.spei_step_5)} ${speiAction.reference}`,
-      `6. ${this.i18n.t(I18nKeys.ui.spei_step_6)} ${speiAction.beneficiary}`,
+      `1. ${I18nKeys.ui.spei_step_1}`,
+      `2. ${I18nKeys.ui.spei_step_2}`,
+      `3. ${I18nKeys.ui.spei_step_3} ${speiAction.clabe}`,
+      `4. ${I18nKeys.ui.spei_step_4} $${speiAction.amount.toLocaleString()} ${speiAction.currency}`,
+      `5. ${I18nKeys.ui.spei_step_5} ${speiAction.reference}`,
+      `6. ${I18nKeys.ui.spei_step_6} ${speiAction.beneficiary}`,
       '',
-      `⚠️ ${this.i18n.t(I18nKeys.ui.spei_deadline)} ${new Date(speiAction.expiresAt).toLocaleString('es-MX')}`,
+      `⚠️ ${I18nKeys.ui.spei_deadline} ${new Date(speiAction.expiresAt).toLocaleString('es-MX')}`,
       '',
-      this.i18n.t(I18nKeys.ui.spei_processing_time),
+      I18nKeys.ui.spei_processing_time,
     ].join('\n');
   }
 
@@ -187,8 +182,7 @@ export class SpeiStrategy implements PaymentStrategy {
 
     const speiAction: NextActionSpei = {
       type: 'spei',
-      instructions:
-        this.getUserInstructions(intent) ?? this.i18n.t(I18nKeys.messages.spei_instructions),
+      instructions: this.getUserInstructions(intent) ?? I18nKeys.messages.spei_instructions,
       clabe: existingSpei?.clabe ?? this.extractClabeFromRaw(intent),
       reference: existingSpei?.reference ?? this.generateReference(req.orderId),
       bank: existingSpei?.bank ?? SpeiStrategy.RECEIVING_BANKS[intent.provider] ?? 'STP',

@@ -234,6 +234,12 @@ export function getStatusText(
   return i18n.has(statusKey) ? i18n.t(statusKey) : status;
 }
 
+export const ACTION_REQUIRED_STATUSES = new Set<PaymentIntent['status']>([
+  'requires_payment_method',
+  'requires_confirmation',
+  'requires_action',
+]);
+
 /**
  * Re-exportar tipos del dominio para conveniencia.
  */

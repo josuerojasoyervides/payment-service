@@ -6,12 +6,11 @@ import {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { defaultIfEmpty, firstValueFrom, of, throwError } from 'rxjs';
+import { firstValueFrom, of, throwError } from 'rxjs';
 
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 import { PaymentStrategy, StrategyContext } from '../ports/payment-strategy.port';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { StartPaymentUseCase } from './start-payment.use-case';
 
 describe('StartPaymentUseCase', () => {
@@ -56,26 +55,11 @@ describe('StartPaymentUseCase', () => {
     getProvidersForMethod: vi.fn((): PaymentProviderId[] => ['stripe']),
   };
 
-  const fallbackOrchestratorMock = {
-    reportFailure: vi.fn(() => false), // Por defecto no hay fallback
-    notifySuccess: vi.fn(),
-    notifyFailure: vi.fn(),
-    reset: vi.fn(),
-    getSnapshot: vi.fn(() => ({
-      status: 'idle',
-      failedAttempts: [],
-      pendingEvent: null,
-      currentProvider: null,
-      isAutoFallback: false,
-    })),
-  };
-
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
         StartPaymentUseCase,
         { provide: ProviderFactoryRegistry, useValue: registryMock },
-        { provide: FallbackOrchestratorService, useValue: fallbackOrchestratorMock },
         IdempotencyKeyFactory,
       ],
     });
@@ -149,38 +133,20 @@ describe('StartPaymentUseCase', () => {
       );
     });
 
-    it('propagates observable errors from strategy.start() when no fallback available', async () => {
-      const error: PaymentError = { code: 'provider_error', message: 'boom', raw: {} };
+    it('propagates the error when strategy.start() fails (fallback is handled by the Store)', async () => {
+      const error: PaymentError = { code: 'provider_error', messageKey: 'boom', raw: {} };
 
       (strategyMock.start as any).mockReturnValueOnce(throwError(() => error));
-      fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(false);
 
-      await expect(firstValueFrom(useCase.execute(req, 'stripe'))).rejects.toThrow('boom');
-
-      expect(fallbackOrchestratorMock.reportFailure).toHaveBeenCalledWith(
-        expect.objectContaining({
-          providerId: 'stripe',
-          error,
-          request: expect.objectContaining({
-            ...req,
-            idempotencyKey: expect.stringContaining('stripe:start:o1:100:MXN:card'),
-          }),
-        }),
-      );
+      await expect(firstValueFrom(useCase.execute(req, 'stripe'))).rejects.toEqual(error);
     });
 
-    it('calls reportFailure when strategy.start() fails and fallback handles it', async () => {
-      const error: PaymentError = { code: 'provider_error', message: 'boom', raw: {} };
+    it('propagates non-domain errors from strategy.start()', async () => {
+      const error = new Error('weird');
 
       (strategyMock.start as any).mockReturnValueOnce(throwError(() => error));
-      fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(true);
 
-      const result = await firstValueFrom(
-        useCase.execute(req, 'stripe').pipe(defaultIfEmpty(null)),
-      );
-
-      expect(result).toBeNull();
-      expect(fallbackOrchestratorMock.reportFailure).toHaveBeenCalled();
+      await expect(firstValueFrom(useCase.execute(req, 'stripe'))).rejects.toThrow('weird');
     });
 
     it('throws when providerId is not registered', async () => {
@@ -216,30 +182,6 @@ describe('StartPaymentUseCase', () => {
       );
 
       expect(strategyMock.start).not.toHaveBeenCalled();
-    });
-
-    it('cuando fallback maneja el fallo debe completar sin emitir valores', async () => {
-      const error: PaymentError = { code: 'provider_error', message: 'boom', raw: {} };
-
-      (strategyMock.start as any).mockReturnValueOnce(throwError(() => error));
-      fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(true);
-
-      const result = await firstValueFrom(
-        useCase.execute(req, 'stripe').pipe(defaultIfEmpty('NO_EMIT')),
-      );
-
-      expect(result).toBe('NO_EMIT');
-    });
-
-    it('NO debe tragar errores no-domino (unknown)', async () => {
-      const error = new Error('weird');
-
-      (strategyMock.start as any).mockReturnValueOnce(throwError(() => error));
-      fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(true); // aunque diga true, NO debería usarse
-
-      await expect(firstValueFrom(useCase.execute(req, 'stripe'))).rejects.toThrow('weird');
-
-      expect(fallbackOrchestratorMock.reportFailure).not.toHaveBeenCalled();
     });
   });
 });

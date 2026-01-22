@@ -93,12 +93,12 @@ export class PaypalProviderFactory implements ProviderFactory {
     this.assertSupported(type);
 
     return {
-      description: this.i18n.t(I18nKeys.ui.pay_with_paypal),
-      instructions: this.i18n.t(I18nKeys.ui.paypal_redirect_secure_message),
+      description: I18nKeys.ui.pay_with_paypal,
+      instructions: I18nKeys.ui.paypal_redirect_secure_message,
       fields: [
         {
           name: 'returnUrl',
-          label: this.i18n.t(I18nKeys.ui.return_url_label),
+          label: I18nKeys.ui.return_url_label,
           required: true,
           type: 'hidden',
           autoFill: 'currentUrl',
@@ -106,7 +106,7 @@ export class PaypalProviderFactory implements ProviderFactory {
         },
         {
           name: 'cancelUrl',
-          label: this.i18n.t(I18nKeys.ui.cancel_url_label),
+          label: I18nKeys.ui.cancel_url_label,
           required: false,
           type: 'hidden',
           autoFill: 'currentUrl',
@@ -133,7 +133,7 @@ export class PaypalProviderFactory implements ProviderFactory {
   private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
     switch (type) {
       case 'card':
-        return new PaypalRedirectStrategy(this.gateway, this.i18n);
+        return new PaypalRedirectStrategy(this.gateway);
       default:
         throw new Error(`Unexpected payment method type: ${type}`);
     }
