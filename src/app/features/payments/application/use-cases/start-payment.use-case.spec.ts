@@ -134,7 +134,7 @@ describe('StartPaymentUseCase', () => {
     });
 
     it('propagates the error when strategy.start() fails (fallback is handled by the Store)', async () => {
-      const error: PaymentError = { code: 'provider_error', message: 'boom', raw: {} };
+      const error: PaymentError = { code: 'provider_error', messageKey: 'boom', raw: {} };
 
       (strategyMock.start as any).mockReturnValueOnce(throwError(() => error));
 

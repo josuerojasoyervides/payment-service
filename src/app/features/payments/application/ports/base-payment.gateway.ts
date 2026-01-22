@@ -191,7 +191,6 @@ export abstract class BasePaymentGateway<
   protected normalizeError(err: unknown): PaymentError {
     return {
       code: 'provider_error',
-      message: I18nKeys.errors.provider_error,
       messageKey: I18nKeys.errors.provider_error,
       raw: err,
     };

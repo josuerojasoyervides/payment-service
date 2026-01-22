@@ -41,7 +41,7 @@ describe('PaymentsStore', () => {
 
   const paymentError: PaymentError = {
     code: 'provider_error',
-    message: 'boom',
+    messageKey: 'boom',
     raw: {},
   };
 

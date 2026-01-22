@@ -5,6 +5,7 @@
  */
 export interface Translations {
   errors: {
+    unknown_error: string;
     provider_error: string;
     invalid_request: string;
     network_error: string;

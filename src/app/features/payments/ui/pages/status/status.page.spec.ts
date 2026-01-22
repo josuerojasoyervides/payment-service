@@ -23,7 +23,7 @@ describe('StatusComponent', () => {
 
   const mockError: PaymentError = {
     code: 'provider_error',
-    message: 'Intent not found',
+    messageKey: 'Intent not found',
     raw: { originalError: 'not_found' },
   };
 

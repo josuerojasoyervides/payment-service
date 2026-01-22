@@ -159,7 +159,6 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
 
       return {
         code,
-        message: 'Remove this message',
         messageKey: I18nKeys.errors.paypal_error,
         params: {
           reason: err.name, // opcional, por si UI quiere mostrarlo o logs
@@ -174,7 +173,6 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
       if (httpError.status === 401) {
         return {
           code: 'provider_error',
-          message: I18nKeys.errors.paypal_auth_error,
           messageKey: I18nKeys.errors.paypal_auth_error,
           raw: err,
         };
@@ -183,7 +181,6 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
       if (httpError.status >= 500) {
         return {
           code: 'provider_unavailable',
-          message: I18nKeys.errors.paypal_unavailable,
           messageKey: I18nKeys.errors.paypal_unavailable,
           raw: err,
         };

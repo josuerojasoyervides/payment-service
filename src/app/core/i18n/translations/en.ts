@@ -2,6 +2,7 @@ import type { Translations } from '../i18n.types';
 
 export const en: Translations = {
   errors: {
+    unknown_error: 'Unknown error',
     provider_error: 'Payment provider error',
     invalid_request: 'Invalid request',
     network_error: 'Network error',

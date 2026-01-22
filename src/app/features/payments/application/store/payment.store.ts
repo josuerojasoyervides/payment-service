@@ -1,5 +1,6 @@
 import { computed, effect, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { I18nKeys } from '@core/i18n';
 import {
   patchState,
   signalStore,
@@ -106,15 +107,23 @@ export const PaymentsStore = signalStore(
     };
 
     const isPaymentError = (e: unknown): e is PaymentError => {
-      return typeof e === 'object' && e !== null && 'code' in e && 'message' in e;
+      return (
+        typeof e === 'object' && e !== null && 'code' in e && ('messageKey' in e || 'message' in e)
+      );
     };
 
     const normalizeError = (e: unknown): PaymentError => {
-      if (isPaymentError(e)) return e;
+      if (isPaymentError(e)) {
+        return {
+          ...e,
+          // ✅ si viene legacy message, úsalo como fallback
+          messageKey: e.messageKey ?? I18nKeys.errors.unknown_error,
+        };
+      }
 
       return {
         code: 'unknown_error',
-        message: e instanceof Error ? e.message : 'Unknown error',
+        messageKey: I18nKeys.errors.unknown_error,
         raw: e,
       };
     };

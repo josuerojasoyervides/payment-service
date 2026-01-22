@@ -51,29 +51,24 @@ const FAKE_ERRORS: Record<FakeScenario, PaymentError> = {
   provider_error: {
     code: 'provider_error',
     messageKey: I18nKeys.errors.provider_error,
-    // si todavía tienes PaymentError.message, déjalo como compat temporal:
-    message: I18nKeys.errors.provider_error,
     raw: { scenario: 'provider_error' },
   },
 
   decline: {
     code: 'card_declined',
     messageKey: I18nKeys.errors.card_declined,
-    message: I18nKeys.errors.card_declined,
     raw: { scenario: 'decline' },
   },
 
   insufficient: {
     code: 'insufficient_funds',
     messageKey: I18nKeys.errors.insufficient_funds,
-    message: I18nKeys.errors.insufficient_funds,
     raw: { scenario: 'insufficient' },
   },
 
   expired: {
     code: 'expired_card',
     messageKey: I18nKeys.errors.expired_card,
-    message: I18nKeys.errors.expired_card,
     raw: { scenario: 'expired' },
   },
 };

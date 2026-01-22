@@ -31,7 +31,6 @@ export abstract class PaymentGatewayPort<
   protected handleError(err: unknown): PaymentError {
     return {
       code: 'provider_error',
-      message: I18nKeys.errors.provider_error, // transitional
       messageKey: I18nKeys.errors.provider_error,
       raw: err,
     };
