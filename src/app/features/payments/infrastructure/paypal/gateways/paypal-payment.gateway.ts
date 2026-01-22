@@ -159,7 +159,7 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
 
       return {
         code,
-        message: err.message ?? I18nKeys.errors.paypal_error,
+        message: 'Remove this message',
         messageKey: I18nKeys.errors.paypal_error,
         params: {
           reason: err.name, // opcional, por si UI quiere mostrarlo o logs

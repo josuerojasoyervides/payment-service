@@ -7,7 +7,9 @@ export type PaymentErrorCode =
   | 'network_error'
   | 'timeout'
   | 'unknown_error'
-  | 'fallback_handled';
+  | 'fallback_handled'
+  | 'insufficient_funds'
+  | 'expired_card';
 
 export type PaymentErrorParams = Record<string, string | number | boolean | null | undefined>;
 

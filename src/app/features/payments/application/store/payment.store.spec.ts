@@ -6,7 +6,7 @@ import {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { from, of, Subject, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { CancelPaymentUseCase } from '../use-cases/cancel-payment.use-case';
@@ -122,20 +122,28 @@ describe('PaymentsStore', () => {
   });
 
   describe('startPayment', () => {
-    it('startPayment -> sets loading immediately + selectedProvider + clears error', async () => {
-      startPaymentUseCaseMock.execute.mockReturnValueOnce(from(Promise.resolve(intent)));
+    it('startPayment -> sets loading immediately + then ready after success', async () => {
+      const start$ = new Subject<PaymentIntent>();
+      startPaymentUseCaseMock.execute.mockReturnValueOnce(start$.asObservable());
 
       patchState(store as any, { status: 'error', error: paymentError });
 
+      // dispara
       store.startPayment({ request: req, providerId: 'stripe' });
 
-      // ✅ loading sí existe antes de resolver el microtask
+      // ✅ aquí SIEMPRE es loading, porque todavía no emitimos
       expect(store.status()).toBe('loading');
       expect(store.error()).toBeNull();
       expect(store.selectedProvider()).toBe('stripe');
 
-      await flush(); // ✅ ya llega a ready
+      // ahora simula éxito
+      start$.next(intent);
+      start$.complete();
+
+      await flush();
+
       expect(store.status()).toBe('ready');
+      expect(store.intent()?.id).toBe('pi_1');
     });
 
     it('startPayment -> success sets ready + intent + history + currentRequest', async () => {

@@ -30,6 +30,7 @@ export interface Translations {
     paypal_error: string;
     stripe_unavailable: string;
     paypal_unavailable: string;
+    insufficient_funds: string;
 
     paypal_invalid_request: string;
     paypal_permission_denied: string;
@@ -117,6 +118,7 @@ export interface Translations {
     transfer_exact_amount: string;
     payment_may_take: string;
     keep_receipt: string;
+    spei_instructions: string;
 
     // 3DS
     '3ds_verification_required': string;

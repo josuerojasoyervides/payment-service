@@ -25,6 +25,8 @@ export const en: Translations = {
     paypal_error: 'Error processing payment with PayPal.',
     stripe_unavailable: 'Stripe is not available at this time. Please try again later.',
     paypal_unavailable: 'PayPal is not available at this time. Please try again later.',
+    insufficient_funds: 'Insufficient funds in the card.',
+
     paypal_invalid_request: 'The request to PayPal is invalid. Please verify the data.',
     paypal_permission_denied: 'You do not have permission to perform this operation.',
     paypal_resource_not_found: 'The PayPal order was not found.',
@@ -97,6 +99,8 @@ export const en: Translations = {
     transfer_exact_amount: 'Transfer the exact amount to avoid rejections',
     payment_may_take: 'Payment may take 1 to 24 hours to reflect',
     keep_receipt: 'Keep your transfer receipt',
+    spei_instructions: 'Make a SPEI transfer with the following data:',
+
     '3ds_verification_required': '3D Secure verification required',
     bank_requires_verification:
       'Your bank requires additional verification to complete this transaction. You will be redirected to a secure page to authenticate the payment.',
