@@ -12,6 +12,7 @@
  * import { CircuitBreakerService, retryInterceptor } from '@core/resilience';
  * import { CacheService, cacheInterceptor } from '@core/caching';
  * import { LoggerService, loggingInterceptor } from '@core/logging';
+ * import { I18nKeys, I18nService } from '@core/i18n';
  *
  * import {
  *   CircuitBreakerService,
@@ -21,17 +22,17 @@
  * ```
  */
 
-// Resilience
-export * from './resilience';
+// Resilience (public)
+export { CircuitBreakerService } from './resilience/circuit-breaker/circuit-breaker.service';
+export { RateLimiterService } from './resilience/rate-limiter/rate-limiter.service';
+export { RetryService } from './resilience/retry/retry.service';
 
-// Caching
-export * from './caching';
+// Caching (public)
+export { CacheService } from './caching/cache.service';
 
-// Logging
-export * from './logging';
+// Logging (public)
+export { LoggerService } from './logging/logger.service';
 
-// Testing
-export * from './testing';
-
-// i18n
-export * from './i18n';
+// i18n (public)
+export { I18nKeys } from './i18n/i18n.keys';
+export { I18nService } from './i18n/i18n.service';
