@@ -23,6 +23,7 @@ export interface Translations {
     card_token_required: string;
     intent_id_required: string;
     min_amount: string;
+    max_amount: string;
 
     stripe_error: string;
     paypal_error: string;
