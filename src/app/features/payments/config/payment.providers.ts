@@ -39,7 +39,6 @@ const STRIPE_REAL_GATEWAYS: Provider[] = [
   StripeCancelIntentGateway,
   StripeGetIntentGateway,
 ];
-
 const STRIPE_FAKE_GATEWAYS: Provider[] = [
   {
     provide: IntentFacade,
@@ -48,7 +47,6 @@ const STRIPE_FAKE_GATEWAYS: Provider[] = [
 ];
 
 const PAYPAL_REAL_GATEWAYS: Provider[] = [PaypalPaymentGateway];
-
 const PAYPAL_FAKE_GATEWAYS: Provider[] = [
   {
     provide: PaypalPaymentGateway,
