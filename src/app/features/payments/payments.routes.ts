@@ -70,13 +70,6 @@ export const PAYMENT_ROUTES: Routes = [
           import('./ui/pages/showcase/showcase.page').then((m) => m.ShowcaseComponent),
         title: 'Component Showcase',
       },
-      // Ruta legacy - mantener por compatibilidad
-      {
-        path: 'debug',
-        loadComponent: () =>
-          import('./ui/pages/payments/payments.page').then((m) => m.PaymentsComponent),
-        title: 'Debug - Payments',
-      },
     ],
   },
 ];
