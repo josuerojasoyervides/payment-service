@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs';
 
-import { PaymentFlowContext } from '../../models/payment/payment-flow-context.types';
-import { PaymentIntent, PaymentMethodType } from '../../models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '../../models/payment/payment-request.types';
+import { PaymentFlowContext } from '../../domain/models/payment/payment-flow-context.types';
+import { PaymentIntent, PaymentMethodType } from '../../domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '../../domain/models/payment/payment-request.types';
 
 /**
  * Strategy preparation result.

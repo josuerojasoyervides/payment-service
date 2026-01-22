@@ -1,4 +1,5 @@
 import { computed, effect, inject, Injectable, Signal } from '@angular/core';
+import { StrategyContext } from '@payments/application/ports/payment-strategy.port';
 import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
 import { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
@@ -12,7 +13,6 @@ import {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
-import { StrategyContext } from '@payments/domain/ports/payment/payment-strategy.port';
 
 import { PaymentDebugSummary, PaymentStatePort, Unsubscribe } from '../state/payment-state.port';
 import { PaymentHistoryEntry, PaymentsState } from '../store/payment.models';

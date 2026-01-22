@@ -7,10 +7,10 @@ import {
 } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
+import { ProviderFactory } from '../../../application/ports/provider-factory.port';
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { PAYMENT_PROVIDER_FACTORIES } from '../../../application/tokens/payment-provider-factories.token';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { ProviderFactory } from '../../../domain/ports/provider/provider-factory.port';
 
 type SmokeStartStatus = 'skipped' | 'ok' | 'error';
 

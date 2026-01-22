@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import { PaymentGateway } from '@payments/application/ports/payment-gateway.port';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
   PaymentIntent,
@@ -13,7 +14,6 @@ import {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
-import { PaymentGateway } from '@payments/domain/ports/payment/payment-gateway.port';
 import { catchError, map, Observable, tap, throwError } from 'rxjs';
 
 export abstract class BasePaymentGateway<

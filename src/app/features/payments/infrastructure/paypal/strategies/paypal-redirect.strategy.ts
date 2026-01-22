@@ -8,12 +8,12 @@ import {
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { map, Observable, tap } from 'rxjs';
 
-import { PaymentGateway } from '../../../domain/ports/payment/payment-gateway.port';
+import { PaymentGateway } from '../../../application/ports/payment-gateway.port';
 import {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
-} from '../../../domain/ports/payment/payment-strategy.port';
+} from '../../../application/ports/payment-strategy.port';
 import { findPaypalLink, PaypalOrderDto } from '../dto/paypal.dto';
 
 /**
