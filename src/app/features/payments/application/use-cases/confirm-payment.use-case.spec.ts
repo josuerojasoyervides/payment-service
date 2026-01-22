@@ -12,7 +12,6 @@ import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.
 import { PaymentGateway } from '../ports/payment-gateway.port';
 import { ProviderFactory } from '../ports/provider-factory.port';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { ConfirmPaymentUseCase } from './confirm-payment.use-case';
 
 describe('ConfirmPaymentUseCase', () => {
@@ -49,26 +48,11 @@ describe('ConfirmPaymentUseCase', () => {
     get: vi.fn((providerId: PaymentProviderId) => providerFactoryMock),
   } satisfies Pick<ProviderFactoryRegistry, 'get'>;
 
-  const fallbackOrchestratorMock = {
-    reportFailure: vi.fn(() => false),
-    notifySuccess: vi.fn(),
-    notifyFailure: vi.fn(),
-    reset: vi.fn(),
-    getSnapshot: vi.fn(() => ({
-      status: 'idle' as const,
-      pendingEvent: null,
-      failedAttempts: [],
-      currentProvider: null,
-      isAutoFallback: false,
-    })),
-  };
-
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
         ConfirmPaymentUseCase,
         { provide: ProviderFactoryRegistry, useValue: registryMock },
-        { provide: FallbackOrchestratorService, useValue: fallbackOrchestratorMock },
         IdempotencyKeyFactory,
       ],
     });
@@ -102,23 +86,11 @@ describe('ConfirmPaymentUseCase', () => {
       );
     });
 
-    it('propagates observable errors from gateway.confirmIntent() and reports to orchestrator', async () => {
+    it('propagates observable errors from gateway.confirmIntent()', async () => {
       const error: PaymentError = { code: 'provider_error', message: 'boom', raw: {} };
       (gatewayMock.confirmIntent as any).mockReturnValueOnce(throwError(() => error));
 
       await expect(firstValueFrom(useCase.execute(req, 'stripe'))).rejects.toThrow('boom');
-
-      expect(fallbackOrchestratorMock.reportFailure).toHaveBeenCalledWith(
-        'stripe',
-        error,
-        expect.objectContaining({
-          orderId: 'pi_1',
-          amount: 0,
-          currency: 'MXN',
-          method: { type: 'card' },
-        }),
-        false,
-      );
     });
   });
 });

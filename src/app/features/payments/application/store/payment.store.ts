@@ -22,7 +22,7 @@ import {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
-import { catchError, filter, Observable, of, pipe, switchMap, tap } from 'rxjs';
+import { catchError, EMPTY, filter, Observable, pipe, switchMap, tap } from 'rxjs';
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { CancelPaymentUseCase } from '../use-cases/cancel-payment.use-case';
@@ -39,6 +39,13 @@ import {
 type PaymentsWritableStore = WritableStateSource<PaymentsState> & {
   history: () => PaymentHistoryEntry[];
 };
+
+interface RunOptions {
+  providerId?: PaymentProviderId;
+  request?: CreatePaymentRequest;
+  wasAutoFallback?: boolean;
+  allowFallback?: boolean;
+}
 
 export const PaymentsStore = signalStore(
   withState<PaymentsState>(initialPaymentsState),
@@ -93,10 +100,23 @@ export const PaymentsStore = signalStore(
     // -----------------------------
     // Helpers (limpieza)
     // -----------------------------
-
     const canSurfaceErrorToUI = () => {
       const snap = store.fallback();
       return snap.status === 'idle' || snap.status === 'failed';
+    };
+
+    const isPaymentError = (e: unknown): e is PaymentError => {
+      return typeof e === 'object' && e !== null && 'code' in e && 'message' in e;
+    };
+
+    const normalizeError = (e: unknown): PaymentError => {
+      if (isPaymentError(e)) return e;
+
+      return {
+        code: 'unknown_error',
+        message: e instanceof Error ? e.message : 'Unknown error',
+        raw: e,
+      };
     };
 
     const applySuccess = (intent: PaymentIntent, providerId?: PaymentProviderId) => {
@@ -104,21 +124,44 @@ export const PaymentsStore = signalStore(
 
       if (providerId) addToHistory(store, intent, providerId);
 
-      fallbackOrchestrator.notifySuccess();
-    };
-
-    const applyError = (error: PaymentError) => {
-      if (canSurfaceErrorToUI()) {
-        patchState(store, { status: 'error', error, intent: null });
+      // si fallback estaba corriendo y ya funcionó -> cerrarlo
+      if (store.fallback().status !== 'idle') {
+        fallbackOrchestrator.notifySuccess();
       }
     };
 
-    const run = (op$: Observable<PaymentIntent>, providerId?: PaymentProviderId) =>
+    const applySilentFailure = () => {
+      patchState(store, { status: 'ready', intent: null, error: null });
+    };
+
+    const applyError = (error: PaymentError) => {
+      if (!canSurfaceErrorToUI()) return; // 👈 NO toca UI mientras fallback está corriendo
+      patchState(store, { status: 'error', error, intent: null });
+    };
+
+    const run = (op$: Observable<PaymentIntent>, options: RunOptions = {}) =>
       op$.pipe(
-        tap((intent) => applySuccess(intent, providerId)),
-        catchError((err: PaymentError) => {
-          applyError(err);
-          return of(null);
+        tap((intent) => applySuccess(intent, options.providerId)),
+        catchError((e: unknown) => {
+          const error = normalizeError(e);
+
+          // ✅ Fallback SOLO aquí (store)
+          if (options.allowFallback && options.providerId && options.request) {
+            const handled = fallbackOrchestrator.reportFailure(
+              options.providerId,
+              error,
+              options.request,
+              options.wasAutoFallback,
+            );
+
+            if (handled) {
+              applySilentFailure();
+              return EMPTY;
+            }
+          }
+
+          applyError(error);
+          return EMPTY;
         }),
       );
 
@@ -140,10 +183,12 @@ export const PaymentsStore = signalStore(
 
           const wasAutoFallback = store.fallback().status === 'auto_executing';
 
-          return run(
-            startPaymentUseCase.execute(request, providerId, context, wasAutoFallback),
+          return run(startPaymentUseCase.execute(request, providerId, context, wasAutoFallback), {
             providerId,
-          );
+            request,
+            wasAutoFallback,
+            allowFallback: true,
+          });
         }),
       ),
     );
@@ -155,7 +200,7 @@ export const PaymentsStore = signalStore(
       pipe(
         tap(() => patchState(store, { status: 'loading', error: null })),
         switchMap(({ request, providerId }) =>
-          run(confirmPaymentUseCase.execute(request, providerId), providerId),
+          run(confirmPaymentUseCase.execute(request, providerId), { providerId }),
         ),
       ),
     );
@@ -167,7 +212,7 @@ export const PaymentsStore = signalStore(
       pipe(
         tap(() => patchState(store, { status: 'loading', error: null })),
         switchMap(({ request, providerId }) =>
-          run(cancelPaymentUseCase.execute(request, providerId), providerId),
+          run(cancelPaymentUseCase.execute(request, providerId), { providerId }),
         ),
       ),
     );
@@ -179,7 +224,7 @@ export const PaymentsStore = signalStore(
       pipe(
         tap(() => patchState(store, { status: 'loading', error: null })),
         switchMap(({ request, providerId }) =>
-          run(getPaymentStatusUseCase.execute(request, providerId), providerId),
+          run(getPaymentStatusUseCase.execute(request, providerId), { providerId }),
         ),
       ),
     );
@@ -190,10 +235,10 @@ export const PaymentsStore = signalStore(
 
     fallbackOrchestrator.fallbackExecute$
       .pipe(
-        filter(
-          () =>
-            store.fallback().status === 'auto_executing' || store.fallback().status === 'executing',
-        ),
+        filter(() => {
+          const status = fallbackOrchestrator.state().status;
+          return status === 'auto_executing' || status === 'executing';
+        }),
         takeUntilDestroyed(),
       )
       .subscribe(({ request, provider }) => {
