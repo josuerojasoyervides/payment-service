@@ -4,5 +4,5 @@
  * Permite imports simplificados:
  * import { PaymentIntent, FallbackConfig } from '../../domain/models';
  */
-export * from './payment';
 export * from './fallback';
+export * from './payment';

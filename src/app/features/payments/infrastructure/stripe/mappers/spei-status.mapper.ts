@@ -1,4 +1,5 @@
 import { PaymentIntentStatus } from '@payments/domain/models';
+
 import { StripeSpeiSourceDto } from '../dto/stripe.dto';
 
 export class SpeiStatusMapper {

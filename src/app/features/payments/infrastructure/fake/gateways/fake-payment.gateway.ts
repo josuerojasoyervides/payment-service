@@ -1,18 +1,19 @@
 import { Injectable } from '@angular/core';
+import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
 import { delay, Observable, of, throwError } from 'rxjs';
+
 import {
-  PaymentIntent,
-  PaymentProviderId,
-  PaymentIntentStatus,
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
   PaymentError,
+  PaymentIntent,
+  PaymentIntentStatus,
+  PaymentProviderId,
 } from '../../../domain/models';
-import { StripePaymentIntentDto, StripeSpeiSourceDto } from '../../stripe/dto/stripe.dto';
 import { PaypalOrderDto } from '../../paypal/dto/paypal.dto';
-import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
+import { StripePaymentIntentDto, StripeSpeiSourceDto } from '../../stripe/dto/stripe.dto';
 
 /**
  * Special tokens to control fake gateway behavior.

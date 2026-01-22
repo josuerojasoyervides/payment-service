@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
+
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { PAYMENT_PROVIDER_FACTORIES } from '../../../application/tokens/payment-provider-factories.token';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';

@@ -1,10 +1,11 @@
-import { HttpInterceptorFn, HttpErrorResponse, HttpEvent } from '@angular/common/http';
+import { HttpErrorResponse, HttpEvent, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable, throwError, timer } from 'rxjs';
 import { catchError, mergeMap, tap } from 'rxjs/operators';
-import { RetryService } from './retry.service';
+
 import { LoggerService } from '../../logging/logger.service';
 import { CircuitBreakerService, CircuitOpenError } from '../circuit-breaker';
+import { RetryService } from './retry.service';
 
 /**
  * Patrones de URL a excluir del retry automático.

@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { I18nService, I18nKeys } from '@core/i18n';
+import { Component, inject } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
+
 import { LanguageSelectorComponent } from '../language-selector/language-selector.component';
 
 /**

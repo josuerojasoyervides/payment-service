@@ -1,17 +1,18 @@
 import { Signal } from '@angular/core';
+
 import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
-  GetPaymentStatusRequest,
-  PaymentIntent,
-  PaymentProviderId,
-  PaymentError,
   FallbackAvailableEvent,
   FallbackState,
+  GetPaymentStatusRequest,
+  PaymentError,
+  PaymentIntent,
+  PaymentProviderId,
 } from '../../domain/models';
 import { StrategyContext } from '../../domain/ports';
-import { PaymentHistoryEntry, PaymentsState, PaymentFlowStatus } from '../store/payment.models';
+import { PaymentFlowStatus, PaymentHistoryEntry, PaymentsState } from '../store/payment.models';
 
 /**
  * Función para cancelar suscripción.

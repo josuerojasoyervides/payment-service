@@ -1,11 +1,12 @@
-import { Injectable, InjectionToken, inject } from '@angular/core';
+import { inject, Injectable, InjectionToken } from '@angular/core';
+
 import {
-  LogEntry,
-  LogLevel,
-  LoggerConfig,
   CorrelationContext,
   DEFAULT_LOGGER_CONFIG,
   LOG_LEVEL_PRIORITY,
+  LogEntry,
+  LoggerConfig,
+  LogLevel,
 } from './logging.types';
 
 /**

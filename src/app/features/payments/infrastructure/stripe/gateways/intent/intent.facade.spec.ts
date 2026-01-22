@@ -1,13 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { CreatePaymentRequest } from '@payments/domain/models';
 import { of } from 'rxjs';
 
-import { IntentFacade } from './intent.facade';
-import { StripeCreateIntentGateway } from './create-intent.gateway';
-import { StripeConfirmIntentGateway } from './confirm-intent.gateway';
 import { StripeCancelIntentGateway } from './cancel-intent.gateway';
+import { StripeConfirmIntentGateway } from './confirm-intent.gateway';
+import { StripeCreateIntentGateway } from './create-intent.gateway';
 import { StripeGetIntentGateway } from './get-intent.gateway';
-
-import { CreatePaymentRequest } from '@payments/domain/models';
+import { IntentFacade } from './intent.facade';
 
 describe('IntentFacade (adapter)', () => {
   let gateway: IntentFacade;

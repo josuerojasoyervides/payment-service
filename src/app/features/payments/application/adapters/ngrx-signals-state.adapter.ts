@@ -1,19 +1,20 @@
 import { computed, effect, inject, Injectable, Signal } from '@angular/core';
-import { PaymentStatePort, PaymentDebugSummary, Unsubscribe } from '../state/payment-state.port';
-import { PaymentsStore } from '../store/payment.store';
+
 import {
-  PaymentIntent,
-  PaymentProviderId,
-  PaymentError,
-  FallbackAvailableEvent,
-  FallbackState,
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
+  FallbackAvailableEvent,
+  FallbackState,
   GetPaymentStatusRequest,
+  PaymentError,
+  PaymentIntent,
+  PaymentProviderId,
 } from '../../domain/models';
 import { StrategyContext } from '../../domain/ports';
+import { PaymentDebugSummary, PaymentStatePort, Unsubscribe } from '../state/payment-state.port';
 import { PaymentHistoryEntry, PaymentsState } from '../store/payment.models';
+import { PaymentsStore } from '../store/payment.store';
 
 /**
  * Adapter que implementa PaymentStatePort usando NgRx Signals.

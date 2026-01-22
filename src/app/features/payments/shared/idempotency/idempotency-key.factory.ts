@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+
 import { CreatePaymentRequest, PaymentProviderId } from '../../domain/models';
 
 export type IdempotencyOperation = 'start' | 'confirm' | 'cancel' | 'get';

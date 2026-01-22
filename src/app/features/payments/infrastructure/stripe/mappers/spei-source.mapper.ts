@@ -1,7 +1,8 @@
-import { NextActionSpei, PaymentIntent, PaymentProviderId } from '@payments/domain/models';
-import { StripeSpeiSourceDto } from '../dto/stripe.dto';
-import { I18nKeys, I18nService } from '@core/i18n';
 import { inject } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
+import { NextActionSpei, PaymentIntent, PaymentProviderId } from '@payments/domain/models';
+
+import { StripeSpeiSourceDto } from '../dto/stripe.dto';
 import { SpeiStatusMapper } from './spei-status.mapper';
 
 export class SpeiSourceMapper {

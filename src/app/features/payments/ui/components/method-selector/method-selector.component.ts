@@ -1,7 +1,8 @@
-import { Component, input, output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PaymentMethodType, getDefaultMethods, MethodOption } from '../../shared';
-import { I18nService, I18nKeys } from '@core/i18n';
+import { Component, inject, input, output } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
+
+import { getDefaultMethods, MethodOption, PaymentMethodType } from '../../shared';
 
 /**
  * Payment method selector component.

@@ -16,6 +16,6 @@
  * ```
  */
 
+export * from './i18n.keys';
 export * from './i18n.service';
 export * from './i18n.types';
-export * from './i18n.keys';

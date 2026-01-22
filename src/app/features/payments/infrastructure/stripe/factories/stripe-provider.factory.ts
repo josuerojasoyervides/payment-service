@@ -1,19 +1,20 @@
 import { inject, Injectable } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
+
+import { PaymentMethodType } from '../../../domain/models';
 import {
-  ProviderFactory,
-  PaymentStrategy,
-  PaymentRequestBuilder,
   FieldRequirements,
   PaymentGateway,
+  PaymentRequestBuilder,
+  PaymentStrategy,
+  ProviderFactory,
 } from '../../../domain/ports';
-import { PaymentMethodType } from '../../../domain/models';
-import { IntentFacade } from '../gateways/intent/intent.facade';
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
 import { StripeCardRequestBuilder } from '../builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '../builders/stripe-spei-request.builder';
+import { IntentFacade } from '../gateways/intent/intent.facade';
 import { StripeTokenValidator } from '../validators/stripe-token.validator';
-import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Stripe provider factory.

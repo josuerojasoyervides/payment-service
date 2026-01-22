@@ -1,8 +1,9 @@
-import { firstValueFrom, of } from 'rxjs';
-import { SpeiStrategy } from './spei-strategy';
-import { PaymentGateway } from '../../domain/ports';
-import { CreatePaymentRequest, PaymentIntent, NextActionSpei } from '../../domain/models';
 import { I18nService } from '@core/i18n';
+import { firstValueFrom, of } from 'rxjs';
+
+import { CreatePaymentRequest, NextActionSpei, PaymentIntent } from '../../domain/models';
+import { PaymentGateway } from '../../domain/ports';
+import { SpeiStrategy } from './spei-strategy';
 
 describe('SpeiStrategy', () => {
   let strategy: SpeiStrategy;

@@ -1,11 +1,12 @@
-import { Injectable, InjectionToken, inject } from '@angular/core';
+import { inject, Injectable, InjectionToken } from '@angular/core';
+
+import { LoggerService } from '../../logging/logger.service';
 import {
-  RateLimitInfo,
+  DEFAULT_RATE_LIMITER_CONFIG,
   RateLimiterConfig,
   RateLimitExceededError,
-  DEFAULT_RATE_LIMITER_CONFIG,
+  RateLimitInfo,
 } from './rate-limiter.types';
-import { LoggerService } from '../../logging/logger.service';
 
 /**
  * Token para inyectar configuración del Rate Limiter.

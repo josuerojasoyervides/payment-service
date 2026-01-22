@@ -1,12 +1,13 @@
 //file: checkout.page.integration.spec.ts
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { CheckoutComponent } from './checkout.page';
-import providePayments from '../../../config/payment.providers';
-import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { LoggerService } from '@core/logging';
+
+import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import type { PaymentStatePort } from '../../../application/state/payment-state.port';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
+import providePayments from '../../../config/payment.providers';
+import { CheckoutComponent } from './checkout.page';
 
 /**
  * Espera a que el store complete el flujo:

@@ -1,17 +1,17 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter } from '@angular/router';
-
-import { routes } from './app.routes';
 import {
   HTTP_INTERCEPTORS,
   provideHttpClient,
   withInterceptors,
   withInterceptorsFromDi,
 } from '@angular/common/http';
-import { FakePaymentsBackendInterceptor } from './core/testing';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { provideRouter } from '@angular/router';
+
+import { routes } from './app.routes';
 import { cacheInterceptor } from './core/caching';
-import { retryInterceptor, resilienceInterceptor } from './core/resilience';
 import { loggingInterceptor } from './core/logging';
+import { resilienceInterceptor, retryInterceptor } from './core/resilience';
+import { FakePaymentsBackendInterceptor } from './core/testing';
 /**
  * Configuración principal de la aplicación.
  *

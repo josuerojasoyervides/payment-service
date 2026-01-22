@@ -1,8 +1,9 @@
+import { I18nService } from '@core/i18n';
+import { firstValueFrom, of } from 'rxjs';
+
 import { CreatePaymentRequest, PaymentIntent } from '../../domain/models';
 import { PaymentGateway, TokenValidator } from '../../domain/ports';
 import { CardStrategy } from './card-strategy';
-import { firstValueFrom, of } from 'rxjs';
-import { I18nService } from '@core/i18n';
 
 describe('CardStrategy', () => {
   let strategy: CardStrategy;

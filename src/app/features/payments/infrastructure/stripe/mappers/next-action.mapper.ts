@@ -1,4 +1,5 @@
 import { NextActionThreeDs } from '@payments/domain/models';
+
 import { StripePaymentIntentDto } from '../dto/stripe.dto';
 
 export function mapStripeNextAction(dto: StripePaymentIntentDto): NextActionThreeDs | undefined {

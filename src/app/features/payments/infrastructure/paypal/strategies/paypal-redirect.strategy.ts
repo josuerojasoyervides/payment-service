@@ -1,19 +1,20 @@
 import { inject } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
 import { map, Observable, tap } from 'rxjs';
+
 import {
-  PaymentIntent,
-  PaymentMethodType,
   CreatePaymentRequest,
   NextActionPaypalApprove,
+  PaymentIntent,
+  PaymentMethodType,
 } from '../../../domain/models';
 import {
+  PaymentGateway,
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
-  PaymentGateway,
 } from '../../../domain/ports';
 import { findPaypalLink, PaypalOrderDto } from '../dto/paypal.dto';
-import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Redirect strategy for PayPal.

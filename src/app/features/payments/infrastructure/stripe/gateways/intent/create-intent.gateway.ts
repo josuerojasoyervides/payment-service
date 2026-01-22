@@ -1,15 +1,16 @@
 import { Injectable } from '@angular/core';
 import { CreatePaymentRequest, PaymentIntent, PaymentProviderId } from '@payments/domain/models';
 import { PaymentGatewayOperation } from '@payments/shared/payment-operation.gateway';
+import { Observable } from 'rxjs';
+
 import {
   StripeCreateIntentRequest,
   StripePaymentIntentDto,
   StripeSpeiSourceDto,
 } from '../../dto/stripe.dto';
-import { Observable } from 'rxjs';
-import { getIdempotencyHeaders } from '../../validators/get-idempotency-headers';
-import { SpeiSourceMapper } from '../../mappers/spei-source.mapper';
 import { mapPaymentIntent } from '../../mappers/payment-intent.mapper';
+import { SpeiSourceMapper } from '../../mappers/spei-source.mapper';
+import { getIdempotencyHeaders } from '../../validators/get-idempotency-headers';
 
 @Injectable()
 export class StripeCreateIntentGateway extends PaymentGatewayOperation<

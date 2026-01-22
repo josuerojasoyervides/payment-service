@@ -1,18 +1,19 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { RouterLink, provideRouter } from '@angular/router';
-import { CheckoutComponent } from './checkout.page';
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter, RouterLink } from '@angular/router';
 import { LoggerService } from '@core/logging';
+
+import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
+import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import {
-  PaymentProviderId,
-  PaymentMethodType,
-  PaymentIntent,
-  PaymentError,
   FallbackAvailableEvent,
+  PaymentError,
+  PaymentIntent,
+  PaymentMethodType,
+  PaymentProviderId,
 } from '../../../domain/models';
 import { FieldRequirements, PaymentOptions } from '../../../domain/ports';
+import { CheckoutComponent } from './checkout.page';
 
 describe('CheckoutComponent', () => {
   let component: CheckoutComponent;

@@ -1,10 +1,11 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { signal } from '@angular/core';
-import { ReturnComponent } from './return.page';
+import { I18nService } from '@core/i18n';
+
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { PaymentIntent } from '../../../domain/models';
-import { I18nService } from '@core/i18n';
+import { ReturnComponent } from './return.page';
 
 describe('ReturnComponent', () => {
   let component: ReturnComponent;

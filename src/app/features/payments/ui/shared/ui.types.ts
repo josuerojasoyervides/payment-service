@@ -1,13 +1,14 @@
+import { I18nKeys } from '@core/i18n';
+
 import {
-  PaymentProviderId,
-  PaymentMethodType,
-  PaymentIntent,
-  PaymentError,
   CurrencyCode,
   FallbackAvailableEvent,
+  PaymentError,
+  PaymentIntent,
+  PaymentMethodType,
+  PaymentProviderId,
 } from '../../domain/models';
 import { FieldRequirements, PaymentOptions } from '../../domain/ports';
-import { I18nKeys } from '@core/i18n';
 
 /**
  * Item de orden para mostrar en el resumen.
@@ -236,12 +237,12 @@ export function getStatusText(
  * Re-exportar tipos del dominio para conveniencia.
  */
 export type {
-  PaymentProviderId,
-  PaymentMethodType,
-  PaymentIntent,
-  PaymentError,
   CurrencyCode,
   FallbackAvailableEvent,
   FieldRequirements,
+  PaymentError,
+  PaymentIntent,
+  PaymentMethodType,
   PaymentOptions,
+  PaymentProviderId,
 };

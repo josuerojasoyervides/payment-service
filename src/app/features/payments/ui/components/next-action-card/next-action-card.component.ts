@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
+
 import { NextAction } from '../../../domain/models/payment/payment-action.types';
 import { SpeiInstructionsComponent } from '../spei-instructions/spei-instructions.component';
 

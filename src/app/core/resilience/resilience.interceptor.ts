@@ -1,9 +1,10 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { tap, catchError, throwError } from 'rxjs';
+import { catchError, tap, throwError } from 'rxjs';
+
+import { LoggerService } from '../logging/logger.service';
 import { CircuitBreakerService, CircuitOpenError } from './circuit-breaker';
 import { RateLimiterService, RateLimitExceededError } from './rate-limiter';
-import { LoggerService } from '../logging/logger.service';
 import { DEFAULT_RESILIENCE_CONFIG } from './resilience.types';
 
 /**

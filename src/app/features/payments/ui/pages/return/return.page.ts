@@ -1,10 +1,11 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { I18nKeys, I18nService } from '@core/i18n';
+
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { PaymentProviderId } from '../../../domain/models';
 import { PaymentIntentCardComponent } from '../../components';
-import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Return page for 3DS and PayPal callbacks.

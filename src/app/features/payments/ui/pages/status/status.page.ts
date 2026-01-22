@@ -1,11 +1,12 @@
-import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { I18nKeys, I18nService } from '@core/i18n';
+
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { PaymentProviderId, PaymentIntent } from '../../../domain/models';
-import { PaymentIntentCardComponent, NextActionCardComponent } from '../../components';
-import { I18nService, I18nKeys } from '@core/i18n';
+import { PaymentIntent, PaymentProviderId } from '../../../domain/models';
+import { NextActionCardComponent, PaymentIntentCardComponent } from '../../components';
 
 /**
  * Page to query payment status by ID.

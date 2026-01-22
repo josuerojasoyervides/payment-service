@@ -6,7 +6,7 @@ import {
   HttpResponse,
 } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, of, throwError, delay } from 'rxjs';
+import { delay, Observable, of, throwError } from 'rxjs';
 
 @Injectable()
 export class FakePaymentsBackendInterceptor implements HttpInterceptor {

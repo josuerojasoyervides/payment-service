@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { I18nService } from './i18n.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { I18nKeys } from './i18n.keys';
-import { es } from './translations/es';
+import { I18nService } from './i18n.service';
 import { en } from './translations/en';
+import { es } from './translations/es';
 
 describe('I18nService', () => {
   let service: I18nService;
