@@ -232,5 +232,7 @@ export const es: Translations = {
     cancel_url_label: 'URL de cancelación',
     paypal_redirect_secure_message:
       'Serás redirigido a PayPal para completar el pago de forma segura',
+    flow_3ds: '3D Secure',
+    flow_paypal_redirect: 'PayPal Redirect',
   },
 };

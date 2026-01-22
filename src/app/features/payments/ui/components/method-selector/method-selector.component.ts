@@ -1,25 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 
 import { getDefaultMethods, MethodOption, PaymentMethodType } from '../../shared/ui.types';
 
-/**
- * Payment method selector component.
- *
- * Displays payment method options (card, SPEI, etc.)
- * filtered by what the selected provider supports.
- *
- * @example
- * ```html
- * <app-method-selector
- *   [methods]="['card', 'spei']"
- *   [selected]="selectedMethod()"
- *   [disabled]="isLoading()"
- *   (methodChange)="onMethodChange($event)"
- * />
- * ```
- */
 @Component({
   selector: 'app-method-selector',
   standalone: true,
@@ -29,19 +13,17 @@ import { getDefaultMethods, MethodOption, PaymentMethodType } from '../../shared
 export class MethodSelectorComponent {
   private readonly i18n = inject(I18nService);
 
-  /** List of available payment methods */
   readonly methods = input.required<PaymentMethodType[]>();
-
-  /** Currently selected method */
   readonly selected = input<PaymentMethodType | null>(null);
-
-  /** Whether selector is disabled */
   readonly disabled = input<boolean>(false);
 
-  /** Emits when a method is selected */
   readonly methodChange = output<PaymentMethodType>();
 
-  /** Method options with metadata */
+  readonly paymentMethodLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_method_label));
+  readonly selectProviderForMethodsText = computed(() =>
+    this.i18n.t(I18nKeys.ui.select_provider_for_methods),
+  );
+
   methodOptions(): MethodOption[] {
     const defaultMethods = getDefaultMethods(this.i18n);
     return this.methods()
@@ -53,13 +35,5 @@ export class MethodSelectorComponent {
     if (!this.disabled() && methodType !== this.selected()) {
       this.methodChange.emit(methodType);
     }
-  }
-
-  get paymentMethodLabel(): string {
-    return this.i18n.t(I18nKeys.ui.payment_method_label);
-  }
-
-  get selectProviderForMethodsText(): string {
-    return this.i18n.t(I18nKeys.ui.select_provider_for_methods);
   }
 }

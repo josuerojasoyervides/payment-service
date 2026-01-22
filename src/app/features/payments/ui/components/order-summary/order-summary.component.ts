@@ -48,15 +48,9 @@ export class OrderSummaryComponent {
     return itemsList.reduce((sum, item) => sum + item.price * item.quantity, 0);
   });
 
-  get orderSummaryLabel(): string {
-    return this.i18n.t(I18nKeys.ui.order_summary);
-  }
+  readonly orderSummaryLabel = computed(() => this.i18n.t(I18nKeys.ui.order_summary));
 
-  get subtotalLabel(): string {
-    return this.i18n.t(I18nKeys.ui.subtotal);
-  }
+  readonly subtotalLabel = computed(() => this.i18n.t(I18nKeys.ui.subtotal));
 
-  get totalLabel(): string {
-    return this.i18n.t(I18nKeys.ui.total);
-  }
+  readonly totalLabel = computed(() => this.i18n.t(I18nKeys.ui.total));
 }

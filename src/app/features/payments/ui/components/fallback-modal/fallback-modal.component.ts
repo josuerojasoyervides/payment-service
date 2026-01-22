@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
 import {
   FallbackAvailableEvent,
@@ -75,13 +76,9 @@ export class FallbackModalComponent {
   }
 
   /** Error message from event */
-  readonly errorMessage = computed(() => {
+  readonly errorMessageText = computed(() => {
     const e = this.event();
-    if (!e?.error) return null;
-    if (typeof e.error === 'object' && 'message' in e.error) {
-      return (e.error as { message: string }).message;
-    }
-    return null;
+    return renderPaymentError(this.i18n, e?.error);
   });
 
   /** Alternative providers with metadata */
@@ -105,25 +102,13 @@ export class FallbackModalComponent {
   });
 
   // ===== Textos para el template =====
-  get paymentProblemTitle(): string {
-    return this.i18n.t(I18nKeys.ui.payment_problem);
-  }
+  readonly paymentProblemTitle = computed(() => this.i18n.t(I18nKeys.ui.payment_problem));
 
-  get providerUnavailableText(): string {
-    return this.i18n.t(I18nKeys.ui.provider_unavailable);
-  }
+  readonly providerUnavailableText = computed(() => this.i18n.t(I18nKeys.ui.provider_unavailable));
+  readonly tryAnotherProviderText = computed(() => this.i18n.t(I18nKeys.ui.try_another_provider));
 
-  get tryAnotherProviderText(): string {
-    return this.i18n.t(I18nKeys.ui.try_another_provider);
-  }
-
-  get cancelLabel(): string {
-    return this.i18n.t(I18nKeys.ui.cancel);
-  }
-
-  get retryWithLabel(): string {
-    return this.i18n.t(I18nKeys.ui.retry_with);
-  }
+  readonly cancelLabel = computed(() => this.i18n.t(I18nKeys.ui.cancel));
+  readonly retryWithLabel = computed(() => this.i18n.t(I18nKeys.ui.retry_with));
 
   selectProvider(providerId: PaymentProviderId): void {
     this.selectedProvider.set(providerId);

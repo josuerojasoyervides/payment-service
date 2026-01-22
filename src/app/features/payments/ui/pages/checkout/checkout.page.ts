@@ -71,7 +71,7 @@ export class CheckoutComponent {
   readonly selectedProvider = signal<PaymentProviderId | null>(null);
   readonly selectedMethod = signal<PaymentMethodType | null>(null);
 
-  private formOptions = signal<PaymentOptions>({});
+  private readonly formOptions = signal<PaymentOptions>({});
   readonly isFormValid = signal(false);
 
   readonly isLoading = this.paymentState.isLoading;
@@ -90,10 +90,12 @@ export class CheckoutComponent {
   readonly availableMethods = computed<PaymentMethodType[]>(() => {
     const provider = this.selectedProvider();
     if (!provider) return [];
+
     try {
-      const factory = this.registry.get(provider);
-      return factory.getSupportedMethods();
-    } catch {
+      return this.registry.get(provider).getSupportedMethods();
+    } catch (e) {
+      if (this.isDevMode)
+        this.logger.warn('Failed to resolve methods', 'CheckoutPage', { provider, e });
       return [];
     }
   });
@@ -105,7 +107,14 @@ export class CheckoutComponent {
     try {
       const factory = this.registry.get(provider);
       return factory.getFieldRequirements(method);
-    } catch {
+    } catch (e) {
+      if (this.isDevMode) {
+        this.logger.warn('Failed to resolve field requirements', 'CheckoutPage', {
+          provider,
+          method,
+          e,
+        });
+      }
       return null;
     }
   });
@@ -203,7 +212,7 @@ export class CheckoutComponent {
       const context: StrategyContext = {
         returnUrl: this.buildReturnUrl(),
         cancelUrl: this.buildCancelUrl(),
-        isTest: isDevMode(),
+        isTest: this.isDevMode,
         deviceData: {
           userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
           screenWidth: typeof window !== 'undefined' ? window.screen.width : undefined,
@@ -244,57 +253,31 @@ export class CheckoutComponent {
     this.logger.info('Payment reset', 'CheckoutPage');
   }
 
-  get checkoutTitle(): string {
-    return this.i18n.t(I18nKeys.ui.checkout);
-  }
+  readonly checkoutTitle = computed(() => this.i18n.t(I18nKeys.ui.checkout));
 
-  get paymentSystemSubtitle(): string {
-    return this.i18n.t(I18nKeys.ui.payment_system);
-  }
+  readonly paymentSystemSubtitle = computed(() => this.i18n.t(I18nKeys.ui.payment_system));
 
-  get viewHistoryLabel(): string {
-    return this.i18n.t(I18nKeys.ui.view_history);
-  }
+  readonly viewHistoryLabel = computed(() => this.i18n.t(I18nKeys.ui.view_history));
 
-  get checkStatusLabel(): string {
-    return this.i18n.t(I18nKeys.ui.check_status);
-  }
+  readonly checkStatusLabel = computed(() => this.i18n.t(I18nKeys.ui.check_status));
 
-  get showcaseLabel(): string {
-    return this.i18n.t(I18nKeys.ui.showcase);
-  }
+  readonly showcaseLabel = computed(() => this.i18n.t(I18nKeys.ui.showcase));
 
-  get paymentProviderLabel(): string {
-    return this.i18n.t(I18nKeys.ui.payment_provider);
-  }
+  readonly paymentProviderLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_provider));
 
-  get paymentMethodLabel(): string {
-    return this.i18n.t(I18nKeys.ui.payment_method);
-  }
+  readonly paymentMethodLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_method));
 
-  get paymentDataLabel(): string {
-    return this.i18n.t(I18nKeys.ui.payment_data);
-  }
+  readonly paymentDataLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_data));
 
-  get debugInfoLabel(): string {
-    return this.i18n.t(I18nKeys.ui.debug_info);
-  }
+  readonly debugInfoLabel = computed(() => this.i18n.t(I18nKeys.ui.debug_info));
 
-  get providerDebugLabel(): string {
-    return this.i18n.t(I18nKeys.ui.provider_debug);
-  }
+  readonly providerDebugLabel = computed(() => this.i18n.t(I18nKeys.ui.provider_debug));
 
-  get methodDebugLabel(): string {
-    return this.i18n.t(I18nKeys.ui.method_debug);
-  }
+  readonly methodDebugLabel = computed(() => this.i18n.t(I18nKeys.ui.method_debug));
 
-  get formValidLabel(): string {
-    return this.i18n.t(I18nKeys.ui.form_valid);
-  }
+  readonly formValidLabel = computed(() => this.i18n.t(I18nKeys.ui.form_valid));
 
-  get loadingDebugLabel(): string {
-    return this.i18n.t(I18nKeys.ui.loading_debug);
-  }
+  readonly loadingDebugLabel = computed(() => this.i18n.t(I18nKeys.ui.loading_debug));
 
   private buildReturnUrl(): string {
     if (typeof window === 'undefined') return '';

@@ -176,7 +176,7 @@ describe('FallbackModalComponent', () => {
       fixture.componentRef.setInput('event', mockEvent1);
       fixture.detectChanges();
 
-      expect(component.errorMessage()).toBe('Provider unavailable');
+      expect(component.errorMessageText()).toBe('Provider unavailable');
     });
 
     it('debe retornar null si no hay error', () => {
@@ -184,7 +184,7 @@ describe('FallbackModalComponent', () => {
       fixture.componentRef.setInput('event', eventWithoutError);
       fixture.detectChanges();
 
-      expect(component.errorMessage()).toBeNull();
+      expect(component.errorMessageText()).toBe('ui.unknown_error');
     });
 
     it('debe calcular alternativeProviders correctamente', () => {

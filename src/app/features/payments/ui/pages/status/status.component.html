@@ -2,9 +2,9 @@
   <div class="max-w-xl mx-auto px-4">
     <!-- Header -->
     <div class="text-center mb-8">
-      <h1 class="text-2xl font-bold text-gray-900">{{ consultStatusTitle }}</h1>
+      <h1 class="text-2xl font-bold text-gray-900">{{ labels.consultStatusTitle() }}</h1>
       <p class="text-gray-600 mt-2">
-        {{ enterPaymentIdText }}
+        {{ labels.enterPaymentIdText() }}
       </p>
     </div>
 
@@ -14,23 +14,23 @@
         <!-- Intent ID Input -->
         <div>
           <label for="intentId" class="label">
-            {{ intentIdLabel }}
+            {{ labels.intentIdLabel() }}
           </label>
           <input
             id="intentId"
             type="text"
             class="input font-mono"
-            [placeholder]="intentIdPlaceholder"
+            [placeholder]="labels.intentIdPlaceholder()"
             [(ngModel)]="intentId"
             (keyup.enter)="searchIntent()" />
           <p class="text-xs text-gray-500 mt-1">
-            {{ exampleStripeText }}
+            {{ labels.exampleStripeText() }}
           </p>
         </div>
 
         <!-- Provider Selection -->
         <div>
-          <label class="label" for="provider">{{ providerLabel }}</label>
+          <label class="label" for="provider">{{ labels.providerLabel() }}</label>
           <div class="flex gap-3">
             <button
               type="button"
@@ -39,7 +39,7 @@
               [class.bg-purple-50]="selectedProvider() === 'stripe'"
               [class.border-gray-200]="selectedProvider() !== 'stripe'"
               (click)="selectedProvider.set('stripe')">
-              <span class="font-medium">{{ stripeProviderLabel }}</span>
+              <span class="font-medium">{{ labels.stripeProviderLabel() }}</span>
             </button>
             <button
               type="button"
@@ -48,7 +48,7 @@
               [class.bg-blue-50]="selectedProvider() === 'paypal'"
               [class.border-gray-200]="selectedProvider() !== 'paypal'"
               (click)="selectedProvider.set('paypal')">
-              <span class="font-medium">{{ paypalProviderLabel }}</span>
+              <span class="font-medium">{{ labels.paypalProviderLabel() }}</span>
             </button>
           </div>
         </div>
@@ -60,7 +60,7 @@
           (click)="searchIntent()">
           @if (isLoading()) {
             <div class="spinner mr-2"></div>
-            {{ consultingLabel }}
+            {{ labels.consultingLabel() }}
           } @else {
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -69,7 +69,7 @@
                 stroke-width="2"
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            {{ checkStatusLabel }}
+            {{ labels.checkStatusLabel() }}
           }
         </button>
       </div>
@@ -91,7 +91,7 @@
               d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
-            <p class="font-medium">{{ errorConsultingLabel }}</p>
+            <p class="font-medium">{{ labels.errorConsultingLabel() }}</p>
             <p class="text-sm mt-1">{{ getErrorMessage(err) }}</p>
           </div>
         </div>
@@ -101,7 +101,7 @@
     <!-- Result -->
     @if (result(); as intent) {
       <div class="space-y-4">
-        <h2 class="text-lg font-semibold text-gray-900">{{ resultLabel }}</h2>
+        <h2 class="text-lg font-semibold text-gray-900">{{ labels.resultLabel() }}</h2>
 
         <app-payment-intent-card
           [intent]="intent"
@@ -119,9 +119,9 @@
 
     <!-- Quick Examples -->
     <div class="mt-8">
-      <h3 class="text-sm font-medium text-gray-700 mb-3">{{ quickExamplesLabel }}</h3>
+      <h3 class="text-sm font-medium text-gray-700 mb-3">{{ labels.quickExamplesLabel() }}</h3>
       <div class="flex flex-wrap gap-2">
-        @for (example of examples; track example.id) {
+        @for (example of examples(); track example.id) {
           <button
             class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-700 transition-colors"
             (click)="useExample(example)">
@@ -134,10 +134,10 @@
     <!-- Navigation -->
     <div class="mt-8 flex justify-center gap-4 text-sm">
       <a routerLink="/payments/checkout" class="text-blue-600 hover:underline">
-        {{ checkoutLabel }}
+        {{ labels.checkoutLabel() }}
       </a>
       <a routerLink="/payments/history" class="text-blue-600 hover:underline">
-        {{ historyLabel }}
+        {{ labels.historyLabel() }}
       </a>
     </div>
   </div>
