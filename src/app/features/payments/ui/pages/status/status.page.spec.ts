@@ -59,9 +59,9 @@ describe('StatusComponent', () => {
     });
 
     it('debe tener ejemplos predefinidos', () => {
-      expect(component.examples).toHaveLength(2);
-      expect(component.examples[0].provider).toBe('stripe');
-      expect(component.examples[1].provider).toBe('paypal');
+      expect(component.examples()).toHaveLength(2);
+      expect(component.examples()[0].provider).toBe('stripe');
+      expect(component.examples()[1].provider).toBe('paypal');
     });
   });
 
@@ -156,14 +156,14 @@ describe('StatusComponent', () => {
 
   describe('Ejemplos', () => {
     it('debe usar ejemplo y actualizar intentId y provider', () => {
-      const example = component.examples[0];
+      const example = component.examples()[0];
       component.useExample(example);
       expect(component.intentId).toBe(example.id);
       expect(component.selectedProvider()).toBe(example.provider);
     });
 
     it('debe funcionar con ejemplos de PayPal', () => {
-      const example = component.examples[1];
+      const example = component.examples()[1];
       component.useExample(example);
       expect(component.intentId).toBe(example.id);
       expect(component.selectedProvider()).toBe('paypal');

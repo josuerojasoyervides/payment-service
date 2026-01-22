@@ -1,9 +1,9 @@
 <div class="space-y-3">
-  <label for="payment-method" class="label">{{ paymentMethodLabel }}</label>
+  <label for="payment-method" class="label">{{ paymentMethodLabel() }}</label>
 
   @if (methods().length === 0) {
     <p class="text-sm text-gray-500 italic">
-      {{ selectProviderForMethodsText }}
+      {{ selectProviderForMethodsText() }}
     </p>
   } @else {
     <div id="payment-method" class="flex flex-wrap gap-2">

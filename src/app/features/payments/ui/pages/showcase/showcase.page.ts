@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
@@ -135,7 +135,11 @@ export class ShowcaseComponent {
     open: false,
     event: {
       failedProvider: 'stripe',
-      error: { code: 'provider_error', message: 'Stripe está temporalmente no disponible' },
+      error: {
+        code: 'provider_error',
+        message: 'Stripe está temporalmente no disponible',
+        raw: { source: 'showcase' },
+      },
       alternativeProviders: ['paypal'],
       originalRequest: {
         orderId: 'order_123',
@@ -171,123 +175,42 @@ export class ShowcaseComponent {
   }
 
   // ===== Textos para el template =====
-  get componentShowcaseTitle(): string {
-    return this.i18n.t(I18nKeys.ui.component_showcase);
-  }
-
-  get componentShowcaseDescription(): string {
-    return this.i18n.t(I18nKeys.ui.component_showcase_description);
-  }
-
-  get goToCheckoutLabel(): string {
-    return this.i18n.t(I18nKeys.ui.go_to_checkout);
-  }
-
-  get previewLabel(): string {
-    return this.i18n.t(I18nKeys.ui.preview);
-  }
-
-  get controlsLabel(): string {
-    return this.i18n.t(I18nKeys.ui.controls);
-  }
-
-  get amountLabelShort(): string {
-    return this.i18n.t(I18nKeys.ui.amount_label_short);
-  }
-
-  get currencyLabel(): string {
-    return this.i18n.t(I18nKeys.ui.currency_label);
-  }
-
-  get showItemsBreakdownLabel(): string {
-    return this.i18n.t(I18nKeys.ui.show_items_breakdown);
-  }
-
-  get selectedLabel(): string {
-    return this.i18n.t(I18nKeys.ui.selected);
-  }
-
-  get disabledLabel(): string {
-    return this.i18n.t(I18nKeys.ui.disabled);
-  }
-
-  get providerLabel(): string {
-    return this.i18n.t(I18nKeys.ui.provider);
-  }
-
-  get stripeProviderLabel(): string {
-    return this.i18n.t(I18nKeys.ui.provider_stripe);
-  }
-
-  get paypalProviderLabel(): string {
-    return this.i18n.t(I18nKeys.ui.provider_paypal);
-  }
-
-  get statusLabelShort(): string {
-    return this.i18n.t(I18nKeys.ui.status_label_short);
-  }
-
-  get loadingLabel(): string {
-    return this.i18n.t(I18nKeys.ui.loading);
-  }
-
-  get successLabel(): string {
-    return this.i18n.t(I18nKeys.ui.success);
-  }
-
-  get errorLabel(): string {
-    return this.i18n.t(I18nKeys.ui.error);
-  }
-
-  get showSuccessStateLabel(): string {
-    return this.i18n.t(I18nKeys.ui.show_success_state);
-  }
-
-  get clabeLabel(): string {
-    return this.i18n.t(I18nKeys.ui.clabe_label);
-  }
-
-  get statusRequiresConfirmationLabel(): string {
-    return this.i18n.t(I18nKeys.messages.status_requires_confirmation);
-  }
-
-  get statusRequiresActionLabel(): string {
-    return this.i18n.t(I18nKeys.messages.status_requires_action);
-  }
-
-  get processingLabel(): string {
-    return this.i18n.t(I18nKeys.ui.processing);
-  }
-
-  get statusSucceededLabel(): string {
-    return this.i18n.t(I18nKeys.messages.status_succeeded);
-  }
-
-  get statusFailedLabel(): string {
-    return this.i18n.t(I18nKeys.messages.status_failed);
-  }
-
-  get canceledLabel(): string {
-    return this.i18n.t(I18nKeys.ui.canceled);
-  }
-
-  get showActionsLabel(): string {
-    return this.i18n.t(I18nKeys.ui.show_actions);
-  }
-
-  get expandedLabel(): string {
-    return this.i18n.t(I18nKeys.ui.expanded);
-  }
-
-  get openFallbackModalLabel(): string {
-    return this.i18n.t(I18nKeys.ui.open_fallback_modal);
-  }
-
-  get infoLabel(): string {
-    return this.i18n.t(I18nKeys.ui.info);
-  }
-
-  get fallbackModalInfoLabel(): string {
-    return this.i18n.t(I18nKeys.ui.fallback_modal_info);
-  }
+  readonly labels = {
+    componentShowcaseTitle: computed(() => this.i18n.t(I18nKeys.ui.component_showcase)),
+    componentShowcaseDescription: computed(() =>
+      this.i18n.t(I18nKeys.ui.component_showcase_description),
+    ),
+    goToCheckoutLabel: computed(() => this.i18n.t(I18nKeys.ui.go_to_checkout)),
+    previewLabel: computed(() => this.i18n.t(I18nKeys.ui.preview)),
+    controlsLabel: computed(() => this.i18n.t(I18nKeys.ui.controls)),
+    amountLabelShort: computed(() => this.i18n.t(I18nKeys.ui.amount_label_short)),
+    currencyLabel: computed(() => this.i18n.t(I18nKeys.ui.currency_label)),
+    showItemsBreakdownLabel: computed(() => this.i18n.t(I18nKeys.ui.show_items_breakdown)),
+    selectedLabel: computed(() => this.i18n.t(I18nKeys.ui.selected)),
+    disabledLabel: computed(() => this.i18n.t(I18nKeys.ui.disabled)),
+    providerLabel: computed(() => this.i18n.t(I18nKeys.ui.provider)),
+    stripeProviderLabel: computed(() => this.i18n.t(I18nKeys.ui.provider_stripe)),
+    paypalProviderLabel: computed(() => this.i18n.t(I18nKeys.ui.provider_paypal)),
+    statusLabelShort: computed(() => this.i18n.t(I18nKeys.ui.status_label_short)),
+    loadingLabel: computed(() => this.i18n.t(I18nKeys.ui.loading)),
+    successLabel: computed(() => this.i18n.t(I18nKeys.ui.success)),
+    errorLabel: computed(() => this.i18n.t(I18nKeys.ui.error)),
+    showSuccessStateLabel: computed(() => this.i18n.t(I18nKeys.ui.show_success_state)),
+    clabeLabel: computed(() => this.i18n.t(I18nKeys.ui.clabe_label)),
+    statusRequiresConfirmationLabel: computed(() =>
+      this.i18n.t(I18nKeys.messages.status_requires_confirmation),
+    ),
+    statusRequiresActionLabel: computed(() =>
+      this.i18n.t(I18nKeys.messages.status_requires_action),
+    ),
+    processingLabel: computed(() => this.i18n.t(I18nKeys.ui.processing)),
+    statusSucceededLabel: computed(() => this.i18n.t(I18nKeys.messages.status_succeeded)),
+    statusFailedLabel: computed(() => this.i18n.t(I18nKeys.messages.status_failed)),
+    canceledLabel: computed(() => this.i18n.t(I18nKeys.ui.canceled)),
+    showActionsLabel: computed(() => this.i18n.t(I18nKeys.ui.show_actions)),
+    expandedLabel: computed(() => this.i18n.t(I18nKeys.ui.expanded)),
+    openFallbackModalLabel: computed(() => this.i18n.t(I18nKeys.ui.open_fallback_modal)),
+    infoLabel: computed(() => this.i18n.t(I18nKeys.ui.info)),
+    fallbackModalInfoLabel: computed(() => this.i18n.t(I18nKeys.ui.fallback_modal_info)),
+  };
 }

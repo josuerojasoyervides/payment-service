@@ -46,9 +46,9 @@ export interface PaymentsState {
 export interface PaymentHistoryEntry {
   intentId: string;
   provider: PaymentProviderId;
-  status: string;
+  status: PaymentIntent['status'];
   amount: number;
-  currency: string;
+  currency: PaymentIntent['currency'];
   timestamp: number;
   error?: PaymentError;
 }

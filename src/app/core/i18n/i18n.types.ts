@@ -122,6 +122,7 @@ export interface Translations {
     bank_requires_verification: string;
     '3ds_version': string;
     complete_verification: string;
+    flow_3ds: string;
 
     // PayPal
     paypal_approval_required: string;
@@ -129,6 +130,7 @@ export interface Translations {
     order_id: string;
     go_to_paypal: string;
     after_approve_verify: string;
+    flow_paypal_redirect: string;
 
     // Acciones
     action_required: string;

@@ -1,6 +1,6 @@
 <div class="card">
   <div class="flex items-center justify-between mb-4">
-    <h3 class="text-lg font-semibold text-gray-900">{{ orderSummaryLabel }}</h3>
+    <h3 class="text-lg font-semibold text-gray-900">{{ orderSummaryLabel() }}</h3>
     <span class="text-sm text-gray-500 font-mono">{{ orderId() }}</span>
   </div>
 
@@ -22,7 +22,7 @@
     </div>
     <div class="border-t border-gray-200 pt-3">
       <div class="flex justify-between text-sm text-gray-500 mb-1">
-        <span>{{ subtotalLabel }}</span>
+        <span>{{ subtotalLabel() }}</span>
         <span>{{ subtotal() | currency: currency() }}</span>
       </div>
     </div>
@@ -33,7 +33,7 @@
     [class.pt-3]="items() && items()!.length > 0"
     [class.border-t]="items() && items()!.length > 0"
     [class.border-gray-200]="items() && items()!.length > 0">
-    <span class="text-base font-medium text-gray-900">{{ totalLabel }}</span>
+    <span class="text-base font-medium text-gray-900">{{ totalLabel() }}</span>
     <span class="text-2xl font-bold text-gray-900">
       {{ amount() | currency: currency() }}
     </span>
