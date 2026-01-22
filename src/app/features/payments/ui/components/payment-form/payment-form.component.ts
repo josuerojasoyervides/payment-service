@@ -5,7 +5,7 @@ import { I18nKeys, I18nService } from '@core/i18n';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 
 import { FieldConfig, FieldRequirements } from '../../../domain/ports';
-import { PaymentOptions } from '../../shared';
+import { PaymentOptions } from '../../shared/ui.types';
 
 type DynamicControl = FormControl<string | boolean>;
 type DynamicForm = FormRecord<DynamicControl>;

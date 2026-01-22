@@ -2,7 +2,7 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 
-import { getStatusText, PaymentIntent, STATUS_BADGE_MAP } from '../../shared';
+import { getStatusText, PaymentIntent, STATUS_BADGE_MAP } from '../../shared/ui.types';
 
 /**
  * Card component to display a PaymentIntent.

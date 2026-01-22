@@ -20,7 +20,7 @@ import { PaymentResultComponent } from '@payments/ui/components/payment-result/p
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
 import { SpeiInstructionsComponent } from '@payments/ui/components/spei-instructions/spei-instructions.component';
 
-import { OrderItem, PaymentButtonState } from '../../shared';
+import { OrderItem, PaymentButtonState } from '../../shared/ui.types';
 
 /**
  * Página de showcase para demostrar todos los componentes de UI.
