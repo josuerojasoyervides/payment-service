@@ -3,24 +3,29 @@ import { Component, computed, effect, inject, isDevMode, signal } from '@angular
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+// Domain types
+import {
+  CurrencyCode,
+  PaymentMethodType,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
+import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
+import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
+import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
+import { OrderSummaryComponent } from '@payments/ui/components/order-summary/order-summary.component';
+import { PaymentButtonComponent } from '@payments/ui/components/payment-button/payment-button.component';
+import { PaymentFormComponent } from '@payments/ui/components/payment-form/payment-form.component';
+import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
+import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
 
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 // Port and token (decoupled from implementation)
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-// Domain types
-import { CurrencyCode, PaymentMethodType, PaymentProviderId } from '../../../domain/models';
-import { FieldRequirements, PaymentOptions, StrategyContext } from '../../../domain/ports';
-// UI Components
 import {
-  FallbackModalComponent,
-  MethodSelectorComponent,
-  NextActionCardComponent,
-  OrderSummaryComponent,
-  PaymentButtonComponent,
-  PaymentFormComponent,
-  PaymentResultComponent,
-  ProviderSelectorComponent,
-} from '../../components';
+  FieldRequirements,
+  PaymentOptions,
+} from '../../../domain/ports/payment/payment-request-builder.port';
+import { StrategyContext } from '../../../domain/ports/payment/payment-strategy.port';
 
 /**
  * Checkout page for processing payments.

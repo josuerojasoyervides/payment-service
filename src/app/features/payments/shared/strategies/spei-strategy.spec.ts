@@ -1,8 +1,10 @@
 import { I18nService } from '@core/i18n';
+import { NextActionSpei } from '@payments/domain/models/payment/payment-action.types';
+import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of } from 'rxjs';
 
-import { CreatePaymentRequest, NextActionSpei, PaymentIntent } from '../../domain/models';
-import { PaymentGateway } from '../../domain/ports';
+import { PaymentGateway } from '../../domain/ports/payment/payment-gateway.port';
 import { SpeiStrategy } from './spei-strategy';
 
 describe('SpeiStrategy', () => {

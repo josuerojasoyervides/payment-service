@@ -1,5 +1,9 @@
 import { Injectable } from '@angular/core';
-import { GetPaymentStatusRequest, PaymentIntent, PaymentProviderId } from '@payments/domain/models';
+import {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
+import { GetPaymentStatusRequest } from '@payments/domain/models/payment/payment-request.types';
 import { PaymentGatewayOperation } from '@payments/shared/payment-operation.gateway';
 import { Observable } from 'rxjs';
 

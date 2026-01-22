@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-
 import {
-  CreatePaymentRequest,
   DEFAULT_FALLBACK_CONFIG,
   FallbackConfig,
-  PaymentError,
-  PaymentProviderId,
-} from '../../domain/models';
+} from '@payments/domain/models/fallback/fallback-config.types';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FALLBACK_CONFIG, FallbackOrchestratorService } from './fallback-orchestrator.service';
 

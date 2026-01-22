@@ -3,10 +3,14 @@ import { Component, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
+import {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
 
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { PaymentIntent, PaymentProviderId } from '../../../domain/models';
-import { NextActionCardComponent, PaymentIntentCardComponent } from '../../components';
+import { NextActionCardComponent } from '../../components/next-action-card/next-action-card.component';
+import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
 /**
  * Page to query payment status by ID.

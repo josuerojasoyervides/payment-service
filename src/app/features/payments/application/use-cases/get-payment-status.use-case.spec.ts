@@ -1,14 +1,15 @@
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom, of, throwError } from 'rxjs';
-
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
-  GetPaymentStatusRequest,
-  PaymentError,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '../../domain/models';
-import { PaymentGateway, ProviderFactory } from '../../domain/ports';
+} from '@payments/domain/models/payment/payment-intent.types';
+import { GetPaymentStatusRequest } from '@payments/domain/models/payment/payment-request.types';
+import { firstValueFrom, of, throwError } from 'rxjs';
+
+import { PaymentGateway } from '../../domain/ports/payment/payment-gateway.port';
+import { ProviderFactory } from '../../domain/ports/provider/provider-factory.port';
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';

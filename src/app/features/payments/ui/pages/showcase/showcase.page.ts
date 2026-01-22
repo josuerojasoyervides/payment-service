@@ -3,26 +3,24 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
-
+import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
   CurrencyCode,
-  FallbackAvailableEvent,
-  PaymentError,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '../../../domain/models';
-import {
-  FallbackModalComponent,
-  MethodSelectorComponent,
-  OrderSummaryComponent,
-  PaymentButtonComponent,
-  PaymentIntentCardComponent,
-  PaymentResultComponent,
-  ProviderSelectorComponent,
-  SpeiInstructionsComponent,
-} from '../../components';
-import { OrderItem, PaymentButtonState } from '../../shared';
+} from '@payments/domain/models/payment/payment-intent.types';
+import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
+import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
+import { OrderSummaryComponent } from '@payments/ui/components/order-summary/order-summary.component';
+import { PaymentButtonComponent } from '@payments/ui/components/payment-button/payment-button.component';
+import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
+import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
+import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
+import { SpeiInstructionsComponent } from '@payments/ui/components/spei-instructions/spei-instructions.component';
+
+import { OrderItem, PaymentButtonState } from '../../shared/ui.types';
 
 /**
  * Página de showcase para demostrar todos los componentes de UI.

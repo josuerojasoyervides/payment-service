@@ -1,11 +1,13 @@
 import {
-  CreatePaymentRequest,
   FallbackState,
   INITIAL_FALLBACK_STATE,
-  PaymentError,
+} from '@payments/domain/models/fallback/fallback-state.types';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import {
   PaymentIntent,
   PaymentProviderId,
-} from '../../domain/models';
+} from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
 /**
  * Estados posibles del flujo de pago en la UI.
