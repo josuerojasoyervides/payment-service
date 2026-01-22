@@ -8,9 +8,9 @@ import {
 import { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of, throwError } from 'rxjs';
 
-import { ProviderFactory } from '../../domain/ports/provider/provider-factory.port';
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 import { PaymentGateway } from '../ports/payment-gateway.port';
+import { ProviderFactory } from '../ports/provider-factory.port';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { ConfirmPaymentUseCase } from './confirm-payment.use-case';

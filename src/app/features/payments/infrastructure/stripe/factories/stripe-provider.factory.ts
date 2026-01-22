@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { ProviderFactory } from '@payments/application/ports/provider-factory.port';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
-import { ProviderFactory } from '@payments/domain/ports/provider/provider-factory.port';
 
 import { PaymentGateway } from '../../../application/ports/payment-gateway.port';
 import { PaymentStrategy } from '../../../application/ports/payment-strategy.port';
