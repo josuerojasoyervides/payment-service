@@ -32,6 +32,7 @@ export abstract class PaymentGatewayPort<
     return {
       code: 'provider_error',
       message: this.i18n.t(I18nKeys.errors.provider_error),
+      messageKey: I18nKeys.errors.provider_error,
       raw: err,
     };
   }
