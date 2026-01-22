@@ -14,55 +14,64 @@ import { FakePaymentGateway } from '../infrastructure/fake/gateways/fake-payment
 import { PaypalProviderFactory } from '../infrastructure/paypal/factories/paypal-provider.factory';
 import { PaypalPaymentGateway } from '../infrastructure/paypal/gateways/paypal-payment.gateway';
 import { StripeProviderFactory } from '../infrastructure/stripe/factories/stripe-provider.factory';
+import { StripeCancelIntentGateway } from '../infrastructure/stripe/gateways/intent/cancel-intent.gateway';
+import { StripeConfirmIntentGateway } from '../infrastructure/stripe/gateways/intent/confirm-intent.gateway';
+import { StripeCreateIntentGateway } from '../infrastructure/stripe/gateways/intent/create-intent.gateway';
+import { StripeGetIntentGateway } from '../infrastructure/stripe/gateways/intent/get-intent.gateway';
 import { IntentFacade } from '../infrastructure/stripe/gateways/intent/intent.facade';
 import { IdempotencyKeyFactory } from '../shared/idempotency/idempotency-key.factory';
 
-/**
- * Gateways for each provider.
- *
- * In development/testing, can be replaced with fakes.
- */
-const GATEWAY_PROVIDERS: Provider[] = [
-  // For development: use fake gateway that simulates responses
-  // In production: remove this line and use real gateway
+export type PaymentsProvidersMode = 'fake' | 'real';
 
-  /**
-   * ! TODO: ✅ El contrato real no debería ser “StripePaymentGateway”, debería ser “PaymentGateway”.
-   * ! UI/Application no deberían inyectar gateways por clase concreta nunca.
-   * ! Solo la infra debería decidir la implementación concreta.
-   * ! las clases concretas de gateways no deberían importarse en config si quieres reemplazabilidad total.
-   */
+export interface PaymentsProvidersOptions {
+  mode?: PaymentsProvidersMode;
+  extraProviders?: Provider[];
+}
+
+/**
+ * Provider bundles by provider implementation
+ */
+
+const STRIPE_REAL_GATEWAYS: Provider[] = [
+  IntentFacade,
+  StripeCreateIntentGateway,
+  StripeConfirmIntentGateway,
+  StripeCancelIntentGateway,
+  StripeGetIntentGateway,
+];
+
+const STRIPE_FAKE_GATEWAYS: Provider[] = [
   {
     provide: IntentFacade,
     useFactory: () => FakePaymentGateway.create('stripe'),
   },
+];
+
+const PAYPAL_REAL_GATEWAYS: Provider[] = [PaypalPaymentGateway];
+
+const PAYPAL_FAKE_GATEWAYS: Provider[] = [
   {
     provide: PaypalPaymentGateway,
     useFactory: () => FakePaymentGateway.create('paypal'),
   },
-
-  // Real gateways (commented for development)
-  // StripePaymentGateway,
-  // PaypalPaymentGateway,
 ];
 
+function selectGateways(mode: PaymentsProvidersMode): Provider[] {
+  if (mode === 'real') {
+    return [...STRIPE_REAL_GATEWAYS, ...PAYPAL_REAL_GATEWAYS];
+  }
+  return [...STRIPE_FAKE_GATEWAYS, ...PAYPAL_FAKE_GATEWAYS];
+}
+
 /**
- * Provider factories (using multi-token).
- *
- * Each factory is registered with multi: true to allow
- * adding new providers without modifying existing configuration.
+ * Cross-cutting providers (grow-safe lists)
  */
+
 const FACTORY_PROVIDERS: Provider[] = [
   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: StripeProviderFactory, multi: true },
   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: PaypalProviderFactory, multi: true },
 ];
 
-/**
- * Application layer use cases.
- *
- * Do not use providedIn: 'root' to allow testing
- * and give explicit control of lifecycle.
- */
 const USE_CASE_PROVIDERS: Provider[] = [
   StartPaymentUseCase,
   ConfirmPaymentUseCase,
@@ -70,80 +79,44 @@ const USE_CASE_PROVIDERS: Provider[] = [
   GetPaymentStatusUseCase,
 ];
 
-/**
- * Application infrastructure services.
- *
- * IMPORTANT: State is injected via PAYMENT_STATE token.
- * This allows changing the implementation (NgRx Signals, Akita, etc.)
- * without modifying components that consume the state.
- */
 const APPLICATION_PROVIDERS: Provider[] = [
   ProviderFactoryRegistry,
   FallbackOrchestratorService,
   PaymentsStore,
-  // Adapter that implements PaymentStatePort using NgRx Signals
-  // If you decide to change state manager, only change this provider
   { provide: PAYMENT_STATE, useClass: NgRxSignalsStateAdapter },
 ];
 
-/**
- * Shared services (utilities used across layers).
- */
 const SHARED_PROVIDERS: Provider[] = [IdempotencyKeyFactory];
 
-/**
- * Function to provide all payment infrastructure.
- *
- * Usage:
- * ```typescript
- * // In app.config.ts
- * export const appConfig: ApplicationConfig = {
- *   providers: [
- *     providePayments(),
- *     // other providers...
- *   ]
- * };
- * ```
- */
-export default function providePayments(): (Provider | EnvironmentProviders)[] {
+function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provider[] {
+  const mode = options.mode ?? 'fake';
+
   return [
-    ...GATEWAY_PROVIDERS,
+    ...selectGateways(mode),
     ...FACTORY_PROVIDERS,
     ...USE_CASE_PROVIDERS,
     ...APPLICATION_PROVIDERS,
     ...SHARED_PROVIDERS,
+    ...(options.extraProviders ?? []),
   ];
 }
 
 /**
- * Function to provide payments with custom configuration.
- *
- * @param options Configuration options
+ * Default export: convenience for app.config.ts
+ */
+export default function providePayments(): (Provider | EnvironmentProviders)[] {
+  return buildPaymentsProviders();
+}
+
+/**
+ * Backwards-compatible config function
  */
 export function providePaymentsWithConfig(options: {
-  /** Use real gateways instead of fakes */
   useRealGateways?: boolean;
-  /** Additional providers */
   extraProviders?: Provider[];
 }): (Provider | EnvironmentProviders)[] {
-  const providers: Provider[] = [];
-
-  if (options.useRealGateways) {
-    providers.push(IntentFacade, PaypalPaymentGateway);
-  } else {
-    providers.push(...GATEWAY_PROVIDERS);
-  }
-
-  providers.push(
-    ...FACTORY_PROVIDERS,
-    ...USE_CASE_PROVIDERS,
-    ...APPLICATION_PROVIDERS,
-    ...SHARED_PROVIDERS,
-  );
-
-  if (options.extraProviders) {
-    providers.push(...options.extraProviders);
-  }
-
-  return providers;
+  return buildPaymentsProviders({
+    mode: options.useRealGateways ? 'real' : 'fake',
+    extraProviders: options.extraProviders,
+  });
 }
