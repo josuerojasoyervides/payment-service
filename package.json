@@ -14,7 +14,7 @@
     "lint": "eslint \"src/**/*.ts\" \"src/app/**/*.html\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"src/app/**/*.html\" --fix",
     "format": "prettier \"src/**/*.{ts,html,scss,css,json,md}\" --write",
-    "format:check": "prettier . --check",
+    "format:check": "prettier \"src/**/*.{ts,html,scss,css,json,md}\" --check",
     "prepare": "husky"
   },
   "lint-staged": {
