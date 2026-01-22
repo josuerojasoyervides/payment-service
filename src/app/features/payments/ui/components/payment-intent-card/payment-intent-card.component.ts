@@ -2,7 +2,7 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 
-import { getStatusText, PaymentIntent, STATUS_BADGE_MAP } from '../../shared';
+import { getStatusText, PaymentIntent, STATUS_BADGE_MAP } from '../../shared/ui.types';
 
 /**
  * Card component to display a PaymentIntent.
@@ -52,8 +52,6 @@ export class PaymentIntentCardComponent {
   /** Emits to expand/collapse */
   readonly expandedChange = output<boolean>();
 
-  private _expanded = false;
-
   /** Status helpers */
   readonly isSucceeded = computed(() => this.intent().status === 'succeeded');
   readonly isFailed = computed(() => this.intent().status === 'failed');
@@ -86,43 +84,16 @@ export class PaymentIntentCardComponent {
   });
 
   toggleExpanded(): void {
-    this._expanded = !this._expanded;
-    this.expandedChange.emit(this._expanded);
+    this.expandedChange.emit(!this.expanded());
   }
 
-  get providerLabel(): string {
-    return this.i18n.t(I18nKeys.ui.payment_provider);
-  }
-
-  get statusLabel(): string {
-    return this.i18n.t(I18nKeys.ui.status_label);
-  }
-
-  get amountLabel(): string {
-    return this.i18n.t(I18nKeys.ui.amount_label);
-  }
-
-  get actionRequiredLabel(): string {
-    return this.i18n.t(I18nKeys.ui.action_required_label);
-  }
-
-  get confirmButtonText(): string {
-    return this.i18n.t(I18nKeys.ui.confirm_button);
-  }
-
-  get cancelButtonText(): string {
-    return this.i18n.t(I18nKeys.ui.cancel_button);
-  }
-
-  get idLabel(): string {
-    return this.i18n.t(I18nKeys.ui.id_label);
-  }
-
-  get clientSecretLabel(): string {
-    return this.i18n.t(I18nKeys.ui.client_secret);
-  }
-
-  get redirectUrlLabel(): string {
-    return this.i18n.t(I18nKeys.ui.redirect_url);
-  }
+  readonly providerLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_provider));
+  readonly statusLabel = computed(() => this.i18n.t(I18nKeys.ui.status_label));
+  readonly amountLabel = computed(() => this.i18n.t(I18nKeys.ui.amount_label));
+  readonly actionRequiredLabel = computed(() => this.i18n.t(I18nKeys.ui.action_required_label));
+  readonly confirmButtonText = computed(() => this.i18n.t(I18nKeys.ui.confirm_button));
+  readonly cancelButtonText = computed(() => this.i18n.t(I18nKeys.ui.cancel_button));
+  readonly idLabel = computed(() => this.i18n.t(I18nKeys.ui.id_label));
+  readonly clientSecretLabel = computed(() => this.i18n.t(I18nKeys.ui.client_secret));
+  readonly redirectUrlLabel = computed(() => this.i18n.t(I18nKeys.ui.redirect_url));
 }

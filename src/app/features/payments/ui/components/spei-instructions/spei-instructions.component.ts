@@ -1,7 +1,7 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
-import { ClabeFormatPipe } from '@shared/pipes';
+import { ClabeFormatPipe } from '@shared/pipes/clabe-format.pipe';
 
 /**
  * Component that displays SPEI payment instructions.
@@ -56,57 +56,34 @@ export class SpeiInstructionsComponent {
   readonly copiedField = signal<string | null>(null);
 
   // ===== Textos para el template =====
-  get speiTransferTitle(): string {
-    return this.i18n.t(I18nKeys.ui.spei_transfer);
-  }
+  readonly speiTransferTitle = computed(() => this.i18n.t(I18nKeys.ui.spei_transfer));
 
-  get makeTransferText(): string {
-    return this.i18n.t(I18nKeys.ui.make_transfer_with_data);
-  }
+  readonly makeTransferText = computed(() => this.i18n.t(I18nKeys.ui.make_transfer_with_data));
 
-  get copiedLabel(): string {
-    return this.i18n.t(I18nKeys.ui.copied);
-  }
+  readonly copiedLabel = computed(() => this.i18n.t(I18nKeys.ui.copied));
 
-  get copyLabel(): string {
-    return this.i18n.t(I18nKeys.ui.copy);
-  }
+  readonly copyLabel = computed(() => this.i18n.t(I18nKeys.ui.copy));
 
-  get referenceLabel(): string {
-    return this.i18n.t(I18nKeys.ui.reference);
-  }
+  readonly referenceLabel = computed(() => this.i18n.t(I18nKeys.ui.reference));
 
-  get exactAmountLabel(): string {
-    return this.i18n.t(I18nKeys.ui.exact_amount);
-  }
+  readonly exactAmountLabel = computed(() => this.i18n.t(I18nKeys.ui.exact_amount));
 
-  get destinationBankLabel(): string {
-    return this.i18n.t(I18nKeys.ui.destination_bank);
-  }
+  readonly destinationBankLabel = computed(() => this.i18n.t(I18nKeys.ui.destination_bank));
 
-  get beneficiaryLabel(): string {
-    return this.i18n.t(I18nKeys.ui.beneficiary);
-  }
+  readonly beneficiaryLabel = computed(() => this.i18n.t(I18nKeys.ui.beneficiary));
 
-  get referenceExpiresText(): string {
-    return this.i18n.t(I18nKeys.ui.reference_expires);
-  }
+  readonly referenceExpiresText = computed(() => this.i18n.t(I18nKeys.ui.reference_expires));
 
-  get transferExactAmountText(): string {
-    return this.i18n.t(I18nKeys.ui.transfer_exact_amount);
-  }
+  readonly transferExactAmountText = computed(() => this.i18n.t(I18nKeys.ui.transfer_exact_amount));
 
-  get paymentMayTakeText(): string {
-    return this.i18n.t(I18nKeys.ui.payment_may_take);
-  }
+  readonly paymentMayTakeText = computed(() => this.i18n.t(I18nKeys.ui.payment_may_take));
 
-  get keepReceiptText(): string {
-    return this.i18n.t(I18nKeys.ui.keep_receipt);
-  }
+  readonly keepReceiptText = computed(() => this.i18n.t(I18nKeys.ui.keep_receipt));
 
   /** Copies text to clipboard */
   async copyToClipboard(text: string, field: string): Promise<void> {
     try {
+      if (typeof navigator === 'undefined' || !navigator.clipboard) return;
       await navigator.clipboard.writeText(text);
       this.copiedField.set(field);
 

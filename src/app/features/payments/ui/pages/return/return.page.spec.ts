@@ -1,10 +1,10 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { I18nService } from '@core/i18n';
+import { I18nKeys, I18nService } from '@core/i18n';
+import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { PaymentIntent } from '../../../domain/models';
 import { ReturnComponent } from './return.page';
 
 describe('ReturnComponent', () => {
@@ -199,7 +199,7 @@ describe('ReturnComponent', () => {
 
     it('debe refrescar pago correctamente', () => {
       component.intentId.set('pi_test_123');
-      component.refreshPayment('pi_test_123');
+      component.refreshPaymentByReference('pi_test_123');
       expect(mockPaymentState.refreshPayment).toHaveBeenCalledWith(
         { intentId: 'pi_test_123' },
         'stripe',
@@ -239,13 +239,13 @@ describe('ReturnComponent', () => {
     it('debe detectar tipo de flujo PayPal', () => {
       component.paypalToken.set('ORDER_FAKE_XYZ');
       // Las computed de Signals se actualizan inmediatamente
-      expect(component.flowType()).toBe('PayPal Redirect');
+      expect(component.flowType()).toBe(I18nKeys.ui.flow_paypal_redirect);
     });
 
     it('debe detectar tipo de flujo 3DS', () => {
       component.intentId.set('pi_test_123');
       // Las computed de Signals se actualizan inmediatamente
-      expect(component.flowType()).toBe('3D Secure');
+      expect(component.flowType()).toBe(I18nKeys.ui.flow_3ds);
     });
 
     it('debe retornar desconocido si no hay parámetros', () => {

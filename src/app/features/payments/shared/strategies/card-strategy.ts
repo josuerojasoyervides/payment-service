@@ -1,16 +1,22 @@
-import { inject } from '@angular/core';
-import { I18nKeys, I18nService } from '@core/i18n';
-import { map, Observable, tap } from 'rxjs';
-
-import { CreatePaymentRequest, PaymentIntent, PaymentMethodType } from '../../domain/models';
+import { I18nKeys } from '@core/i18n';
+import { PaymentValidationError } from '@payments/application/errors/payment-validation.error';
+import {
+  PaymentIntent,
+  PaymentMethodType,
+} from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import {
   NullTokenValidator,
-  PaymentGateway,
+  TokenValidator,
+} from '@payments/domain/ports/provider/token-validator.port';
+import { map, Observable, tap } from 'rxjs';
+
+import { PaymentGateway } from '../../application/ports/payment-gateway.port';
+import {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
-  TokenValidator,
-} from '../../domain/ports';
+} from '../../application/ports/payment-strategy.port';
 
 /**
  * Strategy for credit/debit card payments.
@@ -33,7 +39,6 @@ export class CardStrategy implements PaymentStrategy {
   constructor(
     private readonly gateway: PaymentGateway,
     private readonly tokenValidator: TokenValidator = new NullTokenValidator(),
-    private readonly i18n: I18nService = inject(I18nService),
   ) {}
 
   /**
@@ -46,16 +51,17 @@ export class CardStrategy implements PaymentStrategy {
   validate(req: CreatePaymentRequest): void {
     if (this.tokenValidator.requiresToken()) {
       if (!req.method.token) {
-        throw new Error(this.i18n.t(I18nKeys.errors.card_token_required));
+        throw new Error(I18nKeys.errors.card_token_required);
       }
       this.tokenValidator.validate(req.method.token);
     }
 
     const minAmount = req.currency === 'MXN' ? 10 : 1;
     if (req.amount < minAmount) {
-      throw new Error(
-        this.i18n.t(I18nKeys.errors.min_amount, { amount: minAmount, currency: req.currency }),
-      );
+      throw new PaymentValidationError(I18nKeys.errors.min_amount, {
+        amount: minAmount,
+        currency: req.currency,
+      });
     }
   }
 
@@ -144,7 +150,7 @@ export class CardStrategy implements PaymentStrategy {
       return null;
     }
 
-    return this.i18n.t(I18nKeys.messages.bank_verification_required);
+    return I18nKeys.messages.bank_verification_required;
   }
 
   /**

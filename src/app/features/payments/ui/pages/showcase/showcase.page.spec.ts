@@ -67,7 +67,7 @@ describe('ShowcaseComponent', () => {
 
     it('debe tener sampleError configurado', () => {
       expect(component.sampleError.code).toBe('card_declined');
-      expect(component.sampleError.message).toContain('rechazada');
+      expect(component.sampleError.messageKey).toContain('rechazada');
     });
 
     it('debe tener speiInstructions configurado', () => {

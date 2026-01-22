@@ -1,12 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
+import {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
+import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { PaymentIntent, PaymentProviderId } from '../../../domain/models';
-import { NextActionCardComponent, PaymentIntentCardComponent } from '../../components';
+import { NextActionCardComponent } from '../../components/next-action-card/next-action-card.component';
+import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
 /**
  * Page to query payment status by ID.
@@ -37,7 +42,7 @@ export class StatusComponent {
   readonly error = this.paymentState.error;
   readonly isLoading = this.paymentState.isLoading;
 
-  readonly examples = [
+  readonly examples = computed(() => [
     {
       id: 'pi_fake_abc123',
       label: this.i18n.t(I18nKeys.ui.stripe_intent),
@@ -48,14 +53,12 @@ export class StatusComponent {
       label: this.i18n.t(I18nKeys.ui.paypal_order),
       provider: 'paypal' as const,
     },
-  ];
+  ]);
 
   constructor() {
     effect(() => {
       const intent = this.paymentState.intent();
-      if (intent) {
-        this.result.set(intent);
-      }
+      if (intent) this.result.set(intent);
     });
   }
 
@@ -63,6 +66,7 @@ export class StatusComponent {
     if (!this.intentId.trim()) return;
 
     this.result.set(null);
+    this.paymentState.clearError?.();
 
     this.paymentState.refreshPayment({ intentId: this.intentId.trim() }, this.selectedProvider());
   }
@@ -85,69 +89,24 @@ export class StatusComponent {
   }
 
   getErrorMessage(error: unknown): string {
-    if (typeof error === 'object' && error !== null && 'message' in error) {
-      return (error as { message: string }).message;
-    }
-    return this.i18n.t(I18nKeys.ui.unknown_error);
+    return renderPaymentError(this.i18n, error);
   }
 
-  get consultStatusTitle(): string {
-    return this.i18n.t(I18nKeys.ui.consult_status);
-  }
-
-  get enterPaymentIdText(): string {
-    return this.i18n.t(I18nKeys.ui.enter_payment_id);
-  }
-
-  get intentIdLabel(): string {
-    return this.i18n.t(I18nKeys.ui.intent_id);
-  }
-
-  get intentIdPlaceholder(): string {
-    return this.i18n.t(I18nKeys.ui.intent_id_placeholder);
-  }
-
-  get exampleStripeText(): string {
-    return this.i18n.t(I18nKeys.ui.example_stripe);
-  }
-
-  get providerLabel(): string {
-    return this.i18n.t(I18nKeys.ui.provider);
-  }
-
-  get stripeProviderLabel(): string {
-    return this.i18n.t(I18nKeys.ui.provider_stripe);
-  }
-
-  get paypalProviderLabel(): string {
-    return this.i18n.t(I18nKeys.ui.provider_paypal);
-  }
-
-  get consultingLabel(): string {
-    return this.i18n.t(I18nKeys.ui.consulting);
-  }
-
-  get checkStatusLabel(): string {
-    return this.i18n.t(I18nKeys.ui.check_status);
-  }
-
-  get errorConsultingLabel(): string {
-    return this.i18n.t(I18nKeys.ui.error_consulting);
-  }
-
-  get resultLabel(): string {
-    return this.i18n.t(I18nKeys.ui.result);
-  }
-
-  get quickExamplesLabel(): string {
-    return this.i18n.t(I18nKeys.ui.quick_examples);
-  }
-
-  get checkoutLabel(): string {
-    return this.i18n.t(I18nKeys.ui.checkout);
-  }
-
-  get historyLabel(): string {
-    return this.i18n.t(I18nKeys.ui.view_history);
-  }
+  readonly labels = {
+    consultStatusTitle: computed(() => this.i18n.t(I18nKeys.ui.consult_status)),
+    enterPaymentIdText: computed(() => this.i18n.t(I18nKeys.ui.enter_payment_id)),
+    intentIdLabel: computed(() => this.i18n.t(I18nKeys.ui.intent_id)),
+    intentIdPlaceholder: computed(() => this.i18n.t(I18nKeys.ui.intent_id_placeholder)),
+    exampleStripeText: computed(() => this.i18n.t(I18nKeys.ui.example_stripe)),
+    providerLabel: computed(() => this.i18n.t(I18nKeys.ui.provider)),
+    stripeProviderLabel: computed(() => this.i18n.t(I18nKeys.ui.provider_stripe)),
+    paypalProviderLabel: computed(() => this.i18n.t(I18nKeys.ui.provider_paypal)),
+    consultingLabel: computed(() => this.i18n.t(I18nKeys.ui.consulting)),
+    checkStatusLabel: computed(() => this.i18n.t(I18nKeys.ui.check_status)),
+    errorConsultingLabel: computed(() => this.i18n.t(I18nKeys.ui.error_consulting)),
+    resultLabel: computed(() => this.i18n.t(I18nKeys.ui.result)),
+    quickExamplesLabel: computed(() => this.i18n.t(I18nKeys.ui.quick_examples)),
+    checkoutLabel: computed(() => this.i18n.t(I18nKeys.ui.checkout)),
+    historyLabel: computed(() => this.i18n.t(I18nKeys.ui.view_history)),
+  };
 }

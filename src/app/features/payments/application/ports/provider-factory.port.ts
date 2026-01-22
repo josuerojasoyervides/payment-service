@@ -1,8 +1,3 @@
-import { PaymentMethodType, PaymentProviderId } from '../../models/payment/payment-intent.types';
-import { PaymentGateway } from '../payment/payment-gateway.port';
-import { FieldRequirements, PaymentRequestBuilder } from '../payment/payment-request-builder.port';
-import { PaymentStrategy } from '../payment/payment-strategy.port';
-
 /**
  * Port for payment provider factories.
  *
@@ -18,6 +13,23 @@ import { PaymentStrategy } from '../payment/payment-strategy.port';
  * 2. Know which fields each method needs (getFieldRequirements)
  * 3. Get the correct builder (createRequestBuilder)
  */
+
+import {
+  PaymentMethodType,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
+import {
+  FieldRequirements,
+  PaymentRequestBuilder,
+} from '@payments/domain/ports/payment/payment-request-builder.port';
+
+import { PaymentGateway } from './payment-gateway.port';
+import { PaymentStrategy } from './payment-strategy.port';
+
+/**
+ * ! TODO This factory depends on the application layer. It should be moved to the application layer
+ * ! or refactor the application ports
+ * */
 export interface ProviderFactory {
   /** Unique provider identifier */
   readonly providerId: PaymentProviderId;

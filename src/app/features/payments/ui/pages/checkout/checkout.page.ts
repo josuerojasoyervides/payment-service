@@ -3,24 +3,29 @@ import { Component, computed, effect, inject, isDevMode, signal } from '@angular
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-
-import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
-// Port and token (decoupled from implementation)
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 // Domain types
-import { CurrencyCode, PaymentMethodType, PaymentProviderId } from '../../../domain/models';
-import { FieldRequirements, PaymentOptions, StrategyContext } from '../../../domain/ports';
-// UI Components
 import {
-  FallbackModalComponent,
-  MethodSelectorComponent,
-  NextActionCardComponent,
-  OrderSummaryComponent,
-  PaymentButtonComponent,
-  PaymentFormComponent,
-  PaymentResultComponent,
-  ProviderSelectorComponent,
-} from '../../components';
+  CurrencyCode,
+  PaymentMethodType,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
+import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
+import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
+import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
+import { OrderSummaryComponent } from '@payments/ui/components/order-summary/order-summary.component';
+import { PaymentButtonComponent } from '@payments/ui/components/payment-button/payment-button.component';
+import { PaymentFormComponent } from '@payments/ui/components/payment-form/payment-form.component';
+import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
+import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
+
+// Port and token (decoupled from implementation)
+import { StrategyContext } from '../../../application/ports/payment-strategy.port';
+import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
+import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
+import {
+  FieldRequirements,
+  PaymentOptions,
+} from '../../../domain/ports/payment/payment-request-builder.port';
 
 /**
  * Checkout page for processing payments.
@@ -66,7 +71,7 @@ export class CheckoutComponent {
   readonly selectedProvider = signal<PaymentProviderId | null>(null);
   readonly selectedMethod = signal<PaymentMethodType | null>(null);
 
-  private formOptions = signal<PaymentOptions>({});
+  private readonly formOptions = signal<PaymentOptions>({});
   readonly isFormValid = signal(false);
 
   readonly isLoading = this.paymentState.isLoading;
@@ -85,10 +90,12 @@ export class CheckoutComponent {
   readonly availableMethods = computed<PaymentMethodType[]>(() => {
     const provider = this.selectedProvider();
     if (!provider) return [];
+
     try {
-      const factory = this.registry.get(provider);
-      return factory.getSupportedMethods();
-    } catch {
+      return this.registry.get(provider).getSupportedMethods();
+    } catch (e) {
+      if (this.isDevMode)
+        this.logger.warn('Failed to resolve methods', 'CheckoutPage', { provider, e });
       return [];
     }
   });
@@ -100,7 +107,14 @@ export class CheckoutComponent {
     try {
       const factory = this.registry.get(provider);
       return factory.getFieldRequirements(method);
-    } catch {
+    } catch (e) {
+      if (this.isDevMode) {
+        this.logger.warn('Failed to resolve field requirements', 'CheckoutPage', {
+          provider,
+          method,
+          e,
+        });
+      }
       return null;
     }
   });
@@ -198,7 +212,7 @@ export class CheckoutComponent {
       const context: StrategyContext = {
         returnUrl: this.buildReturnUrl(),
         cancelUrl: this.buildCancelUrl(),
-        isTest: isDevMode(),
+        isTest: this.isDevMode,
         deviceData: {
           userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
           screenWidth: typeof window !== 'undefined' ? window.screen.width : undefined,
@@ -239,57 +253,31 @@ export class CheckoutComponent {
     this.logger.info('Payment reset', 'CheckoutPage');
   }
 
-  get checkoutTitle(): string {
-    return this.i18n.t(I18nKeys.ui.checkout);
-  }
+  readonly checkoutTitle = computed(() => this.i18n.t(I18nKeys.ui.checkout));
 
-  get paymentSystemSubtitle(): string {
-    return this.i18n.t(I18nKeys.ui.payment_system);
-  }
+  readonly paymentSystemSubtitle = computed(() => this.i18n.t(I18nKeys.ui.payment_system));
 
-  get viewHistoryLabel(): string {
-    return this.i18n.t(I18nKeys.ui.view_history);
-  }
+  readonly viewHistoryLabel = computed(() => this.i18n.t(I18nKeys.ui.view_history));
 
-  get checkStatusLabel(): string {
-    return this.i18n.t(I18nKeys.ui.check_status);
-  }
+  readonly checkStatusLabel = computed(() => this.i18n.t(I18nKeys.ui.check_status));
 
-  get showcaseLabel(): string {
-    return this.i18n.t(I18nKeys.ui.showcase);
-  }
+  readonly showcaseLabel = computed(() => this.i18n.t(I18nKeys.ui.showcase));
 
-  get paymentProviderLabel(): string {
-    return this.i18n.t(I18nKeys.ui.payment_provider);
-  }
+  readonly paymentProviderLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_provider));
 
-  get paymentMethodLabel(): string {
-    return this.i18n.t(I18nKeys.ui.payment_method);
-  }
+  readonly paymentMethodLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_method));
 
-  get paymentDataLabel(): string {
-    return this.i18n.t(I18nKeys.ui.payment_data);
-  }
+  readonly paymentDataLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_data));
 
-  get debugInfoLabel(): string {
-    return this.i18n.t(I18nKeys.ui.debug_info);
-  }
+  readonly debugInfoLabel = computed(() => this.i18n.t(I18nKeys.ui.debug_info));
 
-  get providerDebugLabel(): string {
-    return this.i18n.t(I18nKeys.ui.provider_debug);
-  }
+  readonly providerDebugLabel = computed(() => this.i18n.t(I18nKeys.ui.provider_debug));
 
-  get methodDebugLabel(): string {
-    return this.i18n.t(I18nKeys.ui.method_debug);
-  }
+  readonly methodDebugLabel = computed(() => this.i18n.t(I18nKeys.ui.method_debug));
 
-  get formValidLabel(): string {
-    return this.i18n.t(I18nKeys.ui.form_valid);
-  }
+  readonly formValidLabel = computed(() => this.i18n.t(I18nKeys.ui.form_valid));
 
-  get loadingDebugLabel(): string {
-    return this.i18n.t(I18nKeys.ui.loading_debug);
-  }
+  readonly loadingDebugLabel = computed(() => this.i18n.t(I18nKeys.ui.loading_debug));
 
   private buildReturnUrl(): string {
     if (typeof window === 'undefined') return '';

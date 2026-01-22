@@ -5,9 +5,11 @@
  */
 export interface Translations {
   errors: {
+    unknown_error: string;
     provider_error: string;
     invalid_request: string;
     network_error: string;
+    timeout: string;
 
     card_declined: string;
     expired_card: string;
@@ -23,11 +25,13 @@ export interface Translations {
     card_token_required: string;
     intent_id_required: string;
     min_amount: string;
+    max_amount: string;
 
     stripe_error: string;
     paypal_error: string;
     stripe_unavailable: string;
     paypal_unavailable: string;
+    insufficient_funds: string;
 
     paypal_invalid_request: string;
     paypal_permission_denied: string;
@@ -115,12 +119,14 @@ export interface Translations {
     transfer_exact_amount: string;
     payment_may_take: string;
     keep_receipt: string;
+    spei_instructions: string;
 
     // 3DS
     '3ds_verification_required': string;
     bank_requires_verification: string;
     '3ds_version': string;
     complete_verification: string;
+    flow_3ds: string;
 
     // PayPal
     paypal_approval_required: string;
@@ -128,6 +134,7 @@ export interface Translations {
     order_id: string;
     go_to_paypal: string;
     after_approve_verify: string;
+    flow_paypal_redirect: string;
 
     // Acciones
     action_required: string;
