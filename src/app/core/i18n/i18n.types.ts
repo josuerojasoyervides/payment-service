@@ -8,6 +8,7 @@ export interface Translations {
     provider_error: string;
     invalid_request: string;
     network_error: string;
+    timeout: string;
 
     card_declined: string;
     expired_card: string;

@@ -4,6 +4,8 @@ export type PaymentErrorCode =
   | 'requires_action'
   | 'provider_unavailable'
   | 'provider_error'
+  | 'network_error'
+  | 'timeout'
   | 'unknown_error'
   | 'fallback_handled';
 
