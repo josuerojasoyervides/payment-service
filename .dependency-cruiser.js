@@ -3,7 +3,7 @@ module.exports = {
   forbidden: [
     {
       name: 'no-circular',
-      severity: 'warn',
+      severity: 'error',
       comment:
         'This dependency is part of a circular relationship. You might want to revise ' +
         'your solution (i.e. use dependency inversion, make sure the modules have a single responsibility) ',
@@ -40,7 +40,7 @@ module.exports = {
       comment:
         'A module depends on a node core module that has been deprecated. Find an alternative - these are ' +
         "bound to exist - node doesn't deprecate lightly.",
-      severity: 'warn',
+      severity: 'error',
       from: {},
       to: {
         dependencyTypes: ['core'],
@@ -73,7 +73,7 @@ module.exports = {
       comment:
         'This module uses a (version of an) npm module that has been deprecated. Either upgrade to a later ' +
         'version of that module, or find an alternative. Deprecated modules are a security risk.',
-      severity: 'warn',
+      severity: 'error',
       from: {},
       to: {
         dependencyTypes: ['deprecated'],
@@ -109,7 +109,7 @@ module.exports = {
         "Likely this module depends on an external ('npm') package that occurs more than once " +
         'in your package.json i.e. bot as a devDependencies and in dependencies. This will cause ' +
         'maintenance problems later on.',
-      severity: 'warn',
+      severity: 'error',
       from: {},
       to: {
         moreThanOneDependencyType: true,
