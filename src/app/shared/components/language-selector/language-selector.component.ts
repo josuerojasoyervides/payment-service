@@ -1,6 +1,6 @@
-import { Component, inject, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { I18nService, I18nKeys } from '@core/i18n';
+import { Component, computed, HostListener, inject } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
 
 export interface LanguageOption {
   code: string;

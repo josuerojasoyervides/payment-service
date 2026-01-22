@@ -1,27 +1,28 @@
-import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { I18nKeys, I18nService } from '@core/i18n';
+
 import {
-  PaymentIntent,
-  PaymentProviderId,
-  PaymentMethodType,
   CurrencyCode,
   FallbackAvailableEvent,
   PaymentError,
+  PaymentIntent,
+  PaymentMethodType,
+  PaymentProviderId,
 } from '../../../domain/models';
 import {
-  OrderSummaryComponent,
-  ProviderSelectorComponent,
-  MethodSelectorComponent,
-  PaymentButtonComponent,
-  PaymentResultComponent,
-  SpeiInstructionsComponent,
   FallbackModalComponent,
+  MethodSelectorComponent,
+  OrderSummaryComponent,
+  PaymentButtonComponent,
   PaymentIntentCardComponent,
+  PaymentResultComponent,
+  ProviderSelectorComponent,
+  SpeiInstructionsComponent,
 } from '../../components';
 import { OrderItem, PaymentButtonState } from '../../shared';
-import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Página de showcase para demostrar todos los componentes de UI.

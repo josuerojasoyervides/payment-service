@@ -1,10 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { StripeProviderFactory } from './stripe-provider.factory';
-import { IntentFacade } from '../gateways/intent/intent.facade';
+import { I18nService } from '@core/i18n';
 import { firstValueFrom, of } from 'rxjs';
+
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
-import { I18nService } from '@core/i18n';
+import { IntentFacade } from '../gateways/intent/intent.facade';
+import { StripeProviderFactory } from './stripe-provider.factory';
 
 describe('StripeProviderFactory', () => {
   let factory: StripeProviderFactory;

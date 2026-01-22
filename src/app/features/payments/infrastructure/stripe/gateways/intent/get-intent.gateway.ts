@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { GetPaymentStatusRequest, PaymentIntent, PaymentProviderId } from '@payments/domain/models';
 import { PaymentGatewayOperation } from '@payments/shared/payment-operation.gateway';
-import { StripePaymentIntentDto } from '../../dto/stripe.dto';
 import { Observable } from 'rxjs';
+
+import { StripePaymentIntentDto } from '../../dto/stripe.dto';
 import { mapPaymentIntent } from '../../mappers/payment-intent.mapper';
 
 @Injectable()

@@ -1,9 +1,10 @@
-import { HttpInterceptorFn, HttpResponse, HttpRequest } from '@angular/common/http';
+import { HttpInterceptorFn, HttpRequest, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { of } from 'rxjs';
-import { tap, map } from 'rxjs/operators';
-import { CacheService } from './cache.service';
+import { map, tap } from 'rxjs/operators';
+
 import { LoggerService } from '../logging/logger.service';
+import { CacheService } from './cache.service';
 import { generateCacheKey, parseCacheControlMaxAge, shouldSkipCache } from './cache.types';
 
 /**

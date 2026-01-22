@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { I18nService } from '@core/i18n';
+
 import { FallbackAvailableEvent, PaymentError } from '../../../domain/models';
 import { FallbackModalComponent } from './fallback-modal.component';
 

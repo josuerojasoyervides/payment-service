@@ -1,17 +1,18 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of, throwError } from 'rxjs';
-import { CancelPaymentUseCase } from './cancel-payment.use-case';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
-import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
-import { ProviderFactory, PaymentGateway } from '../../domain/ports';
+
 import {
   CancelPaymentRequest,
+  PaymentError,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-  PaymentError,
 } from '../../domain/models';
+import { PaymentGateway, ProviderFactory } from '../../domain/ports';
+import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
+import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+import { CancelPaymentUseCase } from './cancel-payment.use-case';
 
 describe('CancelPaymentUseCase', () => {
   let useCase: CancelPaymentUseCase;

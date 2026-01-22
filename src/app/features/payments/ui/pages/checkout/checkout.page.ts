@@ -1,27 +1,25 @@
-import { Component, computed, effect, inject, isDevMode, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, computed, effect, inject, isDevMode, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { I18nKeys, I18nService } from '@core/i18n';
+import { LoggerService } from '@core/logging';
 
+import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 // Port and token (decoupled from implementation)
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
-import { LoggerService } from '@core/logging';
-import { I18nService, I18nKeys } from '@core/i18n';
-
 // Domain types
-import { PaymentProviderId, PaymentMethodType, CurrencyCode } from '../../../domain/models';
+import { CurrencyCode, PaymentMethodType, PaymentProviderId } from '../../../domain/models';
 import { FieldRequirements, PaymentOptions, StrategyContext } from '../../../domain/ports';
-
 // UI Components
 import {
-  OrderSummaryComponent,
-  ProviderSelectorComponent,
-  MethodSelectorComponent,
-  PaymentFormComponent,
-  PaymentButtonComponent,
-  PaymentResultComponent,
-  NextActionCardComponent,
   FallbackModalComponent,
+  MethodSelectorComponent,
+  NextActionCardComponent,
+  OrderSummaryComponent,
+  PaymentButtonComponent,
+  PaymentFormComponent,
+  PaymentResultComponent,
+  ProviderSelectorComponent,
 } from '../../components';
 
 /**

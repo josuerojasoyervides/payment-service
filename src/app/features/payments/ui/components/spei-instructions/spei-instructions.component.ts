@@ -1,6 +1,6 @@
-import { Component, input, signal, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { I18nService, I18nKeys } from '@core/i18n';
+import { Component, inject, input, signal } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
 import { ClabeFormatPipe } from '@shared/pipes';
 
 /**

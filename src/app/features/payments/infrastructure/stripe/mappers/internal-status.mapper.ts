@@ -1,4 +1,5 @@
 import { PaymentIntentStatus } from '@payments/domain/models';
+
 import { StripePaymentIntentStatus } from '../dto/stripe.dto';
 
 export const STATUS_MAP: Record<StripePaymentIntentStatus, PaymentIntentStatus> = {

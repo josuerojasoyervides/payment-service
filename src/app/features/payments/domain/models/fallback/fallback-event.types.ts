@@ -1,5 +1,5 @@
-import { PaymentProviderId } from '../payment/payment-intent.types';
 import { PaymentError } from '../payment/payment-error.types';
+import { PaymentProviderId } from '../payment/payment-intent.types';
 import { CreatePaymentRequest } from '../payment/payment-request.types';
 
 /**

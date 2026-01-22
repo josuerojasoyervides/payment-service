@@ -1,16 +1,17 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
 import {
-  PaymentIntent,
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
+  PaymentIntent,
 } from '@payments/domain/models';
 import { PaymentGateway } from '@payments/domain/ports';
-import { StripeCreateIntentGateway } from './create-intent.gateway';
-import { StripeConfirmIntentGateway } from './confirm-intent.gateway';
+import { Observable } from 'rxjs';
+
 import { StripeCancelIntentGateway } from './cancel-intent.gateway';
+import { StripeConfirmIntentGateway } from './confirm-intent.gateway';
+import { StripeCreateIntentGateway } from './create-intent.gateway';
 import { StripeGetIntentGateway } from './get-intent.gateway';
 
 /**

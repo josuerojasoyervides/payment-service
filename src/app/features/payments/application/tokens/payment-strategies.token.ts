@@ -1,6 +1,7 @@
 import { InjectionToken } from '@angular/core';
-import { PaymentStrategy } from '../../domain/ports';
+
 import { PaymentProviderId } from '../../domain/models';
+import { PaymentStrategy } from '../../domain/ports';
 
 /**
  * Token to inject payment strategies by provider.

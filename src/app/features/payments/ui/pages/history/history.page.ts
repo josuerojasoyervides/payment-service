@@ -1,11 +1,12 @@
-import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { PaymentProviderId, PaymentIntent } from '../../../domain/models';
-import { PaymentIntentCardComponent } from '../../components';
+import { I18nKeys, I18nService } from '@core/i18n';
+
 import { PaymentHistoryEntry } from '../../../application/store/payment.models';
-import { I18nService, I18nKeys } from '@core/i18n';
+import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
+import { PaymentIntent, PaymentProviderId } from '../../../domain/models';
+import { PaymentIntentCardComponent } from '../../components';
 
 /**
  * Payment history page.

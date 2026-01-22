@@ -7,6 +7,6 @@
  * - Invalidación automática en mutaciones
  */
 
-export * from './cache.types';
-export * from './cache.service';
 export * from './cache.interceptor';
+export * from './cache.service';
+export * from './cache.types';

@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+
 import { Translations } from './i18n.types';
 import { en } from './translations/en';
 import { es } from './translations/es';

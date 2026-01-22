@@ -7,7 +7,7 @@
  * - Decorator para logging de métodos
  */
 
-export * from './logging.types';
+export * from './log-method.decorator';
 export * from './logger.service';
 export * from './logging.interceptor';
-export * from './log-method.decorator';
+export * from './logging.types';

@@ -1,7 +1,8 @@
-import { Component, input, output, computed, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, JsonPipe } from '@angular/common';
-import { PaymentIntent, PaymentError, STATUS_BADGE_MAP } from '../../shared';
-import { I18nService, I18nKeys } from '@core/i18n';
+import { Component, computed, inject, input, output } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
+
+import { PaymentError, PaymentIntent, STATUS_BADGE_MAP } from '../../shared';
 
 /**
  * Component that displays payment result.

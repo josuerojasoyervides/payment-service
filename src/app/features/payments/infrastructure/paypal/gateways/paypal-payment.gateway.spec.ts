@@ -1,9 +1,10 @@
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { PaypalPaymentGateway } from './paypal-payment.gateway';
-import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
+
 import { CreatePaymentRequest, PaymentError } from '../../../domain/models';
+import { PaypalPaymentGateway } from './paypal-payment.gateway';
 
 describe('PaypalPaymentGateway', () => {
   let gateway: PaypalPaymentGateway;

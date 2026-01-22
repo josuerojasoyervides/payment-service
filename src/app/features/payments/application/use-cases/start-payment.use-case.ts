@@ -2,19 +2,17 @@ import { inject, Injectable } from '@angular/core';
 import { EMPTY, Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
-
 import {
   CreatePaymentRequest,
-  PaymentProviderId,
   PaymentError,
-  PaymentIntent,
   PaymentFlowContext,
+  PaymentIntent,
+  PaymentProviderId,
 } from '../../domain/models';
-
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 import { safeDefer } from '../helpers/safe-defer';
+import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 
 function isPaymentError(e: unknown): e is PaymentError {
   return typeof e === 'object' && e !== null && 'code' in e && 'message' in e;

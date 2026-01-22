@@ -13,13 +13,6 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { catchError, filter, Observable, of, pipe, switchMap, tap } from 'rxjs';
 
 import {
-  HISTORY_MAX_ENTRIES,
-  initialPaymentsState,
-  PaymentHistoryEntry,
-  PaymentsState,
-} from './payment.models';
-
-import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
@@ -28,13 +21,18 @@ import {
   PaymentIntent,
   PaymentProviderId,
 } from '../../domain/models';
-
 import { StrategyContext } from '../../domain/ports';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { CancelPaymentUseCase } from '../use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '../use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
 import { StartPaymentUseCase } from '../use-cases/start-payment.use-case';
+import {
+  HISTORY_MAX_ENTRIES,
+  initialPaymentsState,
+  PaymentHistoryEntry,
+  PaymentsState,
+} from './payment.models';
 
 type PaymentsWritableStore = WritableStateSource<PaymentsState> & {
   history: () => PaymentHistoryEntry[];

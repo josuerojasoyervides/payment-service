@@ -1,9 +1,10 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { RouterLink, provideRouter } from '@angular/router';
-import { HistoryComponent } from './history.page';
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter, RouterLink } from '@angular/router';
+
 import { PaymentHistoryEntry } from '../../../application/store/payment.models';
+import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
+import { HistoryComponent } from './history.page';
 
 describe('HistoryComponent', () => {
   let component: HistoryComponent;

@@ -1,10 +1,10 @@
 import {
-  PaymentIntent,
-  PaymentProviderId,
-  PaymentError,
   CreatePaymentRequest,
   FallbackState,
   INITIAL_FALLBACK_STATE,
+  PaymentError,
+  PaymentIntent,
+  PaymentProviderId,
 } from '../../domain/models';
 
 /**

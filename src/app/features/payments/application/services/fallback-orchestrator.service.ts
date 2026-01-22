@@ -1,16 +1,17 @@
-import { inject, Injectable, InjectionToken, signal, computed } from '@angular/core';
-import { Subject, timer, takeUntil, filter } from 'rxjs';
+import { computed, inject, Injectable, InjectionToken, signal } from '@angular/core';
+import { filter, Subject, takeUntil, timer } from 'rxjs';
+
 import {
-  PaymentProviderId,
-  PaymentError,
   CreatePaymentRequest,
-  FallbackAvailableEvent,
-  FallbackUserResponse,
-  FallbackState,
-  FallbackConfig,
-  FailedAttempt,
   DEFAULT_FALLBACK_CONFIG,
+  FailedAttempt,
+  FallbackAvailableEvent,
+  FallbackConfig,
+  FallbackState,
+  FallbackUserResponse,
   INITIAL_FALLBACK_STATE,
+  PaymentError,
+  PaymentProviderId,
 } from '../../domain/models';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 

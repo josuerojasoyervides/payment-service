@@ -1,6 +1,7 @@
-import { I18nKeys, I18nService } from '@core/i18n';
-import { StripeErrorResponse } from '../dto/stripe.dto';
 import { inject } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
+
+import { StripeErrorResponse } from '../dto/stripe.dto';
 
 export class ErrorKeyMapper {
   private readonly i18n = inject(I18nService);

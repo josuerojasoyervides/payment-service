@@ -1,17 +1,18 @@
 import { TestBed } from '@angular/core/testing';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { StartPaymentUseCase } from './start-payment.use-case';
+import { defaultIfEmpty, firstValueFrom, of, throwError } from 'rxjs';
+
 import {
+  CreatePaymentRequest,
+  PaymentError,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-  CreatePaymentRequest,
-  PaymentError,
 } from '../../domain/models';
 import { PaymentStrategy, StrategyContext } from '../../domain/ports';
-import { defaultIfEmpty, firstValueFrom, of, throwError } from 'rxjs';
-import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
+import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+import { StartPaymentUseCase } from './start-payment.use-case';
 
 describe('StartPaymentUseCase', () => {
   let useCase: StartPaymentUseCase;

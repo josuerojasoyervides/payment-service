@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { PaypalPaymentGateway } from '../gateways/paypal-payment.gateway';
-import { PaypalProviderFactory } from './paypal-provider.factory';
-import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
-import { firstValueFrom, of } from 'rxjs';
 import { I18nService } from '@core/i18n';
+import { firstValueFrom, of } from 'rxjs';
+
+import { PaypalPaymentGateway } from '../gateways/paypal-payment.gateway';
+import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
+import { PaypalProviderFactory } from './paypal-provider.factory';
 
 describe('PaypalProviderFactory', () => {
   let factory: PaypalProviderFactory;

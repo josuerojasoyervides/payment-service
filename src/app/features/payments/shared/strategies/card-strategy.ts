@@ -1,15 +1,16 @@
 import { inject } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
 import { map, Observable, tap } from 'rxjs';
+
+import { CreatePaymentRequest, PaymentIntent, PaymentMethodType } from '../../domain/models';
 import {
+  NullTokenValidator,
+  PaymentGateway,
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
-  PaymentGateway,
   TokenValidator,
-  NullTokenValidator,
 } from '../../domain/ports';
-import { PaymentIntent, PaymentMethodType, CreatePaymentRequest } from '../../domain/models';
-import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Strategy for credit/debit card payments.

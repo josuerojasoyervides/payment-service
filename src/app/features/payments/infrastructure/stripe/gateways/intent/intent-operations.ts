@@ -6,6 +6,7 @@ import {
   PaymentIntent,
 } from '@payments/domain/models';
 import { PaymentGatewayOperation } from '@payments/shared/payment-operation.gateway';
+
 import { StripePaymentIntentDto, StripeSpeiSourceDto } from '../../dto/stripe.dto';
 
 export type CreateIntentOp = PaymentGatewayOperation<

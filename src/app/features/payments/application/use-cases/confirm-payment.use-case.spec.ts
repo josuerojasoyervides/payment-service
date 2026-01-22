@@ -1,17 +1,18 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of, throwError } from 'rxjs';
-import { ConfirmPaymentUseCase } from './confirm-payment.use-case';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
-import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
-import { ProviderFactory, PaymentGateway } from '../../domain/ports';
+
 import {
   ConfirmPaymentRequest,
+  PaymentError,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-  PaymentError,
 } from '../../domain/models';
+import { PaymentGateway, ProviderFactory } from '../../domain/ports';
+import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
+import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+import { ConfirmPaymentUseCase } from './confirm-payment.use-case';
 
 describe('ConfirmPaymentUseCase', () => {
   let useCase: ConfirmPaymentUseCase;

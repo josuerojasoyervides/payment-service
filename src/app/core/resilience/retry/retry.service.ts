@@ -1,16 +1,17 @@
-import { Injectable, InjectionToken, inject } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
+import { inject, Injectable, InjectionToken } from '@angular/core';
+
+import { LoggerService } from '../../logging/logger.service';
 import {
-  RetryConfig,
-  RetryAttemptInfo,
-  RetryState,
+  calculateBackoffDelay,
   DEFAULT_RETRY_CONFIG,
   isRetryableError,
   isRetryableMethod,
-  calculateBackoffDelay,
   parseRetryAfterHeader,
+  RetryAttemptInfo,
+  RetryConfig,
+  RetryState,
 } from './retry.types';
-import { LoggerService } from '../../logging/logger.service';
 
 /**
  * Token para inyectar configuración del Retry.

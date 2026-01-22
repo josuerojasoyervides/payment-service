@@ -1,9 +1,9 @@
-import providePayments from './payment.providers';
+import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
 import { PAYMENT_PROVIDER_FACTORIES } from '../application/tokens/payment-provider-factories.token';
 import { PAYMENT_STATE } from '../application/tokens/payment-state.token';
-import { StripeProviderFactory } from '../infrastructure/stripe/factories/stripe-provider.factory';
 import { PaypalProviderFactory } from '../infrastructure/paypal/factories/paypal-provider.factory';
-import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
+import { StripeProviderFactory } from '../infrastructure/stripe/factories/stripe-provider.factory';
+import providePayments from './payment.providers';
 
 describe('providePayments', () => {
   it('registers payment providers and state', () => {

@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+
 import { PaymentIntent, PaymentProviderId } from '../../models/payment/payment-intent.types';
 import {
   CancelPaymentRequest,

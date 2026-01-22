@@ -1,17 +1,18 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of, throwError } from 'rxjs';
-import { GetPaymentStatusUseCase } from './get-payment-status.use-case';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
-import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
-import { ProviderFactory, PaymentGateway } from '../../domain/ports';
+
 import {
   GetPaymentStatusRequest,
+  PaymentError,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-  PaymentError,
 } from '../../domain/models';
+import { PaymentGateway, ProviderFactory } from '../../domain/ports';
+import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
+import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+import { GetPaymentStatusUseCase } from './get-payment-status.use-case';
 
 describe('GetPaymentStatusUseCase', () => {
   let useCase: GetPaymentStatusUseCase;

@@ -1,15 +1,16 @@
 import { inject, Injectable } from '@angular/core';
+import { catchError, Observable, throwError } from 'rxjs';
+
 import {
   GetPaymentStatusRequest,
+  PaymentError,
   PaymentIntent,
   PaymentProviderId,
-  PaymentError,
 } from '../../domain/models';
-import { Observable, catchError, throwError } from 'rxjs';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 import { safeDefer } from '../helpers/safe-defer';
+import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 
 /**
  * Caso de uso: Obtener estado de un pago.

@@ -1,6 +1,6 @@
 import { CircuitBreakerConfig, DEFAULT_CIRCUIT_BREAKER_CONFIG } from './circuit-breaker';
-import { RateLimiterConfig, DEFAULT_RATE_LIMITER_CONFIG } from './rate-limiter';
-import { RetryConfig, DEFAULT_RETRY_CONFIG } from './retry';
+import { DEFAULT_RATE_LIMITER_CONFIG, RateLimiterConfig } from './rate-limiter';
+import { DEFAULT_RETRY_CONFIG, RetryConfig } from './retry';
 
 /**
  * Complete resilience configuration.

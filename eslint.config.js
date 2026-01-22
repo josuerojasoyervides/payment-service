@@ -5,6 +5,7 @@ const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
 const unusedImports = require('eslint-plugin-unused-imports');
 const eslintConfigPrettier = require('eslint-config-prettier');
+const simpleImportSort = require('eslint-plugin-simple-import-sort');
 
 module.exports = defineConfig([
   // ✅ ignora basura
@@ -25,6 +26,7 @@ module.exports = defineConfig([
 
     plugins: {
       'unused-imports': unusedImports,
+      'simple-import-sort': simpleImportSort,
     },
 
     rules: {
@@ -53,7 +55,10 @@ module.exports = defineConfig([
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
     },
+
   },
 
   // ✅ infra fake: se permite any

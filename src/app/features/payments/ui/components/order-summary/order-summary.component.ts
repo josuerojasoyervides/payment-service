@@ -1,7 +1,8 @@
-import { Component, input, computed, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
+import { Component, computed, inject, input } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
+
 import { CurrencyCode, OrderItem } from '../../shared';
-import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Component that displays order summary.

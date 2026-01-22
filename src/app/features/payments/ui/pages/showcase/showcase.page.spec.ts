@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RouterLink, provideRouter } from '@angular/router';
+import { provideRouter, RouterLink } from '@angular/router';
+
 import { ShowcaseComponent } from './showcase.page';
 
 describe('ShowcaseComponent', () => {
