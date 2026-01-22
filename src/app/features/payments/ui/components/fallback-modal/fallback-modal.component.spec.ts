@@ -12,7 +12,7 @@ describe('FallbackModalComponent', () => {
 
   const mockError: PaymentError = {
     code: 'provider_error',
-    message: 'Provider unavailable',
+    messageKey: 'Provider unavailable',
     raw: { error: 'test' },
   };
 

@@ -26,13 +26,13 @@ describe('FallbackOrchestratorService', () => {
 
   const providerUnavailableError: PaymentError = {
     code: 'provider_unavailable',
-    message: 'Provider not available',
+    messageKey: 'Provider not available',
     raw: undefined,
   };
 
   const cardDeclinedError: PaymentError = {
     code: 'card_declined',
-    message: 'Card was declined',
+    messageKey: 'Card was declined',
     raw: undefined,
   };
 
@@ -668,7 +668,7 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
 
   const providerUnavailableError: PaymentError = {
     code: 'provider_unavailable',
-    message: 'Provider not available',
+    messageKey: 'Provider not available',
     raw: undefined,
   };
 

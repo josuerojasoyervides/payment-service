@@ -2,6 +2,7 @@ import type { Translations } from '../i18n.types';
 
 export const es: Translations = {
   errors: {
+    unknown_error: 'Error desconocido',
     provider_error: 'Error del proveedor de pago',
     invalid_request: 'Solicitud inválida',
     network_error: 'Error de red',
@@ -24,6 +25,8 @@ export const es: Translations = {
     paypal_error: 'Error procesando el pago con PayPal.',
     stripe_unavailable: 'Stripe no está disponible en este momento. Intenta más tarde.',
     paypal_unavailable: 'PayPal no está disponible en este momento. Intenta más tarde.',
+    insufficient_funds: 'Fondos insuficientes en la tarjeta.',
+
     paypal_invalid_request: 'La solicitud a PayPal es inválida. Verifica los datos.',
     paypal_permission_denied: 'No tienes permiso para realizar esta operación.',
     paypal_resource_not_found: 'La orden de PayPal no fue encontrada.',
@@ -96,6 +99,8 @@ export const es: Translations = {
     transfer_exact_amount: 'Transfiere el monto exacto para evitar rechazos',
     payment_may_take: 'El pago puede tardar de 1 a 24 horas en reflejarse',
     keep_receipt: 'Conserva tu comprobante de transferencia',
+    spei_instructions: 'Realiza una transferencia SPEI con los siguientes datos:',
+
     '3ds_verification_required': 'Verificación 3D Secure requerida',
     bank_requires_verification:
       'Tu banco requiere verificación adicional para completar esta transacción. Serás redirigido a una página segura para autenticar el pago.',

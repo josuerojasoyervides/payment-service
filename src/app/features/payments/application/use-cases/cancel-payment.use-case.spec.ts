@@ -86,10 +86,13 @@ describe('CancelPaymentUseCase', () => {
     });
 
     it('propagates observable errors from gateway.cancelIntent()', async () => {
-      const error: PaymentError = { code: 'provider_error', message: 'boom', raw: {} };
+      const error: PaymentError = { code: 'provider_error', messageKey: 'boom', raw: {} };
       (gatewayMock.cancelIntent as any).mockReturnValueOnce(throwError(() => error));
 
-      await expect(firstValueFrom(useCase.execute(req, 'stripe'))).rejects.toThrow('boom');
+      await expect(firstValueFrom(useCase.execute(req, 'stripe'))).rejects.toMatchObject({
+        code: 'provider_error',
+        messageKey: 'boom',
+      });
     });
   });
 });

@@ -98,7 +98,6 @@ class PaymentGatewayTest extends BasePaymentGateway<any, any> {
   protected override normalizeError(err: unknown): PaymentError {
     return {
       code: 'provider_error',
-      message: 'Test normalized error',
       messageKey: 'errors.provider_error',
       raw: err,
     };
@@ -258,7 +257,6 @@ describe('PaymentGateway (abstract class)', () => {
 
         await expect(firstValueFrom(gateway.createIntent(validReq()))).rejects.toMatchObject({
           code: 'provider_error',
-          message: 'Test normalized error',
           messageKey: 'errors.provider_error',
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
@@ -269,7 +267,6 @@ describe('PaymentGateway (abstract class)', () => {
 
         await expect(firstValueFrom(gateway.createIntent(validReq()))).rejects.toMatchObject({
           code: 'provider_error',
-          message: 'errors.provider_error',
           messageKey: 'errors.provider_error',
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
@@ -306,7 +303,6 @@ describe('PaymentGateway (abstract class)', () => {
           firstValueFrom(gateway.confirmIntent(validConfirmReq())),
         ).rejects.toMatchObject({
           code: 'provider_error',
-          message: 'Test normalized error',
           messageKey: 'errors.provider_error',
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
@@ -319,7 +315,6 @@ describe('PaymentGateway (abstract class)', () => {
           firstValueFrom(gateway.confirmIntent(validConfirmReq())),
         ).rejects.toMatchObject({
           code: 'provider_error',
-          message: 'errors.provider_error',
           messageKey: 'errors.provider_error',
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
@@ -354,7 +349,6 @@ describe('PaymentGateway (abstract class)', () => {
 
         await expect(firstValueFrom(gateway.cancelIntent(validCancelReq()))).rejects.toMatchObject({
           code: 'provider_error',
-          message: 'Test normalized error',
           messageKey: 'errors.provider_error',
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
@@ -365,7 +359,6 @@ describe('PaymentGateway (abstract class)', () => {
 
         await expect(firstValueFrom(gateway.cancelIntent(validCancelReq()))).rejects.toMatchObject({
           code: 'provider_error',
-          message: 'errors.provider_error',
           messageKey: 'errors.provider_error',
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
@@ -400,7 +393,6 @@ describe('PaymentGateway (abstract class)', () => {
 
         await expect(firstValueFrom(gateway.getIntent(validGetStatusReq()))).rejects.toMatchObject({
           code: 'provider_error',
-          message: 'Test normalized error',
           messageKey: 'errors.provider_error',
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
@@ -411,7 +403,6 @@ describe('PaymentGateway (abstract class)', () => {
 
         await expect(firstValueFrom(gateway.getIntent(validGetStatusReq()))).rejects.toMatchObject({
           code: 'provider_error',
-          message: 'errors.provider_error',
           messageKey: 'errors.provider_error',
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });

@@ -102,7 +102,7 @@ export class ShowcaseComponent {
 
   sampleError: PaymentError = {
     code: 'card_declined',
-    message: 'La tarjeta fue rechazada. Por favor intenta con otro método de pago.',
+    messageKey: this.i18n.t(I18nKeys.errors.card_declined),
     raw: { originalError: 'card_declined' },
   };
 
@@ -137,7 +137,7 @@ export class ShowcaseComponent {
       failedProvider: 'stripe',
       error: {
         code: 'provider_error',
-        message: 'Stripe está temporalmente no disponible',
+        messageKey: this.i18n.t(I18nKeys.errors.provider_error),
         raw: { source: 'showcase' },
       },
       alternativeProviders: ['paypal'],
