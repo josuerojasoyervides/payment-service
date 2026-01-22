@@ -1,14 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
+import { PaymentGateway } from '@payments/domain/ports/payment/payment-gateway.port';
+import { ProviderFactory } from '@payments/domain/ports/provider/provider-factory.port';
 
 import {
   FieldRequirements,
-  PaymentGateway,
   PaymentRequestBuilder,
-  PaymentStrategy,
-  ProviderFactory,
-} from '../../../domain/ports';
+} from '../../../domain/ports/payment/payment-request-builder.port';
+import { PaymentStrategy } from '../../../domain/ports/payment/payment-strategy.port';
 import { PaypalRedirectRequestBuilder } from '../builders/paypal-redirect-request.builder';
 import { PaypalPaymentGateway } from '../gateways/paypal-payment.gateway';
 import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';

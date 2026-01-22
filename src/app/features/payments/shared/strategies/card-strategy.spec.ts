@@ -3,7 +3,8 @@ import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.ty
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of } from 'rxjs';
 
-import { PaymentGateway, TokenValidator } from '../../domain/ports';
+import { PaymentGateway } from '../../domain/ports/payment/payment-gateway.port';
+import { TokenValidator } from '../../domain/ports/provider/token-validator.port';
 import { CardStrategy } from './card-strategy';
 
 describe('CardStrategy', () => {

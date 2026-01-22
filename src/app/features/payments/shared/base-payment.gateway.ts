@@ -13,7 +13,7 @@ import {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
-import { PaymentGateway } from '@payments/domain/ports';
+import { PaymentGateway } from '@payments/domain/ports/payment/payment-gateway.port';
 import { catchError, map, Observable, tap, throwError } from 'rxjs';
 
 export abstract class BasePaymentGateway<

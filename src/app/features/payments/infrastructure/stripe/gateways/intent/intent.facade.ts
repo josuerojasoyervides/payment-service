@@ -6,7 +6,7 @@ import {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
-import { PaymentGateway } from '@payments/domain/ports';
+import { PaymentGateway } from '@payments/domain/ports/payment/payment-gateway.port';
 import { Observable } from 'rxjs';
 
 import { StripeCancelIntentGateway } from './cancel-intent.gateway';

@@ -3,7 +3,7 @@ import {
   PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { ProviderFactory } from '@payments/domain/ports';
+import { ProviderFactory } from '@payments/domain/ports/provider/provider-factory.port';
 
 import { PAYMENT_PROVIDER_FACTORIES } from '../tokens/payment-provider-factories.token';
 

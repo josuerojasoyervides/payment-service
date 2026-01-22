@@ -21,7 +21,11 @@ import { ProviderSelectorComponent } from '@payments/ui/components/provider-sele
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 // Port and token (decoupled from implementation)
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { FieldRequirements, PaymentOptions, StrategyContext } from '../../../domain/ports';
+import {
+  FieldRequirements,
+  PaymentOptions,
+} from '../../../domain/ports/payment/payment-request-builder.port';
+import { StrategyContext } from '../../../domain/ports/payment/payment-strategy.port';
 
 /**
  * Checkout page for processing payments.

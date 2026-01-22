@@ -8,12 +8,12 @@ import {
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { map, Observable, tap } from 'rxjs';
 
+import { PaymentGateway } from '../../domain/ports/payment/payment-gateway.port';
 import {
-  PaymentGateway,
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
-} from '../../domain/ports';
+} from '../../domain/ports/payment/payment-strategy.port';
 
 /**
  * Strategy for payments via SPEI (Sistema de Pagos Electrónicos Interbancarios).

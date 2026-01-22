@@ -8,7 +8,8 @@ import {
 import { GetPaymentStatusRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of, throwError } from 'rxjs';
 
-import { PaymentGateway, ProviderFactory } from '../../domain/ports';
+import { PaymentGateway } from '../../domain/ports/payment/payment-gateway.port';
+import { ProviderFactory } from '../../domain/ports/provider/provider-factory.port';
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';

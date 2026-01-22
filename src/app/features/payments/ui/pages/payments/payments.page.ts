@@ -10,7 +10,7 @@ import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-re
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { PAYMENT_PROVIDER_FACTORIES } from '../../../application/tokens/payment-provider-factories.token';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { ProviderFactory } from '../../../domain/ports';
+import { ProviderFactory } from '../../../domain/ports/provider/provider-factory.port';
 
 type SmokeStartStatus = 'skipped' | 'ok' | 'error';
 

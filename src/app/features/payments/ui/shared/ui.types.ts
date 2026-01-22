@@ -7,8 +7,10 @@ import {
   PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { FieldRequirements, PaymentOptions } from '@payments/ports';
-
+import {
+  FieldRequirements,
+  PaymentOptions,
+} from '@payments/domain/ports/payment/payment-request-builder.port';
 /**
  * Item de orden para mostrar en el resumen.
  */
@@ -235,6 +237,8 @@ export function getStatusText(
 /**
  * Re-exportar tipos del dominio para conveniencia.
  */
+
+// TODO! Get rid of this and use the types from the domain ports.
 export type {
   CurrencyCode,
   FallbackAvailableEvent,

@@ -8,7 +8,7 @@ import {
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { defaultIfEmpty, firstValueFrom, of, throwError } from 'rxjs';
 
-import { PaymentStrategy, StrategyContext } from '../../domain/ports';
+import { PaymentStrategy, StrategyContext } from '../../domain/ports/payment/payment-strategy.port';
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';

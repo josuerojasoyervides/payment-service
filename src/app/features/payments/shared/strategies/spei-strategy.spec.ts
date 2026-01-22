@@ -4,7 +4,7 @@ import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.ty
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of } from 'rxjs';
 
-import { PaymentGateway } from '../../domain/ports';
+import { PaymentGateway } from '../../domain/ports/payment/payment-gateway.port';
 import { SpeiStrategy } from './spei-strategy';
 
 describe('SpeiStrategy', () => {

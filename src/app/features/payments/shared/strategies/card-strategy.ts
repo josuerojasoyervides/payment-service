@@ -5,16 +5,18 @@ import {
   PaymentMethodType,
 } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { map, Observable, tap } from 'rxjs';
-
 import {
   NullTokenValidator,
-  PaymentGateway,
+  TokenValidator,
+} from '@payments/domain/ports/provider/token-validator.port';
+import { map, Observable, tap } from 'rxjs';
+
+import { PaymentGateway } from '../../domain/ports/payment/payment-gateway.port';
+import {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
-  TokenValidator,
-} from '../../domain/ports';
+} from '../../domain/ports/payment/payment-strategy.port';
 
 /**
  * Strategy for credit/debit card payments.

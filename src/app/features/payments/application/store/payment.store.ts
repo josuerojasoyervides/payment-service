@@ -21,7 +21,7 @@ import {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
-import { StrategyContext } from '@payments/domain/ports';
+import { StrategyContext } from '@payments/domain/ports/payment/payment-strategy.port';
 import { catchError, filter, Observable, of, pipe, switchMap, tap } from 'rxjs';
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';

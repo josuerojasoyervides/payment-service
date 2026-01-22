@@ -3,7 +3,7 @@ import { I18nService } from '@core/i18n';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of } from 'rxjs';
 
-import { PaymentGateway } from '../../../domain/ports';
+import { PaymentGateway } from '../../../domain/ports/payment/payment-gateway.port';
 import { PaypalPaymentGateway } from '../gateways/paypal-payment.gateway';
 import { PaypalRedirectStrategy } from './paypal-redirect.strategy';
 

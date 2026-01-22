@@ -12,7 +12,7 @@ import {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
-import { StrategyContext } from '@payments/domain/ports';
+import { StrategyContext } from '@payments/domain/ports/payment/payment-strategy.port';
 
 import { PaymentDebugSummary, PaymentStatePort, Unsubscribe } from '../state/payment-state.port';
 import { PaymentHistoryEntry, PaymentsState } from '../store/payment.models';

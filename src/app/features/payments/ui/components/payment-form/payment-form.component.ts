@@ -4,8 +4,11 @@ import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angul
 import { I18nKeys, I18nService } from '@core/i18n';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 
-import { FieldConfig, FieldRequirements } from '../../../domain/ports';
-import { PaymentOptions } from '../../shared/ui.types';
+import {
+  FieldConfig,
+  FieldRequirements,
+  PaymentOptions,
+} from '../../../domain/ports/payment/payment-request-builder.port';
 
 type DynamicControl = FormControl<string | boolean>;
 type DynamicForm = FormRecord<DynamicControl>;

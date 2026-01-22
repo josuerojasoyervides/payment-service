@@ -12,7 +12,10 @@ import {
 
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { FieldRequirements, PaymentOptions } from '../../../domain/ports';
+import {
+  FieldRequirements,
+  PaymentOptions,
+} from '../../../domain/ports/payment/payment-request-builder.port';
 import { CheckoutComponent } from './checkout.page';
 
 describe('CheckoutComponent', () => {
