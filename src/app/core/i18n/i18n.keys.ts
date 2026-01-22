@@ -1,28 +1,36 @@
 import { en } from './translations/en';
 
-/**
- * Construye un árbol de claves de traducción a partir del objeto de traducciones
- * base (en). Cada hoja contiene la ruta completa con puntos, ej: 'errors.card_declined'.
- */
-function buildKeys(obj: Record<string, any>, prefix = ''): any {
-    return Object.fromEntries(
-        Object.entries(obj).map(([key, value]) => {
-            const path = prefix ? `${prefix}.${key}` : key;
-            if (value && typeof value === 'object') {
-                return [key, buildKeys(value as Record<string, any>, path)];
-            }
-            return [key, path];
-        }),
-    );
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+type KeyTree<T> = {
+  [K in keyof T]: T[K] extends object ? KeyTree<T[K]> : string;
+};
+
+function buildKeys<T extends object>(obj: T, prefix = ''): KeyTree<T> {
+  const result = {} as KeyTree<T>;
+
+  for (const key of Object.keys(obj) as (keyof T & string)[]) {
+    const value = (obj as Record<string, unknown>)[key];
+    const path = prefix ? `${prefix}.${key}` : key;
+
+    if (isRecord(value)) {
+      (result as Record<string, unknown>)[key] = buildKeys(value, path);
+    } else {
+      (result as Record<string, unknown>)[key] = path;
+    }
+  }
+
+  return result;
 }
 
 export const I18nKeys = buildKeys(en);
 
-/**
- * Tipo que representa cualquier clave de traducción válida derivada de I18nKeys.
- */
-export type I18nKey =
-    (typeof I18nKeys)['errors'][keyof (typeof I18nKeys)['errors']] |
-    (typeof I18nKeys)['messages'][keyof (typeof I18nKeys)['messages']] |
-    (typeof I18nKeys)['ui'][keyof (typeof I18nKeys)['ui']];
+type LeafValues<T> = T extends string
+  ? T
+  : T extends Record<string, unknown>
+    ? { [K in keyof T]: LeafValues<T[K]> }[keyof T]
+    : never;
 
+export type I18nKey = LeafValues<typeof I18nKeys>;

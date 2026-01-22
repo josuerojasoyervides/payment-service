@@ -1,6 +1,6 @@
 /**
  * Módulo de Caching
- * 
+ *
  * Provee servicios e interceptors para caching HTTP:
  * - Cache en memoria con LRU eviction
  * - TTL configurable por patrón de URL

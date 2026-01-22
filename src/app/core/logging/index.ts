@@ -1,6 +1,6 @@
 /**
  * Módulo de Logging
- * 
+ *
  * Provee servicios para logging estructurado:
  * - Logging con correlation IDs
  * - Interceptor HTTP para logging de requests

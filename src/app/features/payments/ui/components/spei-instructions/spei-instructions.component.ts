@@ -5,10 +5,10 @@ import { ClabeFormatPipe } from '@shared/pipes';
 
 /**
  * Component that displays SPEI payment instructions.
- * 
+ *
  * Includes CLABE, reference and amount with clipboard
  * copy functionality.
- * 
+ *
  * @example
  * ```html
  * <app-spei-instructions
@@ -23,100 +23,100 @@ import { ClabeFormatPipe } from '@shared/pipes';
  * ```
  */
 @Component({
-    selector: 'app-spei-instructions',
-    standalone: true,
-    imports: [CommonModule, CurrencyPipe, DatePipe, ClabeFormatPipe],
-    templateUrl: './spei-instructions.component.html',
+  selector: 'app-spei-instructions',
+  standalone: true,
+  imports: [CommonModule, CurrencyPipe, DatePipe, ClabeFormatPipe],
+  templateUrl: './spei-instructions.component.html',
 })
 export class SpeiInstructionsComponent {
-    private readonly i18n = inject(I18nService);
+  private readonly i18n = inject(I18nService);
 
-    /** Interbank CLABE */
-    readonly clabe = input.required<string>();
+  /** Interbank CLABE */
+  readonly clabe = input.required<string>();
 
-    /** Reference number */
-    readonly reference = input.required<string>();
+  /** Reference number */
+  readonly reference = input.required<string>();
 
-    /** Bank name */
-    readonly bank = input.required<string>();
+  /** Bank name */
+  readonly bank = input.required<string>();
 
-    /** Beneficiary name */
-    readonly beneficiary = input<string>();
+  /** Beneficiary name */
+  readonly beneficiary = input<string>();
 
-    /** Amount to transfer */
-    readonly amount = input.required<number>();
+  /** Amount to transfer */
+  readonly amount = input.required<number>();
 
-    /** Currency code */
-    readonly currency = input<string>('MXN');
+  /** Currency code */
+  readonly currency = input<string>('MXN');
 
-    /** Expiration date */
-    readonly expiresAt = input<string>();
+  /** Expiration date */
+  readonly expiresAt = input<string>();
 
-    /** Field that was just copied */
-    readonly copiedField = signal<string | null>(null);
+  /** Field that was just copied */
+  readonly copiedField = signal<string | null>(null);
 
-    // ===== Textos para el template =====
-    get speiTransferTitle(): string {
-        return this.i18n.t(I18nKeys.ui.spei_transfer);
-    }
+  // ===== Textos para el template =====
+  get speiTransferTitle(): string {
+    return this.i18n.t(I18nKeys.ui.spei_transfer);
+  }
 
-    get makeTransferText(): string {
-        return this.i18n.t(I18nKeys.ui.make_transfer_with_data);
-    }
+  get makeTransferText(): string {
+    return this.i18n.t(I18nKeys.ui.make_transfer_with_data);
+  }
 
-    get copiedLabel(): string {
-        return this.i18n.t(I18nKeys.ui.copied);
-    }
+  get copiedLabel(): string {
+    return this.i18n.t(I18nKeys.ui.copied);
+  }
 
-    get copyLabel(): string {
-        return this.i18n.t(I18nKeys.ui.copy);
-    }
+  get copyLabel(): string {
+    return this.i18n.t(I18nKeys.ui.copy);
+  }
 
-    get referenceLabel(): string {
-        return this.i18n.t(I18nKeys.ui.reference);
-    }
+  get referenceLabel(): string {
+    return this.i18n.t(I18nKeys.ui.reference);
+  }
 
-    get exactAmountLabel(): string {
-        return this.i18n.t(I18nKeys.ui.exact_amount);
-    }
+  get exactAmountLabel(): string {
+    return this.i18n.t(I18nKeys.ui.exact_amount);
+  }
 
-    get destinationBankLabel(): string {
-        return this.i18n.t(I18nKeys.ui.destination_bank);
-    }
+  get destinationBankLabel(): string {
+    return this.i18n.t(I18nKeys.ui.destination_bank);
+  }
 
-    get beneficiaryLabel(): string {
-        return this.i18n.t(I18nKeys.ui.beneficiary);
-    }
+  get beneficiaryLabel(): string {
+    return this.i18n.t(I18nKeys.ui.beneficiary);
+  }
 
-    get referenceExpiresText(): string {
-        return this.i18n.t(I18nKeys.ui.reference_expires);
-    }
+  get referenceExpiresText(): string {
+    return this.i18n.t(I18nKeys.ui.reference_expires);
+  }
 
-    get transferExactAmountText(): string {
-        return this.i18n.t(I18nKeys.ui.transfer_exact_amount);
-    }
+  get transferExactAmountText(): string {
+    return this.i18n.t(I18nKeys.ui.transfer_exact_amount);
+  }
 
-    get paymentMayTakeText(): string {
-        return this.i18n.t(I18nKeys.ui.payment_may_take);
-    }
+  get paymentMayTakeText(): string {
+    return this.i18n.t(I18nKeys.ui.payment_may_take);
+  }
 
-    get keepReceiptText(): string {
-        return this.i18n.t(I18nKeys.ui.keep_receipt);
-    }
+  get keepReceiptText(): string {
+    return this.i18n.t(I18nKeys.ui.keep_receipt);
+  }
 
-    /** Copies text to clipboard */
-    async copyToClipboard(text: string, field: string): Promise<void> {
-        try {
-            await navigator.clipboard.writeText(text);
-            this.copiedField.set(field);
+  /** Copies text to clipboard */
+  async copyToClipboard(text: string, field: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+      this.copiedField.set(field);
 
-            setTimeout(() => {
-                if (this.copiedField() === field) {
-                    this.copiedField.set(null);
-                }
-            }, 2000);
-        } catch (err) {
-            console.error('Failed to copy:', err);
+      setTimeout(() => {
+        if (this.copiedField() === field) {
+          this.copiedField.set(null);
         }
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
     }
+  }
 }

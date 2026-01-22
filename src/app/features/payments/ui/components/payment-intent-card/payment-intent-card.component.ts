@@ -1,14 +1,14 @@
-import { Component, input, output, computed, inject } from '@angular/core';
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
+import { Component, computed, inject, input, output } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
 import { PaymentIntent, STATUS_BADGE_MAP, getStatusText } from '../../shared';
-import { I18nService, I18nKeys } from '@core/i18n';
 
 /**
  * Card component to display a PaymentIntent.
- * 
+ *
  * Useful for history lists, status page, etc.
  * Shows summarized information and optional actions.
- * 
+ *
  * @example
  * ```html
  * <app-payment-intent-card
@@ -22,104 +22,106 @@ import { I18nService, I18nKeys } from '@core/i18n';
  * ```
  */
 @Component({
-    selector: 'app-payment-intent-card',
-    standalone: true,
-    imports: [CommonModule, CurrencyPipe],
-    templateUrl: './payment-intent-card.component.html',
+  selector: 'app-payment-intent-card',
+  standalone: true,
+  imports: [CommonModule, CurrencyPipe],
+  templateUrl: './payment-intent-card.component.html',
 })
 export class PaymentIntentCardComponent {
-    private readonly i18n = inject(I18nService);
-    
-    /** Intent to display */
-    readonly intent = input.required<PaymentIntent>();
-    
-    /** Whether to show actions */
-    readonly showActions = input<boolean>(true);
-    
-    /** Whether expanded */
-    readonly expanded = input<boolean>(false);
-    
-    /** Emits to confirm the intent */
-    readonly confirm = output<string>();
-    
-    /** Emits to cancel the intent */
-    readonly cancel = output<string>();
-    
-    /** Emits to refresh status */
-    readonly refresh = output<string>();
-    
-    /** Emits to expand/collapse */
-    readonly expandedChange = output<boolean>();
+  private readonly i18n = inject(I18nService);
 
-    private _expanded = false;
+  /** Intent to display */
+  readonly intent = input.required<PaymentIntent>();
 
-    /** Status helpers */
-    readonly isSucceeded = computed(() => this.intent().status === 'succeeded');
-    readonly isFailed = computed(() => this.intent().status === 'failed');
-    readonly isCanceled = computed(() => this.intent().status === 'canceled');
-    readonly isPending = computed(() => 
-        ['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(this.intent().status)
-    );
-    readonly isProcessing = computed(() => this.intent().status === 'processing');
+  /** Whether to show actions */
+  readonly showActions = input<boolean>(true);
 
-    /** Whether can confirm */
-    readonly canConfirm = computed(() => 
-        ['requires_confirmation', 'requires_action'].includes(this.intent().status)
-    );
+  /** Whether expanded */
+  readonly expanded = input<boolean>(false);
 
-    /** Whether can cancel */
-    readonly canCancel = computed(() => 
-        !['succeeded', 'canceled', 'failed'].includes(this.intent().status)
-    );
+  /** Emits to confirm the intent */
+  readonly confirm = output<string>();
 
-    /** Status badge class */
-    readonly statusBadgeClass = computed(() => {
-        return STATUS_BADGE_MAP[this.intent().status] || 'badge';
-    });
+  /** Emits to cancel the intent */
+  readonly canceled = output<string>();
 
-    /** Status text */
-    readonly statusText = computed(() => {
-        return getStatusText(this.i18n, this.intent().status);
-    });
+  /** Emits to refresh status */
+  readonly refresh = output<string>();
 
-    toggleExpanded(): void {
-        this._expanded = !this._expanded;
-        this.expandedChange.emit(this._expanded);
-    }
+  /** Emits to expand/collapse */
+  readonly expandedChange = output<boolean>();
 
-    get providerLabel(): string {
-        return this.i18n.t(I18nKeys.ui.payment_provider);
-    }
+  private _expanded = false;
 
-    get statusLabel(): string {
-        return this.i18n.t(I18nKeys.ui.status_label);
-    }
+  /** Status helpers */
+  readonly isSucceeded = computed(() => this.intent().status === 'succeeded');
+  readonly isFailed = computed(() => this.intent().status === 'failed');
+  readonly isCanceled = computed(() => this.intent().status === 'canceled');
+  readonly isPending = computed(() =>
+    ['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(
+      this.intent().status,
+    ),
+  );
+  readonly isProcessing = computed(() => this.intent().status === 'processing');
 
-    get amountLabel(): string {
-        return this.i18n.t(I18nKeys.ui.amount_label);
-    }
+  /** Whether can confirm */
+  readonly canConfirm = computed(() =>
+    ['requires_confirmation', 'requires_action'].includes(this.intent().status),
+  );
 
-    get actionRequiredLabel(): string {
-        return this.i18n.t(I18nKeys.ui.action_required_label);
-    }
+  /** Whether can cancel */
+  readonly canCancel = computed(
+    () => !['succeeded', 'canceled', 'failed'].includes(this.intent().status),
+  );
 
-    get confirmButtonText(): string {
-        return this.i18n.t(I18nKeys.ui.confirm_button);
-    }
+  /** Status badge class */
+  readonly statusBadgeClass = computed(() => {
+    return STATUS_BADGE_MAP[this.intent().status] || 'badge';
+  });
 
-    get cancelButtonText(): string {
-        return this.i18n.t(I18nKeys.ui.cancel_button);
-    }
+  /** Status text */
+  readonly statusText = computed(() => {
+    return getStatusText(this.i18n, this.intent().status);
+  });
 
-    get idLabel(): string {
-        return this.i18n.t(I18nKeys.ui.id_label);
-    }
+  toggleExpanded(): void {
+    this._expanded = !this._expanded;
+    this.expandedChange.emit(this._expanded);
+  }
 
-    get clientSecretLabel(): string {
-        return this.i18n.t(I18nKeys.ui.client_secret);
-    }
+  get providerLabel(): string {
+    return this.i18n.t(I18nKeys.ui.payment_provider);
+  }
 
-    get redirectUrlLabel(): string {
-        return this.i18n.t(I18nKeys.ui.redirect_url);
-    }
+  get statusLabel(): string {
+    return this.i18n.t(I18nKeys.ui.status_label);
+  }
+
+  get amountLabel(): string {
+    return this.i18n.t(I18nKeys.ui.amount_label);
+  }
+
+  get actionRequiredLabel(): string {
+    return this.i18n.t(I18nKeys.ui.action_required_label);
+  }
+
+  get confirmButtonText(): string {
+    return this.i18n.t(I18nKeys.ui.confirm_button);
+  }
+
+  get cancelButtonText(): string {
+    return this.i18n.t(I18nKeys.ui.cancel_button);
+  }
+
+  get idLabel(): string {
+    return this.i18n.t(I18nKeys.ui.id_label);
+  }
+
+  get clientSecretLabel(): string {
+    return this.i18n.t(I18nKeys.ui.client_secret);
+  }
+
+  get redirectUrlLabel(): string {
+    return this.i18n.t(I18nKeys.ui.redirect_url);
+  }
 }

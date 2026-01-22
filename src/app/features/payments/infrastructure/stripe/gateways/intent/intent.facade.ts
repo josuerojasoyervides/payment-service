@@ -1,19 +1,17 @@
-import { inject, Injectable } from "@angular/core";
-import { Observable } from "rxjs";
-import { I18nKeys } from "@core/i18n";
+import { inject, Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import {
-    PaymentIntent,
-    CancelPaymentRequest,
-    ConfirmPaymentRequest,
-    CreatePaymentRequest,
-    GetPaymentStatusRequest,
-} from "@payments/domain/models";
-import { PaymentGateway } from "@payments/domain/ports";
-import { StripeCreateIntentGateway } from "./create-intent.gateway";
-import { StripeConfirmIntentGateway } from "./confirm-intent.gateway";
-import { StripeCancelIntentGateway } from "./cancel-intent.gateway";
-import { StripeGetIntentGateway } from "./get-intent.gateway";
-
+  PaymentIntent,
+  CancelPaymentRequest,
+  ConfirmPaymentRequest,
+  CreatePaymentRequest,
+  GetPaymentStatusRequest,
+} from '@payments/domain/models';
+import { PaymentGateway } from '@payments/domain/ports';
+import { StripeCreateIntentGateway } from './create-intent.gateway';
+import { StripeConfirmIntentGateway } from './confirm-intent.gateway';
+import { StripeCancelIntentGateway } from './cancel-intent.gateway';
+import { StripeGetIntentGateway } from './get-intent.gateway';
 
 /**
  * Stripe gateway.
@@ -28,26 +26,26 @@ import { StripeGetIntentGateway } from "./get-intent.gateway";
  */
 @Injectable()
 export class IntentFacade implements PaymentGateway {
-    readonly providerId = 'stripe' as const;
+  readonly providerId = 'stripe' as const;
 
-    private readonly createIntentOp = inject(StripeCreateIntentGateway);
-    private readonly confirmIntentOp = inject(StripeConfirmIntentGateway);
-    private readonly cancelIntentOp = inject(StripeCancelIntentGateway);
-    private readonly getIntentOp = inject(StripeGetIntentGateway);
+  private readonly createIntentOp = inject(StripeCreateIntentGateway);
+  private readonly confirmIntentOp = inject(StripeConfirmIntentGateway);
+  private readonly cancelIntentOp = inject(StripeCancelIntentGateway);
+  private readonly getIntentOp = inject(StripeGetIntentGateway);
 
-    createIntent(req: CreatePaymentRequest): Observable<PaymentIntent> {
-        return this.createIntentOp.execute(req);
-    }
+  createIntent(req: CreatePaymentRequest): Observable<PaymentIntent> {
+    return this.createIntentOp.execute(req);
+  }
 
-    confirmIntent(req: ConfirmPaymentRequest): Observable<PaymentIntent> {
-        return this.confirmIntentOp.execute(req);
-    }
+  confirmIntent(req: ConfirmPaymentRequest): Observable<PaymentIntent> {
+    return this.confirmIntentOp.execute(req);
+  }
 
-    cancelIntent(req: CancelPaymentRequest): Observable<PaymentIntent> {
-        return this.cancelIntentOp.execute(req);
-    }
+  cancelIntent(req: CancelPaymentRequest): Observable<PaymentIntent> {
+    return this.cancelIntentOp.execute(req);
+  }
 
-    getIntent(req: GetPaymentStatusRequest): Observable<PaymentIntent> {
-        return this.getIntentOp.execute(req);
-    }
+  getIntent(req: GetPaymentStatusRequest): Observable<PaymentIntent> {
+    return this.getIntentOp.execute(req);
+  }
 }

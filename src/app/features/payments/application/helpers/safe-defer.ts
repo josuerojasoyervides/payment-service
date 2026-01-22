@@ -6,5 +6,5 @@ import { defer, Observable } from 'rxjs';
  * para evitar "Unhandled Error" y UI colgada.
  */
 export function safeDefer<T>(fn: () => Observable<T>): Observable<T> {
-    return defer(fn);
+  return defer(fn);
 }

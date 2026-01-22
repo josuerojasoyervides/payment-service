@@ -5,33 +5,33 @@ module.exports = {
       name: 'no-circular',
       severity: 'warn',
       comment:
-        "This dependency is part of a circular relationship. You might want to revise " +
-        "your solution (i.e. use dependency inversion, make sure the modules have a single responsibility) ",
+        'This dependency is part of a circular relationship. You might want to revise ' +
+        'your solution (i.e. use dependency inversion, make sure the modules have a single responsibility) ',
       from: {},
       to: {
-        circular: true
-      }
+        circular: true,
+      },
     },
     {
       name: 'no-orphans',
       comment:
         "This is an orphan module - it's likely not used (anymore?). Either use it or " +
         "remove it. If it's logical this module is an orphan (i.e. it's a config file), " +
-        "add an exception for it in your dependency-cruiser configuration. By default " +
-        "this rule does not scrutinize dot-files (e.g. .eslintrc.js), TypeScript declaration " +
-        "files (.d.ts), tsconfig.json and some of the babel and webpack configs.",
+        'add an exception for it in your dependency-cruiser configuration. By default ' +
+        'this rule does not scrutinize dot-files (e.g. .eslintrc.js), TypeScript declaration ' +
+        'files (.d.ts), tsconfig.json and some of the babel and webpack configs.',
       severity: 'warn',
       from: {
         orphan: true,
         pathNot: [
-          '(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$',                  // dot files
-          '[.]d[.]ts$',                                                       // TypeScript declaration files
-          '(^|/)tsconfig[.]json$',                                            // TypeScript config
+          '(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$', // dot files
+          '[.]d[.]ts$', // TypeScript declaration files
+          '(^|/)tsconfig[.]json$', // TypeScript config
           '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$', // other configs
           '^src/app/features/payments/domain/',
           '^src/app/features/payments/infrastructure/stripe/dto/stripe.dto.ts$', // DTO usado por gateways
           '^src/app/features/payments/application/state/payment-state.port.ts$', // Port usado por adapters
-        ]
+        ],
       },
       to: {},
     },
@@ -43,9 +43,7 @@ module.exports = {
       severity: 'warn',
       from: {},
       to: {
-        dependencyTypes: [
-          'core'
-        ],
+        dependencyTypes: ['core'],
         path: [
           '^v8/tools/codemap$',
           '^v8/tools/consarray$',
@@ -66,9 +64,9 @@ module.exports = {
           '^constants$',
           '^sys$',
           '^_linklist$',
-          '^_stream_wrap$'
+          '^_stream_wrap$',
         ],
-      }
+      },
     },
     {
       name: 'not-to-deprecated',
@@ -78,10 +76,8 @@ module.exports = {
       severity: 'warn',
       from: {},
       to: {
-        dependencyTypes: [
-          'deprecated'
-        ]
-      }
+        dependencyTypes: ['deprecated'],
+      },
     },
     {
       name: 'no-non-package-json',
@@ -89,15 +85,12 @@ module.exports = {
       comment:
         "This module depends on an npm package that isn't in the 'dependencies' section of your package.json. " +
         "That's problematic as the package either (1) won't be available on live (2 - worse) will be " +
-        "available on live with an non-guaranteed version. Fix it by adding the package to the dependencies " +
-        "in your package.json.",
+        'available on live with an non-guaranteed version. Fix it by adding the package to the dependencies ' +
+        'in your package.json.',
       from: {},
       to: {
-        dependencyTypes: [
-          'npm-no-pkg',
-          'npm-unknown'
-        ]
-      }
+        dependencyTypes: ['npm-no-pkg', 'npm-unknown'],
+      },
     },
     {
       name: 'not-to-unresolvable',
@@ -107,23 +100,23 @@ module.exports = {
       severity: 'error',
       from: {},
       to: {
-        couldNotResolve: true
-      }
+        couldNotResolve: true,
+      },
     },
     {
       name: 'no-duplicate-dep-types',
       comment:
         "Likely this module depends on an external ('npm') package that occurs more than once " +
-        "in your package.json i.e. bot as a devDependencies and in dependencies. This will cause " +
-        "maintenance problems later on.",
+        'in your package.json i.e. bot as a devDependencies and in dependencies. This will cause ' +
+        'maintenance problems later on.',
       severity: 'warn',
       from: {},
       to: {
         moreThanOneDependencyType: true,
         // as it's common to use a devDependency for type-only imports: don't
         // consider type-only dependencyTypes for this rule
-        dependencyTypesNot: ["type-only"]
-      }
+        dependencyTypesNot: ['type-only'],
+      },
     },
 
     // rules you might want to tweak for your specific situation:
@@ -137,8 +130,8 @@ module.exports = {
       severity: 'error',
       from: {},
       to: {
-        path: '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$'
-      }
+        path: '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
+      },
     },
     {
       name: 'not-to-dev-dep',
@@ -151,57 +144,47 @@ module.exports = {
         'from.pathNot re of the not-to-dev-dep rule in the dependency-cruiser configuration',
       from: {
         path: '^(src)',
-        pathNot: '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$'
+        pathNot: '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
       },
       to: {
-        dependencyTypes: [
-          'npm-dev',
-        ],
+        dependencyTypes: ['npm-dev'],
         // type only dependencies are not a problem as they don't end up in the
         // production code or are ignored by the runtime.
-        dependencyTypesNot: [
-          'type-only'
-        ],
-        pathNot: [
-          'node_modules/@types/'
-        ]
-      }
+        dependencyTypesNot: ['type-only'],
+        pathNot: ['node_modules/@types/'],
+      },
     },
     {
       name: 'optional-deps-used',
       severity: 'info',
       comment:
-        "This module depends on an npm package that is declared as an optional dependency " +
+        'This module depends on an npm package that is declared as an optional dependency ' +
         "in your package.json. As this makes sense in limited situations only, it's flagged here. " +
-        "If you use an optional dependency here by design - add an exception to your" +
-        "dependency-cruiser configuration.",
+        'If you use an optional dependency here by design - add an exception to your' +
+        'dependency-cruiser configuration.',
       from: {},
       to: {
-        dependencyTypes: [
-          'npm-optional'
-        ]
-      }
+        dependencyTypes: ['npm-optional'],
+      },
     },
     {
       name: 'peer-deps-used',
       comment:
-        "This module depends on an npm package that is declared as a peer dependency " +
-        "in your package.json. This makes sense if your package is e.g. a plugin, but in " +
-        "other cases - maybe not so much. If the use of a peer dependency is intentional " +
-        "add an exception to your dependency-cruiser configuration.",
+        'This module depends on an npm package that is declared as a peer dependency ' +
+        'in your package.json. This makes sense if your package is e.g. a plugin, but in ' +
+        'other cases - maybe not so much. If the use of a peer dependency is intentional ' +
+        'add an exception to your dependency-cruiser configuration.',
       severity: 'warn',
       from: {},
       to: {
-        dependencyTypes: [
-          'npm-peer'
-        ]
-      }
+        dependencyTypes: ['npm-peer'],
+      },
     },
     {
       name: 'domain-no-external-deps',
       severity: 'error',
       from: { path: '^src/app/features/payments/domain' },
-      to: { path: '^src/app/features/payments/(application|infrastructure|ui|config|shared)' }
+      to: { path: '^src/app/features/payments/(application|infrastructure|ui|config|shared)' },
     },
     {
       name: 'domain-no-angular',
@@ -209,7 +192,7 @@ module.exports = {
       comment:
         'Domain debe ser puro. No puede importar Angular (@angular/*). Mueve estas dependencias a infrastructure/shared.',
       from: { path: '^src/app/features/payments/domain' },
-      to: { path: '^node_modules/@angular' }
+      to: { path: '^node_modules/@angular' },
     },
     {
       name: 'domain-no-rxjs',
@@ -217,7 +200,7 @@ module.exports = {
       comment:
         'Domain debe ser puro. No puede importar rxjs. RxJS es parte del orchestration layer (application/ui).',
       from: { path: '^src/app/features/payments/domain' },
-      to: { path: '^node_modules/rxjs' }
+      to: { path: '^node_modules/rxjs' },
     },
     {
       name: 'domain-no-app-core-or-shared',
@@ -225,46 +208,44 @@ module.exports = {
       comment:
         'Domain del feature no debe depender de @core o @shared del app. Mantén el domain aislado y transportable.',
       from: { path: '^src/app/features/payments/domain' },
-      to: { path: '^src/app/(core|shared)' }
+      to: { path: '^src/app/(core|shared)' },
     },
     {
       name: 'domain-no-shared',
       severity: 'error',
       from: { path: '^src/app/features/payments/domain' },
-      to: { path: '^src/app/features/payments/shared' }
+      to: { path: '^src/app/features/payments/shared' },
     },
     {
       name: 'application-no-infra',
       severity: 'error',
       from: { path: '^src/app/features/payments/application' },
-      to: { path: '^src/app/features/payments/infrastructure' }
+      to: { path: '^src/app/features/payments/infrastructure' },
     },
     {
       name: 'ui-no-infra',
       severity: 'error',
       from: { path: '^src/app/features/payments/ui' },
-      to: { path: '^src/app/features/payments/infrastructure' }
+      to: { path: '^src/app/features/payments/infrastructure' },
     },
     {
       name: 'infra-no-ui',
       severity: 'error',
       from: { path: '^src/app/features/payments/infrastructure' },
-      to: { path: '^src/app/features/payments/ui' }
+      to: { path: '^src/app/features/payments/ui' },
     },
   ],
   options: {
     // Which modules not to follow further when encountered
     doNotFollow: {
       // path: an array of regular expressions in strings to match against
-      path: ['node_modules']
+      path: ['node_modules'],
     },
 
     // Which modules to exclude
     exclude: {
       // path: an array of regular expressions in strings to match against
-      path: [
-        '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$'
-      ],
+      path: ['[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$'],
     },
 
     // Which modules to exclusively include (array of regular expressions in strings)
@@ -280,7 +261,7 @@ module.exports = {
     // moduleSystems: ['cjs', 'es6'],
 
     // false: don't look at JSDoc imports (the default)
-    // true: detect dependencies in JSDoc-style import statements. 
+    // true: detect dependencies in JSDoc-style import statements.
     // Implies parser: 'tsc', which a.o. means the typescript compiler will need
     // to be installed in the same spot you run dependency-cruiser from.
     // detectJSDocImports: true,
@@ -291,7 +272,7 @@ module.exports = {
     // detectProcessBuiltinModuleCalls: true,
 
     // prefix for links in html, d2, mermaid and dot/ svg output (e.g. 'https://github.com/you/yourrepo/blob/main/'
-    // to open it on your online repo or `vscode://file/${process.cwd()}/` to 
+    // to open it on your online repo or `vscode://file/${process.cwd()}/` to
     // open it in visual studio code),
     // prefix: `vscode://file/${process.cwd()}/`,
 
@@ -325,7 +306,7 @@ module.exports = {
     // dependency-cruiser's current working directory). When not provided
     // defaults to './tsconfig.json'.
     tsConfig: {
-      fileName: 'tsconfig.json'
+      fileName: 'tsconfig.json',
     },
 
     // Webpack configuration to use to get resolve options from.
@@ -335,7 +316,7 @@ module.exports = {
     // to './webpack.conf.js'.
     //
     // The (optional) 'env' and 'arguments' attributes contain the parameters
-    // to be passed if your webpack config is a function and takes them (see 
+    // to be passed if your webpack config is a function and takes them (see
     //  webpack documentation for details)
     // webpackConfig: {
     //  fileName: 'webpack.config.js',
@@ -381,7 +362,7 @@ module.exports = {
       // if you migrate to ESM (or are in an ESM environment already) you will want to
       // have "module" in the list of mainFields, like so:
       // mainFields: ["module", "main", "types", "typings"],
-      mainFields: ["main", "types", "typings"],
+      mainFields: ['main', 'types', 'typings'],
 
       // A list of alias fields in package.jsons
       // See https://github.com/defunctzombie/package-browser-field-spec and
@@ -391,8 +372,8 @@ module.exports = {
       // aliasFields: ['browser'],
     },
 
-    // skipAnalysisNotInRules will make dependency-cruiser execute 
-    // analysis strictly necessary for checking the rule set only. 
+    // skipAnalysisNotInRules will make dependency-cruiser execute
+    // analysis strictly necessary for checking the rule set only.
     // See https://github.com/sverweij/dependency-cruiser/blob/main/doc/options-reference.md#skipanalysisnotinrules
     skipAnalysisNotInRules: true,
 
@@ -403,16 +384,16 @@ module.exports = {
     */
     builtInModules: {
       add: [
-        "bun",
-        "bun:ffi",
-        "bun:jsc",
-        "bun:sqlite",
-        "bun:test",
-        "bun:wrap",
-        "detect-libc",
-        "undici",
-        "ws"
-      ]
+        'bun',
+        'bun:ffi',
+        'bun:jsc',
+        'bun:sqlite',
+        'bun:test',
+        'bun:wrap',
+        'detect-libc',
+        'undici',
+        'ws',
+      ],
     },
 
     reporterOptions: {
@@ -435,7 +416,8 @@ module.exports = {
       },
       archi: {
         // Pattern of modules to consolidate to.
-        collapsePattern: '^(?:packages|src|lib(s?)|app(s?)|bin|test(s?)|spec(s?))/[^/]+|node_modules/(?:@[^/]+/[^/]+|[^/]+)',
+        collapsePattern:
+          '^(?:packages|src|lib(s?)|app(s?)|bin|test(s?)|spec(s?))/[^/]+|node_modules/(?:@[^/]+/[^/]+|[^/]+)',
 
         // Options to tweak the appearance of your graph. If you don't specify a
         // theme for 'archi' dependency-cruiser will use the one specified in the
@@ -443,9 +425,9 @@ module.exports = {
         // theme: { },
       },
       text: {
-        highlightFocused: true
+        highlightFocused: true,
       },
-    }
-  }
+    },
+  },
 };
 // generated: dependency-cruiser@17.3.6 on 2026-01-16T20:05:08.379Z

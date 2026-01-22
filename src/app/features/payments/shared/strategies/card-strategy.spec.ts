@@ -1,199 +1,210 @@
-import { CreatePaymentRequest, PaymentIntent } from "../../domain/models";
-import { PaymentGateway, TokenValidator } from "../../domain/ports";
-import { CardStrategy } from "./card-strategy"
-import { firstValueFrom, of } from "rxjs";
-import { I18nService } from "@core/i18n";
+import { CreatePaymentRequest, PaymentIntent } from '../../domain/models';
+import { PaymentGateway, TokenValidator } from '../../domain/ports';
+import { CardStrategy } from './card-strategy';
+import { firstValueFrom, of } from 'rxjs';
+import { I18nService } from '@core/i18n';
 
 describe('CardStrategy', () => {
-    let strategy: CardStrategy;
-    let gatewayMock: Pick<PaymentGateway, 'createIntent' | 'providerId'>;
-    let tokenValidatorMock: TokenValidator;
-    let i18nMock: I18nService;
+  let strategy: CardStrategy;
+  let gatewayMock: Pick<PaymentGateway, 'createIntent' | 'providerId'>;
+  let tokenValidatorMock: TokenValidator;
+  let i18nMock: I18nService;
 
-    const validToken = 'tok_test1234567890abc';
+  const validToken = 'tok_test1234567890abc';
 
-    const validReq: CreatePaymentRequest = {
-        orderId: 'order_1',
-        amount: 100,
-        currency: 'MXN',
-        method: { type: 'card', token: validToken },
+  const validReq: CreatePaymentRequest = {
+    orderId: 'order_1',
+    amount: 100,
+    currency: 'MXN',
+    method: { type: 'card', token: validToken },
+  };
+
+  const intentResponse: PaymentIntent = {
+    id: 'pi_1',
+    provider: 'stripe',
+    status: 'requires_payment_method',
+    amount: 100,
+    currency: 'MXN',
+  };
+
+  beforeEach(() => {
+    gatewayMock = {
+      providerId: 'stripe',
+      createIntent: vi.fn(() => of(intentResponse)),
+    } as any;
+
+    // Mock de TokenValidator que valida formato
+    tokenValidatorMock = {
+      requiresToken: vi.fn(() => true),
+      validate: vi.fn((token: string) => {
+        if (!token) throw new Error('Card token is required for card payments');
+        if (!/^(tok_|pm_|card_)[a-zA-Z0-9]+$/.test(token)) {
+          throw new Error('Invalid card token format');
+        }
+      }),
+      isValid: vi.fn((token: string) => /^(tok_|pm_|card_)[a-zA-Z0-9]+$/.test(token)),
+      getAcceptedPatterns: vi.fn(() => ['tok_*', 'pm_*', 'card_*']),
     };
 
-    const intentResponse: PaymentIntent = {
-        id: 'pi_1',
-        provider: 'stripe',
-        status: 'requires_payment_method',
-        amount: 100,
-        currency: 'MXN',
-    };
-
-    beforeEach(() => {
-        gatewayMock = {
-            providerId: 'stripe',
-            createIntent: vi.fn(() => of(intentResponse))
-        } as any;
-
-        // Mock de TokenValidator que valida formato
-        tokenValidatorMock = {
-            requiresToken: vi.fn(() => true),
-            validate: vi.fn((token: string) => {
-                if (!token) throw new Error('Card token is required for card payments');
-                if (!/^(tok_|pm_|card_)[a-zA-Z0-9]+$/.test(token)) {
-                    throw new Error('Invalid card token format');
-                }
-            }),
-            isValid: vi.fn((token: string) => /^(tok_|pm_|card_)[a-zA-Z0-9]+$/.test(token)),
-            getAcceptedPatterns: vi.fn(() => ['tok_*', 'pm_*', 'card_*']),
+    i18nMock = {
+      t: vi.fn((key: string, params?: Record<string, string | number>) => {
+        const translations: Record<string, string> = {
+          'errors.card_token_required': 'Card token is required for card payments',
+          'errors.min_amount': params
+            ? `Minimum amount for card payments is ${params['amount']} ${params['currency']}`
+            : 'Minimum amount for card payments',
+          'messages.bank_verification_required':
+            'Tu banco requiere verificación adicional. Serás redirigido a una página segura para completar la autenticación.',
         };
+        return translations[key] || key;
+      }),
+      setLanguage: vi.fn(),
+      getLanguage: vi.fn(() => 'es'),
+      has: vi.fn(() => true),
+      currentLang: { asReadonly: vi.fn() } as any,
+    } as any;
 
-        i18nMock = {
-            t: vi.fn((key: string, params?: Record<string, string | number>) => {
-                const translations: Record<string, string> = {
-                    'errors.card_token_required': 'Card token is required for card payments',
-                    'errors.min_amount': params ? `Minimum amount for card payments is ${params['amount']} ${params['currency']}` : 'Minimum amount for card payments',
-                    'messages.bank_verification_required': 'Tu banco requiere verificación adicional. Serás redirigido a una página segura para completar la autenticación.',
-                };
-                return translations[key] || key;
-            }),
-            setLanguage: vi.fn(),
-            getLanguage: vi.fn(() => 'es'),
-            has: vi.fn(() => true),
-            currentLang: { asReadonly: vi.fn() } as any,
-        } as any;
+    strategy = new CardStrategy(gatewayMock as any, tokenValidatorMock, i18nMock);
+  });
 
-        strategy = new CardStrategy(gatewayMock as any, tokenValidatorMock, i18nMock);
+  describe('validate()', () => {
+    it('throws if token is missing', () => {
+      const req = { ...validReq, method: { type: 'card' as const } };
+      expect(() => strategy.validate(req)).toThrowError(/Card token is required/);
     });
 
-    describe('validate()', () => {
-        it('throws if token is missing', () => {
-            const req = { ...validReq, method: { type: 'card' as const } };
-            expect(() => strategy.validate(req)).toThrowError(/Card token is required/);
-        });
-
-        it('throws if token has invalid format', () => {
-            const req = { ...validReq, method: { type: 'card' as const, token: 'invalid_token' } };
-            expect(() => strategy.validate(req)).toThrowError(/Invalid card token format/);
-        });
-
-        it('accepts valid token formats (tok_, pm_, card_)', () => {
-            expect(() => strategy.validate({ ...validReq, method: { type: 'card', token: 'tok_test1234567890' } })).not.toThrow();
-            expect(() => strategy.validate({ ...validReq, method: { type: 'card', token: 'pm_test1234567890x' } })).not.toThrow();
-            expect(() => strategy.validate({ ...validReq, method: { type: 'card', token: 'card_test123456789' } })).not.toThrow();
-        });
-
-        it('throws if amount is below minimum for MXN', () => {
-            const req = { ...validReq, amount: 5, currency: 'MXN' as const };
-            expect(() => strategy.validate(req)).toThrowError(/Minimum amount/);
-        });
-
-        it('throws if amount is below minimum for USD', () => {
-            const req = { ...validReq, amount: 0.5, currency: 'USD' as const };
-            expect(() => strategy.validate(req)).toThrowError(/Minimum amount/);
-        });
+    it('throws if token has invalid format', () => {
+      const req = { ...validReq, method: { type: 'card' as const, token: 'invalid_token' } };
+      expect(() => strategy.validate(req)).toThrowError(/Invalid card token format/);
     });
 
-    describe('prepare()', () => {
-        it('returns prepared request and metadata', () => {
-            const result = strategy.prepare(validReq);
-
-            expect(result.preparedRequest).toEqual(validReq);
-            expect(result.metadata['payment_method_type']).toBe('card');
-            expect(result.metadata['is_saved_card']).toBe(false);
-            expect(result.metadata['timestamp']).toBeDefined();
-        });
-
-        it('detects saved cards (pm_ prefix)', () => {
-            const req = { ...validReq, method: { type: 'card' as const, token: 'pm_saved12345678901' } };
-            const result = strategy.prepare(req);
-
-            expect(result.metadata['is_saved_card']).toBe(true);
-            expect(result.metadata['requires_sca']).toBe(true);
-        });
-
-        it('includes return_url from context', () => {
-            const result = strategy.prepare(validReq, { returnUrl: 'https://example.com/return' });
-            expect(result.metadata['return_url']).toBe('https://example.com/return');
-        });
-
-        it('includes device data when provided', () => {
-            const result = strategy.prepare(validReq, {
-                deviceData: {
-                    ipAddress: '192.168.1.1',
-                    userAgent: 'Mozilla/5.0',
-                    screenWidth: 1920,
-                    screenHeight: 1080,
-                }
-            });
-
-            expect(result.metadata['device_ip']).toBe('192.168.1.1');
-            expect(result.metadata['device_user_agent']).toBe('Mozilla/5.0');
-            expect(result.metadata['device_screen']).toBe('1920x1080');
-        });
+    it('accepts valid token formats (tok_, pm_, card_)', () => {
+      expect(() =>
+        strategy.validate({ ...validReq, method: { type: 'card', token: 'tok_test1234567890' } }),
+      ).not.toThrow();
+      expect(() =>
+        strategy.validate({ ...validReq, method: { type: 'card', token: 'pm_test1234567890x' } }),
+      ).not.toThrow();
+      expect(() =>
+        strategy.validate({ ...validReq, method: { type: 'card', token: 'card_test123456789' } }),
+      ).not.toThrow();
     });
 
-    describe('start()', () => {
-        it('validates, prepares and calls gateway.createIntent', async () => {
-            const result = await firstValueFrom(strategy.start(validReq));
-
-            expect(gatewayMock.createIntent).toHaveBeenCalledTimes(1);
-            expect(gatewayMock.createIntent).toHaveBeenCalledWith(validReq);
-            expect(result.id).toBe('pi_1');
-        });
-
-        it('throws validation error before calling gateway', () => {
-            const invalidReq = { ...validReq, method: { type: 'card' as const } };
-
-            // Error is thrown synchronously in start() before returning Observable
-            expect(() => strategy.start(invalidReq)).toThrowError(/Card token is required/);
-
-            expect(gatewayMock.createIntent).not.toHaveBeenCalled();
-        });
-
-        it('enriches intent with 3DS info when requires_action', async () => {
-            const intentWith3ds: PaymentIntent = {
-                ...intentResponse,
-                status: 'requires_action',
-                clientSecret: 'pi_secret_123',
-            };
-            (gatewayMock.createIntent as any).mockReturnValueOnce(of(intentWith3ds));
-
-            const result = await firstValueFrom(strategy.start(validReq, { returnUrl: 'https://return.com' }));
-
-            expect(result.nextAction?.type).toBe('3ds');
-            expect((result.nextAction as any)?.clientSecret).toBe('pi_secret_123');
-            expect((result.nextAction as any)?.returnUrl).toBe('https://return.com');
-        });
+    it('throws if amount is below minimum for MXN', () => {
+      const req = { ...validReq, amount: 5, currency: 'MXN' as const };
+      expect(() => strategy.validate(req)).toThrowError(/Minimum amount/);
     });
 
-    describe('requiresUserAction()', () => {
-        it('returns true when status is requires_action with 3ds', () => {
-            const intent: PaymentIntent = {
-                ...intentResponse,
-                status: 'requires_action',
-                nextAction: { type: '3ds', clientSecret: 'secret', returnUrl: '' },
-            };
-            expect(strategy.requiresUserAction(intent)).toBe(true);
-        });
+    it('throws if amount is below minimum for USD', () => {
+      const req = { ...validReq, amount: 0.5, currency: 'USD' as const };
+      expect(() => strategy.validate(req)).toThrowError(/Minimum amount/);
+    });
+  });
 
-        it('returns false for other statuses', () => {
-            expect(strategy.requiresUserAction({ ...intentResponse, status: 'succeeded' })).toBe(false);
-            expect(strategy.requiresUserAction({ ...intentResponse, status: 'processing' })).toBe(false);
-        });
+  describe('prepare()', () => {
+    it('returns prepared request and metadata', () => {
+      const result = strategy.prepare(validReq);
+
+      expect(result.preparedRequest).toEqual(validReq);
+      expect(result.metadata['payment_method_type']).toBe('card');
+      expect(result.metadata['is_saved_card']).toBe(false);
+      expect(result.metadata['timestamp']).toBeDefined();
     });
 
-    describe('getUserInstructions()', () => {
-        it('returns instructions when 3DS is required', () => {
-            const intent: PaymentIntent = {
-                ...intentResponse,
-                status: 'requires_action',
-                nextAction: { type: '3ds', clientSecret: 'secret', returnUrl: '' },
-            };
-            const instructions = strategy.getUserInstructions(intent);
-            expect(instructions).toContain('verificación adicional');
-        });
+    it('detects saved cards (pm_ prefix)', () => {
+      const req = { ...validReq, method: { type: 'card' as const, token: 'pm_saved12345678901' } };
+      const result = strategy.prepare(req);
 
-        it('returns null when no action required', () => {
-            expect(strategy.getUserInstructions(intentResponse)).toBeNull();
-        });
+      expect(result.metadata['is_saved_card']).toBe(true);
+      expect(result.metadata['requires_sca']).toBe(true);
     });
+
+    it('includes return_url from context', () => {
+      const result = strategy.prepare(validReq, { returnUrl: 'https://example.com/return' });
+      expect(result.metadata['return_url']).toBe('https://example.com/return');
+    });
+
+    it('includes device data when provided', () => {
+      const result = strategy.prepare(validReq, {
+        deviceData: {
+          ipAddress: '192.168.1.1',
+          userAgent: 'Mozilla/5.0',
+          screenWidth: 1920,
+          screenHeight: 1080,
+        },
+      });
+
+      expect(result.metadata['device_ip']).toBe('192.168.1.1');
+      expect(result.metadata['device_user_agent']).toBe('Mozilla/5.0');
+      expect(result.metadata['device_screen']).toBe('1920x1080');
+    });
+  });
+
+  describe('start()', () => {
+    it('validates, prepares and calls gateway.createIntent', async () => {
+      const result = await firstValueFrom(strategy.start(validReq));
+
+      expect(gatewayMock.createIntent).toHaveBeenCalledTimes(1);
+      expect(gatewayMock.createIntent).toHaveBeenCalledWith(validReq);
+      expect(result.id).toBe('pi_1');
+    });
+
+    it('throws validation error before calling gateway', () => {
+      const invalidReq = { ...validReq, method: { type: 'card' as const } };
+
+      // Error is thrown synchronously in start() before returning Observable
+      expect(() => strategy.start(invalidReq)).toThrowError(/Card token is required/);
+
+      expect(gatewayMock.createIntent).not.toHaveBeenCalled();
+    });
+
+    it('enriches intent with 3DS info when requires_action', async () => {
+      const intentWith3ds: PaymentIntent = {
+        ...intentResponse,
+        status: 'requires_action',
+        clientSecret: 'pi_secret_123',
+      };
+      (gatewayMock.createIntent as any).mockReturnValueOnce(of(intentWith3ds));
+
+      const result = await firstValueFrom(
+        strategy.start(validReq, { returnUrl: 'https://return.com' }),
+      );
+
+      expect(result.nextAction?.type).toBe('3ds');
+      expect((result.nextAction as any)?.clientSecret).toBe('pi_secret_123');
+      expect((result.nextAction as any)?.returnUrl).toBe('https://return.com');
+    });
+  });
+
+  describe('requiresUserAction()', () => {
+    it('returns true when status is requires_action with 3ds', () => {
+      const intent: PaymentIntent = {
+        ...intentResponse,
+        status: 'requires_action',
+        nextAction: { type: '3ds', clientSecret: 'secret', returnUrl: '' },
+      };
+      expect(strategy.requiresUserAction(intent)).toBe(true);
+    });
+
+    it('returns false for other statuses', () => {
+      expect(strategy.requiresUserAction({ ...intentResponse, status: 'succeeded' })).toBe(false);
+      expect(strategy.requiresUserAction({ ...intentResponse, status: 'processing' })).toBe(false);
+    });
+  });
+
+  describe('getUserInstructions()', () => {
+    it('returns instructions when 3DS is required', () => {
+      const intent: PaymentIntent = {
+        ...intentResponse,
+        status: 'requires_action',
+        nextAction: { type: '3ds', clientSecret: 'secret', returnUrl: '' },
+      };
+      const instructions = strategy.getUserInstructions(intent);
+      expect(instructions).toContain('verificación adicional');
+    });
+
+    it('returns null when no action required', () => {
+      expect(strategy.getUserInstructions(intentResponse)).toBeNull();
+    });
+  });
 });

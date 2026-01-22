@@ -8,6 +8,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ## Prioridad Alta (Críticos)
 
 ### 1) Inconsistencia en `providedIn: 'root'` en Use Cases
+
 - **Archivo:** [`start-payment.use-case.ts`](src/app/features/payments/application/use-cases/start-payment.use-case.ts)
 - **Problema:**
   - `StartPaymentUseCase` está decorado con `@Injectable({ providedIn: 'root' })`, pero los demás use cases están con `@Injectable()` sin `providedIn`.
@@ -36,6 +37,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 2) Inyección de clases concretas como tokens (acoplamiento de infraestructura)
+
 - **Archivo principal:** [`payment.providers.ts`](src/app/features/payments/config/payment.providers.ts)
 - **Problema:**
   - Se usan clases concretas como tokens de DI para representar “el gateway”:
@@ -74,6 +76,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 3) `PaymentsStore` es un God Object
+
 - **Archivo:** [`payment.store.ts`](src/app/features/payments/application/store/payment.store.ts)
 - **Problema:**
   - Centraliza demasiadas responsabilidades:
@@ -93,9 +96,9 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
   - UI components que dependen del store
 - **Solución (incremental y testeable):**
   - Extraer 1 responsabilidad a la vez:
-    1) `PaymentHistoryService` (append/limit/history derived)
-    2) `FallbackUiCoordinator` (execute/cancel/subscribe to fallbackExecute$)
-    3) Mantener store como “state + delegación”
+    1. `PaymentHistoryService` (append/limit/history derived)
+    2. `FallbackUiCoordinator` (execute/cancel/subscribe to fallbackExecute$)
+    3. Mantener store como “state + delegación”
   - Evitar refactor grande: extraer helpers internos primero.
 - **Done when:**
   - `PaymentsStore` ya no contiene suscripciones directas complejas ni lógica de fallback extensa.
@@ -106,6 +109,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ## Prioridad media (Importantes)
 
 ### 4) Validaciones duplicadas (violación DRY + reglas inconsistentes)
+
 - **Archivo(s):**
   - [`card-strategy.ts`](src/app/features/payments/shared/strategies/card-strategy.ts) -> `validate()`
   - [`stripe-card-request.builder.ts`](src/app/features/payments/infrastructure/stripe/builders/stripe-card-request.builder.ts) -> `validate()`
@@ -126,9 +130,9 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
     - **Domain/Application validation**: validaciones de negocio (minAmount, reglas de method)
     - **Infra validation**: validaciones técnicas del request final (por provider)
   - Recomendación incremental:
-    1) Dejar `CardStrategy.validate()` como “reglas de negocio”
-    2) Builder valida solo “campos requeridos para construir request”
-    3) Base gateway NO debe duplicar reglas de strategy (solo sanity checks)
+    1. Dejar `CardStrategy.validate()` como “reglas de negocio”
+    2. Builder valida solo “campos requeridos para construir request”
+    3. Base gateway NO debe duplicar reglas de strategy (solo sanity checks)
 - **Done when:**
   - No hay 3 validadores peleándose por lo mismo.
   - Un error de “token missing” ocurre en un solo lugar consistente.
@@ -136,6 +140,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 5) Long Parameter List en `StartPaymentUseCase`
+
 - **Archivo:** [`start-payment.use-case.ts`](src/app/features/payments/application/use-cases/start-payment.use-case.ts)
 - **Problema:**
   - `execute(request, providerId, context?, wasAutoFallback?)` ya va creciendo.
@@ -161,6 +166,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 6) Type casting peligroso en `FakePaymentGateway`
+
 - **Archivo:** [`fake-payment.gateway.ts`](src/app/features/payments/infrastructure/fake/gateways/fake-payment.gateway.ts)
 - **Problema:**
   - Se usa hack:
@@ -182,6 +188,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 7) `FakePaymentGateway` excesivamente largo (dificulta mantenimiento)
+
 - **Archivo:** [`fake-payment.gateway.ts`](src/app/features/payments/infrastructure/fake/gateways/fake-payment.gateway.ts) (~697 líneas)
 - **Problema:**
   - Contiene demasiada lógica:
@@ -204,6 +211,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 8) Falta Error Boundary a nivel UI (errores de render no controlados)
+
 - **Archivo(s):**
   - UI pages/components (ej: checkout/status/return)
 - **Problema:**
@@ -224,6 +232,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 9) Código legacy sin eliminar (rutas de debug)
+
 - **Archivo real:** [`payments.routes.ts`](src/app/features/payments/payments.routes.ts)
 - **Problema:**
   - Existe ruta “legacy debug”:
@@ -245,6 +254,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ## Prioridad Baja (Mejoras)
 
 ### 10) Magic strings dispersos
+
 - **Archivo(s):**
   - Múltiples (providers y métodos: `'stripe'`, `'paypal'`, `'card'`, `'spei'`)
 - **Problema:**
@@ -262,6 +272,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 11) Falta lazy loading por provider individual
+
 - **Archivo(s):**
   - [`payment.providers.ts`](src/app/features/payments/config/payment.providers.ts)
 - **Problema:**
@@ -279,6 +290,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 12) `LoggerService` solo escribe a console
+
 - **Archivo:** [`logger.service.ts`](src/app/core/logging/logger.service.ts)
 - **Problema:**
   - Logging estructurado muy bien diseñado, pero sin salida real (Sentry/DataDog/etc.).
@@ -294,6 +306,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 13) `CacheService` sin límite estricto de memoria por bytes
+
 - **Archivo:** [`cache.service.ts`](src/app/core/caching/cache.service.ts)
 - **Problema:**
   - Evicción por `maxEntries`, no por bytes/mem real.
@@ -309,6 +322,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 14) `FallbackOrchestratorService` muy complejo (estado y flujo pesado)
+
 - **Archivo:** [`fallback-orchestrator.service.ts`](src/app/features/payments/application/services/fallback-orchestrator.service.ts) (~483 líneas)
 - **Problema:**
   - Mucha lógica de estado + timers + decisiones.
@@ -325,6 +339,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 15) Sin manejo de autenticación/sesión
+
 - **Archivo(s):**
   - Gateways HTTP (Stripe/PayPal)
 - **Problema:**
@@ -339,6 +354,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 16) Comentarios JSDoc excesivos en código interno
+
 - **Archivo(s):**
   - Varios (core + payments)
 - **Problema:**
@@ -353,6 +369,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 17) Sin E2E tests reales
+
 - **Archivo(s):**
   - Actualmente hay integration specs tipo unit/integration, pero no E2E browser.
 - **Problema:**
@@ -368,6 +385,7 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 ---
 
 ### 18) Vendor lock-in con NgRx Signals
+
 - **Archivo(s):**
   - [`payment.store.ts`](src/app/features/payments/application/store/payment.store.ts)
   - Token adapter: [`payment-state.token.ts`](src/app/features/payments/application/tokens/payment-state.token.ts)
@@ -384,4 +402,3 @@ Enfocado en: arquitectura mantenible, OCP real, tests estables, error handling c
 - **Done when:**
   - UI consume principalmente `PaymentStatePort`.
   - Store interno puede cambiar sin tocar UI extensa.
-

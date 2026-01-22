@@ -1,6 +1,6 @@
 /**
  * Módulo de Resiliencia
- * 
+ *
  * Provee servicios e interceptors para manejo de fallos:
  * - Circuit Breaker: Previene llamadas a servicios que están fallando
  * - Rate Limiter: Controla exceso de requests

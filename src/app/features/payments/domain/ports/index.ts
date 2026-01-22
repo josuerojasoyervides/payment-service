@@ -1,6 +1,6 @@
 /**
  * Barrel export principal para domain/ports.
- * 
+ *
  * Permite imports simplificados:
  * import { PaymentGateway, ProviderFactory } from '../../domain/ports';
  */

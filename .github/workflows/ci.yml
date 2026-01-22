@@ -47,4 +47,3 @@ jobs:
 
       - name: Build (prod)
         run: bun run build -- --configuration production
-

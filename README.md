@@ -7,6 +7,7 @@ Módulo de pagos multi-proveedor para Angular con arquitectura hexagonal (Ports 
 Construir un sistema de pagos **extensible, resiliente y desacoplado** que soporte múltiples proveedores (Stripe, PayPal, futuro MercadoPago, Conekta, etc.) sin que la UI conozca los detalles de implementación de cada uno.
 
 **Principios clave:**
+
 - La UI solo conoce **abstracciones** (interfaces/ports), nunca implementaciones concretas
 - Cada provider define sus propios **requisitos de campos** y **builders**
 - Agregar un nuevo provider **no modifica código existente** (Open/Closed)
@@ -85,18 +86,21 @@ Construir un sistema de pagos **extensible, resiliente y desacoplado** que sopor
 ## Características Principales
 
 ### Multi-Provider con Fallback Inteligente
+
 - Soporta múltiples proveedores de pago simultáneamente
 - Fallback automático o manual cuando un provider falla
 - Prioridad configurable de proveedores
 - Detección de errores elegibles para fallback
 
 ### Resiliencia Integrada
+
 - **Circuit Breaker**: Previene llamadas a servicios que están fallando
 - **Rate Limiting**: Controla exceso de requests del cliente
 - **Retry con Backoff**: Reintentos inteligentes con espera exponencial
 - **Logging estructurado**: Trazabilidad con correlationId
 
 ### Estado Reactivo
+
 - NgRx Signals para estado inmutable
 - Computed properties optimizadas
 - Historial de transacciones
@@ -187,6 +191,7 @@ import { CircuitBreakerService } from '@core/services/circuit-breaker.service';
 ```
 
 Aliases disponibles:
+
 - `@core/*` → `src/app/core/*`
 - `@payments/*` → `src/app/features/payments/*`
 - `@payments/domain` → Models del dominio
@@ -213,16 +218,16 @@ bun run build
 
 ## Patrones de Diseño Utilizados
 
-| Patrón | Implementación | Propósito |
-|--------|---------------|-----------|
-| **Abstract Factory** | `ProviderFactory` | Crea familias de objetos relacionados (gateway + strategies + builders) |
-| **Strategy** | `PaymentStrategy` | Encapsula algoritmos de validación/preparación por método de pago |
-| **Builder** | `PaymentRequestBuilder` | Construye requests complejos con validación |
-| **Template Method** | `PaymentGateway` | Define el esqueleto del algoritmo, subclases implementan detalles |
-| **Registry** | `ProviderFactoryRegistry` | Punto único de acceso a factories con cache |
-| **Port/Adapter** | `PaymentGateway` (port) → `StripePaymentGateway` (adapter) | Inversión de dependencias |
-| **Circuit Breaker** | `CircuitBreakerService` | Resiliencia ante servicios que fallan repetidamente |
-| **Observer** | `FallbackOrchestratorService` | Comunicación reactiva de eventos de fallback |
+| Patrón               | Implementación                                             | Propósito                                                               |
+| -------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------- |
+| **Abstract Factory** | `ProviderFactory`                                          | Crea familias de objetos relacionados (gateway + strategies + builders) |
+| **Strategy**         | `PaymentStrategy`                                          | Encapsula algoritmos de validación/preparación por método de pago       |
+| **Builder**          | `PaymentRequestBuilder`                                    | Construye requests complejos con validación                             |
+| **Template Method**  | `PaymentGateway`                                           | Define el esqueleto del algoritmo, subclases implementan detalles       |
+| **Registry**         | `ProviderFactoryRegistry`                                  | Punto único de acceso a factories con cache                             |
+| **Port/Adapter**     | `PaymentGateway` (port) → `StripePaymentGateway` (adapter) | Inversión de dependencias                                               |
+| **Circuit Breaker**  | `CircuitBreakerService`                                    | Resiliencia ante servicios que fallan repetidamente                     |
+| **Observer**         | `FallbackOrchestratorService`                              | Comunicación reactiva de eventos de fallback                            |
 
 ## Ejemplo de Uso
 
@@ -245,10 +250,10 @@ export class CheckoutComponent {
 
     processPayment(provider: 'stripe' | 'paypal', method: 'card' | 'spei') {
         const factory = this.registry.get(provider);
-        
+
         // Obtener requisitos de campos para el formulario
         const requirements = factory.getFieldRequirements(method);
-        
+
         // Construir request con el builder
         const request = factory.createRequestBuilder(method)
             .forOrder('order_123')
@@ -266,14 +271,14 @@ export class CheckoutComponent {
 
 ```typescript
 // En providers del módulo
-{ 
-    provide: FALLBACK_CONFIG, 
-    useValue: { 
+{
+    provide: FALLBACK_CONFIG,
+    useValue: {
         mode: 'auto',
         autoFallbackDelay: 2000,
         maxAutoFallbacks: 1,
         providerPriority: ['stripe', 'paypal']
-    } 
+    }
 }
 ```
 

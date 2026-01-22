@@ -10,8 +10,8 @@
     "test:coverage": "ng test --coverage",
     "dep:check": "depcruise src",
     "dep:graph": "depcruise src --include-only '^src' --output-type dot | dot -Tsvg > dependency-graph.svg",
-    "lint": "eslint \"src/**/*.{ts,html}\"",
-    "lint:fix": "eslint \"src/**/*.{ts,html}\" --fix",
+    "lint": "eslint \"src/**/*.ts\" \"src/app/**/*.html\"",
+    "lint:fix": "eslint \"src/**/*.ts\" \"src/app/**/*.html\" --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "prepare": "husky"
@@ -47,19 +47,18 @@
     "@vitest/coverage-v8": "^4.0.17",
     "angular-eslint": "21.1.0",
     "autoprefixer": "^10.4.23",
+    "dependency-cruiser": "^17.3.6",
     "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-unused-imports": "^4.3.0",
     "husky": "^9.1.7",
     "jsdom": "^27.4.0",
     "lint-staged": "^16.2.7",
     "postcss": "^8.5.6",
+    "prettier": "^3.8.1",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.2",
     "typescript-eslint": "8.47.0",
-    "vitest": "^4.0.17",
-    "dependency-cruiser": "^17.3.6",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
-    "prettier": "^3.8.1",
-    "prettier-eslint": "^16.4.2"
+    "vitest": "^4.0.17"
   }
 }

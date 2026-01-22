@@ -1,17 +1,29 @@
-import { Component, input, output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, inject, input, output } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
 import { NextAction } from '../../../domain/models/payment/payment-action.types';
 import { SpeiInstructionsComponent } from '../spei-instructions/spei-instructions.component';
-import { I18nService, I18nKeys } from '@core/i18n';
+
+type PaypalApproveAction = Extract<NextAction, { type: 'paypal_approve' }> & {
+  approveUrl: string;
+};
+
+function isPaypalApproveAction(action: NextAction): action is PaypalApproveAction {
+  if (action.type !== 'paypal_approve') return false;
+
+  // Validación runtime sin any
+  const maybe = action as { approveUrl?: unknown };
+  return typeof maybe.approveUrl === 'string' && maybe.approveUrl.length > 0;
+}
 
 /**
  * Component that displays the required action to complete a payment.
- * 
+ *
  * Supports different action types:
  * - 3DS: Bank authentication
  * - SPEI: Transfer instructions
  * - PayPal: Redirect to PayPal
- * 
+ *
  * @example
  * ```html
  * <app-next-action-card
@@ -21,79 +33,78 @@ import { I18nService, I18nKeys } from '@core/i18n';
  * ```
  */
 @Component({
-    selector: 'app-next-action-card',
-    standalone: true,
-    imports: [CommonModule, SpeiInstructionsComponent],
-    templateUrl: './next-action-card.component.html',
+  selector: 'app-next-action-card',
+  standalone: true,
+  imports: [CommonModule, SpeiInstructionsComponent],
+  templateUrl: './next-action-card.component.html',
 })
 export class NextActionCardComponent {
-    private readonly i18n = inject(I18nService);
-    
-    /** Required action */
-    readonly nextAction = input<NextAction | null>(null);
-    
-    /** Emits when action is completed */
-    readonly actionCompleted = output<void>();
-    
-    /** Emits when PayPal redirect is requested */
-    readonly paypalRequested = output<string>();
+  private readonly i18n = inject(I18nService);
 
-    onPayPalClick(): void {
-        const action = this.nextAction();
-        if (action && action.type === 'paypal_approve') {
-            const approveUrl = (action as any).approveUrl;
-            if (approveUrl) {
-                this.paypalRequested.emit(approveUrl);
-            }
-        }
-    }
+  /** Required action */
+  readonly nextAction = input<NextAction | null>(null);
 
-    // ===== Textos para el template =====
-    get threeDsTitle(): string {
-        return this.i18n.t(I18nKeys.ui['3ds_verification_required']);
-    }
+  /** Emits when action is completed */
+  readonly actionCompleted = output<void>();
 
-    get bankRequiresVerificationText(): string {
-        return this.i18n.t(I18nKeys.ui.bank_requires_verification);
-    }
+  /** Emits when PayPal redirect is requested */
+  readonly paypalRequested = output<string>();
 
-    get threeDsVersionLabel(): string {
-        return this.i18n.t(I18nKeys.ui['3ds_version']);
-    }
+  onPayPalClick(): void {
+    const action = this.nextAction();
+    if (!action) return;
 
-    get completeVerificationLabel(): string {
-        return this.i18n.t(I18nKeys.ui.complete_verification);
+    if (isPaypalApproveAction(action)) {
+      this.paypalRequested.emit(action.approveUrl);
     }
+  }
 
-    get paypalApprovalTitle(): string {
-        return this.i18n.t(I18nKeys.ui.paypal_approval_required);
-    }
+  // ===== Textos para el template =====
+  get threeDsTitle(): string {
+    return this.i18n.t(I18nKeys.ui['3ds_verification_required']);
+  }
 
-    get redirectedToPaypalText(): string {
-        return this.i18n.t(I18nKeys.ui.redirected_to_paypal);
-    }
+  get bankRequiresVerificationText(): string {
+    return this.i18n.t(I18nKeys.ui.bank_requires_verification);
+  }
 
-    get orderIdLabel(): string {
-        return this.i18n.t(I18nKeys.ui.order_id);
-    }
+  get threeDsVersionLabel(): string {
+    return this.i18n.t(I18nKeys.ui['3ds_version']);
+  }
 
-    get goToPaypalLabel(): string {
-        return this.i18n.t(I18nKeys.ui.go_to_paypal);
-    }
+  get completeVerificationLabel(): string {
+    return this.i18n.t(I18nKeys.ui.complete_verification);
+  }
 
-    get afterApproveVerifyText(): string {
-        return this.i18n.t(I18nKeys.ui.after_approve_verify);
-    }
+  get paypalApprovalTitle(): string {
+    return this.i18n.t(I18nKeys.ui.paypal_approval_required);
+  }
 
-    get actionRequiredLabel(): string {
-        return this.i18n.t(I18nKeys.ui.action_required);
-    }
+  get redirectedToPaypalText(): string {
+    return this.i18n.t(I18nKeys.ui.redirected_to_paypal);
+  }
 
-    get actionRequiresAttentionText(): string {
-        return this.i18n.t(I18nKeys.ui.action_requires_attention);
-    }
+  get orderIdLabel(): string {
+    return this.i18n.t(I18nKeys.ui.order_id);
+  }
 
-    get viewActionDetailsLabel(): string {
-        return this.i18n.t(I18nKeys.ui.view_action_details);
-    }
+  get goToPaypalLabel(): string {
+    return this.i18n.t(I18nKeys.ui.go_to_paypal);
+  }
+
+  get afterApproveVerifyText(): string {
+    return this.i18n.t(I18nKeys.ui.after_approve_verify);
+  }
+
+  get actionRequiredLabel(): string {
+    return this.i18n.t(I18nKeys.ui.action_required);
+  }
+
+  get actionRequiresAttentionText(): string {
+    return this.i18n.t(I18nKeys.ui.action_requires_attention);
+  }
+
+  get viewActionDetailsLabel(): string {
+    return this.i18n.t(I18nKeys.ui.view_action_details);
+  }
 }

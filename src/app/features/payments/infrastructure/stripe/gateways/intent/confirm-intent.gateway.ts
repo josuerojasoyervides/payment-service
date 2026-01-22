@@ -7,29 +7,32 @@ import { getIdempotencyHeaders } from '../../validators/get-idempotency-headers'
 import { mapPaymentIntent } from '../../mappers/payment-intent.mapper';
 
 @Injectable()
-export class StripeConfirmIntentGateway extends PaymentGatewayOperation<ConfirmPaymentRequest, StripePaymentIntentDto, PaymentIntent> {
+export class StripeConfirmIntentGateway extends PaymentGatewayOperation<
+  ConfirmPaymentRequest,
+  StripePaymentIntentDto,
+  PaymentIntent
+> {
+  readonly providerId: PaymentProviderId = 'stripe' as const;
 
-    readonly providerId: PaymentProviderId = 'stripe' as const;
+  private static readonly API_BASE = '/api/payments/stripe';
 
-    private static readonly API_BASE = '/api/payments/stripe';
+  constructor() {
+    super();
+  }
 
-    constructor() {
-        super();
-    }
+  protected executeRaw(request: ConfirmPaymentRequest): Observable<StripePaymentIntentDto> {
+    const stripeRequest: StripeConfirmIntentRequest = {
+      return_url: request.returnUrl,
+    };
 
-    protected executeRaw(request: ConfirmPaymentRequest): Observable<StripePaymentIntentDto> {
-        const stripeRequest: StripeConfirmIntentRequest = {
-            return_url: request.returnUrl,
-        };
+    return this.http.post<StripePaymentIntentDto>(
+      `${StripeConfirmIntentGateway.API_BASE}/intents/${request.intentId}/confirm`,
+      stripeRequest,
+      { headers: getIdempotencyHeaders(request.intentId, 'confirm', request.idempotencyKey) },
+    );
+  }
 
-        return this.http.post<StripePaymentIntentDto>(
-            `${StripeConfirmIntentGateway.API_BASE}/intents/${request.intentId}/confirm`,
-            stripeRequest,
-            { headers: getIdempotencyHeaders(request.intentId, 'confirm', request.idempotencyKey) }
-        );
-    }
-
-    protected mapResponse(dto: StripePaymentIntentDto): PaymentIntent {
-        return mapPaymentIntent(dto, this.providerId);
-    }
+  protected mapResponse(dto: StripePaymentIntentDto): PaymentIntent {
+    return mapPaymentIntent(dto, this.providerId);
+  }
 }

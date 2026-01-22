@@ -1,4 +1,4 @@
-@import "tailwindcss/index.css";
+@import 'tailwindcss/index.css';
 
 /* Custom theme configuration */
 @theme {
@@ -34,7 +34,6 @@
 
 /* Custom component styles */
 @layer components {
-
   /* Card styles */
   .card {
     @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
