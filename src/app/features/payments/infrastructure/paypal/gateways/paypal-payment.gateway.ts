@@ -155,9 +155,15 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
    */
   protected override normalizeError(err: unknown): PaymentError {
     if (this.isPaypalErrorResponse(err)) {
+      const code = PaypalPaymentGateway.ERROR_MAP[err.name] ?? 'provider_error';
+
       return {
-        code: PaypalPaymentGateway.ERROR_MAP[err.name] ?? 'provider_error',
+        code,
         message: this.humanizePaypalError(err),
+        messageKey: I18nKeys.errors.paypal_error,
+        params: {
+          reason: err.name, // opcional, por si UI quiere mostrarlo o logs
+        },
         raw: err,
       };
     }
@@ -169,6 +175,7 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
         return {
           code: 'provider_error',
           message: this.i18n.t(I18nKeys.errors.paypal_auth_error),
+          messageKey: I18nKeys.errors.paypal_auth_error,
           raw: err,
         };
       }
@@ -177,6 +184,7 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
         return {
           code: 'provider_unavailable',
           message: this.i18n.t(I18nKeys.errors.paypal_unavailable),
+          messageKey: I18nKeys.errors.paypal_unavailable,
           raw: err,
         };
       }
