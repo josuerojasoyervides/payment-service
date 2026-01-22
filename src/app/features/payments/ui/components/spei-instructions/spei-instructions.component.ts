@@ -1,7 +1,7 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, inject, input, signal } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
-import { ClabeFormatPipe } from '@shared/pipes';
+import { ClabeFormatPipe } from '@shared/pipes/clabe-format.pipe';
 
 /**
  * Component that displays SPEI payment instructions.

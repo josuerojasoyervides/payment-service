@@ -9,7 +9,7 @@ import {
 
 import { PaymentHistoryEntry } from '../../../application/store/payment.models';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { PaymentIntentCardComponent } from '../../components';
+import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
 /**
  * Payment history page.

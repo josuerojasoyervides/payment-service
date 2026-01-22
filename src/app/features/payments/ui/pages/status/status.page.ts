@@ -9,7 +9,8 @@ import {
 } from '@payments/domain/models/payment/payment-intent.types';
 
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { NextActionCardComponent, PaymentIntentCardComponent } from '../../components';
+import { NextActionCardComponent } from '../../components/next-action-card/next-action-card.component';
+import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
 /**
  * Page to query payment status by ID.

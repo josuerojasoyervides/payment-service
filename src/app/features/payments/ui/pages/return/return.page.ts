@@ -5,7 +5,7 @@ import { I18nKeys, I18nService } from '@core/i18n';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { PaymentIntentCardComponent } from '../../components';
+import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
 /**
  * Return page for 3DS and PayPal callbacks.
