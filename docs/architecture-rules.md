@@ -1,461 +1,342 @@
 # Payments Module — Architecture & Quality Rules
 
-Este repositorio nació como un laboratorio para aprender **buenas prácticas y arquitectura compleja**, pero puede evolucionar gradualmente hacia un **módulo funcional real**.
+> **Última actualización:** 2026-01-23  
+> Este repositorio es un laboratorio para practicar arquitectura realista aplicada a pagos y evolucionar hacia un módulo funcional **sin convertirlo en una telaraña**.
 
-Este documento define reglas de calidad, diseño y mantenimiento para que el proyecto:
+Este documento define reglas de **diseño, boundaries, i18n, errores, providers y tests** para que el proyecto:
 
-- no se vuelva una telaraña por deuda técnica,
-- sea escalable de manera incremental,
-- permita agregar providers y métodos sin “romper todo”,
-- mantenga tests estables y flujos sin UI colgada.
+- sea mantenible (sin acoplamientos raros),
+- sea extensible (agregar providers / métodos sin “romper todo”),
+- sea testeable (sin depender de UI ni HTTP real),
+- sea consistente (errores e i18n con contrato único).
 
-> Filosofía: **Clean-ish pragmática**. Primero estabilizar, corregir y hacer mantenible. Luego avanzar.
+> Filosofía: **Clean-ish pragmática**. Primero estabilidad y consistencia. Después features y XState.
 
 ---
 
-## 1) Principios del proyecto (lo que NO se negocia)
+## 1) Principios NO negociables
 
 ### 1.1 Propósito
 
-- Aprender arquitectura realista aplicada a pagos.
-- Practicar escalabilidad, separación de responsabilidades y pruebas.
-- Evolucionar hacia un módulo usable **sin sacrificar calidad**.
+- Arquitectura limpia por capas (sin “cosas en cualquier lado”).
+- Flujos claros: **la UI no orquesta**, la Application sí.
+- Errors e i18n consistentes: **UI traduce, infra jamás**.
 
-### 1.2 Prohibiciones absolutas (aunque “funcione”)
+### 1.2 Prohibiciones absolutas
 
-Estas cosas están prohibidas:
+**Domain** debe ser **TypeScript puro**. Prohibido dentro de `domain/`:
 
-- **Librerías en Domain** (domain = TypeScript puro)
-- **`any`** (si aparece, se considera deuda técnica real)
-- **hacks para avanzar** (bomba de tiempo)
-- **features nuevas antes de estabilizar lo actual**
-- **código sin propósito** (mejor ir lento que inflar el sistema)
-- **malas prácticas** (switch/if cascadas para provider, DI frágil, etc.)
-- **deuda técnica intencional** (si hay deuda, debe estar documentada como temporal y con plan)
-
----
-
-## 2) Reglas de capas (layering real)
-
-### 2.1 Dependencias permitidas entre capas
-
-Regla principal de dependencias:
-
-- **Domain → (nada)**
-- **Application → Domain**
-- **Infrastructure → Application + Domain**
-- **UI → Application**
-
-Si una dependencia rompe esto, se considera bug de arquitectura.
-
-### 2.2 Qué está prohibido en `domain/`
-
-Domain debe ser TypeScript puro. Está prohibido:
-
-- Angular ❌
-- RxJS ❌
-- HttpClient ❌
-- i18n ❌
-- Logger ❌
-- cualquier servicio con side effects ❌
-
-### 2.3 Ports: dónde viven y por qué
-
-Regla:
-
-- **Domain ports**: solo contratos que se pueden describir con TS puro (sin RxJS, sin Angular).
-- **Application ports**: contratos que dependen de tecnología o librerías (ej: `Observable`, DI, Http, etc).
-
-Ejemplo típico:
-
-- `PaymentGateway` que retorna `Observable` → debe vivir en `application/ports`.
+- Angular (`@angular/*`) ❌
+- RxJS (`Observable`, operadores) ❌
+- HTTP (`HttpClient`, `fetch`) ❌
+- i18n keys (`I18nKeys`) ❌
+- tipos/errores de providers (Stripe/PayPal DTOs) ❌
+- Date/time libs y side-effects ❌
+- Logger, caching, resiliencia ❌
 
 ---
 
-## 3) Filosofía del diseño (cómo se “programa” aquí)
+## 2) Capas oficiales y reglas de dependencias
 
-### 3.1 Extensibilidad (OCP real)
+Capas del módulo:
 
-La meta es poder agregar:
+```
+src/app/features/payments/
+  domain/
+  application/
+  infrastructure/
+  shared/
+  ui/
+```
 
-- providers (Stripe, PayPal, Fake, etc.)
-- métodos (Card, SPEI, ApplePay, etc.)
+### 2.1 Dependencias permitidas (regla de oro)
 
-**sin** introducir:
+- `domain/` → **nada**
+- `application/` → `domain/` (+ Angular DI/RxJS permitido)
+- `infrastructure/` → `application/` + `domain/`
+- `shared/` → depende del caso (ver sección 2.2)
+- `ui/` → `application/` + `domain/` (por tokens/ports/state), **nunca infrastructure**
 
-- `switch(providerId)` en use cases
-- `if/else` gigantes por provider en el core
+> Regla simple: **UI y Domain no saben que existe infraestructura**.
 
-Regla:
-✅ Si estás a punto de meter un `switch(providerId)`, probablemente falta un **Registry / Factory / Token**.
+### 2.2 ¿Qué es `shared/` en este repo?
 
-### 3.2 Minimal change, high impact
+`shared/` es un “cajón controlado” (mezcla intencional) para cosas reutilizables dentro del módulo, por ejemplo:
 
-Cambios deben ser:
+- strategies de método de pago (`shared/strategies/card-strategy.ts`, `shared/strategies/spei-strategy.ts`)
+- helpers puros o adaptadores internos que no pertenecen claramente a 1 capa
 
-- incrementales,
-- con scope claro,
-- testeables,
-- y con riesgo controlado.
+**Reglas de `shared/`:**
 
-Refactors masivos solo se permiten si:
-
-- hay razón fuerte,
-- y el beneficio es claro,
-- y hay plan incremental.
-
----
-
-## 4) Contrato de errores (PaymentError)
-
-### 4.1 `PaymentError` como error estándar del sistema
-
-El módulo tiene un error estructurado:
-
-**PaymentError**
-
-- `code`
-- `providerId`
-- `messageKey`
-- `raw`
-- `stacks`
-
-Objetivo:
-
-- los errores deben ser **manejables**, **testeables** y **consistentes**.
-
-> Nota: el shape puede evolucionar, pero debe hacerse incrementalmente sin romper todo.
-
-### 4.2 `messageKey` NO es UI ni traducción
-
-Regla clave:
-
-- **Domain**: define el error por `code` (significado semántico).
-- **Application (o UI Adapter)**: traduce `code` → `messageKey`.
-
-Esto mantiene:
-✅ Domain limpio  
-✅ sin UI  
-✅ sin traducciones
+- ✅ puede depender de `domain/` (tipos)
+- ✅ puede depender de `application/` si son helpers de aplicación (con criterio)
+- ❌ NO puede depender de `infrastructure/`
+- ❌ NO puede depender de `ui/`
 
 ---
 
-## 5) Clasificación de errores (recuperable vs fatal)
+## 3) Vocabulario (Ports & Adapters)
 
-Los pagos por naturaleza requieren distinguir si el sistema debe:
+Este repo usa el estilo **Ports & Adapters**.
 
-- **reintentar / fallbackear**, o
-- **fallar inmediatamente**.
+- **Port:** interfaz/contrato entre capas (ej. `PaymentGateway`, `PaymentStatePort`)
+- **Adapter:** implementación concreta (ej. Stripe/PayPal gateway)
+- **Use Case:** orquestación del proceso desde Application (no UI)
+- **Orchestrator:** coordinación multi-step (ej. fallback)
+- **Registry + Factory:** registro de providers y creación de gateways sin acoplar UI/app a implementaciones
 
-### 5.1 Error fatal (no se intenta fallback)
-
-Ejemplos típicos:
-
-- token inválido
-- request inválido
-- datos faltantes
-- validaciones de negocio que NO dependen del provider
-
-Acción:
-
-- ir directo a estado `error`
-- mostrar mensaje claro
-- permitir corregir / reintentar
-
-### 5.2 Error recuperable (fallback posible)
-
-Ejemplos típicos:
-
-- provider caído
-- timeout / 5xx
-- provider unavailable
-
-Acción:
-
-- reportar al `FallbackOrchestrator`
-- decidir fallback auto/manual según contexto
-
-### 5.3 Dónde vive la “regla” de recuperabilidad
-
-Decisión del proyecto:
-
-- ✅ **La clasificación de error (recuperable/fatal) pertenece al Domain como regla de negocio**
-  - porque define “qué hacer cuando el sistema falla” sin depender del framework/tech.
-- ✅ **La implementación concreta de esta regla vive en Application**
-  - porque es donde se ejecuta el flujo (use cases/orchestrator) y puede usar herramientas/infra.
-
-Recomendación práctica:
-
-- Domain define **la intención** (por ejemplo, lista de códigos recuperables/fatales como tipos/consts TS puros).
-- Application consume esa lista y la usa para decidir fallback.
+> Nota: este repo usa “Gateway” como “conexión al mundo externo”.
 
 ---
 
-## 6) Normalización de errores (de infra hacia arriba)
+## 4) Qué vive en cada capa
 
-### 6.1 ¿Dónde se normaliza a `PaymentError`?
+### 4.1 Domain (`domain/`)
 
-Regla:
+Debe contener **solo**:
 
-✅ **Infrastructure (operations/gateways) debe normalizar cualquier error a `PaymentError`.**
+- modelos: `PaymentIntent`, requests, types
+- contratos puros (ports TS puro si aplica)
+- reglas y tipos de dominio (`PaymentError`, enums, etc.)
 
-Motivo:
+Ejemplo:
 
-- Infra es donde viven los errores “reales” (HTTP, red, parsing, provider quirks).
-- Application/UI deben trabajar con un contrato estable.
-- Se evita repetir normalización en cada flujo.
+- `domain/models/payment/payment-error.types.ts`
+- `domain/models/payment/payment-intent.types.ts`
+- `domain/models/payment/payment-request.types.ts`
 
-Esto implica:
+### 4.2 Application (`application/`)
 
-- Cualquier `unknown | Error | HttpErrorResponse` en infra se transforma a `PaymentError` antes de salir.
+Contiene el “cerebro” del módulo:
 
----
+- use cases (start/confirm/cancel/get)
+- ports (interfaces de integración)
+- store (NgRx Signals)
+- orchestrators (fallback)
+- registry + factories
 
-## 7) Regla anti-UI colgada (cold streams + safeDefer)
+✅ En Application se permite:
 
-### 7.1 Regla general
+- Angular DI (`inject`, `Injectable`)
+- RxJS (`Observable`, operadores)
+- Signals (NgRx Signals o Angular signals)
+- interfaces, contratos y “wiring” de aplicación
 
-Objetivo:
+**UI NO implementa lógica de negocio**: UI solo dispara acciones y consume estado.
 
-- evitar “Unhandled error” en Vitest,
-- evitar loading eterno,
-- evitar estados colgados,
-- mantener streams predecibles.
+### 4.3 Infrastructure (`infrastructure/`)
 
-Regla del proyecto:
+Implementaciones concretas hacia el mundo externo:
 
-- Los use cases normalmente deben iniciar su ejecución con un wrapper tipo `safeDefer(...)` para encapsular throws sync dentro del Observable.
+- Stripe / PayPal
+- DTOs
+- mappers (DTO → domain)
+- normalización de errores provider → `PaymentError`
 
-### 7.2 ¿Es obligatorio `safeDefer` siempre?
+**Infra puede:**
 
-No es dogma, pero es altamente recomendado en el contexto actual porque:
+- usar `HttpClient`
+- construir DTOs
+- mapear respuestas externas
 
-- mantiene cold streams consistentes,
-- captura errores sync sin congelar UI,
-- estabiliza tests e integración.
+**Infra NO puede:**
 
-Si una parte del sistema necesita comportamiento distinto (hot stream o ejecución inmediata), debe justificarse explícitamente.
+- traducir (`i18n.t(...)`) ❌
+- tocar store/UI ❌
+- decidir fallback ❌
 
----
+### 4.4 UI (`ui/`)
 
-## 8) Estado UI oficial (state machine básica)
+- componentes
+- render de estados
+- disparo de acciones (start/confirm/etc)
+- traducción de errores (único lugar permitido)
 
-Estados válidos (mínimo):
-
-- `idle`
-- `loading`
-- `ready`
-- `error`
-- `fallback-pending`
-
-Reglas:
-
-- La UI **no puede** quedarse en `loading` indefinidamente.
-- Siempre debe existir una salida:
-  - success (`ready`)
-  - fail (`error`)
-  - fallback (`fallback-pending`)
-  - timeout + acción de usuario (retry/cancel)
-
-✅ UX rule:
-
-> siempre debe existir un timeout razonable para que el usuario pueda reintentar o cancelar.
+UI depende de `PAYMENT_STATE`/ports, **no** de implementaciones.
 
 ---
 
-## 9) Contrato de fallback (reglas del sistema)
+## 5) I18n & PaymentError (contrato oficial)
 
-El fallback es una responsabilidad del **FallbackOrchestratorService**, no de la UI, y no del dominio.
+### 5.1 Regla: **UI-only translation**
 
-### 9.1 Quién decide fallback
+- ✅ Único lugar donde se permite `i18n.t(...)`: `ui/**` (componentes UI)
+- ❌ Prohibido en `domain/`, `application/`, `infrastructure/`, `shared/`
 
-Regla:
+> `I18nKeys` **sí se puede usar en infra/app** para retornar keys, pero nunca para traducir.
 
-- El **Orchestrator** decide fallback porque depende del contexto del flujo.
-- No todos los flujos requieren fallback (ej: `getHistory` no es igual a `startPayment`).
+### 5.2 Contrato oficial: `PaymentError`
 
-### 9.2 Qué errores entran a fallback
+Los errores **viajan como datos**, no como texto traducido.
 
-Regla:
+```ts
+export type PaymentErrorParams = Record<string, string | number | boolean | null | undefined>;
 
-- Fallback aplica principalmente a errores **recuperables** (clasificados por `PaymentError.code`).
-- Errores fatales deben fallar inmediatamente.
+export interface PaymentError {
+  code: PaymentErrorCode;
 
-### 9.3 Contrato de retorno cuando fallback se maneja
+  /**
+   * i18n key used to render the message in UI.
+   * This is the long-term source of truth.
+   */
+  messageKey: string;
 
-Regla estable del proyecto (modo actual):
+  /**
+   * Optional interpolation params for `messageKey`.
+   */
+  params?: PaymentErrorParams;
 
-- ✅ fallback handled → `EMPTY` (complete sin emitir)
-- ✅ fallback not handled → propagate error
+  raw: unknown;
+}
+```
 
-Motivos:
+**Reglas duras:**
 
-- evita romper `firstValueFrom()` en tests si se maneja correctamente,
-- evita “Unhandled errors” en Vitest,
-- evita UI colgada en loading eterno,
-- mantiene el flujo principal limpio (sin usar error como control flow).
+- `messageKey` **SIEMPRE** debe ser una **key i18n válida** ✅
+- `raw` se conserva para debugging y trazabilidad ✅
+- `params` se usa para interpolación en UI ✅
+- Nunca existe “escape hatch” para mostrar mensajes crudos del provider ❌
 
-> Importante: `EMPTY` aquí significa **transición controlada**, no éxito.
+### 5.3 Normalización de errores (dónde y cómo)
 
-### 9.4 Diseño preparado para migrar a mayor complejidad
+- Los providers (infra/adapters) deben convertir errores externos a `PaymentError`.
+- Application/Store solo consume `PaymentError`.
 
-El contrato actual usa `EMPTY` porque es estable y simple, pero debe mantenerse “migrable”.
+**Anti-regla importante:**
 
-Regla:
+- ❌ Jamás usar `providerError.message` como `messageKey`.  
+  Si necesitas conservarlo, va en `raw` o en `params` (pero UI no lo muestra).
 
-- Cualquier helper/utilidad que consuma use cases debe asumir que “handled fallback” puede no emitir.
-- Si en el futuro el contrato cambia a un “FallbackHandledEvent” u otro enfoque, la migración debe ser incremental.
+### 5.4 Enforcements recomendados (obligatorio)
 
----
+Este proyecto requiere enforcement automático:
 
-## 10) Tests: reglas y estabilidad
-
-### 10.1 Pirámide deseada
-
-- Unit tests → suficientes para core (no obsesión por 100% coverage)
-- Integration specs (TestBed + flows) → happy paths y edge cases clave
-- E2E (Playwright) → 1 a 3 críticos por mantenimiento alto
-
-### 10.2 Regla de Stripe refactor por operaciones
-
-Estándar del proyecto:
-
-- **Operations** → tests con `HttpTestingController`
-  - prueban URL, body, headers, mapping, normalize error
-- **Adapter/Facade** → tests sólo de delegación con mocks
-  - sin HTTP, sin TestBed pesado
-  - valida que el entrypoint use las operaciones correctas
-
-> Se recomienda que facades estén agrupados en una carpeta clara para entrada de flujos.
-
-### 10.3 Regla para `firstValueFrom` (EMPTY-safe)
-
-Como el contrato de fallback permite `EMPTY`, los tests deben evitar acoplarse directamente a esa decisión.
-
-Regla recomendada:
-
-- Si un use case puede completar con `EMPTY`, los tests deben usar un helper reusable para resolver el observable de forma estable.
-
-Ejemplo conceptual (sin imponer implementación):
-
-- Un helper de test que:
-  - retorne `null`/`undefined` si completa sin emitir,
-  - o el valor si emitió,
-  - o rechace si hubo error.
-
-Motivo:
-
-- si el contrato de fallback cambia en el futuro, se migra cambiando el helper y no cientos de tests.
+- Test o lint que falle si encuentra `i18n.t(` fuera de `ui/`
+- Test que falle si `PaymentError.messageKey` no empieza con prefijo esperado (ej: `errors.`)
 
 ---
 
-## 11) Reglas de DI (inyección y tokens)
+## 6) Fallback policy (manual / auto)
 
-### 11.1 Preferencia: tokens/ports sobre clases concretas
+### 6.1 Dónde se decide fallback
 
-Regla:
+**Fallback se decide únicamente en Application (store/orchestrator)**.
 
-- UI y Application deben depender de:
-  - ports
-  - tokens abstractos
-  - interfaces de aplicación
+- ✅ UI muestra modal y responde
+- ✅ Store decide cuándo disparar `reportFailure()`
+- ❌ Providers no deciden fallback
 
-y no directamente de clases concretas de infra.
+### 6.2 Qué operaciones usan fallback (estado actual)
 
-Beneficio:
+Hoy el fallback está implementado para:
 
-- desacoplamiento real
-- tests más simples
-- OCP más limpio
-- facilidad de reemplazo (fake ↔ real)
+- ✅ `createIntent` / `startPayment` (único lugar con `allowFallback: true`)
 
-### 11.2 Resolución de providers
+Confirm/cancel/get **no** disparan fallback por defecto (a menos que se agregue explícitamente).
 
-Preferencia del proyecto:
+### 6.3 Modo manual vs auto
 
-✅ Multi-provider token (lista de factories)
+`FallbackOrchestratorService` soporta ambos:
 
-- Registry resuelve por `providerId` sin `switch` en use cases.
+- **manual** (default): emite `FallbackAvailableEvent` y UI decide
+- **auto**: ejecuta fallback después de un delay sin intervención
 
----
+Default actual (config):
 
-## 12) Naming & Conventions
+- `enabled: true`
+- `mode: "manual"`
+- `maxAttempts: 2`
+- `maxAutoFallbacks: 1`
+- `triggerErrorCodes: ['provider_unavailable','provider_error','network_error','timeout']`
+- `providerPriority: ['stripe','paypal']`
 
-### 12.1 Naming rule
+### 6.4 “fallback handled” significa
 
-Usar **kebab-case** y que el nombre defina propósito + patrón:
+Si `reportFailure()` devuelve `true`:
 
-Ejemplos:
-
-- `start-payment.use-case.ts`
-- `payment-intent.gateway.ts`
-- `payment-error.type.ts`
-- `payment.model.ts`
-
-### 12.2 Imports
-
-Preferencia:
-
-- ❌ evitar barrel exports (`index.ts`) por riesgo a largo plazo
-- ✅ usar path aliases en `tsconfig` cuando sea útil
-
-### 12.3 Mappers: dónde viven
-
-Regla:
-
-- `infra/shared/mappers` → mapping genérico reusable
-- `infra/{provider}/mappers` → mapping intrínseco del provider
+- el store hace transición silenciosa (sin dejar la UI en loading infinito)
+- el flujo continúa (manual → espera decisión / auto → ejecuta intento)
 
 ---
 
-## 13) UX Rule: timeouts por operación (loading nunca infinito)
+## 7) Providers: estándar esperado
 
-Regla global:
+Providers disponibles:
 
-> No se permite loading infinito. Si excede el timeout, se transiciona a un error recuperable con opción de reintento o fallback.
+- Stripe
+- PayPal
+- Mock/Fake
 
-Timeouts recomendados:
+### 7.1 Estándar deseado: Gateway + Operations (por operación)
 
-- `start payment` → **15s**
-- `confirm / cancel` → **10–15s**
-- `get status` → **30s**
+El patrón objetivo es **una operación = un gateway refactor** (como Stripe):
+
+- `CreateIntentGateway` (execute)
+- `ConfirmIntentGateway`
+- `CancelIntentGateway`
+- `GetIntentGateway`
+
+PayPal actualmente puede estar legacy (monolítico), pero debe migrar a este estándar.
+
+### 7.2 Qué debe hacer un provider gateway (mínimo)
+
+- ✅ normalizar errores a `PaymentError`
+- ✅ retornar modelos de dominio (no DTOs)
+- ✅ mapear status externo → status interno
+
+Opcional:
+
+- telemetry/logging (idealmente vía base/wrapper)
+
+### 7.3 Prohibiciones
+
+Un provider gateway NO puede:
+
+- tocar store ❌
+- tocar UI ❌
+- traducir ❌
+- decidir fallback ❌
 
 ---
 
-## 14) Troubleshooting (para nuevos devs y para IA)
+## 8) Testing mínimo (scope realista)
 
-### 14.1 Si falla una integración por DI (NG0201)
+No buscamos 100% coverage. Buscamos **tests que eviten regresiones**.
 
-Checklist recomendado:
+### 8.1 Regla mínima por Gateway
 
-- Verificar configuración de `providePaymentsWithConfig(...)` (modo real vs fake).
-- Confirmar que todos los sub-gateways/operations del facade estén registrados como providers.
-- Confirmar que el token/port correcto está siendo inyectado (y no una clase concreta “perdida”).
-- Revisar overrides de TestBed y módulos importados.
+Cada gateway debe tener tests para:
 
-### 14.2 Si un test se cuelga en loading
+- happy path (ok)
+- invalid request
+- provider error
+- normalize error
+- edge cases relevantes
 
-Checklist recomendado:
+### 8.2 Regla mínima del Orchestrator/Store
 
-- Verificar que el use case inicia con `safeDefer(...)` o equivalente.
-- Verificar que throws sync no están fuera del stream.
-- Confirmar que hay `catchError` y que el error termina en:
-  - `error`, o
-  - `fallback-pending`, o
-  - `ready`
-- Confirmar que el store libera `loading` en `finalize` o transición equivalente.
-- Confirmar que el test no está esperando un valor cuando el contrato permite `EMPTY`.
+- fallback no genera loops
+- eventos expirados no rompen el flow
+- UI no se queda “colgada”
 
 ---
 
-## 15) Definition of Stable (mínimo para considerar el módulo estable)
+## 9) Anti-patterns (lo que NO se permite)
 
-Un PR se considera “estable” cuando:
+- UI importando `infrastructure/**`
+- `i18n.t(...)` fuera de UI
+- Domain importando Angular/RxJS
+- Gateways retornando DTOs crudos hacia arriba
+- `messageKey` usando texto real en vez de key i18n
 
-- No existen throws sync escapando del stream (use cases safeDefer o equivalente)
-- Los errores que salen de infra están normalizados (`PaymentError`)
-- La clasificación recuperable/fatal funciona y evita fallbacks innecesarios
-- Contrato de fallback se respeta (handled → no rompe UI ni tests)
-- UI nunca queda en `loading` infinito (timeouts + acción posible)
-- Agregar provider no requiere modificar use cases
-- Tests pasan sin “Unhandled errors” en Vitest
+---
+
+## 10) Evolución: cómo agregar cosas sin romper todo
+
+Cuando agregues un provider o método:
+
+1. Define el contrato en Domain (models / request shape)
+2. Expón el port correcto en Application
+3. Implementa adapter en Infrastructure (con normalización de errores)
+4. Conecta por Factory/Registry
+5. UI solo consume el estado y traduce

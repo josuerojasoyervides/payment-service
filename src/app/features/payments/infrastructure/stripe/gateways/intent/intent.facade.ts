@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { PaymentGateway } from '@payments/application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '@payments/application/ports/payment-gateway.port';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import {
   CancelPaymentRequest,
@@ -26,7 +26,7 @@ import { StripeGetIntentGateway } from './get-intent.gateway';
  * - Idempotency keys for safe operations
  */
 @Injectable()
-export class IntentFacade implements PaymentGateway {
+export class IntentFacade implements PaymentGatewayPort {
   readonly providerId = 'stripe' as const;
 
   private readonly createIntentOp = inject(StripeCreateIntentGateway);

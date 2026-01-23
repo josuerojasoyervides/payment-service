@@ -23,7 +23,7 @@ import {
   PaymentRequestBuilder,
 } from '@payments/domain/ports/payment/payment-request-builder.port';
 
-import { PaymentGateway } from './payment-gateway.port';
+import { PaymentGatewayPort } from './payment-gateway.port';
 import { PaymentStrategy } from './payment-strategy.port';
 
 /**
@@ -38,7 +38,7 @@ export interface ProviderFactory {
    * Returns this provider's gateway.
    * The gateway handles HTTP communication with the provider's API.
    */
-  getGateway(): PaymentGateway;
+  getGateway(): PaymentGatewayPort;
 
   /**
    * Creates a strategy for the payment method type.

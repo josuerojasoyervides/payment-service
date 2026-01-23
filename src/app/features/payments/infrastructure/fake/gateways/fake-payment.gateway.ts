@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
-import { BasePaymentGateway } from '@payments/application/ports/base-payment.gateway';
+import { BasePaymentGateway } from '@payments/application/ports/base-payment-gateway.port';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {

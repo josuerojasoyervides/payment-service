@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { LoggerService } from '@core/logging';
-import { PaymentGateway } from '@payments/application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '@payments/application/ports/payment-gateway.port';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
@@ -19,7 +19,7 @@ import { catchError, map, Observable, tap, throwError } from 'rxjs';
 export abstract class BasePaymentGateway<
   TCreateDto = unknown,
   TConfirmDto = unknown,
-> implements PaymentGateway {
+> implements PaymentGatewayPort {
   abstract readonly providerId: PaymentProviderId;
 
   protected readonly http = inject(HttpClient);

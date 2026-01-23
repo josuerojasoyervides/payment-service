@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { ProviderFactory } from '@payments/application/ports/provider-factory.port';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PaymentGateway } from '../../../application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '../../../application/ports/payment-gateway.port';
 import { PaymentStrategy } from '../../../application/ports/payment-strategy.port';
 import {
   FieldRequirements,
@@ -44,7 +44,7 @@ export class StripeProviderFactory implements ProviderFactory {
    */
   static readonly SUPPORTED_METHODS: PaymentMethodType[] = ['card', 'spei'];
 
-  getGateway(): PaymentGateway {
+  getGateway(): PaymentGatewayPort {
     return this.gateway;
   }
 

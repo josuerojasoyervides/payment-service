@@ -11,7 +11,7 @@ import {
 } from '@payments/domain/ports/provider/token-validator.port';
 import { map, Observable, tap } from 'rxjs';
 
-import { PaymentGateway } from '../../application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '../../application/ports/payment-gateway.port';
 import {
   PaymentStrategy,
   StrategyContext,
@@ -37,7 +37,7 @@ export class CardStrategy implements PaymentStrategy {
   private static readonly SAVED_CARD_PATTERN = /^pm_[a-zA-Z0-9]+$/;
 
   constructor(
-    private readonly gateway: PaymentGateway,
+    private readonly gateway: PaymentGatewayPort,
     private readonly tokenValidator: TokenValidator = new NullTokenValidator(),
   ) {}
 

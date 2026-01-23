@@ -3,12 +3,12 @@ import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.ty
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of } from 'rxjs';
 
-import { PaymentGateway } from '../../application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '../../application/ports/payment-gateway.port';
 import { SpeiStrategy } from './spei-strategy';
 
 describe('SpeiStrategy', () => {
   let strategy: SpeiStrategy;
-  let gatewayMock: Pick<PaymentGateway, 'createIntent' | 'providerId'>;
+  let gatewayMock: Pick<PaymentGatewayPort, 'createIntent' | 'providerId'>;
 
   const validReq: CreatePaymentRequest = {
     orderId: 'order_1',

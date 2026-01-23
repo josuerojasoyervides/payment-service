@@ -2,13 +2,13 @@ import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.ty
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of } from 'rxjs';
 
-import { PaymentGateway } from '../../application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '../../application/ports/payment-gateway.port';
 import { TokenValidator } from '../../domain/ports/provider/token-validator.port';
 import { CardStrategy } from './card-strategy';
 
 describe('CardStrategy', () => {
   let strategy: CardStrategy;
-  let gatewayMock: Pick<PaymentGateway, 'createIntent' | 'providerId'>;
+  let gatewayMock: Pick<PaymentGatewayPort, 'createIntent' | 'providerId'>;
   let tokenValidatorMock: TokenValidator;
 
   const validToken = 'tok_test1234567890abc';

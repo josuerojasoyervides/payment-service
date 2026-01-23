@@ -8,7 +8,7 @@ import {
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { map, Observable, tap } from 'rxjs';
 
-import { PaymentGateway } from '../../application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '../../application/ports/payment-gateway.port';
 import {
   PaymentStrategy,
   StrategyContext,
@@ -40,7 +40,7 @@ export class SpeiStrategy implements PaymentStrategy {
     openpay: 'BBVA México',
   };
 
-  constructor(private readonly gateway: PaymentGateway) {}
+  constructor(private readonly gateway: PaymentGatewayPort) {}
 
   /**
    * Validates the request for SPEI payments.

@@ -2,13 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of } from 'rxjs';
 
-import { PaymentGateway } from '../../../application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '../../../application/ports/payment-gateway.port';
 import { PaypalRedirectStrategy } from './paypal-redirect.strategy';
 
 describe('PaypalRedirectStrategy', () => {
   let strategy: PaypalRedirectStrategy;
 
-  let gatewayMock: Pick<PaymentGateway, 'createIntent' | 'providerId'>;
+  let gatewayMock: Pick<PaymentGatewayPort, 'createIntent' | 'providerId'>;
 
   const req: CreatePaymentRequest = {
     orderId: 'order_1',

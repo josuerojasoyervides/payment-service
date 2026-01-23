@@ -8,7 +8,7 @@ import {
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { map, Observable, tap } from 'rxjs';
 
-import { PaymentGateway } from '../../../application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '../../../application/ports/payment-gateway.port';
 import {
   PaymentStrategy,
   StrategyContext,
@@ -33,7 +33,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
   private static readonly DEFAULT_LANDING_PAGE = 'LOGIN';
   private static readonly DEFAULT_USER_ACTION = 'PAY_NOW';
 
-  constructor(private readonly gateway: PaymentGateway) {}
+  constructor(private readonly gateway: PaymentGatewayPort) {}
 
   /**
    * Validates the request for PayPal.

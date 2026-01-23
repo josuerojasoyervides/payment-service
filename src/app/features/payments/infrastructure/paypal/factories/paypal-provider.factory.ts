@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
-import { PaymentGateway } from '@payments/application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '@payments/application/ports/payment-gateway.port';
 import { ProviderFactory } from '@payments/application/ports/provider-factory.port';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
@@ -41,7 +41,7 @@ export class PaypalProviderFactory implements ProviderFactory {
    */
   static readonly SUPPORTED_METHODS: PaymentMethodType[] = ['card'];
 
-  getGateway(): PaymentGateway {
+  getGateway(): PaymentGatewayPort {
     return this.gateway;
   }
 

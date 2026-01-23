@@ -9,7 +9,7 @@ import { GetPaymentStatusRequest } from '@payments/domain/models/payment/payment
 import { firstValueFrom, of, throwError } from 'rxjs';
 
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
-import { PaymentGateway } from '../ports/payment-gateway.port';
+import { PaymentGatewayPort } from '../ports/payment-gateway.port';
 import { ProviderFactory } from '../ports/provider-factory.port';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { GetPaymentStatusUseCase } from './get-payment-status.use-case';
@@ -31,11 +31,11 @@ describe('GetPaymentStatusUseCase', () => {
         currency: 'MXN',
       } satisfies PaymentIntent),
     ),
-  } as Pick<PaymentGateway, 'getIntent'>;
+  } as Pick<PaymentGatewayPort, 'getIntent'>;
 
   const providerFactoryMock: ProviderFactory = {
     providerId: 'stripe' as const,
-    getGateway: vi.fn(() => gatewayMock as unknown as PaymentGateway),
+    getGateway: vi.fn(() => gatewayMock as unknown as PaymentGatewayPort),
     createStrategy: vi.fn(),
     supportsMethod: vi.fn(() => true),
     getSupportedMethods: vi.fn((): PaymentMethodType[] => ['card', 'spei']),

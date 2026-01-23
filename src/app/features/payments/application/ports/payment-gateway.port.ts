@@ -8,7 +8,7 @@ import {
   GetPaymentStatusRequest,
 } from '../../domain/models/payment/payment-request.types';
 
-export interface PaymentGateway {
+export interface PaymentGatewayPort {
   readonly providerId: PaymentProviderId;
   createIntent(req: CreatePaymentRequest): Observable<PaymentIntent>;
   confirmIntent(req: ConfirmPaymentRequest): Observable<PaymentIntent>;
@@ -16,6 +16,6 @@ export interface PaymentGateway {
   getIntent(req: GetPaymentStatusRequest): Observable<PaymentIntent>;
 }
 
-export interface PaymentGatewayRefactor<TRequest, TResponse> {
+export interface PaymentGatewayRefactorPort<TRequest, TResponse> {
   execute(request: TRequest): Observable<TResponse>;
 }
