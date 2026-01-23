@@ -10,7 +10,7 @@ import {
   PaymentRequestBuilder,
 } from '../../../domain/ports/payment/payment-request-builder.port';
 import { PaypalRedirectRequestBuilder } from '../builders/paypal-redirect-request.builder';
-import { PaypalIntentFacade } from '../gateways/intent.facade';
+import { PaypalIntentFacade } from '../facades/intent.facade';
 import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
 
 /**

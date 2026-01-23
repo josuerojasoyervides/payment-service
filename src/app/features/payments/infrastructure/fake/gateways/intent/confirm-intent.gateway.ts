@@ -13,12 +13,12 @@ import { simulateNetworkDelay } from '../../helpers/simulate-network-delay.helpe
 import { mapIntent } from '../../mappers/intent.mapper';
 
 @Injectable()
-export class FakeConfirmIntentGateway extends PaymentOperationPort<
+export abstract class FakeConfirmIntentGateway extends PaymentOperationPort<
   ConfirmPaymentRequest,
   any,
   PaymentIntent
 > {
-  readonly providerId: PaymentProviderId = 'stripe';
+  abstract override readonly providerId: PaymentProviderId;
 
   protected override executeRaw(request: ConfirmPaymentRequest): Observable<any> {
     console.log(`[FakeGateway] Confirming intent ${request.intentId}`);

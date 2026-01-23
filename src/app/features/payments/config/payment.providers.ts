@@ -3,10 +3,18 @@ import { FakeCancelIntentGateway } from '@payments/infrastructure/fake/gateways/
 import { FakeConfirmIntentGateway } from '@payments/infrastructure/fake/gateways/intent/confirm-intent.gateway';
 import { FakeCreateIntentGateway } from '@payments/infrastructure/fake/gateways/intent/create-intent.gateway';
 import { FakeGetIntentGateway } from '@payments/infrastructure/fake/gateways/intent/get-intent.gateway';
+import { FakePaypalCancelIntentGateway } from '@payments/infrastructure/paypal/fake-gateways/intent/fake-paypal-cancel-intent.gateway';
+import { FakePaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/fake-gateways/intent/fake-paypal-confirm-intent.gateway';
+import { FakePaypalCreateIntentGateway } from '@payments/infrastructure/paypal/fake-gateways/intent/fake-paypal-create-intent.gateway';
+import { FakePaypalGetIntentGateway } from '@payments/infrastructure/paypal/fake-gateways/intent/fake-paypal-get-intent.gateway';
 import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/cancel-intent.gateway';
 import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/confirm-intent.gateway';
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/create-intent.gateway';
 import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/get-intent.gateway';
+import { FakeStripeCancelIntentGateway } from '@payments/infrastructure/stripe/fake-gateways/intent/fake-stripe-cancel-intent.gateway';
+import { FakeStripeConfirmIntentGateway } from '@payments/infrastructure/stripe/fake-gateways/intent/fake-stripe-confirm-intent.gateway';
+import { FakeStripeCreateIntentGateway } from '@payments/infrastructure/stripe/fake-gateways/intent/fake-stripe-create-intent.gateway';
+import { FakeStripeGetIntentGateway } from '@payments/infrastructure/stripe/fake-gateways/intent/fake-stripe-get-intent.gateway';
 
 import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
 import { ProviderFactoryRegistry } from '../application/registry/provider-factory.registry';
@@ -19,14 +27,14 @@ import { ConfirmPaymentUseCase } from '../application/use-cases/confirm-payment.
 import { GetPaymentStatusUseCase } from '../application/use-cases/get-payment-status.use-case';
 import { StartPaymentUseCase } from '../application/use-cases/start-payment.use-case';
 import { FakePaymentGateway } from '../infrastructure/fake/gateways/fake-payment.gateway';
+import { PaypalIntentFacade } from '../infrastructure/paypal/facades/intent.facade';
 import { PaypalProviderFactory } from '../infrastructure/paypal/factories/paypal-provider.factory';
-import { PaypalIntentFacade } from '../infrastructure/paypal/gateways/intent.facade';
+import { StripeIntentFacade } from '../infrastructure/stripe/facades/intent.facade';
 import { StripeProviderFactory } from '../infrastructure/stripe/factories/stripe-provider.factory';
 import { StripeCancelIntentGateway } from '../infrastructure/stripe/gateways/intent/cancel-intent.gateway';
 import { StripeConfirmIntentGateway } from '../infrastructure/stripe/gateways/intent/confirm-intent.gateway';
 import { StripeCreateIntentGateway } from '../infrastructure/stripe/gateways/intent/create-intent.gateway';
 import { StripeGetIntentGateway } from '../infrastructure/stripe/gateways/intent/get-intent.gateway';
-import { StripeIntentFacade } from '../infrastructure/stripe/gateways/intent/intent.facade';
 import { IdempotencyKeyFactory } from '../shared/idempotency/idempotency-key.factory';
 
 export type PaymentsProvidersMode = 'fake' | 'real';
@@ -48,13 +56,20 @@ const STRIPE_REAL_GATEWAYS: Provider[] = [
   StripeGetIntentGateway,
 ];
 const STRIPE_FAKE_GATEWAYS: Provider[] = [
-  FakeCreateIntentGateway,
-  FakeConfirmIntentGateway,
-  FakeCancelIntentGateway,
-  FakeGetIntentGateway,
+  FakeStripeCreateIntentGateway,
+  FakeStripeConfirmIntentGateway,
+  FakeStripeCancelIntentGateway,
+  FakeStripeGetIntentGateway,
   {
     provide: StripeIntentFacade,
-    useFactory: fakeGatewayFactory('stripe'),
+    useFactory: () =>
+      new FakePaymentGateway(
+        'stripe',
+        inject(FakeStripeCreateIntentGateway),
+        inject(FakeStripeConfirmIntentGateway),
+        inject(FakeStripeCancelIntentGateway),
+        inject(FakeStripeGetIntentGateway),
+      ),
   },
 ];
 
@@ -66,13 +81,20 @@ const PAYPAL_REAL_GATEWAYS: Provider[] = [
   PaypalGetIntentGateway,
 ];
 const PAYPAL_FAKE_GATEWAYS: Provider[] = [
-  FakeCreateIntentGateway,
-  FakeConfirmIntentGateway,
-  FakeCancelIntentGateway,
-  FakeGetIntentGateway,
+  FakePaypalCreateIntentGateway,
+  FakePaypalConfirmIntentGateway,
+  FakePaypalCancelIntentGateway,
+  FakePaypalGetIntentGateway,
   {
     provide: PaypalIntentFacade,
-    useFactory: fakeGatewayFactory('paypal'),
+    useFactory: () =>
+      new FakePaymentGateway(
+        'paypal',
+        inject(FakePaypalCreateIntentGateway),
+        inject(FakePaypalConfirmIntentGateway),
+        inject(FakePaypalCancelIntentGateway),
+        inject(FakePaypalGetIntentGateway),
+      ),
   },
 ];
 

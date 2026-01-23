@@ -7,14 +7,14 @@ import {
 } from '@payments/domain/models/payment/payment-request.types';
 import { of } from 'rxjs';
 
-import { StripeCancelIntentGateway } from './cancel-intent.gateway';
-import { StripeConfirmIntentGateway } from './confirm-intent.gateway';
-import { StripeCreateIntentGateway } from './create-intent.gateway';
-import { StripeGetIntentGateway } from './get-intent.gateway';
-import { StripeIntentFacade } from './intent.facade';
+import { PaypalCancelIntentGateway } from '../gateways/intent/cancel-intent.gateway';
+import { PaypalConfirmIntentGateway } from '../gateways/intent/confirm-intent.gateway';
+import { PaypalCreateIntentGateway } from '../gateways/intent/create-intent.gateway';
+import { PaypalGetIntentGateway } from '../gateways/intent/get-intent.gateway';
+import { PaypalIntentFacade } from './intent.facade';
 
 describe('IntentFacade (adapter)', () => {
-  let gateway: StripeIntentFacade;
+  let gateway: PaypalIntentFacade;
 
   // Mocks de operaciones (NO HTTP)
   const createIntentOp = { execute: vi.fn() };
@@ -45,19 +45,19 @@ describe('IntentFacade (adapter)', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        StripeIntentFacade,
+        PaypalIntentFacade,
 
-        { provide: StripeCreateIntentGateway, useValue: createIntentOp },
-        { provide: StripeConfirmIntentGateway, useValue: confirmIntentOp },
-        { provide: StripeCancelIntentGateway, useValue: cancelIntentOp },
-        { provide: StripeGetIntentGateway, useValue: getIntentOp },
+        { provide: PaypalCreateIntentGateway, useValue: createIntentOp },
+        { provide: PaypalConfirmIntentGateway, useValue: confirmIntentOp },
+        { provide: PaypalCancelIntentGateway, useValue: cancelIntentOp },
+        { provide: PaypalGetIntentGateway, useValue: getIntentOp },
       ],
     });
 
-    gateway = TestBed.inject(StripeIntentFacade);
+    gateway = TestBed.inject(PaypalIntentFacade);
   });
 
-  it('delegates createIntent to StripeCreateIntentGateway.execute', async () => {
+  it('delegates createIntent to PaypalCreateIntentGateway.execute', async () => {
     createIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
 
     gateway.createIntent(createReq).subscribe();
@@ -65,7 +65,7 @@ describe('IntentFacade (adapter)', () => {
     expect(createIntentOp.execute).toHaveBeenCalledTimes(1);
     expect(createIntentOp.execute).toHaveBeenCalledWith(createReq);
   });
-  it('delegates confirmIntent to StripeConfirmIntentGateway.execute', async () => {
+  it('delegates confirmIntent to PaypalConfirmIntentGateway.execute', async () => {
     confirmIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
 
     gateway.confirmIntent(confirmReq).subscribe();
@@ -73,7 +73,7 @@ describe('IntentFacade (adapter)', () => {
     expect(confirmIntentOp.execute).toHaveBeenCalledTimes(1);
     expect(confirmIntentOp.execute).toHaveBeenCalledWith(confirmReq);
   });
-  it('delegates cancelIntent to StripeCancelIntentGateway.execute', async () => {
+  it('delegates cancelIntent to PaypalCancelIntentGateway.execute', async () => {
     cancelIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
 
     gateway.cancelIntent(cancelReq).subscribe();
@@ -81,7 +81,7 @@ describe('IntentFacade (adapter)', () => {
     expect(cancelIntentOp.execute).toHaveBeenCalledTimes(1);
     expect(cancelIntentOp.execute).toHaveBeenCalledWith(cancelReq);
   });
-  it('delegates getIntentStatus to StripeGetIntentGateway.execute', async () => {
+  it('delegates getIntentStatus to PaypalGetIntentGateway.execute', async () => {
     getIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
 
     gateway.getIntent(getIntentReq).subscribe();

@@ -13,12 +13,12 @@ import { simulateNetworkDelay } from '../../helpers/simulate-network-delay.helpe
 import { mapIntent } from '../../mappers/intent.mapper';
 
 @Injectable()
-export class FakeCancelIntentGateway extends PaymentOperationPort<
+export abstract class FakeCancelIntentGateway extends PaymentOperationPort<
   CancelPaymentRequest,
   any,
   PaymentIntent
 > {
-  readonly providerId: PaymentProviderId = 'stripe';
+  abstract override readonly providerId: PaymentProviderId;
 
   protected override executeRaw(request: CancelPaymentRequest): Observable<any> {
     console.log(`[FakeGateway] Canceling intent ${request.intentId}`);

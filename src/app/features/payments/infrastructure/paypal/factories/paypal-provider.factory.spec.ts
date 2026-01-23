@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 
-import { PaypalIntentFacade } from '../gateways/intent.facade';
+import { PaypalIntentFacade } from '../facades/intent.facade';
 import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
 import { PaypalProviderFactory } from './paypal-provider.factory';
 

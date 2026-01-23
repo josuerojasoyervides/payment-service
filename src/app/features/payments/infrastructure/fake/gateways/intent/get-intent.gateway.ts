@@ -10,14 +10,15 @@ import { Observable } from 'rxjs';
 import { createFakePaypalOrderStatus } from '../../helpers/create-fake-paypal-order-status.helper';
 import { createFakeStripeIntentStatus } from '../../helpers/create-fake-stripe-intent-status.helper';
 import { simulateNetworkDelay } from '../../helpers/simulate-network-delay.helper';
+import { mapIntent } from '../../mappers/intent.mapper';
 
 @Injectable()
-export class FakeGetIntentGateway extends PaymentOperationPort<
+export abstract class FakeGetIntentGateway extends PaymentOperationPort<
   GetPaymentStatusRequest,
   any,
   PaymentIntent
 > {
-  readonly providerId: PaymentProviderId = 'stripe';
+  abstract override readonly providerId: PaymentProviderId;
 
   protected override executeRaw(request: GetPaymentStatusRequest): Observable<any> {
     console.log(`[FakeGateway] Getting status for ${request.intentId}`);
@@ -29,6 +30,6 @@ export class FakeGetIntentGateway extends PaymentOperationPort<
     return simulateNetworkDelay(createFakeStripeIntentStatus(request.intentId));
   }
   protected override mapResponse(dto: any): PaymentIntent {
-    throw new Error('Method not implemented.');
+    return mapIntent(dto, this.providerId);
   }
 }

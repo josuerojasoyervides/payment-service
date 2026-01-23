@@ -9,10 +9,10 @@ import {
 } from '@payments/domain/models/payment/payment-request.types';
 import { Observable } from 'rxjs';
 
-import { PaypalCancelIntentGateway } from './intent/cancel-intent.gateway';
-import { PaypalConfirmIntentGateway } from './intent/confirm-intent.gateway';
-import { PaypalCreateIntentGateway } from './intent/create-intent.gateway';
-import { PaypalGetIntentGateway } from './intent/get-intent.gateway';
+import { PaypalCancelIntentGateway } from '../gateways/intent/cancel-intent.gateway';
+import { PaypalConfirmIntentGateway } from '../gateways/intent/confirm-intent.gateway';
+import { PaypalCreateIntentGateway } from '../gateways/intent/create-intent.gateway';
+import { PaypalGetIntentGateway } from '../gateways/intent/get-intent.gateway';
 
 /**
  * PayPal gateway (Orders API v2).

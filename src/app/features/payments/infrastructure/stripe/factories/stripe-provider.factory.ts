@@ -12,7 +12,7 @@ import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
 import { StripeCardRequestBuilder } from '../builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '../builders/stripe-spei-request.builder';
-import { StripeIntentFacade } from '../gateways/intent/intent.facade';
+import { StripeIntentFacade } from '../facades/intent.facade';
 import { StripeTokenValidator } from '../validators/stripe-token.validator';
 
 /**

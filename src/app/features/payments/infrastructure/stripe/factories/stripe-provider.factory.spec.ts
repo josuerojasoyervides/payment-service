@@ -3,7 +3,7 @@ import { firstValueFrom, of } from 'rxjs';
 
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
-import { StripeIntentFacade } from '../gateways/intent/intent.facade';
+import { StripeIntentFacade } from '../facades/intent.facade';
 import { StripeProviderFactory } from './stripe-provider.factory';
 
 describe('StripeProviderFactory', () => {
