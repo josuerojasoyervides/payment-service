@@ -1,0 +1,15 @@
+export type AutoCompleteHint =
+  | 'email'
+  | 'name'
+  | 'given-name'
+  | 'family-name'
+  | 'tel'
+  | 'street-address'
+  | 'postal-code'
+  | 'cc-number'
+  | 'cc-exp'
+  | 'cc-exp-month'
+  | 'cc-exp-year'
+  | 'cc-csc'
+  | 'off'
+  | 'current-url';

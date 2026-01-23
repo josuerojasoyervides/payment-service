@@ -11,10 +11,11 @@ import {
 } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { FieldConfig } from '@payments/ui/shared/ui.types';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 
 import {
-  FieldConfig,
+  FieldRequirement,
   FieldRequirements,
   PaymentOptions,
 } from '../../../domain/ports/payment/payment-request-builder.port';
@@ -85,14 +86,14 @@ export class PaymentFormComponent implements OnDestroy {
   }
 
   /** Visible fields (not hidden) */
-  visibleFields(): FieldConfig[] {
+  visibleFields(): FieldRequirement[] {
     const reqs = this.requirements();
     if (!reqs) return [];
-    return reqs.fields.filter((f) => f.type !== 'hidden');
+    return reqs.fields.filter((f) => f.type === 'hidden');
   }
 
   /** Hidden fields */
-  hiddenFields(): FieldConfig[] {
+  hiddenFields(): FieldRequirement[] {
     const reqs = this.requirements();
     if (!reqs) return [];
     return reqs.fields.filter((f) => f.type === 'hidden');
@@ -121,12 +122,12 @@ export class PaymentFormComponent implements OnDestroy {
       // Estas URLs deben venir de StrategyContext (CheckoutComponent)
       // El formulario se enfoca en inputs reales del usuario (token, customerEmail, saveForFuture)
       if (
-        field.autoFill === 'currentUrl' &&
+        field.autoComplete === 'current-url' &&
         (field.name === 'returnUrl' || field.name === 'cancelUrl')
       ) {
         // Dejar vacío - estas URLs vienen del context, no del formulario
         defaultValue = '';
-      } else if (field.autoFill === 'currentUrl') {
+      } else if (field.autoComplete === 'current-url') {
         defaultValue = typeof window !== 'undefined' ? window.location.href : '';
       }
 
@@ -204,12 +205,9 @@ export class PaymentFormComponent implements OnDestroy {
   }
 
   /** Translates the method description */
-  translateDescription(description: string | undefined): string {
-    return description ?? '';
-  }
-
-  translateInstructions(instructions: string | undefined): string {
-    return instructions ?? '';
+  translateText(key?: string, params?: Record<string, string | number>): string {
+    if (!key) return '';
+    return this.i18n.t(key, params);
   }
 
   readonly fieldRequiredText = computed(() => this.i18n.t(I18nKeys.ui.field_required));

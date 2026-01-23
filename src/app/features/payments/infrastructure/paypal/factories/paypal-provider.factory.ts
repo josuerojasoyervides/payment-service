@@ -92,24 +92,22 @@ export class PaypalProviderFactory implements ProviderFactory {
     this.assertSupported(type);
 
     return {
-      description: I18nKeys.ui.pay_with_paypal,
-      instructions: I18nKeys.ui.paypal_redirect_secure_message,
+      descriptionKey: I18nKeys.ui.pay_with_paypal,
+      instructionsKey: I18nKeys.ui.paypal_redirect_secure_message,
       fields: [
         {
           name: 'returnUrl',
-          label: I18nKeys.ui.return_url_label,
+          labelKey: I18nKeys.ui.return_url_label,
           required: true,
           type: 'hidden',
-          autoFill: 'currentUrl',
-          placeholder: '',
+          autoComplete: 'current-url',
         },
         {
           name: 'cancelUrl',
-          label: I18nKeys.ui.cancel_url_label,
+          labelKey: I18nKeys.ui.cancel_url_label,
           required: false,
           type: 'hidden',
-          autoFill: 'currentUrl',
-          placeholder: '',
+          autoComplete: 'current-url',
         },
       ],
     };

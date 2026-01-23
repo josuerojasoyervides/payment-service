@@ -71,8 +71,8 @@ describe('PaypalProviderFactory', () => {
 
       expect(requirements.fields).toBeDefined();
       expect(requirements.fields.length).toBeGreaterThan(0);
-      expect(requirements.description).toBeDefined();
-      expect(requirements.instructions).toBeDefined();
+      expect(requirements.descriptionKey).toBeDefined();
+      expect(requirements.instructionsKey).toBeDefined();
 
       const returnUrlField = requirements.fields.find((f) => f.name === 'returnUrl');
       expect(returnUrlField).toBeDefined();
