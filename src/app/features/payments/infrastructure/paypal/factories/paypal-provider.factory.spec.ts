@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { I18nService } from '@core/i18n';
 import { firstValueFrom, of } from 'rxjs';
 
 import { PaypalPaymentGateway } from '../gateways/paypal-payment.gateway';
@@ -14,20 +13,8 @@ describe('PaypalProviderFactory', () => {
   } satisfies Partial<PaypalPaymentGateway>;
 
   beforeEach(() => {
-    const i18nMock = {
-      t: vi.fn((key: string) => key),
-      setLanguage: vi.fn(),
-      getLanguage: vi.fn(() => 'es'),
-      has: vi.fn(() => true),
-      currentLang: { asReadonly: vi.fn() } as any,
-    } as any;
-
     TestBed.configureTestingModule({
-      providers: [
-        PaypalProviderFactory,
-        { provide: PaypalPaymentGateway, useValue: gatewayStub },
-        { provide: I18nService, useValue: i18nMock },
-      ],
+      providers: [PaypalProviderFactory, { provide: PaypalPaymentGateway, useValue: gatewayStub }],
     });
 
     factory = TestBed.inject(PaypalProviderFactory);
