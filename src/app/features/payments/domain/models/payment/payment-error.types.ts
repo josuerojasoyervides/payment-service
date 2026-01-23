@@ -17,14 +17,6 @@ export interface PaymentError {
   code: PaymentErrorCode;
 
   /**
-   * Human readable error message.
-   *
-   * ⚠️ Transitional field.
-   * During i18n migration, infra may still set this translated string.
-   * The end goal is for UI to render from `messageKey` + `params`.
-   */
-
-  /**
    * i18n key used to render the message in UI.
    * This is the long-term source of truth.
    */
