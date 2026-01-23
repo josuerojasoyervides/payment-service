@@ -1,15 +1,15 @@
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { I18nService } from '@core/i18n';
 import { firstValueFrom, of } from 'rxjs';
 
-import { PaymentGateway } from '../../application/ports/payment-gateway.port';
-import { TokenValidator } from '../../domain/ports/provider/token-validator.port';
+import { CreatePaymentRequest, PaymentIntent } from '../../domain/models';
+import { PaymentGateway, TokenValidator } from '../../domain/ports';
 import { CardStrategy } from './card-strategy';
 
 describe('CardStrategy', () => {
   let strategy: CardStrategy;
   let gatewayMock: Pick<PaymentGateway, 'createIntent' | 'providerId'>;
   let tokenValidatorMock: TokenValidator;
+  let i18nMock: I18nService;
 
   const validToken = 'tok_test1234567890abc';
 
@@ -47,13 +47,31 @@ describe('CardStrategy', () => {
       getAcceptedPatterns: vi.fn(() => ['tok_*', 'pm_*', 'card_*']),
     };
 
-    strategy = new CardStrategy(gatewayMock as any, tokenValidatorMock);
+    i18nMock = {
+      t: vi.fn((key: string, params?: Record<string, string | number>) => {
+        const translations: Record<string, string> = {
+          'errors.card_token_required': 'Card token is required for card payments',
+          'errors.min_amount': params
+            ? `Minimum amount for card payments is ${params['amount']} ${params['currency']}`
+            : 'Minimum amount for card payments',
+          'messages.bank_verification_required':
+            'Tu banco requiere verificación adicional. Serás redirigido a una página segura para completar la autenticación.',
+        };
+        return translations[key] || key;
+      }),
+      setLanguage: vi.fn(),
+      getLanguage: vi.fn(() => 'es'),
+      has: vi.fn(() => true),
+      currentLang: { asReadonly: vi.fn() } as any,
+    } as any;
+
+    strategy = new CardStrategy(gatewayMock as any, tokenValidatorMock, i18nMock);
   });
 
   describe('validate()', () => {
     it('throws if token is missing', () => {
       const req = { ...validReq, method: { type: 'card' as const } };
-      expect(() => strategy.validate(req)).toThrowError('errors.card_token_required');
+      expect(() => strategy.validate(req)).toThrowError(/Card token is required/);
     });
 
     it('throws if token has invalid format', () => {
@@ -75,12 +93,12 @@ describe('CardStrategy', () => {
 
     it('throws if amount is below minimum for MXN', () => {
       const req = { ...validReq, amount: 5, currency: 'MXN' as const };
-      expect(() => strategy.validate(req)).toThrowError('errors.min_amount');
+      expect(() => strategy.validate(req)).toThrowError(/Minimum amount/);
     });
 
     it('throws if amount is below minimum for USD', () => {
       const req = { ...validReq, amount: 0.5, currency: 'USD' as const };
-      expect(() => strategy.validate(req)).toThrowError('errors.min_amount');
+      expect(() => strategy.validate(req)).toThrowError(/Minimum amount/);
     });
   });
 
@@ -136,7 +154,7 @@ describe('CardStrategy', () => {
       const invalidReq = { ...validReq, method: { type: 'card' as const } };
 
       // Error is thrown synchronously in start() before returning Observable
-      expect(() => strategy.start(invalidReq)).toThrowError('errors.card_token_required');
+      expect(() => strategy.start(invalidReq)).toThrowError(/Card token is required/);
 
       expect(gatewayMock.createIntent).not.toHaveBeenCalled();
     });
@@ -183,7 +201,7 @@ describe('CardStrategy', () => {
         nextAction: { type: '3ds', clientSecret: 'secret', returnUrl: '' },
       };
       const instructions = strategy.getUserInstructions(intent);
-      expect(instructions).toBe('messages.bank_verification_required');
+      expect(instructions).toContain('verificación adicional');
     });
 
     it('returns null when no action required', () => {

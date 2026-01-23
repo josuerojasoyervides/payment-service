@@ -1,18 +1,19 @@
-import { I18nKeys } from '@core/i18n';
-import { NextActionPaypalApprove } from '@payments/domain/models/payment/payment-action.types';
-import {
-  PaymentIntent,
-  PaymentMethodType,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { inject } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
 import { map, Observable, tap } from 'rxjs';
 
-import { PaymentGateway } from '../../../application/ports/payment-gateway.port';
 import {
+  CreatePaymentRequest,
+  NextActionPaypalApprove,
+  PaymentIntent,
+  PaymentMethodType,
+} from '../../../domain/models';
+import {
+  PaymentGateway,
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
-} from '../../../application/ports/payment-strategy.port';
+} from '../../../domain/ports';
 import { findPaypalLink, PaypalOrderDto } from '../dto/paypal.dto';
 
 /**
@@ -32,7 +33,10 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
   private static readonly DEFAULT_LANDING_PAGE = 'LOGIN';
   private static readonly DEFAULT_USER_ACTION = 'PAY_NOW';
 
-  constructor(private readonly gateway: PaymentGateway) {}
+  constructor(
+    private readonly gateway: PaymentGateway,
+    private readonly i18n: I18nService = inject(I18nService),
+  ) {}
 
   /**
    * Validates the request for PayPal.
@@ -166,9 +170,11 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
       return null;
     }
 
-    return [I18nKeys.ui.paypal_redirect_secure_message, '', I18nKeys.ui.redirected_to_paypal].join(
-      '\n',
-    );
+    return [
+      this.i18n.t(I18nKeys.ui.paypal_redirect_secure_message),
+      '',
+      this.i18n.t(I18nKeys.ui.redirected_to_paypal),
+    ].join('\n');
   }
 
   /**

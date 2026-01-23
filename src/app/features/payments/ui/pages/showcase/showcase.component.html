@@ -2,13 +2,13 @@
   <div class="max-w-6xl mx-auto px-4">
     <!-- Header -->
     <div class="text-center mb-12">
-      <h1 class="text-3xl font-bold text-gray-900">{{ labels.componentShowcaseTitle() }}</h1>
+      <h1 class="text-3xl font-bold text-gray-900">{{ componentShowcaseTitle }}</h1>
       <p class="text-gray-600 mt-2">
-        {{ labels.componentShowcaseDescription() }}
+        {{ componentShowcaseDescription }}
       </p>
       <div class="flex justify-center gap-4 mt-4 text-sm">
         <a routerLink="/payments/checkout" class="text-blue-600 hover:underline">
-          {{ labels.goToCheckoutLabel() }}
+          {{ goToCheckoutLabel }}
         </a>
       </div>
     </div>
@@ -20,7 +20,7 @@
         <h2 class="text-xl font-bold mb-4 pb-4 border-b">OrderSummaryComponent</h2>
         <div class="grid md:grid-cols-2 gap-6">
           <div>
-            <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
             <app-order-summary
               [orderId]="orderSummary.orderId"
               [amount]="orderSummary.amount"
@@ -28,14 +28,14 @@
               [items]="orderSummary.showItems ? orderSummary.items : undefined" />
           </div>
           <div>
-            <h3 class="font-medium mb-3">{{ labels.controlsLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
             <div class="space-y-3 text-sm">
               <div>
-                <label class="label" for="amount">{{ labels.amountLabelShort() }}</label>
+                <label class="label" for="amount">{{ amountLabelShort }}</label>
                 <input id="amount" type="number" class="input" [(ngModel)]="orderSummary.amount" />
               </div>
               <div>
-                <label class="label" for="currency">{{ labels.currencyLabel() }}</label>
+                <label class="label" for="currency">{{ currencyLabel }}</label>
                 <select id="currency" class="input" [(ngModel)]="orderSummary.currency">
                   <option value="MXN">MXN</option>
                   <option value="USD">USD</option>
@@ -43,7 +43,7 @@
               </div>
               <label class="flex items-center gap-2">
                 <input type="checkbox" [(ngModel)]="orderSummary.showItems" />
-                {{ labels.showItemsBreakdownLabel() }}
+                {{ showItemsBreakdownLabel }}
               </label>
             </div>
           </div>
@@ -55,7 +55,7 @@
         <h2 class="text-xl font-bold mb-4 pb-4 border-b">ProviderSelectorComponent</h2>
         <div class="grid md:grid-cols-2 gap-6">
           <div>
-            <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
             <app-provider-selector
               [providers]="providerSelector.providers"
               [selected]="providerSelector.selected"
@@ -63,15 +63,15 @@
               (providerChange)="providerSelector.selected = $event" />
           </div>
           <div>
-            <h3 class="font-medium mb-3">{{ labels.controlsLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
             <div class="space-y-3 text-sm">
               <p>
-                {{ labels.selectedLabel() }}:
+                {{ selectedLabel }}:
                 <code class="bg-gray-100 px-2 py-1 rounded">{{ providerSelector.selected }}</code>
               </p>
               <label class="flex items-center gap-2">
                 <input type="checkbox" [(ngModel)]="providerSelector.disabled" />
-                {{ labels.disabledLabel() }}
+                {{ disabledLabel }}
               </label>
             </div>
           </div>
@@ -83,7 +83,7 @@
         <h2 class="text-xl font-bold mb-4 pb-4 border-b">MethodSelectorComponent</h2>
         <div class="grid md:grid-cols-2 gap-6">
           <div>
-            <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
             <app-method-selector
               [methods]="methodSelector.methods"
               [selected]="methodSelector.selected"
@@ -91,15 +91,15 @@
               (methodChange)="methodSelector.selected = $event" />
           </div>
           <div>
-            <h3 class="font-medium mb-3">{{ labels.controlsLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
             <div class="space-y-3 text-sm">
               <p>
-                {{ labels.selectedLabel() }}:
+                {{ selectedLabel }}:
                 <code class="bg-gray-100 px-2 py-1 rounded">{{ methodSelector.selected }}</code>
               </p>
               <label class="flex items-center gap-2">
                 <input type="checkbox" [(ngModel)]="methodSelector.disabled" />
-                {{ labels.disabledLabel() }}
+                {{ disabledLabel }}
               </label>
             </div>
           </div>
@@ -111,7 +111,7 @@
         <h2 class="text-xl font-bold mb-4 pb-4 border-b">PaymentButtonComponent</h2>
         <div class="grid md:grid-cols-2 gap-6">
           <div>
-            <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
             <app-payment-button
               [amount]="paymentButton.amount"
               [currency]="paymentButton.currency"
@@ -122,27 +122,27 @@
               (pay)="onPayClick()" />
           </div>
           <div>
-            <h3 class="font-medium mb-3">{{ labels.controlsLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
             <div class="space-y-3 text-sm">
               <div>
-                <label class="label" for="provider">{{ labels.providerLabel() }}</label>
+                <label class="label" for="provider">{{ providerLabel }}</label>
                 <select id="provider" class="input" [(ngModel)]="paymentButton.provider">
-                  <option value="stripe">{{ labels.stripeProviderLabel() }}</option>
-                  <option value="paypal">{{ labels.paypalProviderLabel() }}</option>
+                  <option value="stripe">{{ stripeProviderLabel }}</option>
+                  <option value="paypal">{{ paypalProviderLabel }}</option>
                 </select>
               </div>
               <div>
-                <label class="label" for="status">{{ labels.statusLabelShort() }}</label>
+                <label class="label" for="status">{{ statusLabelShort }}</label>
                 <select id="status" class="input" [(ngModel)]="paymentButton.state">
                   <option value="idle">Idle</option>
-                  <option value="loading">{{ labels.loadingLabel() }}</option>
-                  <option value="success">{{ labels.successLabel() }}</option>
-                  <option value="error">{{ labels.errorLabel() }}</option>
+                  <option value="loading">{{ loadingLabel }}</option>
+                  <option value="success">{{ successLabel }}</option>
+                  <option value="error">{{ errorLabel }}</option>
                 </select>
               </div>
               <label class="flex items-center gap-2">
                 <input type="checkbox" [(ngModel)]="paymentButton.disabled" />
-                {{ labels.disabledLabel() }}
+                {{ disabledLabel }}
               </label>
             </div>
           </div>
@@ -154,7 +154,7 @@
         <h2 class="text-xl font-bold mb-4 pb-4 border-b">PaymentResultComponent</h2>
         <div class="grid md:grid-cols-2 gap-6">
           <div>
-            <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
             @if (paymentResult.showSuccess) {
               <app-payment-result
                 [intent]="sampleIntent"
@@ -170,11 +170,11 @@
             }
           </div>
           <div>
-            <h3 class="font-medium mb-3">{{ labels.controlsLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
             <div class="space-y-3 text-sm">
               <label class="flex items-center gap-2">
                 <input type="checkbox" [(ngModel)]="paymentResult.showSuccess" />
-                {{ labels.showSuccessStateLabel() }}
+                {{ showSuccessStateLabel }}
               </label>
             </div>
           </div>
@@ -186,7 +186,7 @@
         <h2 class="text-xl font-bold mb-4 pb-4 border-b">SpeiInstructionsComponent</h2>
         <div class="grid md:grid-cols-2 gap-6">
           <div>
-            <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
             <app-spei-instructions
               [clabe]="speiInstructions.clabe"
               [reference]="speiInstructions.reference"
@@ -197,10 +197,10 @@
               [expiresAt]="speiInstructions.expiresAt" />
           </div>
           <div>
-            <h3 class="font-medium mb-3">{{ labels.controlsLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
             <div class="space-y-3 text-sm">
               <div>
-                <label class="label" for="amount">{{ labels.amountLabelShort() }}</label>
+                <label class="label" for="amount">{{ amountLabelShort }}</label>
                 <input
                   id="amount"
                   type="number"
@@ -208,7 +208,7 @@
                   [(ngModel)]="speiInstructions.amount" />
               </div>
               <div>
-                <label class="label" for="clabe">{{ labels.clabeLabel() }}</label>
+                <label class="label" for="clabe">{{ clabeLabel }}</label>
                 <input
                   id="clabe"
                   type="text"
@@ -225,7 +225,7 @@
         <h2 class="text-xl font-bold mb-4 pb-4 border-b">PaymentIntentCardComponent</h2>
         <div class="grid md:grid-cols-2 gap-6">
           <div>
-            <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
             <app-payment-intent-card
               [intent]="intentCard.intent"
               [showActions]="intentCard.showActions"
@@ -235,28 +235,28 @@
               (refresh)="onIntentAction('refresh', $event)" />
           </div>
           <div>
-            <h3 class="font-medium mb-3">{{ labels.controlsLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ controlsLabel }}</h3>
             <div class="space-y-3 text-sm">
               <div>
-                <label class="label" for="status">{{ labels.statusLabelShort() }}</label>
+                <label class="label" for="status">{{ statusLabelShort }}</label>
                 <select id="status" class="input" [(ngModel)]="intentCard.intent.status">
                   <option value="requires_confirmation">
-                    {{ labels.statusRequiresConfirmationLabel() }}
+                    {{ statusRequiresConfirmationLabel }}
                   </option>
-                  <option value="requires_action">{{ labels.statusRequiresActionLabel() }}</option>
-                  <option value="processing">{{ labels.processingLabel() }}</option>
-                  <option value="succeeded">{{ labels.statusSucceededLabel() }}</option>
-                  <option value="failed">{{ labels.statusFailedLabel() }}</option>
-                  <option value="canceled">{{ labels.canceledLabel() }}</option>
+                  <option value="requires_action">{{ statusRequiresActionLabel }}</option>
+                  <option value="processing">{{ processingLabel }}</option>
+                  <option value="succeeded">{{ statusSucceededLabel }}</option>
+                  <option value="failed">{{ statusFailedLabel }}</option>
+                  <option value="canceled">{{ canceledLabel }}</option>
                 </select>
               </div>
               <label class="flex items-center gap-2">
                 <input type="checkbox" [(ngModel)]="intentCard.showActions" />
-                {{ labels.showActionsLabel() }}
+                {{ showActionsLabel }}
               </label>
               <label class="flex items-center gap-2">
                 <input type="checkbox" [(ngModel)]="intentCard.expanded" />
-                {{ labels.expandedLabel() }}
+                {{ expandedLabel }}
               </label>
             </div>
           </div>
@@ -268,9 +268,9 @@
         <h2 class="text-xl font-bold mb-4 pb-4 border-b">FallbackModalComponent</h2>
         <div class="grid md:grid-cols-2 gap-6">
           <div>
-            <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ previewLabel }}</h3>
             <button class="btn-primary" (click)="fallbackModal.open = true">
-              {{ labels.openFallbackModalLabel() }}
+              {{ openFallbackModalLabel }}
             </button>
             <app-fallback-modal
               [event]="fallbackModal.event"
@@ -279,9 +279,9 @@
               (canceled)="fallbackModal.open = false" />
           </div>
           <div>
-            <h3 class="font-medium mb-3">{{ labels.infoLabel() }}</h3>
+            <h3 class="font-medium mb-3">{{ infoLabel }}</h3>
             <p class="text-sm text-gray-600">
-              {{ labels.fallbackModalInfoLabel() }}
+              {{ fallbackModalInfoLabel }}
             </p>
           </div>
         </div>

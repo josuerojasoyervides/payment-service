@@ -1,4 +1,4 @@
-import { NextActionThreeDs } from '@payments/domain/models/payment/payment-action.types';
+import { NextActionThreeDs } from '@payments/domain/models';
 
 import { StripePaymentIntentDto } from '../dto/stripe.dto';
 

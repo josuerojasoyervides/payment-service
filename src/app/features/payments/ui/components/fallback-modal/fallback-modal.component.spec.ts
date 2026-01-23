@@ -1,8 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { I18nService } from '@core/i18n';
-import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 
+import { FallbackAvailableEvent, PaymentError } from '../../../domain/models';
 import { FallbackModalComponent } from './fallback-modal.component';
 
 describe('FallbackModalComponent', () => {
@@ -12,7 +11,7 @@ describe('FallbackModalComponent', () => {
 
   const mockError: PaymentError = {
     code: 'provider_error',
-    messageKey: 'Provider unavailable',
+    message: 'Provider unavailable',
     raw: { error: 'test' },
   };
 
@@ -176,7 +175,7 @@ describe('FallbackModalComponent', () => {
       fixture.componentRef.setInput('event', mockEvent1);
       fixture.detectChanges();
 
-      expect(component.errorMessageText()).toBe('Provider unavailable');
+      expect(component.errorMessage()).toBe('Provider unavailable');
     });
 
     it('debe retornar null si no hay error', () => {
@@ -184,7 +183,7 @@ describe('FallbackModalComponent', () => {
       fixture.componentRef.setInput('event', eventWithoutError);
       fixture.detectChanges();
 
-      expect(component.errorMessageText()).toBe('ui.unknown_error');
+      expect(component.errorMessage()).toBeNull();
     });
 
     it('debe calcular alternativeProviders correctamente', () => {

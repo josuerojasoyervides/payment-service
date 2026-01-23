@@ -1,12 +1,12 @@
 import { Observable } from 'rxjs';
 
-import { PaymentIntent, PaymentProviderId } from '../../domain/models/payment/payment-intent.types';
+import { PaymentIntent, PaymentProviderId } from '../../models/payment/payment-intent.types';
 import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '../../domain/models/payment/payment-request.types';
+} from '../../models/payment/payment-request.types';
 
 export interface PaymentGateway {
   readonly providerId: PaymentProviderId;

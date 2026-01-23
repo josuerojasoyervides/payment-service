@@ -1,20 +1,17 @@
 import { Injectable } from '@angular/core';
-import { I18nKeys } from '@core/i18n';
-import { BasePaymentGateway } from '@payments/application/ports/base-payment.gateway';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
-  PaymentIntent,
-  PaymentIntentStatus,
-  PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
+import { delay, Observable, of, throwError } from 'rxjs';
+
 import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/models/payment/payment-request.types';
-import { delay, mergeMap, Observable, of, throwError, timer } from 'rxjs';
-
+  PaymentError,
+  PaymentIntent,
+  PaymentIntentStatus,
+  PaymentProviderId,
+} from '../../../domain/models';
 import { PaypalOrderDto } from '../../paypal/dto/paypal.dto';
 import { StripePaymentIntentDto, StripeSpeiSourceDto } from '../../stripe/dto/stripe.dto';
 
@@ -42,34 +39,34 @@ const SPECIAL_TOKENS = {
   PROCESSING: 'tok_processing',
 } as const;
 
-type FakeScenario = 'provider_error' | 'decline' | 'insufficient' | 'expired';
-
 /**
  * Predefined errors for testing.
  */
-const FAKE_ERRORS: Record<FakeScenario, PaymentError> = {
-  provider_error: {
-    code: 'provider_error',
-    messageKey: I18nKeys.errors.provider_error,
-    raw: { scenario: 'provider_error' },
-  },
-
+const FAKE_ERRORS: Record<string, PaymentError> = {
   decline: {
     code: 'card_declined',
-    messageKey: I18nKeys.errors.card_declined,
-    raw: { scenario: 'decline' },
+    message: 'La tarjeta fue rechazada. Por favor intenta con otro método de pago.',
+    raw: { originalError: 'card_declined' },
   },
-
   insufficient: {
-    code: 'insufficient_funds',
-    messageKey: I18nKeys.errors.insufficient_funds,
-    raw: { scenario: 'insufficient' },
+    code: 'card_declined',
+    message: 'Fondos insuficientes en la tarjeta.',
+    raw: { originalError: 'insufficient_funds' },
   },
-
   expired: {
-    code: 'expired_card',
-    messageKey: I18nKeys.errors.expired_card,
-    raw: { scenario: 'expired' },
+    code: 'card_declined',
+    message: 'La tarjeta ha expirado.',
+    raw: { originalError: 'expired_card' },
+  },
+  provider_error: {
+    code: 'provider_error',
+    message: 'El proveedor de pagos no está disponible temporalmente.',
+    raw: { originalError: 'provider_error' },
+  },
+  timeout: {
+    code: 'provider_error',
+    message: 'La operación ha excedido el tiempo de espera.',
+    raw: { originalError: 'timeout' },
   },
 };
 
@@ -125,7 +122,7 @@ export class FakePaymentGateway extends BasePaymentGateway<any, any> {
    * Simulates an error with delay.
    */
   private simulateError(error: PaymentError, delayMs = 200): Observable<never> {
-    return timer(delayMs).pipe(mergeMap(() => throwError(() => error)));
+    return of(null).pipe(delay(delayMs), () => throwError(() => error));
   }
 
   /**
@@ -654,7 +651,7 @@ export class FakePaymentGateway extends BasePaymentGateway<any, any> {
       currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
       nextAction: {
         type: 'spei',
-        instructions: I18nKeys.ui.spei_instructions,
+        instructions: 'Realiza una transferencia SPEI con los siguientes datos:',
         clabe: dto.spei.clabe,
         reference: dto.spei.reference,
         bank: dto.spei.bank,

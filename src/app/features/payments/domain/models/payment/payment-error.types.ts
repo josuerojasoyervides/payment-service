@@ -4,36 +4,11 @@ export type PaymentErrorCode =
   | 'requires_action'
   | 'provider_unavailable'
   | 'provider_error'
-  | 'network_error'
-  | 'timeout'
   | 'unknown_error'
-  | 'fallback_handled'
-  | 'insufficient_funds'
-  | 'expired_card';
-
-export type PaymentErrorParams = Record<string, string | number | boolean | null | undefined>;
+  | 'fallback_handled';
 
 export interface PaymentError {
   code: PaymentErrorCode;
-
-  /**
-   * Human readable error message.
-   *
-   * ⚠️ Transitional field.
-   * During i18n migration, infra may still set this translated string.
-   * The end goal is for UI to render from `messageKey` + `params`.
-   */
-
-  /**
-   * i18n key used to render the message in UI.
-   * This is the long-term source of truth.
-   */
-  messageKey: string;
-
-  /**
-   * Optional interpolation params for `messageKey`.
-   */
-  params?: PaymentErrorParams;
-
+  message: string;
   raw: unknown;
 }

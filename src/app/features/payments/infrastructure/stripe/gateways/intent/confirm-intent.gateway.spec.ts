@@ -3,8 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { ConfirmPaymentRequest, PaymentIntent } from '@payments/domain/models';
 
 import { StripeConfirmIntentGateway } from './confirm-intent.gateway';
 

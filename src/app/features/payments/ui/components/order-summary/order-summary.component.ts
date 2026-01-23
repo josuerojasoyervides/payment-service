@@ -2,7 +2,7 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 
-import { CurrencyCode, OrderItem } from '../../shared/ui.types';
+import { CurrencyCode, OrderItem } from '../../shared';
 
 /**
  * Component that displays order summary.
@@ -48,9 +48,15 @@ export class OrderSummaryComponent {
     return itemsList.reduce((sum, item) => sum + item.price * item.quantity, 0);
   });
 
-  readonly orderSummaryLabel = computed(() => this.i18n.t(I18nKeys.ui.order_summary));
+  get orderSummaryLabel(): string {
+    return this.i18n.t(I18nKeys.ui.order_summary);
+  }
 
-  readonly subtotalLabel = computed(() => this.i18n.t(I18nKeys.ui.subtotal));
+  get subtotalLabel(): string {
+    return this.i18n.t(I18nKeys.ui.subtotal);
+  }
 
-  readonly totalLabel = computed(() => this.i18n.t(I18nKeys.ui.total));
+  get totalLabel(): string {
+    return this.i18n.t(I18nKeys.ui.total);
+  }
 }

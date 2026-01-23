@@ -3,18 +3,18 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">{{ paymentHistoryLabel() }}</h1>
-        <p class="text-gray-600 mt-1">{{ historyCount() }} {{ paymentsInSessionText() }}</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ paymentHistoryLabel }}</h1>
+        <p class="text-gray-600 mt-1">{{ historyCount() }} {{ paymentsInSessionText }}</p>
       </div>
       <div class="flex gap-3">
         <button
           class="btn-secondary text-sm"
           [disabled]="historyCount() === 0"
           (click)="clearHistory()">
-          {{ clearHistoryText() }}
+          {{ clearHistoryText }}
         </button>
         <a routerLink="/payments/checkout" class="btn-primary text-sm">
-          {{ newPaymentButtonText() }}
+          {{ newPaymentButtonText }}
         </a>
       </div>
     </div>
@@ -33,13 +33,13 @@
           </svg>
         </div>
         <h3 class="text-lg font-medium text-gray-900 mb-2">
-          {{ noPaymentsHistoryText() }}
+          {{ noPaymentsHistoryText }}
         </h3>
         <p class="text-gray-600 mb-6">
-          {{ paymentsWillAppearText() }}
+          {{ paymentsWillAppearText }}
         </p>
         <a routerLink="/payments/checkout" class="btn-primary">
-          {{ makePaymentText() }}
+          {{ makePaymentText }}
         </a>
       </div>
     } @else {
@@ -87,10 +87,10 @@
     <!-- Navigation -->
     <div class="mt-8 flex justify-center gap-4 text-sm">
       <a routerLink="/payments/checkout" class="text-blue-600 hover:underline">
-        {{ checkoutLabel() }}
+        {{ checkoutLabel }}
       </a>
       <a routerLink="/payments/status" class="text-blue-600 hover:underline">
-        {{ checkByIdText() }}
+        {{ checkByIdText }}
       </a>
     </div>
   </div>

@@ -7,13 +7,13 @@
   @switch (state()) {
     @case ('loading') {
       <div class="spinner"></div>
-      <span>{{ processingText() }}</span>
+      <span>{{ processingText }}</span>
     }
     @case ('success') {
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
       </svg>
-      <span>{{ paymentSuccessfulText() }}</span>
+      <span>{{ paymentSuccessfulText }}</span>
     }
     @case ('error') {
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -23,14 +23,14 @@
           stroke-width="2"
           d="M6 18L18 6M6 6l12 12" />
       </svg>
-      <span>{{ paymentErrorText() }}</span>
+      <span>{{ paymentErrorText }}</span>
     }
     @default {
       <span class="text-xl">💳</span>
       <span>
-        {{ payWithText() }} {{ amount() | currency: currency() }}
+        {{ payWithText }} {{ amount() | currency: currency() }}
         @if (provider()) {
-          {{ withText() }} {{ providerName() }}
+          {{ withText }} {{ providerName() }}
         }
       </span>
     }

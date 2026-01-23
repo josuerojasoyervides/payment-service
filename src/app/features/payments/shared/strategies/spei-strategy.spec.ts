@@ -1,14 +1,14 @@
-import { NextActionSpei } from '@payments/domain/models/payment/payment-action.types';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { I18nService } from '@core/i18n';
 import { firstValueFrom, of } from 'rxjs';
 
-import { PaymentGateway } from '../../application/ports/payment-gateway.port';
+import { CreatePaymentRequest, NextActionSpei, PaymentIntent } from '../../domain/models';
+import { PaymentGateway } from '../../domain/ports';
 import { SpeiStrategy } from './spei-strategy';
 
 describe('SpeiStrategy', () => {
   let strategy: SpeiStrategy;
   let gatewayMock: Pick<PaymentGateway, 'createIntent' | 'providerId'>;
+  let i18nMock: I18nService;
 
   const validReq: CreatePaymentRequest = {
     orderId: 'order_1',
@@ -38,23 +38,49 @@ describe('SpeiStrategy', () => {
       createIntent: vi.fn(() => of(intentResponse)),
     } as any;
 
-    strategy = new SpeiStrategy(gatewayMock as any);
+    i18nMock = {
+      t: vi.fn((key: string, params?: Record<string, string | number>) => {
+        const translations: Record<string, string> = {
+          'errors.invalid_request': 'Invalid request',
+          'errors.min_amount': params
+            ? `Minimum amount for card payments is ${params['amount']} ${params['currency']}`
+            : 'Minimum amount for card payments',
+          'messages.spei_instructions': 'Realiza una transferencia SPEI con los siguientes datos:',
+          'ui.spei_instructions_title': 'Para completar tu pago de',
+          'ui.spei_step_1': 'Abre tu app bancaria o banca en línea',
+          'ui.spei_step_2': 'Selecciona "Transferencia SPEI"',
+          'ui.spei_step_3': 'Ingresa la CLABE:',
+          'ui.spei_step_4': 'Monto exacto:',
+          'ui.spei_step_5': 'Referencia:',
+          'ui.spei_step_6': 'Beneficiario:',
+          'ui.spei_deadline': 'Fecha límite:',
+          'ui.spei_processing_time': 'El pago puede tardar de 5 minutos a 24 horas en reflejarse.',
+        };
+        return translations[key] || key;
+      }),
+      setLanguage: vi.fn(),
+      getLanguage: vi.fn(() => 'es'),
+      has: vi.fn(() => true),
+      currentLang: { asReadonly: vi.fn() } as any,
+    } as any;
+
+    strategy = new SpeiStrategy(gatewayMock as any, i18nMock);
   });
 
   describe('validate()', () => {
     it('throws if currency is not MXN', () => {
       const req = { ...validReq, currency: 'USD' as const };
-      expect(() => strategy.validate(req)).toThrowError('errors.invalid_request');
+      expect(() => strategy.validate(req)).toThrowError(/SPEI only supports MXN/);
     });
 
     it('throws if amount is below minimum', () => {
       const req = { ...validReq, amount: 0.5 };
-      expect(() => strategy.validate(req)).toThrowError('errors.min_amount');
+      expect(() => strategy.validate(req)).toThrowError(/Minimum amount/);
     });
 
     it('throws if amount exceeds maximum', () => {
       const req = { ...validReq, amount: 10_000_000 };
-      expect(() => strategy.validate(req)).toThrowError('errors.max_amount');
+      expect(() => strategy.validate(req)).toThrowError(/Maximum amount/);
     });
 
     it('accepts valid MXN amounts', () => {
@@ -115,7 +141,7 @@ describe('SpeiStrategy', () => {
       const invalidReq = { ...validReq, currency: 'USD' as const };
 
       // Error is thrown synchronously in start() before returning Observable
-      expect(() => strategy.start(invalidReq)).toThrowError('errors.invalid_request');
+      expect(() => strategy.start(invalidReq)).toThrowError(/SPEI only supports MXN/);
 
       expect(gatewayMock.createIntent).not.toHaveBeenCalled();
     });
@@ -186,13 +212,10 @@ describe('SpeiStrategy', () => {
 
       const instructions = strategy.getUserInstructions(intent);
 
-      expect(instructions).toContain('ui.spei_instructions_title');
-      expect(instructions).toContain('ui.spei_step_1');
-      expect(instructions).toContain('ui.spei_deadline');
-
       expect(instructions).toContain('100');
       expect(instructions).toContain('646180111812345678');
       expect(instructions).toContain('1234567');
+      expect(instructions).toContain('SPEI');
     });
 
     it('returns null when not a SPEI intent', () => {

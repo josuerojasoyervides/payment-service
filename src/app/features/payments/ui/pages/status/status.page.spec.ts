@@ -1,10 +1,9 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
+import { PaymentError, PaymentIntent } from '../../../domain/models';
 import { StatusComponent } from './status.page';
 
 describe('StatusComponent', () => {
@@ -23,7 +22,7 @@ describe('StatusComponent', () => {
 
   const mockError: PaymentError = {
     code: 'provider_error',
-    messageKey: 'Intent not found',
+    message: 'Intent not found',
     raw: { originalError: 'not_found' },
   };
 
@@ -59,9 +58,9 @@ describe('StatusComponent', () => {
     });
 
     it('debe tener ejemplos predefinidos', () => {
-      expect(component.examples()).toHaveLength(2);
-      expect(component.examples()[0].provider).toBe('stripe');
-      expect(component.examples()[1].provider).toBe('paypal');
+      expect(component.examples).toHaveLength(2);
+      expect(component.examples[0].provider).toBe('stripe');
+      expect(component.examples[1].provider).toBe('paypal');
     });
   });
 
@@ -156,14 +155,14 @@ describe('StatusComponent', () => {
 
   describe('Ejemplos', () => {
     it('debe usar ejemplo y actualizar intentId y provider', () => {
-      const example = component.examples()[0];
+      const example = component.examples[0];
       component.useExample(example);
       expect(component.intentId).toBe(example.id);
       expect(component.selectedProvider()).toBe(example.provider);
     });
 
     it('debe funcionar con ejemplos de PayPal', () => {
-      const example = component.examples()[1];
+      const example = component.examples[1];
       component.useExample(example);
       expect(component.intentId).toBe(example.id);
       expect(component.selectedProvider()).toBe('paypal');

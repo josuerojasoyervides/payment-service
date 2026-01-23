@@ -1,23 +1,19 @@
 import { Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
-import { BasePaymentGateway } from '@payments/application/ports/base-payment.gateway';
-import { NextActionPaypalApprove } from '@payments/domain/models/payment/payment-action.types';
-import {
-  PaymentError,
-  PaymentErrorCode,
-} from '@payments/domain/models/payment/payment-error.types';
-import {
-  PaymentIntent,
-  PaymentIntentStatus,
-} from '@payments/domain/models/payment/payment-intent.types';
+import { BasePaymentGateway } from '@payments/shared/base-payment.gateway';
+import { Observable } from 'rxjs';
+
 import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/models/payment/payment-request.types';
-import { Observable } from 'rxjs';
-
+  NextActionPaypalApprove,
+  PaymentError,
+  PaymentErrorCode,
+  PaymentIntent,
+  PaymentIntentStatus,
+} from '../../../domain/models';
 import {
   findPaypalLink,
   PaypalCreateOrderRequest,
@@ -155,14 +151,9 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
    */
   protected override normalizeError(err: unknown): PaymentError {
     if (this.isPaypalErrorResponse(err)) {
-      const code = PaypalPaymentGateway.ERROR_MAP[err.name] ?? 'provider_error';
-
       return {
-        code,
-        messageKey: I18nKeys.errors.paypal_error,
-        params: {
-          reason: err.name, // opcional, por si UI quiere mostrarlo o logs
-        },
+        code: PaypalPaymentGateway.ERROR_MAP[err.name] ?? 'provider_error',
+        message: this.humanizePaypalError(err),
         raw: err,
       };
     }
@@ -173,7 +164,7 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
       if (httpError.status === 401) {
         return {
           code: 'provider_error',
-          messageKey: I18nKeys.errors.paypal_auth_error,
+          message: this.i18n.t(I18nKeys.errors.paypal_auth_error),
           raw: err,
         };
       }
@@ -181,7 +172,7 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
       if (httpError.status >= 500) {
         return {
           code: 'provider_unavailable',
-          messageKey: I18nKeys.errors.paypal_unavailable,
+          message: this.i18n.t(I18nKeys.errors.paypal_unavailable),
           raw: err,
         };
       }
@@ -320,5 +311,31 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
    */
   private isPaypalErrorResponse(err: unknown): err is PaypalErrorResponse {
     return err !== null && typeof err === 'object' && 'name' in err && 'message' in err;
+  }
+
+  /**
+   * Converts PayPal errors to readable messages.
+   */
+  private humanizePaypalError(error: PaypalErrorResponse): string {
+    const errorKeyMap: Partial<Record<string, string>> = {
+      INVALID_REQUEST: I18nKeys.errors.paypal_invalid_request,
+      PERMISSION_DENIED: I18nKeys.errors.paypal_permission_denied,
+      RESOURCE_NOT_FOUND: I18nKeys.errors.paypal_resource_not_found,
+      INSTRUMENT_DECLINED: I18nKeys.errors.paypal_instrument_declined,
+      ORDER_NOT_APPROVED: I18nKeys.errors.paypal_order_not_approved,
+      INTERNAL_SERVICE_ERROR: I18nKeys.errors.paypal_internal_error,
+    };
+
+    if (error.details?.length) {
+      const detail = error.details[0];
+      return detail.description || detail.issue || error.message;
+    }
+
+    const translationKey = errorKeyMap[error.name];
+    if (translationKey) {
+      return this.i18n.t(translationKey);
+    }
+
+    return error.message ?? this.i18n.t(I18nKeys.errors.paypal_error);
   }
 }

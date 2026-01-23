@@ -1,10 +1,6 @@
 import { Injectable } from '@angular/core';
-import { PaymentGatewayPort } from '@payments/application/ports/payment-operation.port';
-import {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { CreatePaymentRequest, PaymentIntent, PaymentProviderId } from '@payments/domain/models';
+import { PaymentGatewayOperation } from '@payments/shared/payment-operation.gateway';
 import { Observable } from 'rxjs';
 
 import {
@@ -17,7 +13,7 @@ import { SpeiSourceMapper } from '../../mappers/spei-source.mapper';
 import { getIdempotencyHeaders } from '../../validators/get-idempotency-headers';
 
 @Injectable()
-export class StripeCreateIntentGateway extends PaymentGatewayPort<
+export class StripeCreateIntentGateway extends PaymentGatewayOperation<
   CreatePaymentRequest,
   StripePaymentIntentDto | StripeSpeiSourceDto,
   PaymentIntent
