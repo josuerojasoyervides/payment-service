@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { PaymentGateway } from '@payments/application/ports/payment-gateway.port';
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
   PaymentIntent,
@@ -167,33 +167,64 @@ export abstract class BasePaymentGateway<
 
   // ------- Helpers compartidos -------
   protected validateCreate(req: CreatePaymentRequest) {
-    if (!req.orderId) throw new Error(I18nKeys.errors.order_id_required);
-    if (!req.currency) throw new Error(I18nKeys.errors.currency_required);
-    if (!Number.isFinite(req.amount) || req.amount <= 0)
-      throw new Error(I18nKeys.errors.amount_invalid);
-    if (!req.method?.type) throw new Error(I18nKeys.errors.method_type_required);
-    if (req.method.type === 'card' && !req.method.token)
-      throw new Error(I18nKeys.errors.card_token_required);
+    if (!req.orderId) {
+      throw invalidRequestError('errors.order_id_required', { field: 'orderId' });
+    }
+
+    if (!req.currency) {
+      throw invalidRequestError('errors.currency_required', { field: 'currency' });
+    }
+
+    if (!Number.isFinite(req.amount) || req.amount <= 0) {
+      throw invalidRequestError(
+        'errors.amount_invalid',
+        { field: 'amount', min: 1 },
+        { amount: req.amount },
+      );
+    }
+
+    if (!req.method?.type) {
+      throw invalidRequestError('errors.payment_method_type_required', { field: 'method.type' });
+    }
+
+    // Base rule: card requires token
+    // Providers can override validateCreate() (e.g. PayPal) if they don't need it.
+    if (req.method.type === 'card' && !req.method.token) {
+      throw invalidRequestError('errors.card_token_required', { field: 'method.token' });
+    }
   }
 
   protected validateConfirm(req: ConfirmPaymentRequest) {
-    if (!req.intentId) throw new Error(I18nKeys.errors.intent_id_required);
+    if (!req.intentId) {
+      throw invalidRequestError('errors.intent_id_required', { field: 'intentId' });
+    }
   }
 
   protected validateCancel(req: CancelPaymentRequest) {
-    if (!req.intentId) throw new Error(I18nKeys.errors.intent_id_required);
+    if (!req.intentId) {
+      throw invalidRequestError('errors.intent_id_required', { field: 'intentId' });
+    }
   }
 
   protected validateGetStatus(req: GetPaymentStatusRequest) {
-    if (!req.intentId) throw new Error(I18nKeys.errors.intent_id_required);
+    if (!req.intentId) {
+      throw invalidRequestError('errors.intent_id_required', { field: 'intentId' });
+    }
   }
 
   protected normalizeError(err: unknown): PaymentError {
+    // If it's already a PaymentError, do NOT wrap it again.
+    if (this.isPaymentError(err)) return err;
+
     return {
       code: 'provider_error',
-      messageKey: I18nKeys.errors.provider_error,
+      messageKey: 'errors.provider_error',
       raw: err,
     };
+  }
+
+  private isPaymentError(err: unknown): err is PaymentError {
+    return typeof err === 'object' && err !== null && 'code' in err && 'messageKey' in err;
   }
 
   protected abstract createIntentRaw(req: CreatePaymentRequest): Observable<TCreateDto>;

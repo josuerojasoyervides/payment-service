@@ -102,7 +102,7 @@ export class ShowcaseComponent {
 
   sampleError: PaymentError = {
     code: 'card_declined',
-    messageKey: this.i18n.t(I18nKeys.errors.card_declined),
+    messageKey: I18nKeys.errors.card_declined,
     raw: { originalError: 'card_declined' },
   };
 

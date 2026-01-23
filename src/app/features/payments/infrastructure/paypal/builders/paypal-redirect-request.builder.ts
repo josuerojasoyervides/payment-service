@@ -1,3 +1,4 @@
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import { CurrencyCode } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
@@ -69,13 +70,13 @@ export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
 
   private validate(): void {
     if (!this.orderId) {
-      throw new Error('orderId is required');
+      throw invalidRequestError('errors.order_id_required', { field: 'orderId' });
     }
     if (!this.amount || this.amount <= 0) {
-      throw new Error('amount must be greater than 0');
+      throw invalidRequestError('errors.amount_invalid', { field: 'amount' });
     }
     if (!this.currency) {
-      throw new Error('currency is required');
+      throw invalidRequestError('errors.currency_required', { field: 'currency' });
     }
     // returnUrl es opcional en el builder - puede venir de StrategyContext
     // Solo validar formato si está presente
@@ -83,14 +84,14 @@ export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
       try {
         new URL(this.returnUrl);
       } catch {
-        throw new Error('returnUrl must be a valid URL');
+        throw invalidRequestError('errors.return_url_invalid', { field: 'returnUrl' });
       }
     }
     if (this.cancelUrl) {
       try {
         new URL(this.cancelUrl);
       } catch {
-        throw new Error('cancelUrl must be a valid URL');
+        throw invalidRequestError('errors.cancel_url_invalid', { field: 'cancelUrl' });
       }
     }
   }

@@ -34,12 +34,20 @@ describe('PaypalPaymentGateway', () => {
   });
 
   it('throws synchronously when request is invalid (base validation)', () => {
-    expect(() =>
+    try {
       gateway.createIntent({
         ...req,
         orderId: '',
-      }),
-    ).toThrowError('orderId is required');
+      });
+
+      throw new Error('Expected createIntent to throw');
+    } catch (e) {
+      expect(e).toMatchObject({
+        code: 'invalid_request',
+        messageKey: 'errors.order_id_required',
+        params: { field: 'orderId' },
+      });
+    }
   });
 
   describe('createIntent', () => {
