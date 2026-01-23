@@ -24,7 +24,7 @@
                 [formControlName]="field.name"
                 class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
               <span class="label cursor-pointer">
-                {{ field.labelKey }}
+                {{ translateText(field.labelKey) }}
               </span>
             </label>
           } @else {
@@ -57,7 +57,7 @@
         <div class="text-xs text-gray-400 space-y-1">
           @for (field of hiddenFields(); track field.name) {
             <div class="flex items-center gap-2">
-              <span>{{ field.labelKey }}:</span>
+              <span>{{ translateText(field.labelKey) }}:</span>
               <code class="bg-gray-100 px-1 rounded">
                 {{ form.get(field.name)?.value || '(auto)' }}
               </code>

@@ -11,7 +11,6 @@ import {
 } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
 import { I18nKeys, I18nService } from '@core/i18n';
-import { FieldConfig } from '@payments/ui/shared/ui.types';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 
 import {
@@ -89,7 +88,7 @@ export class PaymentFormComponent implements OnDestroy {
   visibleFields(): FieldRequirement[] {
     const reqs = this.requirements();
     if (!reqs) return [];
-    return reqs.fields.filter((f) => f.type === 'hidden');
+    return reqs.fields.filter((f) => f.type !== 'hidden');
   }
 
   /** Hidden fields */
@@ -187,21 +186,6 @@ export class PaymentFormComponent implements OnDestroy {
 
     this.formChange.emit(options);
     this.formValidChange.emit(this.form.valid);
-  }
-
-  /** Translates a field label using i18n if needed */
-  translateFieldLabel(field: FieldConfig): string {
-    const labelKeyByName: Partial<Record<FieldConfig['name'], string>> = {
-      token: I18nKeys.ui.card_token,
-      saveForFuture: I18nKeys.ui.save_card_future,
-      customerEmail: I18nKeys.ui.email_label,
-    };
-
-    const key = labelKeyByName[field.name];
-    if (key) return this.i18n.t(key);
-
-    // fallback: si provider ya manda label, úsalo
-    return field.label;
   }
 
   /** Translates the method description */
