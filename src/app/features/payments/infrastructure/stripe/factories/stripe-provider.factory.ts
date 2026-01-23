@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { I18nKeys, I18nService } from '@core/i18n';
+import { I18nKeys } from '@core/i18n';
 import { ProviderFactory } from '@payments/application/ports/provider-factory.port';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
@@ -34,7 +34,6 @@ export class StripeProviderFactory implements ProviderFactory {
   readonly providerId = 'stripe' as const;
 
   private readonly gateway = inject(IntentFacade);
-  private readonly i18n = inject(I18nService);
 
   /**
    * Strategy cache to avoid recreating them.

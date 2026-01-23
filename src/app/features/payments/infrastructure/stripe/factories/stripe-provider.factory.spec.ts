@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { I18nService } from '@core/i18n';
 import { firstValueFrom, of } from 'rxjs';
 
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
@@ -16,20 +15,8 @@ describe('StripeProviderFactory', () => {
   } satisfies Partial<IntentFacade>;
 
   beforeEach(() => {
-    const i18nMock = {
-      t: vi.fn((key: string) => key),
-      setLanguage: vi.fn(),
-      getLanguage: vi.fn(() => 'es'),
-      has: vi.fn(() => true),
-      currentLang: { asReadonly: vi.fn() } as any,
-    } as any;
-
     TestBed.configureTestingModule({
-      providers: [
-        StripeProviderFactory,
-        { provide: IntentFacade, useValue: gatewayStub },
-        { provide: I18nService, useValue: i18nMock },
-      ],
+      providers: [StripeProviderFactory, { provide: IntentFacade, useValue: gatewayStub }],
     });
 
     factory = TestBed.inject(StripeProviderFactory);

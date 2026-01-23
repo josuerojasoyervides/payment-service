@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { I18nKeys, I18nService } from '@core/i18n';
+import { I18nKeys } from '@core/i18n';
 import { PaymentGateway } from '@payments/application/ports/payment-gateway.port';
 import { ProviderFactory } from '@payments/application/ports/provider-factory.port';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
@@ -30,7 +30,6 @@ export class PaypalProviderFactory implements ProviderFactory {
   readonly providerId = 'paypal' as const;
 
   private readonly gateway = inject(PaypalPaymentGateway);
-  private readonly i18n = inject(I18nService);
 
   /**
    * Strategy cache.
