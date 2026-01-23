@@ -1,4 +1,8 @@
-import { EnvironmentProviders, Provider } from '@angular/core';
+import { EnvironmentProviders, inject, Provider } from '@angular/core';
+import { FakeCancelIntentGateway } from '@payments/infrastructure/fake/gateways/intent/cancel-intent.gateway';
+import { FakeConfirmIntentGateway } from '@payments/infrastructure/fake/gateways/intent/confirm-intent.gateway';
+import { FakeCreateIntentGateway } from '@payments/infrastructure/fake/gateways/intent/create-intent.gateway';
+import { FakeGetIntentGateway } from '@payments/infrastructure/fake/gateways/intent/get-intent.gateway';
 import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/cancel-intent.gateway';
 import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/confirm-intent.gateway';
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/create-intent.gateway';
@@ -44,9 +48,13 @@ const STRIPE_REAL_GATEWAYS: Provider[] = [
   StripeGetIntentGateway,
 ];
 const STRIPE_FAKE_GATEWAYS: Provider[] = [
+  FakeCreateIntentGateway,
+  FakeConfirmIntentGateway,
+  FakeCancelIntentGateway,
+  FakeGetIntentGateway,
   {
     provide: StripeIntentFacade,
-    useFactory: () => FakePaymentGateway.create('stripe'),
+    useFactory: fakeGatewayFactory('stripe'),
   },
 ];
 
@@ -58,9 +66,13 @@ const PAYPAL_REAL_GATEWAYS: Provider[] = [
   PaypalGetIntentGateway,
 ];
 const PAYPAL_FAKE_GATEWAYS: Provider[] = [
+  FakeCreateIntentGateway,
+  FakeConfirmIntentGateway,
+  FakeCancelIntentGateway,
+  FakeGetIntentGateway,
   {
     provide: PaypalIntentFacade,
-    useFactory: () => FakePaymentGateway.create('paypal'),
+    useFactory: fakeGatewayFactory('paypal'),
   },
 ];
 
@@ -127,4 +139,15 @@ export function providePaymentsWithConfig(options: {
     mode: options.useRealGateways ? 'real' : 'fake',
     extraProviders: options.extraProviders,
   });
+}
+
+function fakeGatewayFactory(providerId: 'stripe' | 'paypal') {
+  return () =>
+    new FakePaymentGateway(
+      providerId,
+      inject(FakeCreateIntentGateway),
+      inject(FakeConfirmIntentGateway),
+      inject(FakeCancelIntentGateway),
+      inject(FakeGetIntentGateway),
+    );
 }

@@ -21,10 +21,16 @@ export abstract class PaymentOperationPort<
   }
 
   execute(request: TRequest): Observable<TResponse> {
+    this.validateRequest(request);
+
     return this.executeRaw(request).pipe(
       map((dto) => this.mapResponse(dto)),
       catchError((err) => throwError(() => this.handleError(err))),
     );
+  }
+
+  protected validateRequest(_request: TRequest): void {
+    // Optionally override in subclasses to perform request validation.
   }
 
   protected handleError(err: unknown): PaymentError {
