@@ -1,13 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
+import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
-import {
-  FallbackAvailableEvent,
-  getDefaultProviders,
-  PaymentProviderId,
-} from '../../shared/ui.types';
+import { getDefaultProviders } from '../../shared/ui.types';
 
 /**
  * Modal that displays fallback options when a provider fails.

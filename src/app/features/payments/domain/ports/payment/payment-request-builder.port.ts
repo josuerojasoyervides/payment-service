@@ -1,3 +1,5 @@
+import { AutoCompleteHint } from '@payments/domain/models/payment/autocomplete-hint.types';
+
 import { CurrencyCode } from '../../models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '../../models/payment/payment-request.types';
 
@@ -56,47 +58,27 @@ export interface PaymentRequestBuilder {
 export type FieldType = 'text' | 'email' | 'hidden' | 'url';
 
 /**
- * Payment form field configuration.
- */
-export interface FieldConfig {
-  /** Field name (key in PaymentOptions) */
-  name: keyof PaymentOptions;
-
-  /** Label to display in UI */
-  label: string;
-
-  /** Whether required for this provider/method */
-  required: boolean;
-
-  /** Input type */
-  type: FieldType;
-
-  /** Input placeholder */
-  placeholder?: string;
-
-  /** Default value */
-  defaultValue?: string;
-
-  /**
-   * If 'hidden', UI must provide it but not display it.
-   * E.g., returnUrl can be the current URL
-   */
-  autoFill?: 'currentUrl' | 'none';
-}
-
-/**
  * Field requirements for a specific provider/method.
  *
  * The UI queries this BEFORE rendering the form
  * to know which fields to show.
  */
+export interface FieldRequirement {
+  name: keyof PaymentOptions;
+  labelKey: string;
+  placeholderKey?: string;
+  descriptionKey?: string;
+  instructionsKey?: string;
+
+  required: boolean;
+  type: 'text' | 'email' | 'hidden';
+
+  autoComplete?: AutoCompleteHint;
+  defaultValue?: string;
+}
+
 export interface FieldRequirements {
-  /** Fields this provider/method needs */
-  fields: FieldConfig[];
-
-  /** Payment method description for UI */
-  description?: string;
-
-  /** Additional instructions for the user */
-  instructions?: string;
+  descriptionKey?: string;
+  instructionsKey?: string;
+  fields: FieldRequirement[];
 }

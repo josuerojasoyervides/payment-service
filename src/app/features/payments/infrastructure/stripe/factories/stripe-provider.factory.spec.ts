@@ -71,8 +71,8 @@ describe('StripeProviderFactory', () => {
 
       expect(requirements.fields).toBeDefined();
       expect(requirements.fields.length).toBeGreaterThan(0);
-      expect(requirements.description).toBeDefined();
-      expect(requirements.instructions).toBeDefined();
+      expect(requirements.descriptionKey).toBeDefined();
+      expect(requirements.instructionsKey).toBeDefined();
 
       const tokenField = requirements.fields.find((f) => f.name === 'token');
       expect(tokenField).toBeDefined();
@@ -85,8 +85,8 @@ describe('StripeProviderFactory', () => {
 
       expect(requirements.fields).toBeDefined();
       expect(requirements.fields.length).toBeGreaterThan(0);
-      expect(requirements.description).toBeDefined();
-      expect(requirements.instructions).toBeDefined();
+      expect(requirements.descriptionKey).toBeDefined();
+      expect(requirements.instructionsKey).toBeDefined();
 
       const emailField = requirements.fields.find((f) => f.name === 'customerEmail');
       expect(emailField).toBeDefined();
