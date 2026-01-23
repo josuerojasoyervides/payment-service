@@ -5,10 +5,10 @@ import { PaymentError } from '@payments/domain/models/payment/payment-error.type
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom } from 'rxjs';
 
-import { PaypalPaymentGateway } from './paypal-payment.gateway';
+import { PaypalIntentFacade } from './intent.facade';
 
 describe('PaypalPaymentGateway', () => {
-  let gateway: PaypalPaymentGateway;
+  let gateway: PaypalIntentFacade;
   let httpMock: HttpTestingController;
 
   const req: CreatePaymentRequest = {
@@ -22,10 +22,10 @@ describe('PaypalPaymentGateway', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), PaypalPaymentGateway],
+      providers: [provideHttpClient(), provideHttpClientTesting(), PaypalIntentFacade],
     });
 
-    gateway = TestBed.inject(PaypalPaymentGateway);
+    gateway = TestBed.inject(PaypalIntentFacade);
     httpMock = TestBed.inject(HttpTestingController);
   });
 

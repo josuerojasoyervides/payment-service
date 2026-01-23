@@ -6,7 +6,7 @@ import { PAYMENT_PROVIDER_FACTORIES } from '../application/tokens/payment-provid
 import { PAYMENT_STATE } from '../application/tokens/payment-state.token';
 import { PaypalProviderFactory } from '../infrastructure/paypal/factories/paypal-provider.factory';
 import { StripeProviderFactory } from '../infrastructure/stripe/factories/stripe-provider.factory';
-import { IntentFacade } from '../infrastructure/stripe/gateways/intent/intent.facade';
+import { StripeIntentFacade } from '../infrastructure/stripe/gateways/intent/intent.facade';
 import providePayments, { providePaymentsWithConfig } from './payment.providers';
 
 describe('payment.providers', () => {
@@ -34,6 +34,6 @@ describe('payment.providers', () => {
       ],
     });
 
-    expect(() => TestBed.inject(IntentFacade)).not.toThrow();
+    expect(() => TestBed.inject(StripeIntentFacade)).not.toThrow();
   });
 });

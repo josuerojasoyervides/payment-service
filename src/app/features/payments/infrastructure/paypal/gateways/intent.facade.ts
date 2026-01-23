@@ -1,16 +1,9 @@
 import { Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
 import { BasePaymentGateway } from '@payments/application/ports/base-payment-gateway.port';
-import { NextActionPaypalApprove } from '@payments/domain/models/payment/payment-action.types';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import {
-  PaymentError,
-  PaymentErrorCode,
-} from '@payments/domain/models/payment/payment-error.types';
-import {
-  PaymentIntent,
-  PaymentIntentStatus,
-} from '@payments/domain/models/payment/payment-intent.types';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
@@ -19,13 +12,9 @@ import {
 } from '@payments/domain/models/payment/payment-request.types';
 import { Observable } from 'rxjs';
 
-import {
-  findPaypalLink,
-  PaypalCreateOrderRequest,
-  PaypalErrorResponse,
-  PaypalOrderDto,
-  PaypalOrderStatus,
-} from '../dto/paypal.dto';
+import { PaypalCreateOrderRequest, PaypalErrorResponse, PaypalOrderDto } from '../dto/paypal.dto';
+import { ERROR_MAP } from '../mappers/error.mapper';
+import { mapOrder } from '../mappers/map-order.mapper';
 
 /**
  * PayPal gateway (Orders API v2).
@@ -38,31 +27,10 @@ import {
  * - No client_secret, uses session cookies
  */
 @Injectable()
-export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, PaypalOrderDto> {
+export class PaypalIntentFacade extends BasePaymentGateway<PaypalOrderDto, PaypalOrderDto> {
   readonly providerId = 'paypal' as const;
 
   private static readonly API_BASE = '/api/payments/paypal';
-
-  // PayPal status → internal status mapping
-  private static readonly STATUS_MAP: Record<PaypalOrderStatus, PaymentIntentStatus> = {
-    CREATED: 'requires_action',
-    SAVED: 'requires_confirmation',
-    APPROVED: 'requires_confirmation',
-    VOIDED: 'canceled',
-    COMPLETED: 'succeeded',
-    PAYER_ACTION_REQUIRED: 'requires_action',
-  };
-
-  // PayPal errors → internal errors mapping
-  private static readonly ERROR_MAP: Record<string, PaymentErrorCode> = {
-    INVALID_REQUEST: 'invalid_request',
-    PERMISSION_DENIED: 'provider_error',
-    RESOURCE_NOT_FOUND: 'invalid_request',
-    UNPROCESSABLE_ENTITY: 'invalid_request',
-    INSTRUMENT_DECLINED: 'card_declined',
-    ORDER_NOT_APPROVED: 'requires_action',
-    INTERNAL_SERVICE_ERROR: 'provider_unavailable',
-  };
 
   /**
    * Creates an Order in PayPal.
@@ -73,20 +41,15 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
   protected createIntentRaw(req: CreatePaymentRequest): Observable<PaypalOrderDto> {
     const paypalRequest = this.buildPaypalCreateRequest(req);
 
-    return this.http.post<PaypalOrderDto>(
-      `${PaypalPaymentGateway.API_BASE}/orders`,
-      paypalRequest,
-      {
-        headers: {
-          'PayPal-Request-Id': this.generateRequestId(req.orderId),
-          Prefer: 'return=representation',
-        },
+    return this.http.post<PaypalOrderDto>(`${PaypalIntentFacade.API_BASE}/orders`, paypalRequest, {
+      headers: {
+        'PayPal-Request-Id': this.generateRequestId(req.orderId),
+        Prefer: 'return=representation',
       },
-    );
+    });
   }
-
   protected mapIntent(dto: PaypalOrderDto): PaymentIntent {
-    return this.mapOrder(dto);
+    return mapOrder(dto, this.providerId);
   }
 
   /**
@@ -97,7 +60,7 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
    */
   protected confirmIntentRaw(req: ConfirmPaymentRequest): Observable<PaypalOrderDto> {
     return this.http.post<PaypalOrderDto>(
-      `${PaypalPaymentGateway.API_BASE}/orders/${req.intentId}/capture`,
+      `${PaypalIntentFacade.API_BASE}/orders/${req.intentId}/capture`,
       {},
       {
         headers: {
@@ -106,9 +69,8 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
       },
     );
   }
-
   protected mapConfirmIntent(dto: PaypalOrderDto): PaymentIntent {
-    return this.mapOrder(dto);
+    return mapOrder(dto, this.providerId);
   }
 
   /**
@@ -120,24 +82,22 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
    */
   protected cancelIntentRaw(req: CancelPaymentRequest): Observable<PaypalOrderDto> {
     return this.http.post<PaypalOrderDto>(
-      `${PaypalPaymentGateway.API_BASE}/orders/${req.intentId}/void`,
+      `${PaypalIntentFacade.API_BASE}/orders/${req.intentId}/void`,
       {},
     );
   }
-
   protected mapCancelIntent(dto: PaypalOrderDto): PaymentIntent {
-    return this.mapOrder(dto);
+    return mapOrder(dto, this.providerId);
   }
 
   /**
    * Gets the current status of an Order.
    */
   protected getIntentRaw(req: GetPaymentStatusRequest): Observable<PaypalOrderDto> {
-    return this.http.get<PaypalOrderDto>(`${PaypalPaymentGateway.API_BASE}/orders/${req.intentId}`);
+    return this.http.get<PaypalOrderDto>(`${PaypalIntentFacade.API_BASE}/orders/${req.intentId}`);
   }
-
   protected mapGetIntent(dto: PaypalOrderDto): PaymentIntent {
-    return this.mapOrder(dto);
+    return mapOrder(dto, this.providerId);
   }
 
   /**
@@ -158,7 +118,7 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
    */
   protected override normalizeError(err: unknown): PaymentError {
     if (this.isPaypalErrorResponse(err)) {
-      const code = PaypalPaymentGateway.ERROR_MAP[err.name] ?? 'provider_error';
+      const code = ERROR_MAP[err.name] ?? 'provider_error';
 
       return {
         code,
@@ -198,74 +158,6 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
   /**
    * Maps a PayPal Order to our PaymentIntent model.
    */
-  private mapOrder(dto: PaypalOrderDto): PaymentIntent {
-    const status = PaypalPaymentGateway.STATUS_MAP[dto.status] ?? 'processing';
-    const purchaseUnit = dto.purchase_units[0];
-
-    const amount = parseFloat(purchaseUnit?.amount?.value ?? '0');
-    const currency = purchaseUnit?.amount?.currency_code as 'MXN' | 'USD';
-
-    const intent: PaymentIntent = {
-      id: dto.id,
-      provider: this.providerId,
-      status,
-      amount,
-      currency,
-      raw: dto,
-    };
-
-    if (dto.status === 'CREATED' || dto.status === 'PAYER_ACTION_REQUIRED') {
-      const approveUrl = findPaypalLink(dto.links, 'approve');
-      if (approveUrl) {
-        intent.redirectUrl = approveUrl;
-        // No construir nextAction aquí - PaypalRedirectStrategy.enrichIntentWithPaypalApproval
-        // lo construirá con las URLs correctas desde StrategyContext (metadata)
-        // Si necesitamos construir aquí, requeriríamos acceso al request original con returnUrl/cancelUrl
-      }
-    }
-
-    if (dto.status === 'COMPLETED' && purchaseUnit?.payments?.captures?.[0]) {
-      const capture = purchaseUnit.payments.captures[0];
-      console.log(`[PaypalGateway] Capture ID: ${capture.id}, Status: ${capture.status}`);
-    }
-
-    return intent;
-  }
-
-  /**
-   * Builds PayPal approval action.
-   *
-   * Note: This method is called from mapOrder which doesn't have access to the original request.
-   * However, PaypalRedirectStrategy.enrichIntentWithPaypalApproval already sets the correct URLs
-   * from StrategyContext. This method should ideally not be used, as the strategy enriches the intent.
-   *
-   * If called, returnUrl/cancelUrl MUST be provided - no fallbacks allowed.
-   * The system must guarantee these URLs come from StrategyContext.
-   */
-  private buildPaypalApproveAction(
-    dto: PaypalOrderDto,
-    approveUrl: string,
-    returnUrl?: string,
-    cancelUrl?: string,
-  ): NextActionPaypalApprove {
-    // No inventar URLs - deben venir del request preparado
-    // Si no están disponibles, lanzar error claro
-    if (!returnUrl) {
-      throw new Error(
-        'returnUrl is required for PayPal approval action. ' +
-          'PaypalRedirectStrategy.enrichIntentWithPaypalApproval should set nextAction with URLs from StrategyContext. ' +
-          'If this method is called, returnUrl must be provided explicitly.',
-      );
-    }
-
-    return {
-      type: 'paypal_approve',
-      approveUrl,
-      returnUrl,
-      cancelUrl: cancelUrl ?? returnUrl,
-      paypalOrderId: dto.id,
-    };
-  }
 
   // ============ HELPERS ============
 

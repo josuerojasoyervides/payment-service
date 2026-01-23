@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 
-import { PaypalPaymentGateway } from '../gateways/paypal-payment.gateway';
+import { PaypalIntentFacade } from '../gateways/intent.facade';
 import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
 import { PaypalProviderFactory } from './paypal-provider.factory';
 
@@ -10,11 +10,11 @@ describe('PaypalProviderFactory', () => {
   const gatewayStub = {
     providerId: 'paypal',
     createIntent: vi.fn(),
-  } satisfies Partial<PaypalPaymentGateway>;
+  } satisfies Partial<PaypalIntentFacade>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [PaypalProviderFactory, { provide: PaypalPaymentGateway, useValue: gatewayStub }],
+      providers: [PaypalProviderFactory, { provide: PaypalIntentFacade, useValue: gatewayStub }],
     });
 
     factory = TestBed.inject(PaypalProviderFactory);

@@ -10,7 +10,7 @@ import {
   PaymentRequestBuilder,
 } from '../../../domain/ports/payment/payment-request-builder.port';
 import { PaypalRedirectRequestBuilder } from '../builders/paypal-redirect-request.builder';
-import { PaypalPaymentGateway } from '../gateways/paypal-payment.gateway';
+import { PaypalIntentFacade } from '../gateways/intent.facade';
 import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
 
 /**
@@ -29,7 +29,7 @@ import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
 export class PaypalProviderFactory implements ProviderFactory {
   readonly providerId = 'paypal' as const;
 
-  private readonly gateway = inject(PaypalPaymentGateway);
+  private readonly gateway = inject(PaypalIntentFacade);
 
   /**
    * Strategy cache.

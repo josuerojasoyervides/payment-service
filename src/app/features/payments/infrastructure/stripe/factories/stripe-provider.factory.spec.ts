@@ -3,7 +3,7 @@ import { firstValueFrom, of } from 'rxjs';
 
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
-import { IntentFacade } from '../gateways/intent/intent.facade';
+import { StripeIntentFacade } from '../gateways/intent/intent.facade';
 import { StripeProviderFactory } from './stripe-provider.factory';
 
 describe('StripeProviderFactory', () => {
@@ -12,11 +12,11 @@ describe('StripeProviderFactory', () => {
   const gatewayStub = {
     providerId: 'stripe',
     createIntent: vi.fn(),
-  } satisfies Partial<IntentFacade>;
+  } satisfies Partial<StripeIntentFacade>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [StripeProviderFactory, { provide: IntentFacade, useValue: gatewayStub }],
+      providers: [StripeProviderFactory, { provide: StripeIntentFacade, useValue: gatewayStub }],
     });
 
     factory = TestBed.inject(StripeProviderFactory);

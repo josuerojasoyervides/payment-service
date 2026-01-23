@@ -26,7 +26,7 @@ import { StripeGetIntentGateway } from './get-intent.gateway';
  * - Idempotency keys for safe operations
  */
 @Injectable()
-export class IntentFacade implements PaymentGatewayPort {
+export class StripeIntentFacade implements PaymentGatewayPort {
   readonly providerId = 'stripe' as const;
 
   private readonly createIntentOp = inject(StripeCreateIntentGateway);

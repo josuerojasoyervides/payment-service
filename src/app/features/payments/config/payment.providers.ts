@@ -12,13 +12,13 @@ import { GetPaymentStatusUseCase } from '../application/use-cases/get-payment-st
 import { StartPaymentUseCase } from '../application/use-cases/start-payment.use-case';
 import { FakePaymentGateway } from '../infrastructure/fake/gateways/fake-payment.gateway';
 import { PaypalProviderFactory } from '../infrastructure/paypal/factories/paypal-provider.factory';
-import { PaypalPaymentGateway } from '../infrastructure/paypal/gateways/paypal-payment.gateway';
+import { PaypalIntentFacade } from '../infrastructure/paypal/gateways/intent.facade';
 import { StripeProviderFactory } from '../infrastructure/stripe/factories/stripe-provider.factory';
 import { StripeCancelIntentGateway } from '../infrastructure/stripe/gateways/intent/cancel-intent.gateway';
 import { StripeConfirmIntentGateway } from '../infrastructure/stripe/gateways/intent/confirm-intent.gateway';
 import { StripeCreateIntentGateway } from '../infrastructure/stripe/gateways/intent/create-intent.gateway';
 import { StripeGetIntentGateway } from '../infrastructure/stripe/gateways/intent/get-intent.gateway';
-import { IntentFacade } from '../infrastructure/stripe/gateways/intent/intent.facade';
+import { StripeIntentFacade } from '../infrastructure/stripe/gateways/intent/intent.facade';
 import { IdempotencyKeyFactory } from '../shared/idempotency/idempotency-key.factory';
 
 export type PaymentsProvidersMode = 'fake' | 'real';
@@ -33,7 +33,7 @@ export interface PaymentsProvidersOptions {
  */
 
 const STRIPE_REAL_GATEWAYS: Provider[] = [
-  IntentFacade,
+  StripeIntentFacade,
   StripeCreateIntentGateway,
   StripeConfirmIntentGateway,
   StripeCancelIntentGateway,
@@ -41,15 +41,15 @@ const STRIPE_REAL_GATEWAYS: Provider[] = [
 ];
 const STRIPE_FAKE_GATEWAYS: Provider[] = [
   {
-    provide: IntentFacade,
+    provide: StripeIntentFacade,
     useFactory: () => FakePaymentGateway.create('stripe'),
   },
 ];
 
-const PAYPAL_REAL_GATEWAYS: Provider[] = [PaypalPaymentGateway];
+const PAYPAL_REAL_GATEWAYS: Provider[] = [PaypalIntentFacade];
 const PAYPAL_FAKE_GATEWAYS: Provider[] = [
   {
-    provide: PaypalPaymentGateway,
+    provide: PaypalIntentFacade,
     useFactory: () => FakePaymentGateway.create('paypal'),
   },
 ];
