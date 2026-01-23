@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
 import { BasePaymentGateway } from '@payments/application/ports/base-payment.gateway';
 import { NextActionPaypalApprove } from '@payments/domain/models/payment/payment-action.types';
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.faactory';
 import {
   PaymentError,
   PaymentErrorCode,
@@ -144,10 +145,12 @@ export class PaypalPaymentGateway extends BasePaymentGateway<PaypalOrderDto, Pay
    * PayPal uses its own redirect flow.
    */
   protected override validateCreate(req: CreatePaymentRequest) {
-    if (!req.orderId) throw new Error('orderId is required');
-    if (!req.currency) throw new Error('currency is required');
-    if (!Number.isFinite(req.amount) || req.amount <= 0) throw new Error('amount is invalid');
-    if (!req.method?.type) throw new Error('payment method type is required');
+    if (!req.orderId) throw invalidRequestError('errors.order_id_required', { field: 'orderId' });
+    if (!req.currency) throw invalidRequestError('errors.currency_required', { field: 'currency' });
+    if (!Number.isFinite(req.amount) || req.amount <= 0)
+      throw invalidRequestError('errors.amount_invalid', { field: 'amount' });
+    if (!req.method?.type)
+      throw invalidRequestError('errors.payment_method_type_required', { field: 'method.type' });
   }
 
   /**

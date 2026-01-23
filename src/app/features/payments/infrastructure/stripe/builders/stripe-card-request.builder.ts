@@ -1,3 +1,4 @@
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.faactory';
 import { CurrencyCode } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
@@ -71,19 +72,21 @@ export class StripeCardRequestBuilder implements PaymentRequestBuilder {
    */
   private validate(): void {
     if (!this.orderId) {
-      throw new Error('orderId is required');
+      throw invalidRequestError('errors.order_id_required', { field: 'orderId' });
     }
     if (!this.amount || this.amount <= 0) {
-      throw new Error('amount must be greater than 0');
+      throw invalidRequestError(
+        'errors.amount_invalid',
+        { field: 'amount', min: 1 },
+        { amount: this.amount },
+      );
     }
     if (!this.currency) {
-      throw new Error('currency is required');
+      throw invalidRequestError('errors.currency_required', { field: 'currency' });
     }
+
     if (!this.token) {
-      throw new Error(
-        'Stripe card payments require a token. ' +
-          'Use Stripe Elements to tokenize the card first.',
-      );
+      throw invalidRequestError('errors.card_token_required', { field: 'method.token' });
     }
   }
 }
