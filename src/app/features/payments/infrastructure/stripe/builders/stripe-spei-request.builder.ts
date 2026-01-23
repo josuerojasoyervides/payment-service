@@ -1,5 +1,10 @@
-import { CreatePaymentRequest, CurrencyCode } from '../../../domain/models';
-import { PaymentOptions, PaymentRequestBuilder } from '../../../domain/ports';
+import { CurrencyCode } from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+
+import {
+  PaymentOptions,
+  PaymentRequestBuilder,
+} from '../../../domain/ports/payment/payment-request-builder.port';
 
 /**
  * Builder for SPEI payments via Stripe.

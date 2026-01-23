@@ -2,9 +2,11 @@ import type { Translations } from '../i18n.types';
 
 export const es: Translations = {
   errors: {
+    unknown_error: 'Error desconocido',
     provider_error: 'Error del proveedor de pago',
     invalid_request: 'Solicitud inválida',
     network_error: 'Error de red',
+    timeout: 'La solicitud tardó demasiado. Intenta de nuevo.',
     card_declined: 'Tu tarjeta fue rechazada. Contacta a tu banco o usa otra tarjeta.',
     expired_card: 'Tu tarjeta ha expirado. Por favor usa otra tarjeta.',
     incorrect_cvc: 'El código de seguridad (CVC) es incorrecto.',
@@ -18,10 +20,13 @@ export const es: Translations = {
     card_token_required: 'card token es requerido',
     intent_id_required: 'intentId es requerido',
     min_amount: 'Monto mínimo para pagos con tarjeta es {{amount}} {{currency}}',
+    max_amount: 'Monto máximo para pagos con SPEI es {{amount}} {{currency}}',
     stripe_error: 'Error procesando el pago con Stripe.',
     paypal_error: 'Error procesando el pago con PayPal.',
     stripe_unavailable: 'Stripe no está disponible en este momento. Intenta más tarde.',
     paypal_unavailable: 'PayPal no está disponible en este momento. Intenta más tarde.',
+    insufficient_funds: 'Fondos insuficientes en la tarjeta.',
+
     paypal_invalid_request: 'La solicitud a PayPal es inválida. Verifica los datos.',
     paypal_permission_denied: 'No tienes permiso para realizar esta operación.',
     paypal_resource_not_found: 'La orden de PayPal no fue encontrada.',
@@ -94,6 +99,8 @@ export const es: Translations = {
     transfer_exact_amount: 'Transfiere el monto exacto para evitar rechazos',
     payment_may_take: 'El pago puede tardar de 1 a 24 horas en reflejarse',
     keep_receipt: 'Conserva tu comprobante de transferencia',
+    spei_instructions: 'Realiza una transferencia SPEI con los siguientes datos:',
+
     '3ds_verification_required': 'Verificación 3D Secure requerida',
     bank_requires_verification:
       'Tu banco requiere verificación adicional para completar esta transacción. Serás redirigido a una página segura para autenticar el pago.',
@@ -231,5 +238,7 @@ export const es: Translations = {
     cancel_url_label: 'URL de cancelación',
     paypal_redirect_secure_message:
       'Serás redirigido a PayPal para completar el pago de forma segura',
+    flow_3ds: '3D Secure',
+    flow_paypal_redirect: 'PayPal Redirect',
   },
 };

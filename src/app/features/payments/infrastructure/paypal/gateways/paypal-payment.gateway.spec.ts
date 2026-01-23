@@ -1,9 +1,10 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom } from 'rxjs';
 
-import { CreatePaymentRequest, PaymentError } from '../../../domain/models';
 import { PaypalPaymentGateway } from './paypal-payment.gateway';
 
 describe('PaypalPaymentGateway', () => {
@@ -102,7 +103,7 @@ describe('PaypalPaymentGateway', () => {
 
         // El error se normaliza aunque el formato HTTP lo envuelve
         expect(paymentError.code).toBeDefined();
-        expect(paymentError.message).toBeDefined();
+        expect(paymentError.messageKey).toBeDefined();
         expect(paymentError.raw).toBeTruthy();
       }
     });
@@ -123,7 +124,7 @@ describe('PaypalPaymentGateway', () => {
         const paymentErr = error as PaymentError;
 
         expect(paymentErr.code).toBe('provider_error');
-        expect(paymentErr.message).toBeDefined();
+        expect(paymentErr.messageKey).toBeDefined();
         expect(paymentErr.raw).toBeTruthy();
       }
     });

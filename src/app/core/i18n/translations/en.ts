@@ -2,9 +2,12 @@ import type { Translations } from '../i18n.types';
 
 export const en: Translations = {
   errors: {
+    unknown_error: 'Unknown error',
     provider_error: 'Payment provider error',
     invalid_request: 'Invalid request',
     network_error: 'Network error',
+    timeout: 'Request timed out. Please try again.',
+
     card_declined: 'Your card was declined. Contact your bank or use another card.',
     expired_card: 'Your card has expired. Please use another card.',
     incorrect_cvc: 'The security code (CVC) is incorrect.',
@@ -18,10 +21,13 @@ export const en: Translations = {
     card_token_required: 'card token is required',
     intent_id_required: 'intentId is required',
     min_amount: 'Minimum amount for card payments is {{amount}} {{currency}}',
+    max_amount: 'Maximum amount for SPEI payments is {{amount}} {{currency}}',
     stripe_error: 'Error processing payment with Stripe.',
     paypal_error: 'Error processing payment with PayPal.',
     stripe_unavailable: 'Stripe is not available at this time. Please try again later.',
     paypal_unavailable: 'PayPal is not available at this time. Please try again later.',
+    insufficient_funds: 'Insufficient funds in the card.',
+
     paypal_invalid_request: 'The request to PayPal is invalid. Please verify the data.',
     paypal_permission_denied: 'You do not have permission to perform this operation.',
     paypal_resource_not_found: 'The PayPal order was not found.',
@@ -94,6 +100,8 @@ export const en: Translations = {
     transfer_exact_amount: 'Transfer the exact amount to avoid rejections',
     payment_may_take: 'Payment may take 1 to 24 hours to reflect',
     keep_receipt: 'Keep your transfer receipt',
+    spei_instructions: 'Make a SPEI transfer with the following data:',
+
     '3ds_verification_required': '3D Secure verification required',
     bank_requires_verification:
       'Your bank requires additional verification to complete this transaction. You will be redirected to a secure page to authenticate the payment.',
@@ -231,5 +239,7 @@ export const en: Translations = {
     cancel_url_label: 'Cancel URL',
     paypal_redirect_secure_message:
       'You will be redirected to PayPal to complete your payment securely',
+    flow_3ds: '3D Secure',
+    flow_paypal_redirect: 'PayPal Redirect',
   },
 };
