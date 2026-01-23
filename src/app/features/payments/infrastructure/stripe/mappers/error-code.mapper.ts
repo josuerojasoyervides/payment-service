@@ -1,4 +1,4 @@
-import { PaymentErrorCode } from '@payments/domain/models/payment/payment-error.types';
+import { PaymentErrorCode } from '@payments/domain/models';
 
 export const ERROR_CODE_MAP: Record<string, PaymentErrorCode> = {
   card_declined: 'card_declined',

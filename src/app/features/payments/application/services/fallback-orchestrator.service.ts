@@ -1,23 +1,18 @@
 import { computed, inject, Injectable, InjectionToken, signal } from '@angular/core';
-import { LoggerService } from '@core/logging/logger.service';
-import {
-  DEFAULT_FALLBACK_CONFIG,
-  FallbackConfig,
-} from '@payments/domain/models/fallback/fallback-config.types';
-import {
-  FallbackAvailableEvent,
-  FallbackUserResponse,
-} from '@payments/domain/models/fallback/fallback-event.types';
-import {
-  FailedAttempt,
-  FallbackState,
-  INITIAL_FALLBACK_STATE,
-} from '@payments/domain/models/fallback/fallback-state.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { filter, Subject, takeUntil, timer } from 'rxjs';
 
+import {
+  CreatePaymentRequest,
+  DEFAULT_FALLBACK_CONFIG,
+  FailedAttempt,
+  FallbackAvailableEvent,
+  FallbackConfig,
+  FallbackState,
+  FallbackUserResponse,
+  INITIAL_FALLBACK_STATE,
+  PaymentError,
+  PaymentProviderId,
+} from '../../domain/models';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 
 /**
@@ -66,7 +61,6 @@ interface ReportFailurePayload {
 export class FallbackOrchestratorService {
   private readonly config: FallbackConfig;
   private readonly registry = inject(ProviderFactoryRegistry);
-  private readonly logger = inject(LoggerService);
 
   private readonly _state = signal<FallbackState>(INITIAL_FALLBACK_STATE);
 
@@ -186,15 +180,10 @@ export class FallbackOrchestratorService {
     // Verificar que el evento existe y coincide
     if (!currentEvent || currentEvent.eventId !== response.eventId) {
       // Evento desconocido o expirado - ignorar sin romper
-      this.logger.warn(
-        '[FallbackOrchestrator] Response for unknown or expired event',
-        'fallback-orchestrator',
-        {
-          responseEventId: response.eventId,
-          currentEventId: currentEvent?.eventId ?? null,
-          ttl: this.config.userResponseTimeout,
-        },
-      );
+      console.warn('[FallbackOrchestrator] Response for unknown or expired event', {
+        responseEventId: response.eventId,
+        currentEventId: currentEvent?.eventId ?? null,
+      });
       return;
     }
 
@@ -202,15 +191,11 @@ export class FallbackOrchestratorService {
     const now = Date.now();
     const eventAge = now - currentEvent.timestamp;
     if (eventAge > this.config.userResponseTimeout) {
-      this.logger.warn(
-        '[FallbackOrchestrator] Response for expired event (TTL exceeded)',
-        'fallback-orchestrator',
-        {
-          currentEventId: currentEvent.eventId,
-          eventAge,
-          ttl: this.config.userResponseTimeout,
-        },
-      );
+      console.warn('[FallbackOrchestrator] Response for expired event (TTL exceeded)', {
+        eventId: currentEvent.eventId,
+        eventAge,
+        ttl: this.config.userResponseTimeout,
+      });
 
       // Limpiar evento expirado
       this.finish('cancelled');
@@ -224,14 +209,10 @@ export class FallbackOrchestratorService {
     if (response.accepted && response.selectedProvider) {
       // Validar que el provider seleccionado esté en las alternativas
       if (!currentEvent.alternativeProviders.includes(response.selectedProvider)) {
-        this.logger.warn(
-          '[FallbackOrchestrator] Selected provider not in alternatives',
-          'fallback-orchestrator',
-          {
-            selectedProvider: response.selectedProvider,
-            alternativeProviders: currentEvent.alternativeProviders,
-          },
-        );
+        console.warn('[FallbackOrchestrator] Selected provider not in alternatives', {
+          selectedProvider: response.selectedProvider,
+          alternativeProviders: currentEvent.alternativeProviders,
+        });
 
         // Limpiar estado
         this.finish('cancelled');

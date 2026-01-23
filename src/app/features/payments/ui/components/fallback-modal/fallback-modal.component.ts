@@ -1,13 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
-import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
-import {
-  FallbackAvailableEvent,
-  getDefaultProviders,
-  PaymentProviderId,
-} from '../../shared/ui.types';
+import { FallbackAvailableEvent, getDefaultProviders, PaymentProviderId } from '../../shared';
 
 /**
  * Modal that displays fallback options when a provider fails.
@@ -76,9 +71,13 @@ export class FallbackModalComponent {
   }
 
   /** Error message from event */
-  readonly errorMessageText = computed(() => {
+  readonly errorMessage = computed(() => {
     const e = this.event();
-    return renderPaymentError(this.i18n, e?.error);
+    if (!e?.error) return null;
+    if (typeof e.error === 'object' && 'message' in e.error) {
+      return (e.error as { message: string }).message;
+    }
+    return null;
   });
 
   /** Alternative providers with metadata */
@@ -102,13 +101,25 @@ export class FallbackModalComponent {
   });
 
   // ===== Textos para el template =====
-  readonly paymentProblemTitle = computed(() => this.i18n.t(I18nKeys.ui.payment_problem));
+  get paymentProblemTitle(): string {
+    return this.i18n.t(I18nKeys.ui.payment_problem);
+  }
 
-  readonly providerUnavailableText = computed(() => this.i18n.t(I18nKeys.ui.provider_unavailable));
-  readonly tryAnotherProviderText = computed(() => this.i18n.t(I18nKeys.ui.try_another_provider));
+  get providerUnavailableText(): string {
+    return this.i18n.t(I18nKeys.ui.provider_unavailable);
+  }
 
-  readonly cancelLabel = computed(() => this.i18n.t(I18nKeys.ui.cancel));
-  readonly retryWithLabel = computed(() => this.i18n.t(I18nKeys.ui.retry_with));
+  get tryAnotherProviderText(): string {
+    return this.i18n.t(I18nKeys.ui.try_another_provider);
+  }
+
+  get cancelLabel(): string {
+    return this.i18n.t(I18nKeys.ui.cancel);
+  }
+
+  get retryWithLabel(): string {
+    return this.i18n.t(I18nKeys.ui.retry_with);
+  }
 
   selectProvider(providerId: PaymentProviderId): void {
     this.selectedProvider.set(providerId);

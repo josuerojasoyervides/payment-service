@@ -1,4 +1,4 @@
-import { PaymentIntentStatus } from '@payments/domain/models/payment/payment-intent.types';
+import { PaymentIntentStatus } from '@payments/domain/models';
 
 import { StripeSpeiSourceDto } from '../dto/stripe.dto';
 

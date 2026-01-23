@@ -1,18 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
-import {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { ACTION_REQUIRED_STATUSES } from '@payments/ui/shared/ui.types';
 
 import { PaymentHistoryEntry } from '../../../application/store/payment.models';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
-import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
-
-type IntentStatus = PaymentIntent['status'];
+import { PaymentIntent, PaymentProviderId } from '../../../domain/models';
+import { PaymentIntentCardComponent } from '../../components';
 
 /**
  * Payment history page.
@@ -34,17 +28,17 @@ export class HistoryComponent {
   readonly historyCount = this.paymentState.historyCount;
   readonly isLoading = this.paymentState.isLoading;
 
-  isActionRequired(status: PaymentIntent['status']): boolean {
-    return ACTION_REQUIRED_STATUSES.has(status);
+  isActionRequired(status: string): boolean {
+    return ['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(status);
   }
 
   entryToIntent(entry: PaymentHistoryEntry): PaymentIntent {
     return {
       id: entry.intentId,
       provider: entry.provider,
-      status: entry.status,
+      status: entry.status as PaymentIntent['status'],
       amount: entry.amount,
-      currency: entry.currency,
+      currency: entry.currency as PaymentIntent['currency'],
     };
   }
 
@@ -64,21 +58,39 @@ export class HistoryComponent {
     this.paymentState.clearHistory();
   }
 
-  readonly paymentHistoryLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_history));
+  get paymentHistoryLabel(): string {
+    return this.i18n.t(I18nKeys.ui.payment_history);
+  }
 
-  readonly paymentsInSessionText = computed(() => this.i18n.t(I18nKeys.ui.payments_in_session));
+  get paymentsInSessionText(): string {
+    return this.i18n.t(I18nKeys.ui.payments_in_session);
+  }
 
-  readonly clearHistoryText = computed(() => this.i18n.t(I18nKeys.ui.clear_history));
+  get clearHistoryText(): string {
+    return this.i18n.t(I18nKeys.ui.clear_history);
+  }
 
-  readonly newPaymentButtonText = computed(() => this.i18n.t(I18nKeys.ui.new_payment_button));
+  get newPaymentButtonText(): string {
+    return this.i18n.t(I18nKeys.ui.new_payment_button);
+  }
 
-  readonly noPaymentsHistoryText = computed(() => this.i18n.t(I18nKeys.ui.no_payments_history));
+  get noPaymentsHistoryText(): string {
+    return this.i18n.t(I18nKeys.ui.no_payments_history);
+  }
 
-  readonly paymentsWillAppearText = computed(() => this.i18n.t(I18nKeys.ui.payments_will_appear));
+  get paymentsWillAppearText(): string {
+    return this.i18n.t(I18nKeys.ui.payments_will_appear);
+  }
 
-  readonly makePaymentText = computed(() => this.i18n.t(I18nKeys.ui.make_payment));
+  get makePaymentText(): string {
+    return this.i18n.t(I18nKeys.ui.make_payment);
+  }
 
-  readonly checkByIdText = computed(() => this.i18n.t(I18nKeys.ui.check_by_id));
+  get checkByIdText(): string {
+    return this.i18n.t(I18nKeys.ui.check_by_id);
+  }
 
-  readonly checkoutLabel = computed(() => this.i18n.t(I18nKeys.ui.checkout));
+  get checkoutLabel(): string {
+    return this.i18n.t(I18nKeys.ui.checkout);
+  }
 }

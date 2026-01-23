@@ -1,14 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
-import { ProviderFactory } from '@payments/application/ports/provider-factory.port';
-import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PaymentGateway } from '../../../application/ports/payment-gateway.port';
-import { PaymentStrategy } from '../../../application/ports/payment-strategy.port';
+import { PaymentMethodType } from '../../../domain/models';
 import {
   FieldRequirements,
+  PaymentGateway,
   PaymentRequestBuilder,
-} from '../../../domain/ports/payment/payment-request-builder.port';
+  PaymentStrategy,
+  ProviderFactory,
+} from '../../../domain/ports';
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
 import { StripeCardRequestBuilder } from '../builders/stripe-card-request.builder';
@@ -107,19 +107,19 @@ export class StripeProviderFactory implements ProviderFactory {
     switch (type) {
       case 'card':
         return {
-          description: I18nKeys.ui.card_payment_description,
-          instructions: I18nKeys.ui.enter_card_data,
+          description: this.i18n.t(I18nKeys.ui.card_payment_description),
+          instructions: this.i18n.t(I18nKeys.ui.enter_card_data),
           fields: [
             {
               name: 'token',
-              label: I18nKeys.ui.card_token,
+              label: this.i18n.t(I18nKeys.ui.card_token),
               required: true,
               type: 'hidden',
               placeholder: '',
             },
             {
               name: 'saveForFuture',
-              label: I18nKeys.ui.save_card_future,
+              label: this.i18n.t(I18nKeys.ui.save_card_future),
               required: false,
               type: 'text',
               defaultValue: 'false',
@@ -128,12 +128,12 @@ export class StripeProviderFactory implements ProviderFactory {
         };
       case 'spei':
         return {
-          description: I18nKeys.ui.spei_bank_transfer,
-          instructions: I18nKeys.ui.spei_email_instructions,
+          description: this.i18n.t(I18nKeys.ui.spei_bank_transfer),
+          instructions: this.i18n.t(I18nKeys.ui.spei_email_instructions),
           fields: [
             {
               name: 'customerEmail',
-              label: I18nKeys.ui.email_label,
+              label: this.i18n.t(I18nKeys.ui.email_label),
               required: true,
               type: 'email',
               placeholder: 'tu@email.com',
@@ -161,9 +161,9 @@ export class StripeProviderFactory implements ProviderFactory {
   private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
     switch (type) {
       case 'card':
-        return new CardStrategy(this.gateway, new StripeTokenValidator());
+        return new CardStrategy(this.gateway, new StripeTokenValidator(), this.i18n);
       case 'spei':
-        return new SpeiStrategy(this.gateway);
+        return new SpeiStrategy(this.gateway, this.i18n);
       default:
         throw new Error(`Unexpected payment method type: ${type}`);
     }

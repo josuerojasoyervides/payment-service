@@ -1,8 +1,11 @@
-import { I18nKeys } from '@core/i18n';
+import { inject } from '@angular/core';
+import { I18nKeys, I18nService } from '@core/i18n';
 
 import { StripeErrorResponse } from '../dto/stripe.dto';
 
 export class ErrorKeyMapper {
+  private readonly i18n = inject(I18nService);
+
   mapErrorKey(error: StripeErrorResponse['error']): string {
     const errorKeyMap: Partial<Record<string, string>> = {
       card_declined: I18nKeys.errors.card_declined,
@@ -15,9 +18,9 @@ export class ErrorKeyMapper {
 
     const translationKey = errorKeyMap[error.code];
     if (translationKey) {
-      return translationKey;
+      return this.i18n.t(translationKey);
     }
 
-    return error.message ?? I18nKeys.errors.stripe_error;
+    return error.message ?? this.i18n.t(I18nKeys.errors.stripe_error);
   }
 }

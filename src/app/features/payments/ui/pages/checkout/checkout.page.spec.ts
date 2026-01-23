@@ -2,20 +2,17 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { LoggerService } from '@core/logging';
-import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
-  PaymentIntent,
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
 
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import {
-  FieldRequirements,
-  PaymentOptions,
-} from '../../../domain/ports/payment/payment-request-builder.port';
+  FallbackAvailableEvent,
+  PaymentError,
+  PaymentIntent,
+  PaymentMethodType,
+  PaymentProviderId,
+} from '../../../domain/models';
+import { FieldRequirements, PaymentOptions } from '../../../domain/ports';
 import { CheckoutComponent } from './checkout.page';
 
 describe('CheckoutComponent', () => {
@@ -38,7 +35,7 @@ describe('CheckoutComponent', () => {
 
   const mockError: PaymentError = {
     code: 'card_declined',
-    messageKey: 'La tarjeta fue rechazada',
+    message: 'La tarjeta fue rechazada',
     raw: { originalError: 'declined' },
   };
 
@@ -143,7 +140,6 @@ describe('CheckoutComponent', () => {
     mockLogger = {
       info: vi.fn(),
       debug: vi.fn(),
-      warn: vi.fn(),
       error: vi.fn(),
       startCorrelation: vi.fn(() => 'correlation_id'),
       endCorrelation: vi.fn(),

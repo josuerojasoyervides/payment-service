@@ -44,7 +44,7 @@
 
             @if (isFieldInvalid(field.name)) {
               <p class="text-sm text-red-500">
-                {{ fieldRequiredText() }}
+                {{ fieldRequiredText }}
               </p>
             }
           }
@@ -67,12 +67,12 @@
 
     @if (reqs.fields.length === 0) {
       <p class="text-sm text-gray-500 italic">
-        {{ methodNoAdditionalDataText() }}
+        {{ methodNoAdditionalDataText }}
       </p>
     }
   } @else {
     <p class="text-sm text-gray-500 italic">
-      {{ selectProviderMethodText() }}
+      {{ selectProviderMethodText }}
     </p>
   }
 </div>

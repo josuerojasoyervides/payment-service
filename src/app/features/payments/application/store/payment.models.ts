@@ -1,13 +1,11 @@
 import {
+  CreatePaymentRequest,
   FallbackState,
   INITIAL_FALLBACK_STATE,
-} from '@payments/domain/models/fallback/fallback-state.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
+  PaymentError,
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '../../domain/models';
 
 /**
  * Estados posibles del flujo de pago en la UI.
@@ -46,9 +44,9 @@ export interface PaymentsState {
 export interface PaymentHistoryEntry {
   intentId: string;
   provider: PaymentProviderId;
-  status: PaymentIntent['status'];
+  status: string;
   amount: number;
-  currency: PaymentIntent['currency'];
+  currency: string;
   timestamp: number;
   error?: PaymentError;
 }

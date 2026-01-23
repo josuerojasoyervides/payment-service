@@ -506,7 +506,7 @@ describe('CheckoutComponent - Integración Real', () => {
 
       const err = store.error();
       if (err) {
-        expect(err.messageKey).toBeTruthy();
+        expect(err.message).toBeTruthy();
       }
     });
   });

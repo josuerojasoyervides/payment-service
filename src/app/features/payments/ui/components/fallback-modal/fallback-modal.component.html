@@ -27,26 +27,26 @@
 
         <div class="flex-1">
           <h3 class="text-lg font-semibold text-gray-900">
-            {{ paymentProblemTitle() }}
+            {{ paymentProblemTitle }}
           </h3>
           <p class="mt-1 text-gray-600">
             <span class="font-medium capitalize">{{ event()!.failedProvider }}</span>
-            {{ providerUnavailableText() }}
+            {{ providerUnavailableText }}
           </p>
         </div>
       </div>
 
       <!-- Error info -->
-      @if (event()?.error) {
+      @if (errorMessage()) {
         <div class="bg-red-50 border border-red-100 rounded-lg p-3 mb-6 text-sm text-red-700">
-          {{ errorMessageText() }}
+          {{ errorMessage() }}
         </div>
       }
 
       <!-- Alternatives -->
       <div class="mb-6">
         <p class="text-sm text-gray-600 mb-3">
-          {{ tryAnotherProviderText() }}
+          {{ tryAnotherProviderText }}
         </p>
 
         <div class="space-y-2">
@@ -87,7 +87,7 @@
       <!-- Actions -->
       <div class="flex gap-3">
         <button type="button" class="btn-secondary flex-1" (click)="onCancel()">
-          {{ cancelLabel() }}
+          {{ cancelLabel }}
         </button>
 
         <button
@@ -97,7 +97,7 @@
           [class.opacity-50]="!selectedProvider()"
           [class.cursor-not-allowed]="!selectedProvider()"
           (click)="onConfirm()">
-          {{ retryWithLabel() }} {{ selectedProviderName() || '...' }}
+          {{ retryWithLabel }} {{ selectedProviderName() || '...' }}
         </button>
       </div>
     </div>

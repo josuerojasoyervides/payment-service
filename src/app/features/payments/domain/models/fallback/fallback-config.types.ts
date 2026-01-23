@@ -1,4 +1,3 @@
-import { PaymentErrorCode } from '../payment/payment-error.types';
 import { PaymentProviderId } from '../payment/payment-intent.types';
 import { FallbackMode } from './fallback-state.types';
 
@@ -16,7 +15,7 @@ export interface FallbackConfig {
   userResponseTimeout: number;
 
   /** Error codes that trigger fallback */
-  triggerErrorCodes: PaymentErrorCode[];
+  triggerErrorCodes: string[];
 
   /** Providers in preference order for fallback */
   providerPriority: PaymentProviderId[];

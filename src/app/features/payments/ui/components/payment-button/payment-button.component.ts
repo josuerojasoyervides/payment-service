@@ -2,7 +2,7 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 
-import { CurrencyCode, PaymentButtonState, PaymentProviderId } from '../../shared/ui.types';
+import { CurrencyCode, PaymentButtonState, PaymentProviderId } from '../../shared';
 
 /**
  * Payment button component with visual states.
@@ -68,15 +68,25 @@ export class PaymentButtonComponent {
     return providerStr.charAt(0).toUpperCase() + providerStr.slice(1);
   });
 
-  readonly processingText = computed(() => this.i18n.t(I18nKeys.ui.processing));
+  get processingText(): string {
+    return this.i18n.t(I18nKeys.ui.processing);
+  }
 
-  readonly paymentSuccessfulText = computed(() => this.i18n.t(I18nKeys.ui.payment_successful));
+  get paymentSuccessfulText(): string {
+    return this.i18n.t(I18nKeys.ui.payment_successful);
+  }
 
-  readonly paymentErrorText = computed(() => this.i18n.t(I18nKeys.ui.payment_error_text));
+  get paymentErrorText(): string {
+    return this.i18n.t(I18nKeys.ui.payment_error_text);
+  }
 
-  readonly payWithText = computed(() => this.i18n.t(I18nKeys.ui.pay_with));
+  get payWithText(): string {
+    return this.i18n.t(I18nKeys.ui.pay_with);
+  }
 
-  readonly withText = computed(() => this.i18n.t(I18nKeys.ui.with));
+  get withText(): string {
+    return this.i18n.t(I18nKeys.ui.with);
+  }
 
   /** Button CSS classes based on state */
   readonly buttonClasses = computed(() => {

@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+
 import {
+  CreatePaymentRequest,
   DEFAULT_FALLBACK_CONFIG,
   FallbackConfig,
-} from '@payments/domain/models/fallback/fallback-config.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-
+  PaymentError,
+  PaymentProviderId,
+} from '../../domain/models';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { FALLBACK_CONFIG, FallbackOrchestratorService } from './fallback-orchestrator.service';
 
@@ -26,13 +26,13 @@ describe('FallbackOrchestratorService', () => {
 
   const providerUnavailableError: PaymentError = {
     code: 'provider_unavailable',
-    messageKey: 'Provider not available',
+    message: 'Provider not available',
     raw: undefined,
   };
 
   const cardDeclinedError: PaymentError = {
     code: 'card_declined',
-    messageKey: 'Card was declined',
+    message: 'Card was declined',
     raw: undefined,
   };
 
@@ -668,7 +668,7 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
 
   const providerUnavailableError: PaymentError = {
     code: 'provider_unavailable',
-    messageKey: 'Provider not available',
+    message: 'Provider not available',
     raw: undefined,
   };
 
