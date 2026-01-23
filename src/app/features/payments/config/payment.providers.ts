@@ -1,4 +1,8 @@
 import { EnvironmentProviders, Provider } from '@angular/core';
+import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/cancel-intent.gateway';
+import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/confirm-intent.gateway';
+import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/create-intent.gateway';
+import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/get-intent.gateway';
 
 import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
 import { ProviderFactoryRegistry } from '../application/registry/provider-factory.registry';
@@ -46,7 +50,13 @@ const STRIPE_FAKE_GATEWAYS: Provider[] = [
   },
 ];
 
-const PAYPAL_REAL_GATEWAYS: Provider[] = [PaypalIntentFacade];
+const PAYPAL_REAL_GATEWAYS: Provider[] = [
+  PaypalIntentFacade,
+  PaypalCreateIntentGateway,
+  PaypalConfirmIntentGateway,
+  PaypalCancelIntentGateway,
+  PaypalGetIntentGateway,
+];
 const PAYPAL_FAKE_GATEWAYS: Provider[] = [
   {
     provide: PaypalIntentFacade,

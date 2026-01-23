@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { PaymentGatewayPort } from '@payments/application/ports/payment-operation.port';
+import { PaymentOperationPort } from '@payments/application/ports/payment-operation.port';
 import {
   PaymentIntent,
   PaymentProviderId,
@@ -11,7 +11,7 @@ import { StripePaymentIntentDto } from '../../dto/stripe.dto';
 import { mapPaymentIntent } from '../../mappers/payment-intent.mapper';
 
 @Injectable()
-export class StripeGetIntentGateway extends PaymentGatewayPort<
+export class StripeGetIntentGateway extends PaymentOperationPort<
   GetPaymentStatusRequest,
   StripePaymentIntentDto,
   PaymentIntent

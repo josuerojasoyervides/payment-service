@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { PaymentGatewayPort } from '@payments/application/ports/payment-operation.port';
+import { PaymentOperationPort } from '@payments/application/ports/payment-operation.port';
 import {
   PaymentIntent,
   PaymentProviderId,
@@ -8,9 +8,10 @@ import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-re
 import { Observable } from 'rxjs';
 
 import { PaypalCreateOrderRequest, PaypalOrderDto } from '../../dto/paypal.dto';
+import { mapOrder } from '../../mappers/map-order.mapper';
 
 @Injectable()
-export class PaypalCreateIntentGateway extends PaymentGatewayPort<
+export class PaypalCreateIntentGateway extends PaymentOperationPort<
   CreatePaymentRequest,
   PaypalOrderDto,
   PaymentIntent
@@ -18,7 +19,7 @@ export class PaypalCreateIntentGateway extends PaymentGatewayPort<
   private readonly API_BASE = '/api/payments/paypal';
 
   readonly providerId: PaymentProviderId = 'paypal' as const;
-  protected override executeRaw(request: CreatePaymentRequest): Observable<PaypalOrderDto> {
+  protected executeRaw(request: CreatePaymentRequest): Observable<PaypalOrderDto> {
     const paypalRequest = this.buildPaypalCreateRequest(request);
 
     return this.http.post<PaypalOrderDto>(`${this.API_BASE}/orders`, paypalRequest, {
@@ -28,10 +29,11 @@ export class PaypalCreateIntentGateway extends PaymentGatewayPort<
       },
     });
   }
-  protected override mapResponse(dto: PaypalOrderDto): PaymentIntent {
-    throw new Error('Method not implemented.');
+  protected mapResponse(dto: PaypalOrderDto): PaymentIntent {
+    return mapOrder(dto, this.providerId);
   }
 
+  // TODO: This mocked method should not exist if we are using the fake gateway
   private buildPaypalCreateRequest(req: CreatePaymentRequest): PaypalCreateOrderRequest {
     // returnUrl/cancelUrl deben venir del request preparado (PaypalRedirectStrategy.prepare)
     // que usa StrategyContext como ÚNICA fuente

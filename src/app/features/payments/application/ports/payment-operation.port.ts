@@ -7,7 +7,7 @@ import { PaymentError } from '@payments/domain/models/payment/payment-error.type
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import { catchError, map, Observable, throwError } from 'rxjs';
 
-export abstract class PaymentGatewayPort<
+export abstract class PaymentOperationPort<
   TRequest,
   TDto,
   TResponse,

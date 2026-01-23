@@ -1,140 +1,92 @@
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { firstValueFrom } from 'rxjs';
+import {
+  CancelPaymentRequest,
+  ConfirmPaymentRequest,
+  CreatePaymentRequest,
+  GetPaymentStatusRequest,
+} from '@payments/domain/models/payment/payment-request.types';
+import { of } from 'rxjs';
 
 import { PaypalIntentFacade } from './intent.facade';
+import { PaypalCancelIntentGateway } from './intent/cancel-intent.gateway';
+import { PaypalConfirmIntentGateway } from './intent/confirm-intent.gateway';
+import { PaypalCreateIntentGateway } from './intent/create-intent.gateway';
+import { PaypalGetIntentGateway } from './intent/get-intent.gateway';
 
-describe('PaypalPaymentGateway', () => {
+describe('IntentFacade (adapter)', () => {
   let gateway: PaypalIntentFacade;
-  let httpMock: HttpTestingController;
 
-  const req: CreatePaymentRequest = {
+  // Mocks de operaciones (NO HTTP)
+  const createIntentOp = { execute: vi.fn() };
+  const confirmIntentOp = { execute: vi.fn() };
+  const cancelIntentOp = { execute: vi.fn() };
+  const getIntentOp = { execute: vi.fn() };
+
+  const createReq: CreatePaymentRequest = {
     orderId: 'order_1',
     amount: 100,
     currency: 'MXN',
     method: { type: 'card', token: 'tok_123' },
-    returnUrl: 'https://example.com/payments/return',
-    cancelUrl: 'https://example.com/payments/cancel',
+  };
+
+  const confirmReq: ConfirmPaymentRequest = {
+    intentId: 'pi_1',
+    returnUrl: 'https://example.com/return',
+  };
+
+  const cancelReq: CancelPaymentRequest = {
+    intentId: 'pi_1',
+  };
+
+  const getIntentReq: GetPaymentStatusRequest = {
+    intentId: 'pi_1',
   };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), PaypalIntentFacade],
+      providers: [
+        PaypalIntentFacade,
+
+        { provide: PaypalCreateIntentGateway, useValue: createIntentOp },
+        { provide: PaypalConfirmIntentGateway, useValue: confirmIntentOp },
+        { provide: PaypalCancelIntentGateway, useValue: cancelIntentOp },
+        { provide: PaypalGetIntentGateway, useValue: getIntentOp },
+      ],
     });
 
     gateway = TestBed.inject(PaypalIntentFacade);
-    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => {
-    httpMock.verify();
+  it('delegates createIntent to PaypalCreateIntentGateway.execute', async () => {
+    createIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
+
+    gateway.createIntent(createReq).subscribe();
+
+    expect(createIntentOp.execute).toHaveBeenCalledTimes(1);
+    expect(createIntentOp.execute).toHaveBeenCalledWith(createReq);
   });
+  it('delegates confirmIntent to PaypalConfirmIntentGateway.execute', async () => {
+    confirmIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
 
-  it('throws synchronously when request is invalid (base validation)', () => {
-    try {
-      gateway.createIntent({
-        ...req,
-        orderId: '',
-      });
+    gateway.confirmIntent(confirmReq).subscribe();
 
-      throw new Error('Expected createIntent to throw');
-    } catch (e) {
-      expect(e).toMatchObject({
-        code: 'invalid_request',
-        messageKey: 'errors.order_id_required',
-        params: { field: 'orderId' },
-      });
-    }
+    expect(confirmIntentOp.execute).toHaveBeenCalledTimes(1);
+    expect(confirmIntentOp.execute).toHaveBeenCalledWith(confirmReq);
   });
+  it('delegates cancelIntent to PaypalCancelIntentGateway.execute', async () => {
+    cancelIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
 
-  describe('createIntent', () => {
-    it('POSTs to /api/payments/paypal/orders with PayPal format', async () => {
-      const promise = firstValueFrom(gateway.createIntent(req));
+    gateway.cancelIntent(cancelReq).subscribe();
 
-      // PayPal uses /orders endpoint, not /intents
-      const httpReq = httpMock.expectOne('/api/payments/paypal/orders');
-      expect(httpReq.request.method).toBe('POST');
-      // Body is transformed to PayPal Orders API format
-      expect(httpReq.request.body.intent).toBe('CAPTURE');
-      expect(httpReq.request.body.purchase_units[0].amount.value).toBe('100.00');
-      expect(httpReq.request.body.purchase_units[0].amount.currency_code).toBe('MXN');
+    expect(cancelIntentOp.execute).toHaveBeenCalledTimes(1);
+    expect(cancelIntentOp.execute).toHaveBeenCalledWith(cancelReq);
+  });
+  it('delegates getIntentStatus to PaypalGetIntentGateway.execute', async () => {
+    getIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
 
-      // Respond with PayPal Order DTO
-      httpReq.flush({
-        id: 'ORDER_123',
-        status: 'CREATED',
-        intent: 'CAPTURE',
-        create_time: new Date().toISOString(),
-        update_time: new Date().toISOString(),
-        links: [{ href: 'https://paypal.com/approve/ORDER_123', rel: 'approve', method: 'GET' }],
-        purchase_units: [
-          {
-            reference_id: 'order_1',
-            amount: { currency_code: 'MXN', value: '100.00' },
-          },
-        ],
-      });
+    gateway.getIntent(getIntentReq).subscribe();
 
-      const result = await promise;
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          id: 'ORDER_123',
-          provider: 'paypal',
-          status: 'requires_action', // CREATED maps to requires_action
-          amount: 100,
-          currency: 'MXN',
-        }),
-      );
-
-      expect(result.redirectUrl).toContain('paypal.com');
-      expect(result.raw).toBeTruthy();
-    });
-
-    it('normalizes PayPal-like errors with human-readable messages', async () => {
-      const promise = firstValueFrom(gateway.createIntent(req));
-      const httpReq = httpMock.expectOne('/api/payments/paypal/orders');
-
-      httpReq.flush(
-        { name: 'INSTRUMENT_DECLINED', message: 'Payment declined', debug_id: 'abc123' },
-        { status: 422, statusText: 'Unprocessable Entity' },
-      );
-
-      try {
-        await promise;
-        throw new Error('Expected promise to reject');
-      } catch (error) {
-        const paymentError = error as PaymentError;
-
-        // El error se normaliza aunque el formato HTTP lo envuelve
-        expect(paymentError.code).toBeDefined();
-        expect(paymentError.messageKey).toBeDefined();
-        expect(paymentError.raw).toBeTruthy();
-      }
-    });
-
-    it('falls back to generic error message when error shape is not PayPal-like', async () => {
-      const promise = firstValueFrom(gateway.createIntent(req));
-      const httpReq = httpMock.expectOne('/api/payments/paypal/orders');
-
-      httpReq.error(new ProgressEvent('error'), {
-        status: 0,
-        statusText: 'Unknown Error',
-      });
-
-      try {
-        await promise;
-        throw new Error('Expected promise to reject');
-      } catch (error) {
-        const paymentErr = error as PaymentError;
-
-        expect(paymentErr.code).toBe('provider_error');
-        expect(paymentErr.messageKey).toBeDefined();
-        expect(paymentErr.raw).toBeTruthy();
-      }
-    });
+    expect(getIntentOp.execute).toHaveBeenCalledTimes(1);
+    expect(getIntentOp.execute).toHaveBeenCalledWith(getIntentReq);
   });
 });

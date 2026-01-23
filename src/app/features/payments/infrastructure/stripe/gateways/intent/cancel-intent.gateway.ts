@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { PaymentGatewayPort } from '@payments/application/ports/payment-operation.port';
+import { PaymentOperationPort } from '@payments/application/ports/payment-operation.port';
 import {
   PaymentIntent,
   PaymentProviderId,
@@ -12,7 +12,7 @@ import { mapPaymentIntent } from '../../mappers/payment-intent.mapper';
 import { getIdempotencyHeaders } from '../../validators/get-idempotency-headers';
 
 @Injectable()
-export class StripeCancelIntentGateway extends PaymentGatewayPort<
+export class StripeCancelIntentGateway extends PaymentOperationPort<
   CancelPaymentRequest,
   StripePaymentIntentDto,
   PaymentIntent
