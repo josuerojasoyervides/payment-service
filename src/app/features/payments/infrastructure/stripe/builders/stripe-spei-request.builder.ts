@@ -1,3 +1,4 @@
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import { CurrencyCode } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
@@ -57,22 +58,33 @@ export class StripeSpeiRequestBuilder implements PaymentRequestBuilder {
 
   private validate(): void {
     if (!this.orderId) {
-      throw new Error('orderId is required');
+      throw invalidRequestError('errors.order_id_required', { field: 'orderId' });
     }
-    if (!this.amount || this.amount <= 0) {
-      throw new Error('amount must be greater than 0');
-    }
-    if (!this.currency) {
-      throw new Error('currency is required');
-    }
-    if (!this.customerEmail) {
-      throw new Error(
-        'SPEI payments require customerEmail. ' +
-          'The payment instructions will be sent to this email.',
+
+    // Nota: usamos Number.isFinite para cubrir NaN también
+    if (!Number.isFinite(this.amount) || (this.amount ?? 0) <= 0) {
+      throw invalidRequestError(
+        'errors.amount_invalid',
+        { field: 'amount', min: 1 },
+        { amount: this.amount },
       );
     }
+
+    if (!this.currency) {
+      throw invalidRequestError('errors.currency_required', { field: 'currency' });
+    }
+
+    if (!this.customerEmail) {
+      throw invalidRequestError('errors.customer_email_required', { field: 'customerEmail' });
+    }
+
+    // validación ultra simple (tu test solo pide includes('@'))
     if (!this.customerEmail.includes('@')) {
-      throw new Error('customerEmail must be a valid email address');
+      throw invalidRequestError(
+        'errors.customer_email_invalid',
+        { field: 'customerEmail' },
+        { customerEmail: this.customerEmail },
+      );
     }
   }
 }

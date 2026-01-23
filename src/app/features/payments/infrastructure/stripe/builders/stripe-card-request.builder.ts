@@ -1,4 +1,4 @@
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.faactory';
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import { CurrencyCode } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 

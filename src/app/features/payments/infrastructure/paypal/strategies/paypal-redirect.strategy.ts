@@ -1,5 +1,6 @@
 import { I18nKeys } from '@core/i18n';
 import { NextActionPaypalApprove } from '@payments/domain/models/payment/payment-action.types';
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import {
   PaymentIntent,
   PaymentMethodType,
@@ -44,10 +45,18 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
   validate(req: CreatePaymentRequest): void {
     const supportedCurrencies = ['USD', 'MXN', 'EUR', 'GBP', 'CAD', 'AUD'];
 
-    if (!supportedCurrencies.includes(req.currency)) {
-      throw new Error(
-        `PayPal does not support ${req.currency}. ` +
-          `Supported currencies: ${supportedCurrencies.join(', ')}`,
+    // Currency debe existir (normalmente ya viene validado por BasePaymentGateway),
+    // pero aquí mantenemos regla específica PayPal.
+    if (!req.currency || !supportedCurrencies.includes(req.currency)) {
+      throw invalidRequestError(
+        'errors.currency_not_supported',
+        {
+          field: 'currency',
+          provider: 'paypal',
+          supportedCount: supportedCurrencies.length,
+          currency: req.currency,
+        },
+        { currency: req.currency },
       );
     }
 
@@ -61,11 +70,18 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     };
 
     const minAmount = minAmounts[req.currency] ?? 1;
-    if (req.amount < minAmount) {
-      throw new Error(`Minimum amount for PayPal in ${req.currency} is ${minAmount}`);
+
+    // amount inválido o menor al mínimo de PayPal por moneda
+    if (!Number.isFinite(req.amount) || req.amount < minAmount) {
+      throw invalidRequestError(
+        'errors.amount_invalid',
+        { field: 'amount', min: minAmount, currency: req.currency },
+        { amount: req.amount, currency: req.currency, minAmount },
+      );
     }
 
-    if (req.method.token) {
+    // Token se ignora en PayPal redirect flow (no tronamos, solo warning)
+    if (req.method?.token) {
       console.warn('[PaypalRedirectStrategy] Token provided but PayPal uses its own checkout flow');
     }
   }
@@ -80,11 +96,12 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
    */
   prepare(req: CreatePaymentRequest, context?: StrategyContext): StrategyPrepareResult {
     // StrategyContext es la ÚNICA fuente de URLs para PayPal
-    // No usar fallbacks defensivos - si falta returnUrl => error claro y temprano
+    // No inventar URLs - si falta returnUrl => error claro y temprano
     if (!context?.returnUrl) {
-      throw new Error(
-        'PayPal requires StrategyContext.returnUrl. ' +
-          'It must be provided by CheckoutComponent when starting the payment.',
+      throw invalidRequestError(
+        'errors.return_url_required',
+        { field: 'returnUrl', provider: 'paypal' },
+        { returnUrl: context?.returnUrl },
       );
     }
 
@@ -109,8 +126,8 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     return {
       preparedRequest: {
         ...req,
+        // PayPal no usa token desde cliente, solo necesitamos tipo
         method: { type: 'card' },
-        // Asegurar que returnUrl y cancelUrl estén en el request
         returnUrl,
         cancelUrl,
       },
@@ -120,13 +137,6 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
 
   /**
    * Starts the PayPal Checkout flow.
-   *
-   * Flow:
-   * 1. Validates the request
-   * 2. Prepares with return URLs
-   * 3. Creates Order in PayPal via gateway
-   * 4. Extracts approve URL from HATEOAS links
-   * 5. Returns intent with nextAction of type paypal_approve
    */
   start(req: CreatePaymentRequest, context?: StrategyContext): Observable<PaymentIntent> {
     this.validate(req);
@@ -139,6 +149,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
       currency: req.currency,
       returnUrl: metadata['return_url'],
     });
+
     return this.gateway.createIntent(preparedRequest).pipe(
       tap((intent) => {
         console.log(`[PaypalRedirectStrategy] PayPal order created: ${intent.id}`);
@@ -147,9 +158,6 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     );
   }
 
-  /**
-   * PayPal always requires user action (approve in PayPal).
-   */
   requiresUserAction(intent: PaymentIntent): boolean {
     return (
       intent.status === 'requires_action' ||
@@ -158,9 +166,6 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     );
   }
 
-  /**
-   * Instructions for the user about PayPal flow.
-   */
   getUserInstructions(intent: PaymentIntent): string | null {
     if (intent.status === 'succeeded') {
       return null;
@@ -182,6 +187,8 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
 
     if (!approveUrl) {
       console.error('[PaypalRedirectStrategy] No approve URL found in PayPal response');
+
+      // Fallback: si el intent ya trae redirectUrl, úsalo como redirect genérico
       if (intent.redirectUrl) {
         return {
           ...intent,
@@ -193,6 +200,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
           },
         };
       }
+
       return intent;
     }
 
@@ -212,9 +220,6 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     };
   }
 
-  /**
-   * Extracts the approval URL from PayPal response.
-   */
   private extractApproveUrl(intent: PaymentIntent): string | null {
     const raw = intent.raw as PaypalOrderDto | undefined;
 
@@ -233,9 +238,6 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     return null;
   }
 
-  /**
-   * Generates a client metadata ID for PayPal Risk/Fraud.
-   */
   private generateClientMetadataId(deviceData: NonNullable<StrategyContext['deviceData']>): string {
     const data = [
       deviceData.ipAddress ?? 'unknown',
