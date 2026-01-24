@@ -13,8 +13,9 @@ import { CancelPaymentUseCase } from '../use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '../use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
 import { StartPaymentUseCase } from '../use-cases/start-payment.use-case';
-import { HISTORY_MAX_ENTRIES, initialPaymentsState } from './payment.models';
-import { PaymentsStore } from './payment.store';
+import { PaymentsStore } from './payment-store';
+import { HISTORY_MAX_ENTRIES } from './payment-store.history.types';
+import { initialPaymentsState } from './payment-store.state';
 
 const flush = async () => {
   await Promise.resolve();

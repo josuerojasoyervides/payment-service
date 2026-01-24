@@ -19,7 +19,7 @@ import { FakeStripeGetIntentGateway } from '@payments/infrastructure/stripe/fake
 import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
 import { ProviderFactoryRegistry } from '../application/registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../application/services/fallback-orchestrator.service';
-import { PaymentsStore } from '../application/store/payment.store';
+import { PaymentsStore } from '../application/store/payment-store';
 import { PAYMENT_PROVIDER_FACTORIES } from '../application/tokens/payment-provider-factories.token';
 import { PAYMENT_STATE } from '../application/tokens/payment-state.token';
 import { CancelPaymentUseCase } from '../application/use-cases/cancel-payment.use-case';

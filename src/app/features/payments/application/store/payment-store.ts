@@ -14,10 +14,10 @@ import { CancelPaymentUseCase } from '../use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '../use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
 import { StartPaymentUseCase } from '../use-cases/start-payment.use-case';
-import { initialPaymentsState, PaymentsState } from './payment.models';
-import { createPaymentsStoreActions } from './payment.store.actions';
-import { setupFallbackExecuteListener } from './payment.store.fallback';
-import { buildPaymentsSelectors } from './payment.store.selectors';
+import { createPaymentsStoreActions } from './payment-store.actions';
+import { setupFallbackExecuteListener } from './payment-store.fallback';
+import { buildPaymentsSelectors } from './payment-store.selectors';
+import { initialPaymentsState, PaymentsState } from './payment-store.state';
 
 export const PaymentsStore = signalStore(
   withState<PaymentsState>(initialPaymentsState),

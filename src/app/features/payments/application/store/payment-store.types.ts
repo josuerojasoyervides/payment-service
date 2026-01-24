@@ -7,7 +7,8 @@ import {
 } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
-import { PaymentFlowStatus, PaymentHistoryEntry, PaymentsState } from './payment.models';
+import { PaymentHistoryEntry } from './payment-store.history.types';
+import { PaymentFlowStatus, PaymentsState } from './payment-store.state';
 
 /**
  * Minimal store shape used by internal helpers.
