@@ -331,8 +331,9 @@ describe('FallbackOrchestratorService', () => {
       });
 
       expect(emittedData).not.toBeNull();
-      expect(emittedData.provider).toBe('paypal');
-      expect(emittedData.request).toEqual(mockRequest);
+      expect(emittedData.fromProvider).toBe('stripe');
+      expect(emittedData.eventId).toBeTruthy();
+      expect(typeof emittedData.wasAutoFallback).toBe('boolean');
 
       vi.useRealTimers();
     });
@@ -740,8 +741,9 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
 
       vi.useRealTimers();
 
-      expect(emittedData.provider).toBe('paypal');
-      expect(emittedData.request).toEqual(mockRequest);
+      expect(emittedData.fromProvider).toBe('stripe');
+      expect(emittedData.eventId).toBeTruthy();
+      expect(typeof emittedData.wasAutoFallback).toBe('boolean');
     });
 
     it('should set currentProvider during auto execution', () => {

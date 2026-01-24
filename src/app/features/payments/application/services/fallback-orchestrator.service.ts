@@ -21,7 +21,6 @@ import {
   isEventExpiredByAgeGuard,
   isEventExpiredGuard,
   isFallbackEnabledGuard,
-  isOriginalRequestAvailableGuard,
   isPendingEventForResponseGuard,
   isPendingEventGuard,
   isResponseAcceptedGuard,
@@ -109,6 +108,8 @@ export class FallbackOrchestratorService {
 
   readonly autoFallbackStarted$ = this._autoFallbackStarted$.asObservable();
 
+  private flowId: string | null = null;
+
   // Computed signals
   readonly state = this._state.asReadonly();
   readonly isPending = computed(() => this._state().status === 'pending');
@@ -190,11 +191,13 @@ export class FallbackOrchestratorService {
       return false;
     }
 
+    const flowId = this.getOrCreateFlowId();
+
     // ✅ decidir auto/manual
     if (shouldAutoFallbackPolicy(this.config, this._state())) {
-      this.startAutoFallback(alternatives[0], request);
+      this.startAutoFallback(alternatives[0], request, providerId, flowId);
     } else {
-      this.emitManualFallbackEvent(providerId, error, alternatives, request);
+      this.emitManualFallbackEvent(providerId, error, alternatives, request, flowId);
     }
 
     return true;
@@ -274,6 +277,10 @@ export class FallbackOrchestratorService {
     this._fallbackExecute$.next({
       request: currentEvent.originalRequest,
       provider: response.selectedProvider,
+
+      fromProvider: currentEvent.failedProvider,
+      eventId: currentEvent.eventId,
+      wasAutoFallback: false,
     });
 
     this._userResponse$.next(response);
@@ -299,7 +306,8 @@ export class FallbackOrchestratorService {
     originalRequest?: CreatePaymentRequest,
     wasAutoFallback?: boolean,
   ) {
-    if (!isOriginalRequestAvailableGuard(originalRequest)) {
+    const req = originalRequest ?? this._state().originalRequest;
+    if (!req) {
       setFailedNoRequestTransition(this._state);
       return;
     }
@@ -307,7 +315,7 @@ export class FallbackOrchestratorService {
     // 👇 inferencia automática si no lo pasan
     const inferredAuto = wasAutoFallback ?? this._state().isAutoFallback;
 
-    this.reportFailure(providerId, error, originalRequest, inferredAuto);
+    this.reportFailure(providerId, error, req, inferredAuto);
   }
 
   /**
@@ -316,6 +324,8 @@ export class FallbackOrchestratorService {
   reset(): void {
     this._cancel$.next();
     resetTransition(this._state);
+
+    this.clearFlowId();
   }
 
   /**
@@ -335,23 +345,39 @@ export class FallbackOrchestratorService {
   /**
    * Ejecuta un fallback automático después de un delay.
    */
-  private executeAutoFallback(provider: PaymentProviderId, request: CreatePaymentRequest): void {
+  private executeAutoFallback(
+    provider: PaymentProviderId,
+    request: CreatePaymentRequest,
+    fromProvider: PaymentProviderId,
+    flowId: string,
+  ): void {
     const delay = this.config.autoFallbackDelay;
 
-    // Actualizar estado a auto_executing
-    setAutoExecutingTransition(this._state, provider);
+    // estado auto_executing
+    setAutoExecutingTransition(this._state, provider, request);
 
-    // Notificar que se inició un auto-fallback (para feedback en UI)
-    this._autoFallbackStarted$.next({ provider, delay });
+    // ✅ autoFallbackStarted ya tiene correlación real
+    this._autoFallbackStarted$.next({
+      provider,
+      delay,
+      fromProvider,
+      eventId: flowId,
+      wasAutoFallback: true,
+    });
 
-    // Esperar el delay y luego ejecutar
     scheduleAfterDelay(
       delay,
       this._cancel$,
       () => isAutoExecutingGuard(this._state(), provider),
-      // Emitir evento para que el componente ejecute el pago
       () => {
-        this._fallbackExecute$.next({ request, provider });
+        // ✅ fallbackExecute completo
+        this._fallbackExecute$.next({
+          request,
+          provider,
+          fromProvider,
+          eventId: flowId,
+          wasAutoFallback: true,
+        });
       },
     );
   }
@@ -364,24 +390,21 @@ export class FallbackOrchestratorService {
     error: PaymentError,
     alternatives: PaymentProviderId[],
     originalRequest: CreatePaymentRequest,
+    flowId: string,
   ): boolean {
-    // Emitir evento de fallback disponible
     const event: FallbackAvailableEvent = {
       failedProvider,
       error,
       alternativeProviders: alternatives,
       originalRequest,
       timestamp: Date.now(),
-      eventId: generateEventIdPolicy(),
+      eventId: flowId, // ✅ no regeneres
     };
 
     setPendingManualTransition(this._state, event);
-
     this._fallbackAvailable$.next(event);
 
-    // Configurar timeout
     this.setupTimeout(event.eventId);
-
     return true;
   }
 
@@ -417,8 +440,13 @@ export class FallbackOrchestratorService {
     );
   }
 
-  private startAutoFallback(provider: PaymentProviderId, request: CreatePaymentRequest): void {
-    this.executeAutoFallback(provider, request);
+  private startAutoFallback(
+    provider: PaymentProviderId,
+    request: CreatePaymentRequest,
+    fromProvider: PaymentProviderId,
+    flowId: string,
+  ): void {
+    this.executeAutoFallback(provider, request, fromProvider, flowId);
   }
 
   private emitManualFallbackEvent(
@@ -426,8 +454,9 @@ export class FallbackOrchestratorService {
     error: PaymentError,
     alternatives: PaymentProviderId[],
     originalRequest: CreatePaymentRequest,
+    flowId: string,
   ): void {
-    this.emitFallbackAvailable(failedProvider, error, alternatives, originalRequest);
+    this.emitFallbackAvailable(failedProvider, error, alternatives, originalRequest, flowId);
   }
 
   private finish(status: FinishStatus) {
@@ -435,9 +464,21 @@ export class FallbackOrchestratorService {
 
     setTerminalTransition(this._state, status);
 
-    // ✅ reset después (microtask) para que UI alcance a ver el estado final
     queueMicrotask(() => {
       this.reset();
     });
+  }
+
+  acknowledge(): void {
+    this.reset();
+  }
+
+  private getOrCreateFlowId(): string {
+    if (!this.flowId) this.flowId = generateEventIdPolicy();
+    return this.flowId;
+  }
+
+  private clearFlowId(): void {
+    this.flowId = null;
   }
 }
