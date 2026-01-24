@@ -57,7 +57,6 @@ export function applyReadyState(store: PaymentsStoreContext, intent: PaymentInte
     status: 'ready',
     intent,
     error: null,
-    currentRequest: null,
   });
 }
 
@@ -73,7 +72,7 @@ export function applyReadyState(store: PaymentsStoreContext, intent: PaymentInte
  * - intent === null
  * - error !== null
  */
-export function applyErrorFailureState(store: PaymentsStoreContext, error: PaymentError): void {
+export function applyFailureState(store: PaymentsStoreContext, error: PaymentError): void {
   patchState(store, {
     status: 'error',
     intent: null,
