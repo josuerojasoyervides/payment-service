@@ -1,4 +1,25 @@
 {
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=827846
-  "recommendations": ["angular.ng-template"]
+  "recommendations": [
+    // Angular (templates + TS context)
+    "angular.ng-template",
+
+    // Formatting & linting (project uses Prettier + ESLint)
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "editorconfig.editorconfig",
+
+    // Testing
+    "vitest.explorer",
+
+    // Docs & diagrams (this repo generates .dot graphs and has lots of .md docs)
+    "DavidAnson.vscode-markdownlint",
+    "EFanZh.graphviz-preview",
+
+    // Dev UX (optional but highly recommended)
+    "usernamehw.errorlens",
+    "christian-kohler.path-intellisense",
+    "eamodio.gitlens",
+    "streetsidesoftware.code-spell-checker",
+    "streetsidesoftware.code-spell-checker-spanish"
+  ]
 }
