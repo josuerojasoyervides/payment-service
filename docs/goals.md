@@ -1,72 +1,77 @@
-# Payments Module — Goals & Evolution Plan (NgRx Signals + XState)
+# Payments Module — Goals & Evolution Plan (NgRx Signals → XState)
 
-> **Última actualización:** 2026-01-23  
-> Documento estratégico: define **por qué** existe este módulo, qué estamos optimizando, y cómo vamos a evolucionar el diseño sin romperlo.
+> **Última revisión:** 2026-01-24  
+> Documento estratégico: define **por qué** existe este módulo, cuál es el **North Star**, y cómo evolucionar el diseño sin romper lo que ya funciona.
+
+## Cómo usar este doc
+
+- **Esto NO es “estado del sprint”.**  
+  Es una guía + historial de intención.
+- Cuando el código se aleje del North Star, este doc debe:
+  - registrar la desviación,
+  - explicar por qué se aceptó,
+  - y definir el “cierre” (cómo se vuelve a alinear).
 
 ---
 
 ## 1) Propósito del proyecto
 
-Este repositorio existe para practicar arquitectura real aplicada a pagos (no sólo “que funcione”).
+Este repositorio existe para practicar arquitectura real aplicada a pagos (no solo “que funcione”).
 
-Queremos que el módulo:
+Buscamos que el módulo:
 
 - Sea **extensible** para agregar providers y métodos sin tocar todo el sistema.
 - Sea **estable** (tests confiables, flujos sin estados zombies, errores normalizados).
-- Sirva como laboratorio para aprender **Clean-ish Architecture pragmática**.
-- Pueda crecer hacia algo usable **sin entrar en sobre-diseño enterprise**.
+- Sea **mantenible** (boundaries claros; refactors sin efecto dominó).
+- Sea un laboratorio para aprender **Clean-ish Architecture pragmática**.
 
 ---
 
-## 2) Estado actual (real)
+## 2) North Star (end‑state deseado)
 
-- Store principal: **NgRx Signals**
-- Flow: **stateful**
-- Estado de pago (macro):
-  - `idle → creating_intent → requires_action → confirming → succeeded/failed`
-- UI inicia acciones, pero el flow real lo controlan:
-  - `PaymentsStore` + `FallbackOrchestratorService`
-- Objetivo i18n/errores: **UI-only translation**
+### 2.1 Soporte real multi‑provider
 
----
+- Stripe + PayPal (mínimo)
+- Facilitar agregar:
+  - SPEI / transferencias
+  - wallets
+  - providers alternos
 
-## 3) Principios de evolución
+**North Star:** agregar un provider nuevo debería ser:
 
-### 3.1 Lo que no vamos a sacrificar
-
-- Boundaries por capas (domain/app/infra/ui)
-- Normalización de errores a un contrato único (`PaymentError`)
-- UI como capa de presentación (no orquesta lógica)
-- Providers agregables vía registry/factories
-
-### 3.2 Lo que sí vamos a permitir (pragmatismo)
-
-- Angular DI / RxJS dentro de Application
-- Doble API temporal (legacy + refactor) **si está claramente documentada**
-- Estrategias por método de pago (card/spei) en `shared/`
+- implementar operaciones/gateways + mapping
+- registrarlo en config
+- agregar tests mínimos
+- sin tocar UI/store en 20 lugares
 
 ---
 
-## 4) Target architecture: Ports & Adapters + XState
+### 2.2 Contrato de errores estable (PaymentError)
 
-### 4.1 Ports & Adapters (estándar)
+**North Star:**
 
-- Domain define modelos/contratos puros.
-- Application coordina (use cases, store, orchestrator).
-- Infrastructure implementa adapters (Stripe/PayPal/etc).
-- UI consume estado y traduce.
+- Infra/App retornan `PaymentError` con:
+  - `code`
+  - `messageKey`
+  - `params`
+  - `raw` (debug)
+- UI es el único lugar que traduce.
 
-### 4.2 Por qué XState en este proyecto
+---
 
-XState se usará como **motor del lifecycle** del pago porque el flow se vuelve difícil de mantener sólo con:
+### 2.3 Estado/flujo robusto (XState)
 
-- señales + efectos + rxMethods
-- múltiples providers
-- fallback manual/auto
+**Razón:**
+En pagos hay demasiados estados intermedios reales:
+
+- 3DS / requires_action
+- redirect approval (PayPal)
+- callbacks
+- polling de status
 - retries/timeouts
-- estados intermedios como `requires_action`
+- transiciones incompletas
 
-Con XState buscamos:
+**North Star con XState:**
 
 - flujo explícito (statechart real)
 - transiciones auditables (eventos claros)
@@ -75,81 +80,99 @@ Con XState buscamos:
 
 ---
 
-## 5) Coexistencia: NgRx Signals + XState (intención)
+## 3) Coexistencia: NgRx Signals + XState (intención)
 
 ✅ Lo que se queda en NgRx Signals:
 
-- historial
-- estado actual (view model)
-- computed/derived state para UI
-- caching ligero de UI
+- estado de UI/pantallas
+- wiring de inputs / outputs
+- data shape para components
 
 ✅ Lo que migra a XState:
 
-- flow intent/confirm
-- fallback (manual/auto)
-- retries/resiliencia (límites, backoff/timeout)
+- lifecycle de un pago (create → action → confirm/capture → done/fail)
+- branching por provider/método
+- “recovery paths” (retry/backoff, fallback, cancel)
 
-Regla:
+📌 Estado actual:
 
-- XState es el **motor de transición**
-- NgRx Signals es el **state store observable y derivado para UI**
-
----
-
-## 6) Definition of Done (pre‑XState)
-
-Antes de meter XState, este repo debe estar en un estado “estable y coherente”.
-
-### ✅ DoD mínimo
-
-1. **PaymentError es contrato final**
-   - `messageKey` SIEMPRE es una key i18n
-   - `params` para interpolación
-   - UI-only translation
-
-2. **Providers consistentes**
-   - Stripe y PayPal siguen el estándar “Gateway + Operations”
-   - cada operación normaliza error y retorna domain models
-
-3. **Fallback estable**
-   - no hay loops
-   - eventos expirados no rompen el flow
-   - UI nunca se queda colgada
-
-4. **Tests base pasando**
-   - gateways: happy path + invalid request + provider error + normalize
-   - store/orchestrator: no estados zombies
-
-5. **Docs alineados**
-   - reglas y naming reflejan el código real
+- Store con NgRx Signals sigue siendo la base.
+- XState aún NO está integrado (está planeado).
 
 ---
 
-## 7) Roadmap incremental (sin reescritura)
+## 4) Roadmap por fases (incremental, sin reescrituras)
 
-### Fase A — cerrar el ciclo i18n/errores (P0)
+### Fase A — Estabilización & consistencia (P0/P1)
 
-- eliminar cualquier legacy que permita `messageKey` ≠ key i18n
-- enforcement automático (lint/test)
+**Objetivo:** que el módulo sea confiable y consistente antes de meter flow complejo.
 
-### Fase B — unificar providers (P1)
+**Definition of Done (North Star de la fase A):**
 
-- refactor PayPal a “operations”
-- estandarizar responses (domain models) y errores
+- PaymentError solo viaja como `messageKey + params (+ raw)`
+- UI-only translation (definición por “UI layer”, no por folder literal)
+- Fallback policy estable y testeado
+- Providers con el mismo patrón (facade + operations)
+- Tests mínimos en gateways críticos
 
-### Fase C — meter XState (P1/P2)
+📌 Estado actual (as-of 2026-01-24):
 
-- introducir statechart de pagos (intent/confirm + requires_action)
-- integrar XState como motor del flow
-- mantener NgRx Signals como state + history
+- ✅ Providers ya están estandarizados
+- ✅ Fallback orchestrator integrado
+- ✅ PaymentError contract existe
+- 🟡 Aún hay deuda legacy en renderer de errores y en algunos tests
+- ❌ Enforcement automático pendiente
 
 ---
 
-## 8) Métricas de éxito (qué significa “mejor”)
+### Fase B — Hardening (enforcement + CI) (P1)
 
-- cambios de provider sin tocar UI
-- agregar un método sin tocar 8 archivos
-- errores siempre renderizan igual (messageKey+params)
-- fallback predecible, sin loops
-- tests detectan regresiones rápido
+**Objetivo:** evitar regresiones sin depender de disciplina manual.
+
+Targets:
+
+- test/lint que falle si hay `i18n.t(` fuera de UI layer
+- test/lint que falle si `messageKey` se usa como texto traducido
+- depcruise consolidado con reglas que representen el North Star real
+
+---
+
+### Fase C — XState (P2)
+
+**Objetivo:** migrar el “pago como workflow” a máquina de estados.
+
+Targets:
+
+- definir actor por provider
+- migrar el pipeline “start payment” primero
+- mantener el store como puente (sin romper UI)
+
+---
+
+## 5) Métricas de éxito (lo que importa)
+
+- Agregar un provider nuevo sin tocar UI/store a lo loco ✅
+- Reducir bugs de estados zombies ✅
+- Errores consistentes y traducidos solo en UI ✅
+- Refactors sin romper tests ✅
+- La UI no necesita saber “cómo” se paga, solo “qué estado mostrar” ✅
+
+---
+
+## 6) Deuda aceptada (registrada)
+
+Esto no es “malo”, es deuda consciente (pero debe tener plan):
+
+- Legacy rendering de `PaymentError.message` (debe morir)
+- Algunos specs con `messageKey` como texto (debe corregirse)
+- Abstract ports con HttpClient en application (decidir si se migra a infra/base)
+
+---
+
+## 7) Próximo cierre recomendado (el siguiente “checkpoint” real)
+
+Si hoy tuvieras que cerrar un ciclo completo, sería:
+
+1. **Cerrar i18n de verdad** (no legacy rendering, no messageKey traducido)
+2. **Enforcement automático mínimo** (scan tests / lint)
+3. **Completar tests mínimos en gateways críticos**
