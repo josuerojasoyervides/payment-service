@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { I18nKeys } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
@@ -42,7 +43,7 @@ describe('PaymentsStore', () => {
 
   const paymentError: PaymentError = {
     code: 'provider_error',
-    messageKey: 'boom',
+    messageKey: I18nKeys.errors.provider_error,
     raw: {},
   };
 

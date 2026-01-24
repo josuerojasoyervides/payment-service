@@ -139,7 +139,7 @@ export class ShowcaseComponent {
       failedProvider: 'stripe',
       error: {
         code: 'provider_error',
-        messageKey: this.i18n.t(I18nKeys.errors.provider_error),
+        messageKey: I18nKeys.errors.provider_error,
         raw: { source: 'showcase' },
       },
       alternativeProviders: ['paypal'],

@@ -3,13 +3,7 @@ import { I18nKeys, I18nService } from '@core/i18n';
 type I18nSafeParams = Record<string, string | number>;
 type LooseParams = Record<string, unknown>;
 
-interface MaybePaymentError {
-  message?: string;
-  messageKey?: string;
-  params?: LooseParams;
-}
-
-interface MaybeValidationError {
+interface MaybeI18nErrorShape {
   messageKey?: string;
   params?: LooseParams;
 }
@@ -57,46 +51,38 @@ function looksLikeI18nKey(value: string): boolean {
   return value.includes('.') && !value.includes(' ');
 }
 
+/**
+ * Strict renderer: UI must only render i18n keys.
+ *
+ * ✅ Accepts: { messageKey, params } shapes
+ * ✅ Accepts: Error whose `message` is an i18n key
+ * ❌ Rejects: legacy human text (will become unknown_error)
+ */
 export function renderPaymentError(i18n: I18nService, error: unknown): string {
-  if (!error) return i18n.t(I18nKeys.ui.unknown_error);
+  if (!error) return i18n.t(I18nKeys.errors.unknown_error);
 
   // Si te llega Error nativo (throw new Error(...))
   if (error instanceof Error) {
     const msg = error.message;
 
-    if (looksLikeI18nKey(msg)) {
+    if (typeof msg === 'string' && looksLikeI18nKey(msg)) {
       return i18n.t(msg);
     }
 
-    return msg || i18n.t(I18nKeys.ui.unknown_error);
+    return i18n.t(I18nKeys.errors.unknown_error);
   }
 
+  // Generic error shape: { messageKey, params }
   if (isObject(error) && 'messageKey' in error) {
-    const validationError = error as MaybeValidationError;
+    const e = error as MaybeI18nErrorShape;
 
-    if (typeof validationError.messageKey === 'string') {
-      return i18n.t(validationError.messageKey, sanitizeI18nParams(validationError.params));
+    if (typeof e.messageKey === 'string' && looksLikeI18nKey(e.messageKey)) {
+      return i18n.t(e.messageKey, sanitizeI18nParams(e.params));
     }
+
+    // messageKey exists but is not an i18n key => treat as unknown
+    return i18n.t(I18nKeys.errors.unknown_error);
   }
 
-  // PaymentError-like
-  if (isObject(error) && ('messageKey' in error || 'message' in error)) {
-    const paymentError = error as MaybePaymentError;
-
-    if (typeof paymentError.messageKey === 'string') {
-      return i18n.t(paymentError.messageKey, sanitizeI18nParams(paymentError.params));
-    }
-
-    if (typeof paymentError.message === 'string') {
-      // Si message parece key -> traducir
-      if (looksLikeI18nKey(paymentError.message)) {
-        return i18n.t(paymentError.message, sanitizeI18nParams(paymentError.params));
-      }
-
-      // Si no parece key -> texto legacy
-      return paymentError.message;
-    }
-  }
-
-  return i18n.t(I18nKeys.ui.unknown_error);
+  return i18n.t(I18nKeys.errors.unknown_error);
 }

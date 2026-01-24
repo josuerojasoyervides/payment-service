@@ -39,7 +39,7 @@ describe('CheckoutComponent', () => {
 
   const mockError: PaymentError = {
     code: 'card_declined',
-    messageKey: 'La tarjeta fue rechazada',
+    messageKey: I18nKeys.errors.card_declined,
     raw: { originalError: 'declined' },
   };
 
