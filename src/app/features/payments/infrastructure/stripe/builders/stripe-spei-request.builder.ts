@@ -1,4 +1,4 @@
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
+import { I18nKeys } from '@core/i18n/i18n.keys';
 import { CurrencyCode } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
@@ -18,11 +18,15 @@ import {
  * - returnUrl (No redirect)
  * - saveForFuture (Not applicable to SPEI)
  */
-export class StripeSpeiRequestBuilder implements PaymentRequestBuilder {
+export class StripeSpeiRequestBuilder extends PaymentRequestBuilder {
   private orderId?: string;
   private amount?: number;
   private currency?: CurrencyCode;
   private customerEmail?: string;
+
+  constructor() {
+    super();
+  }
 
   forOrder(orderId: string): this {
     this.orderId = orderId;
@@ -36,15 +40,24 @@ export class StripeSpeiRequestBuilder implements PaymentRequestBuilder {
   }
 
   withOptions(options: PaymentOptions): this {
-    if (options.customerEmail !== undefined) {
-      this.customerEmail = options.customerEmail;
-    }
+    if (options.customerEmail !== undefined) this.customerEmail = options.customerEmail;
     return this;
   }
 
-  build(): CreatePaymentRequest {
-    this.validate();
+  protected override validateRequired(): void {
+    this.requireNonEmptyStringWithKey('orderId', this.orderId, I18nKeys.errors.order_id_required);
+    this.requirePositiveAmountWithKey('amount', this.amount, I18nKeys.errors.amount_invalid);
+    this.requireDefinedWithKey('currency', this.currency, I18nKeys.errors.currency_required);
 
+    this.requireEmailWithKey(
+      'customerEmail',
+      this.customerEmail,
+      I18nKeys.errors.customer_email_required,
+      I18nKeys.errors.customer_email_invalid,
+    );
+  }
+
+  protected override buildUnsafe(): CreatePaymentRequest {
     return {
       orderId: this.orderId!,
       amount: this.amount!,
@@ -52,39 +65,7 @@ export class StripeSpeiRequestBuilder implements PaymentRequestBuilder {
       method: {
         type: 'spei',
       },
-      customerEmail: this.customerEmail,
+      customerEmail: this.customerEmail!,
     };
-  }
-
-  private validate(): void {
-    if (!this.orderId) {
-      throw invalidRequestError('errors.order_id_required', { field: 'orderId' });
-    }
-
-    // Nota: usamos Number.isFinite para cubrir NaN también
-    if (!Number.isFinite(this.amount) || (this.amount ?? 0) <= 0) {
-      throw invalidRequestError(
-        'errors.amount_invalid',
-        { field: 'amount', min: 1 },
-        { amount: this.amount },
-      );
-    }
-
-    if (!this.currency) {
-      throw invalidRequestError('errors.currency_required', { field: 'currency' });
-    }
-
-    if (!this.customerEmail) {
-      throw invalidRequestError('errors.customer_email_required', { field: 'customerEmail' });
-    }
-
-    // validación ultra simple (tu test solo pide includes('@'))
-    if (!this.customerEmail.includes('@')) {
-      throw invalidRequestError(
-        'errors.customer_email_invalid',
-        { field: 'customerEmail' },
-        { customerEmail: this.customerEmail },
-      );
-    }
   }
 }

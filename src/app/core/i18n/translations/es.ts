@@ -2,6 +2,9 @@ import type { Translations } from '../i18n.types';
 
 export const es: Translations = {
   errors: {
+    customer_email_invalid: 'El correo electrónico del cliente es inválido',
+    cancel_url_invalid: 'URL de cancelación inválida',
+    customer_email_required: 'El correo electrónico del cliente es requerido',
     return_url_required: 'URL de retorno es requerida',
     currency_not_supported: 'La moneda no es soportada',
     unknown_error: 'Error desconocido',

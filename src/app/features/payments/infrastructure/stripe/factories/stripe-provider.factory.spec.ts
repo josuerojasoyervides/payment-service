@@ -36,7 +36,14 @@ describe('StripeProviderFactory', () => {
 
   it('throws for unsupported payment method type', () => {
     expect(() => factory.createStrategy('unsupported' as any)).toThrow(
-      /Payment method "unsupported" is not supported by Stripe/,
+      expect.objectContaining({
+        code: 'invalid_request',
+        messageKey: 'errors.invalid_request',
+        params: {
+          reason: 'unsupported_payment_method',
+          supportedMethods: 'card, spei',
+        },
+      }),
     );
   });
 
@@ -96,7 +103,14 @@ describe('StripeProviderFactory', () => {
 
     it('throws for unsupported payment method type', () => {
       expect(() => factory.getFieldRequirements('unsupported' as any)).toThrow(
-        /Payment method "unsupported" is not supported by Stripe/,
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: 'errors.invalid_request',
+          params: {
+            reason: 'unsupported_payment_method',
+            supportedMethods: 'card, spei',
+          },
+        }),
       );
     });
   });

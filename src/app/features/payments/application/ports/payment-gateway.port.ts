@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
@@ -225,7 +226,7 @@ export abstract class BasePaymentGateway<
 
     return {
       code: 'provider_error',
-      messageKey: 'errors.provider_error',
+      messageKey: I18nKeys.errors.provider_error,
       raw: err,
     };
   }

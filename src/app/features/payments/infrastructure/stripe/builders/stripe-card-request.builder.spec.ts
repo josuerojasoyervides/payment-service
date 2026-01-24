@@ -142,7 +142,7 @@ describe('StripeCardRequestBuilder', () => {
         expect(e).toMatchObject({
           code: 'invalid_request',
           messageKey: 'errors.card_token_required',
-          params: { field: 'method.token' },
+          params: { field: 'token' },
         });
       }
     });
