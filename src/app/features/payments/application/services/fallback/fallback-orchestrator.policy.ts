@@ -54,3 +54,7 @@ export function getAlternativeProvidersPolicy(
 export function generateEventIdPolicy(): string {
   return `fb_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`;
 }
+
+export function hasReachedMaxAttemptsPolicy(config: FallbackConfig, state: FallbackState): boolean {
+  return state.failedAttempts.length >= config.maxAttempts;
+}
