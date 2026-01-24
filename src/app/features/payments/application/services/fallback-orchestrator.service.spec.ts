@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { I18nKeys } from '@core/i18n';
 import {
   DEFAULT_FALLBACK_CONFIG,
   FallbackConfig,
@@ -26,13 +27,13 @@ describe('FallbackOrchestratorService', () => {
 
   const providerUnavailableError: PaymentError = {
     code: 'provider_unavailable',
-    messageKey: 'Provider not available',
+    messageKey: I18nKeys.errors.stripe_unavailable,
     raw: undefined,
   };
 
   const cardDeclinedError: PaymentError = {
     code: 'card_declined',
-    messageKey: 'Card was declined',
+    messageKey: I18nKeys.errors.card_declined,
     raw: undefined,
   };
 
@@ -669,7 +670,7 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
 
   const providerUnavailableError: PaymentError = {
     code: 'provider_unavailable',
-    messageKey: 'Provider not available',
+    messageKey: I18nKeys.errors.stripe_unavailable,
     raw: undefined,
   };
 

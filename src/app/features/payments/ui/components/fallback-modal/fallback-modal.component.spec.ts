@@ -12,7 +12,7 @@ describe('FallbackModalComponent', () => {
 
   const mockError: PaymentError = {
     code: 'provider_error',
-    messageKey: 'Provider unavailable',
+    messageKey: 'errors.provider_error',
     raw: { error: 'test' },
   };
 
@@ -176,7 +176,7 @@ describe('FallbackModalComponent', () => {
       fixture.componentRef.setInput('event', mockEvent1);
       fixture.detectChanges();
 
-      expect(component.errorMessageText()).toBe('Provider unavailable');
+      expect(component.errorMessageText()).toBe('errors.provider_error');
     });
 
     it('debe retornar null si no hay error', () => {
@@ -184,7 +184,7 @@ describe('FallbackModalComponent', () => {
       fixture.componentRef.setInput('event', eventWithoutError);
       fixture.detectChanges();
 
-      expect(component.errorMessageText()).toBe('ui.unknown_error');
+      expect(component.errorMessageText()).toBe('errors.unknown_error');
     });
 
     it('debe calcular alternativeProviders correctamente', () => {

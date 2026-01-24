@@ -1,6 +1,11 @@
 import { I18nKeys } from '@core/i18n';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 
+export function looksLikeI18nKey(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  return value.startsWith('errors.') || value.startsWith('ui.');
+}
+
 export function isPaymentError(e: unknown): e is PaymentError {
   return !!e && typeof e === 'object' && 'code' in e && 'messageKey' in e;
 }
@@ -18,7 +23,7 @@ export function normalizePaymentError(e: unknown): PaymentError {
     // NOTE: MessageKey must already be an i18n key at this point.
     return {
       ...e,
-      messageKey: e.messageKey,
+      messageKey: looksLikeI18nKey(e.messageKey) ? e.messageKey : I18nKeys.errors.unknown_error,
       raw: e.raw ?? null,
     };
   }

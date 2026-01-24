@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
+import { I18nKeys, I18nService } from '@core/i18n';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
@@ -23,7 +24,7 @@ describe('StatusComponent', () => {
 
   const mockError: PaymentError = {
     code: 'provider_error',
-    messageKey: 'Intent not found',
+    messageKey: I18nKeys.errors.provider_error,
     raw: { originalError: 'not_found' },
   };
 
@@ -42,6 +43,9 @@ describe('StatusComponent', () => {
       imports: [StatusComponent, RouterLink],
       providers: [{ provide: PAYMENT_STATE, useValue: mockPaymentState }, provideRouter([])],
     }).compileComponents();
+
+    const i18n = TestBed.inject(I18nService);
+    vi.spyOn(i18n, 't').mockImplementation((key: string) => key);
 
     fixture = TestBed.createComponent(StatusComponent);
     component = fixture.componentInstance;
@@ -173,17 +177,17 @@ describe('StatusComponent', () => {
   describe('Manejo de errores', () => {
     it('debe obtener mensaje de error correctamente', () => {
       const errorMsg = component.getErrorMessage(mockError);
-      expect(errorMsg).toBe('Intent not found');
+      expect(errorMsg).toBe('errors.provider_error');
     });
 
     it('debe retornar mensaje genérico para errores desconocidos', () => {
       const errorMsg = component.getErrorMessage('string error');
-      expect(errorMsg).toBe('Error desconocido');
+      expect(errorMsg).toBe('errors.unknown_error');
     });
 
     it('debe retornar mensaje genérico para objetos sin message', () => {
       const errorMsg = component.getErrorMessage({ code: 'unknown' });
-      expect(errorMsg).toBe('Error desconocido');
+      expect(errorMsg).toBe('errors.unknown_error');
     });
 
     it('debe exponer error del payment state', () => {

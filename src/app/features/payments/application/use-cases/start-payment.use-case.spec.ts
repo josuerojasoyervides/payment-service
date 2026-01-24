@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { I18nKeys } from '@core/i18n';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
   PaymentIntent,
@@ -134,7 +135,11 @@ describe('StartPaymentUseCase', () => {
     });
 
     it('propagates the error when strategy.start() fails (fallback is handled by the Store)', async () => {
-      const error: PaymentError = { code: 'provider_error', messageKey: 'boom', raw: {} };
+      const error: PaymentError = {
+        code: 'provider_error',
+        messageKey: I18nKeys.errors.provider_error,
+        raw: {},
+      };
 
       (strategyMock.start as any).mockReturnValueOnce(throwError(() => error));
 

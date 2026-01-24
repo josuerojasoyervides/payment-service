@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { I18nKeys } from '@core/i18n';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
   PaymentIntent,
@@ -87,12 +88,16 @@ describe('ConfirmPaymentUseCase', () => {
     });
 
     it('propagates observable errors from gateway.confirmIntent()', async () => {
-      const error: PaymentError = { code: 'provider_error', messageKey: 'boom', raw: {} };
+      const error: PaymentError = {
+        code: 'provider_error',
+        messageKey: I18nKeys.errors.provider_error,
+        raw: {},
+      };
       (gatewayMock.confirmIntent as any).mockReturnValueOnce(throwError(() => error));
 
       await expect(firstValueFrom(useCase.execute(req, 'stripe'))).rejects.toMatchObject({
         code: 'provider_error',
-        messageKey: 'boom',
+        messageKey: I18nKeys.errors.provider_error,
       });
     });
   });
