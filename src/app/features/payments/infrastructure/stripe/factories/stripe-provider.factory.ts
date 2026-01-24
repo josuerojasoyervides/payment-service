@@ -1,6 +1,8 @@
 import { inject, Injectable } from '@angular/core';
+import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { ProviderFactory } from '@payments/application/ports/provider-factory.port';
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
 import { PaymentGatewayPort } from '../../../application/ports/payment-gateway.port';
@@ -92,7 +94,10 @@ export class StripeProviderFactory implements ProviderFactory {
       case 'spei':
         return new StripeSpeiRequestBuilder();
       default:
-        throw new Error(`No builder for payment method: ${type}`);
+        throw invalidRequestError(I18nKeys.errors.invalid_request, {
+          reason: 'no_builder_for_payment_method',
+          type,
+        });
     }
   }
 
@@ -151,10 +156,10 @@ export class StripeProviderFactory implements ProviderFactory {
 
   private assertSupported(type: PaymentMethodType): void {
     if (!this.supportsMethod(type)) {
-      throw new Error(
-        `Payment method "${type}" is not supported by Stripe. ` +
-          `Supported methods: ${StripeProviderFactory.SUPPORTED_METHODS.join(', ')}`,
-      );
+      throw invalidRequestError(I18nKeys.errors.invalid_request, {
+        reason: 'unsupported_payment_method',
+        supportedMethods: StripeProviderFactory.SUPPORTED_METHODS.join(', '),
+      });
     }
   }
 
@@ -165,7 +170,10 @@ export class StripeProviderFactory implements ProviderFactory {
       case 'spei':
         return new SpeiStrategy(this.gateway, this.logger);
       default:
-        throw new Error(`Unexpected payment method type: ${type}`);
+        throw invalidRequestError(I18nKeys.errors.invalid_request, {
+          reason: 'unexpected_payment_method_type',
+          type,
+        });
     }
   }
 }

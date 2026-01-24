@@ -71,7 +71,6 @@ export function renderPaymentError(i18n: I18nService, error: unknown): string {
     return msg || i18n.t(I18nKeys.ui.unknown_error);
   }
 
-  // Validation error (PaymentValidationError)
   if (isObject(error) && 'messageKey' in error) {
     const validationError = error as MaybeValidationError;
 
