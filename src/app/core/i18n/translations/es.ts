@@ -2,6 +2,8 @@ import type { Translations } from '../i18n.types';
 
 export const es: Translations = {
   errors: {
+    return_url_required: 'URL de retorno es requerida',
+    currency_not_supported: 'La moneda no es soportada',
     unknown_error: 'Error desconocido',
     provider_error: 'Error del proveedor de pago',
     invalid_request: 'Solicitud inválida',

@@ -107,9 +107,7 @@ export const PaymentsStore = signalStore(
     };
 
     const isPaymentError = (e: unknown): e is PaymentError => {
-      return (
-        typeof e === 'object' && e !== null && 'code' in e && ('messageKey' in e || 'message' in e)
-      );
+      return typeof e === 'object' && e !== null && 'code' in e && 'messageKey' in e;
     };
 
     const normalizeError = (e: unknown): PaymentError => {
