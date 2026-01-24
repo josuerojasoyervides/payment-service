@@ -7,6 +7,7 @@ import {
 } from '@payments/domain/models/fallback/fallback-state.types';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
 import { FinishStatus } from './fallback-orchestrator.types';
 
@@ -51,6 +52,7 @@ export function setExecutingTransition(
 export function setAutoExecutingTransition(
   state: WritableSignal<FallbackState>,
   provider: PaymentProviderId,
+  originalRequest: CreatePaymentRequest,
 ): void {
   state.update((s) => ({
     ...s,
@@ -58,6 +60,7 @@ export function setAutoExecutingTransition(
     currentProvider: provider,
     pendingEvent: null,
     isAutoFallback: true,
+    originalRequest,
   }));
 }
 
