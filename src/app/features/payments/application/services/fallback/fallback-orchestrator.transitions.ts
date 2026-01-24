@@ -84,3 +84,13 @@ export function setTerminalTransition(
 export function resetTransition(state: WritableSignal<FallbackState>): void {
   state.set(INITIAL_FALLBACK_STATE);
 }
+
+export function setFailedNoRequestTransition(state: WritableSignal<FallbackState>): void {
+  state.update((s) => ({
+    ...s,
+    status: 'failed',
+    pendingEvent: null,
+    currentProvider: null,
+    isAutoFallback: false,
+  }));
+}
