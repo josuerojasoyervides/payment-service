@@ -1,7 +1,5 @@
-import { patchState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
   PaymentIntent,
   PaymentProviderId,
@@ -30,6 +28,12 @@ import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-cas
 import { StartPaymentUseCase } from '../use-cases/start-payment.use-case';
 import { normalizePaymentError } from './payment-store.errors';
 import { addToHistory } from './payment-store.history';
+import {
+  applyFailureState,
+  applyLoadingState,
+  applyReadyState,
+  applySilentFailureState,
+} from './payment-store.transitions';
 import { PaymentsStoreContext, RunOptions } from './payment-store.types';
 
 export interface PaymentsStoreDeps {
@@ -41,63 +45,52 @@ export interface PaymentsStoreDeps {
 }
 
 export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: PaymentsStoreDeps) {
-  const applyLoading = (providerId?: PaymentProviderId, request?: CreatePaymentRequest) => {
-    patchState(store, {
-      status: 'loading',
-      error: null,
-      selectedProvider: providerId ?? store.selectedProvider(),
-      currentRequest: request ?? store.currentRequest(),
-    });
-  };
-
-  const applySuccess = (intent: PaymentIntent, providerId: PaymentProviderId) => {
-    patchState(store, {
-      status: 'ready',
-      intent,
-      error: null,
-    });
-
-    addToHistory(store, intent, providerId);
-
-    // ✅ If fallback was active, notify orchestrator that we recovered.
-    if (store.fallback().status !== 'idle') {
-      deps.fallbackOrchestrator.notifySuccess();
-    }
-  };
-
-  const applySilentFailure = () => {
-    patchState(store, {
-      status: 'ready',
-      intent: null,
-      error: null,
-    });
-  };
-
+  /**
+   * Policy: do not surface UI errors while fallback is executing.
+   * - idle: ok
+   * - failed: ok (fallback attempt ended)
+   * - executing/auto_executing: NO (avoid flickering UI error mid-fallback)
+   */
   const canSurfaceErrorToUI = (fallback: FallbackState) => {
     return fallback.status === 'idle' || fallback.status === 'failed';
   };
 
-  const applyError = (error: PaymentError) => {
-    // 👇 NO toca UI mientras fallback está corriendo
-    if (!canSurfaceErrorToUI(store.fallback())) return;
+  /**
+   * Side-effect: after success, store becomes ready and we persist history.
+   * If fallback was active, notify orchestrator that we recovered.
+   */
+  const onSuccess = (providerId: PaymentProviderId) => {
+    return tap((intent: PaymentIntent) => {
+      applyReadyState(store, intent);
 
-    patchState(store, {
-      status: 'error',
-      intent: null,
-      error,
+      addToHistory(store, intent, providerId);
+
+      if (store.fallback().status !== 'idle') {
+        deps.fallbackOrchestrator.notifySuccess();
+      }
     });
   };
 
+  /**
+   * Common operator for all payment operations.
+   * - sets loading on subscribe (immediate)
+   * - normalizes errors
+   * - optionally triggers fallback (start/create only)
+   * - applies error state only when allowed by policy
+   */
   const run = <T>(options: RunOptions = {}): MonoTypeOperatorFunction<T> => {
     return pipe(
+      // ✅ loading must happen immediately (even if stream errors synchronously)
       tap({
         subscribe: () => {
-          applyLoading(options.providerId, options.request);
+          applyLoadingState(store, options.providerId, options.request);
         },
       }),
+
       catchError((rawError: unknown) => {
         const error = normalizePaymentError(rawError);
 
+        // Optional fallback hook (only for start/create)
         if (options.allowFallback && options.providerId && options.request) {
           const handled = deps.fallbackOrchestrator.reportFailure(
             options.providerId,
@@ -107,12 +100,16 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
           );
 
           if (handled) {
-            applySilentFailure();
+            applySilentFailureState(store);
             return EMPTY as Observable<T>;
           }
         }
 
-        applyError(error);
+        // 👇 do not surface errors to UI while fallback is executing
+        if (canSurfaceErrorToUI(store.fallback())) {
+          applyFailureState(store, error);
+        }
+
         return EMPTY as Observable<T>;
       }),
     );
@@ -125,19 +122,16 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
   }>(
     pipe(
       switchMap(({ request, providerId, context }) => {
-        // Detect if we are inside an auto-fallback execution
         const wasAutoFallback = store.fallback().status === 'auto_executing';
 
         return deps.startPaymentUseCase.execute(request, providerId, context, wasAutoFallback).pipe(
-          run<PaymentIntent>({
+          run({
             providerId,
             request,
             allowFallback: true,
             wasAutoFallback,
           }),
-          tap((intent) => {
-            applySuccess(intent, providerId);
-          }),
+          onSuccess(providerId),
         );
       }),
     ),
@@ -149,10 +143,9 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
   }>(
     pipe(
       switchMap(({ request, providerId }) =>
-        deps.confirmPaymentUseCase.execute(request, providerId).pipe(
-          run<PaymentIntent>({ providerId }),
-          tap((intent) => applySuccess(intent, providerId)),
-        ),
+        deps.confirmPaymentUseCase
+          .execute(request, providerId)
+          .pipe(run({ providerId }), onSuccess(providerId)),
       ),
     ),
   );
@@ -163,10 +156,9 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
   }>(
     pipe(
       switchMap(({ request, providerId }) =>
-        deps.cancelPaymentUseCase.execute(request, providerId).pipe(
-          run<PaymentIntent>({ providerId }),
-          tap((intent) => applySuccess(intent, providerId)),
-        ),
+        deps.cancelPaymentUseCase
+          .execute(request, providerId)
+          .pipe(run({ providerId }), onSuccess(providerId)),
       ),
     ),
   );
@@ -177,10 +169,9 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
   }>(
     pipe(
       switchMap(({ request, providerId }) =>
-        deps.getPaymentStatusUseCase.execute(request, providerId).pipe(
-          run<PaymentIntent>({ providerId }),
-          tap((intent) => applySuccess(intent, providerId)),
-        ),
+        deps.getPaymentStatusUseCase
+          .execute(request, providerId)
+          .pipe(run({ providerId }), onSuccess(providerId)),
       ),
     ),
   );
