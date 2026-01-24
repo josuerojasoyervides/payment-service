@@ -5,8 +5,8 @@ import {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 
-import { HISTORY_MAX_ENTRIES, PaymentHistoryEntry } from './payment.models';
-import { PaymentsStoreContext } from './payment.store.types';
+import { HISTORY_MAX_ENTRIES, PaymentHistoryEntry } from './payment-store.history.types';
+import { PaymentsStoreContext } from './payment-store.types';
 
 export function addToHistory(
   store: PaymentsStoreContext,

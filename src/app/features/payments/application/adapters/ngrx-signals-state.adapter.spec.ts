@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { INITIAL_FALLBACK_STATE } from '@payments/domain/models/fallback/fallback-state.types';
 
-import { PaymentsStore } from '../store/payment.store';
+import { PaymentsStore } from '../store/payment-store';
 import { NgRxSignalsStateAdapter } from './ngrx-signals-state.adapter';
 
 describe('NgRxSignalsStateAdapter', () => {

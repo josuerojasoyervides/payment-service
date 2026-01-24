@@ -28,9 +28,9 @@ import { CancelPaymentUseCase } from '../use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '../use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
 import { StartPaymentUseCase } from '../use-cases/start-payment.use-case';
-import { normalizePaymentError } from './payment.store.errors';
-import { addToHistory } from './payment.store.history';
-import { PaymentsStoreContext, RunOptions } from './payment.store.types';
+import { normalizePaymentError } from './payment-store.errors';
+import { addToHistory } from './payment-store.history';
+import { PaymentsStoreContext, RunOptions } from './payment-store.types';
 
 export interface PaymentsStoreDeps {
   fallbackOrchestrator: FallbackOrchestratorService;

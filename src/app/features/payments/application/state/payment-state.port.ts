@@ -14,7 +14,8 @@ import {
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
 
-import { PaymentFlowStatus, PaymentHistoryEntry, PaymentsState } from '../store/payment.models';
+import { PaymentHistoryEntry } from '../store/payment-store.history.types';
+import { PaymentFlowStatus, PaymentsState } from '../store/payment-store.state';
 
 /**
  * Función para cancelar suscripción.
