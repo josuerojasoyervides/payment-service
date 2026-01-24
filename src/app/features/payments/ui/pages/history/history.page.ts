@@ -2,13 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { PaymentHistoryEntry } from '@payments/application/store/payment-store.history.types';
 import {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import { ACTION_REQUIRED_STATUSES } from '@payments/ui/shared/ui.types';
 
-import { PaymentHistoryEntry } from '../../../application/store/payment.models';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 

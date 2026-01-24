@@ -9,6 +9,8 @@ import {
 } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
+import { PaymentHistoryEntry } from './payment-store.history.types';
+
 /**
  * Estados posibles del flujo de pago en la UI.
  */
@@ -41,19 +43,6 @@ export interface PaymentsState {
 }
 
 /**
- * Entrada del historial de pagos.
- */
-export interface PaymentHistoryEntry {
-  intentId: string;
-  provider: PaymentProviderId;
-  status: PaymentIntent['status'];
-  amount: number;
-  currency: PaymentIntent['currency'];
-  timestamp: number;
-  error?: PaymentError;
-}
-
-/**
  * Estado inicial del store de pagos.
  */
 export const initialPaymentsState: PaymentsState = {
@@ -65,8 +54,3 @@ export const initialPaymentsState: PaymentsState = {
   fallback: INITIAL_FALLBACK_STATE,
   history: [],
 };
-
-/**
- * Configuración del historial.
- */
-export const HISTORY_MAX_ENTRIES = 10;
