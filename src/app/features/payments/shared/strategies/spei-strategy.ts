@@ -1,6 +1,7 @@
 import { I18nKeys } from '@core/i18n';
-import { PaymentValidationError } from '@payments/application/errors/payment-validation.error';
+import { LoggerService } from '@core/logging';
 import { NextActionSpei } from '@payments/domain/models/payment/payment-action.types';
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import {
   PaymentIntent,
   PaymentMethodType,
@@ -40,7 +41,10 @@ export class SpeiStrategy implements PaymentStrategy {
     openpay: 'BBVA México',
   };
 
-  constructor(private readonly gateway: PaymentGatewayPort) {}
+  constructor(
+    private readonly gateway: PaymentGatewayPort,
+    private readonly logger: LoggerService,
+  ) {}
 
   /**
    * Validates the request for SPEI payments.
@@ -52,28 +56,30 @@ export class SpeiStrategy implements PaymentStrategy {
    */
   validate(req: CreatePaymentRequest): void {
     if (req.currency !== 'MXN') {
-      throw new PaymentValidationError(I18nKeys.errors.invalid_request, {
+      throw invalidRequestError(I18nKeys.errors.invalid_request, {
         reason: 'spei_only_mxn',
         currency: req.currency,
       });
     }
 
     if (req.amount < SpeiStrategy.MIN_AMOUNT_MXN) {
-      throw new PaymentValidationError(I18nKeys.errors.min_amount, {
+      throw invalidRequestError(I18nKeys.errors.min_amount, {
         amount: SpeiStrategy.MIN_AMOUNT_MXN,
         currency: req.currency,
       });
     }
 
     if (req.amount > SpeiStrategy.MAX_AMOUNT_MXN) {
-      throw new PaymentValidationError(I18nKeys.errors.max_amount, {
+      throw invalidRequestError(I18nKeys.errors.max_amount, {
         amount: SpeiStrategy.MAX_AMOUNT_MXN,
         currency: req.currency,
       });
     }
 
     if (req.method.token) {
-      console.warn('[SpeiStrategy] Token provided but will be ignored for SPEI payments');
+      this.logger.warn('Token provided but will be ignored for SPEI payments', 'SpeiStrategy', {
+        token: req.method.token,
+      });
     }
   }
 
@@ -123,14 +129,16 @@ export class SpeiStrategy implements PaymentStrategy {
 
     const { preparedRequest, metadata } = this.prepare(req, context);
 
-    console.log(`[SpeiStrategy] Starting SPEI payment:`, {
+    this.logger.warn(`[SpeiStrategy] Starting SPEI payment:`, 'SpeiStrategy', {
       orderId: req.orderId,
       amount: req.amount,
       expiresAt: metadata['expires_at'],
     });
     return this.gateway.createIntent(preparedRequest).pipe(
       tap((intent) => {
-        console.log(`[SpeiStrategy] SPEI source created: ${intent.id}`);
+        this.logger.warn(`[SpeiStrategy] SPEI source created: ${intent.id}`, 'SpeiStrategy', {
+          intentId: intent.id,
+        });
       }),
       map((intent) => this.enrichIntentWithSpeiInstructions(intent, req, metadata)),
     );

@@ -67,7 +67,10 @@ describe('I18nService', () => {
       const result = service.t('nonexistent.key');
       expect(result).toBe('nonexistent.key');
       expect(consoleSpy).toHaveBeenCalledWith(
-        '[I18n] Translation missing for key: nonexistent.key',
+        expect.stringContaining(
+          '[I18nService] [I18n] Translation missing for key: nonexistent.key',
+        ),
+        { key: 'nonexistent.key' },
       );
       consoleSpy.mockRestore();
     });
@@ -107,7 +110,8 @@ describe('I18nService', () => {
 
       expect(service.getLanguage()).toBe(currentLang);
       expect(consoleSpy).toHaveBeenCalledWith(
-        '[I18n] Language "fr" not available, keeping current language',
+        expect.stringContaining('[I18n] Language "fr" not available, keeping current language'),
+        { lang: 'fr' },
       );
       consoleSpy.mockRestore();
     });

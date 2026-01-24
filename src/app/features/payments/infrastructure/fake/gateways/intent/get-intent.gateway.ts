@@ -21,8 +21,9 @@ export abstract class FakeGetIntentGateway extends PaymentOperationPort<
   abstract override readonly providerId: PaymentProviderId;
 
   protected override executeRaw(request: GetPaymentStatusRequest): Observable<any> {
-    console.log(`[FakeGateway] Getting status for ${request.intentId}`);
-
+    this.logger.warn(`[FakeGateway] Getting status for ${request.intentId}`, this.logContext, {
+      request,
+    });
     if (this.providerId === 'paypal') {
       return simulateNetworkDelay(createFakePaypalOrderStatus(request.intentId));
     }

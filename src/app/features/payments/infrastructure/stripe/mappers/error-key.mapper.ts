@@ -18,6 +18,6 @@ export class ErrorKeyMapper {
       return translationKey;
     }
 
-    return error.message ?? I18nKeys.errors.stripe_error;
+    return I18nKeys.errors.stripe_error;
   }
 }

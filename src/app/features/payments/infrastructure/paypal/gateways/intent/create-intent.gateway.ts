@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
 import { PaymentOperationPort } from '@payments/application/ports/payment-operation.port';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
@@ -7,6 +7,7 @@ import {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { Observable } from 'rxjs';
 
 import { PAYPAL_API_BASE } from '../../constants/base-api.constant';
@@ -20,14 +21,14 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
   PaymentIntent
 > {
   private readonly API_BASE = PAYPAL_API_BASE;
-
+  private readonly idempotencyKeyFactory = inject(IdempotencyKeyFactory);
   readonly providerId: PaymentProviderId = 'paypal' as const;
   protected executeRaw(request: CreatePaymentRequest): Observable<PaypalOrderDto> {
     const paypalRequest = this.buildPaypalCreateRequest(request);
 
     return this.http.post<PaypalOrderDto>(`${this.API_BASE}/orders`, paypalRequest, {
       headers: {
-        'PayPal-Request-Id': this.generateRequestId(request.orderId),
+        'PayPal-Request-Id': this.idempotencyKeyFactory.generateForStart(this.providerId, request),
         Prefer: 'return=representation',
       },
     });
@@ -70,9 +71,5 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
         cancel_url: cancelUrl,
       },
     };
-  }
-  // TODO Implement the idempotency key and remove this method
-  private generateRequestId(orderId: string, operation = 'create'): string {
-    return `${orderId}-${operation}-${Date.now()}`;
   }
 }

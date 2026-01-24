@@ -26,10 +26,6 @@ import {
 import { PaymentGatewayPort } from './payment-gateway.port';
 import { PaymentStrategy } from './payment-strategy.port';
 
-/**
- * ! TODO This factory depends on the application layer. It should be moved to the application layer
- * ! or refactor the application ports
- * */
 export interface ProviderFactory {
   /** Unique provider identifier */
   readonly providerId: PaymentProviderId;

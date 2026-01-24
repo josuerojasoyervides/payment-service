@@ -25,8 +25,9 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
   abstract override readonly providerId: PaymentProviderId;
 
   protected override executeRaw(request: CreatePaymentRequest): Observable<any> {
-    console.log(`[FakeGateway] Creating intent for ${this.providerId}`, request);
-
+    this.logger.warn(`[FakeGateway] Creating intent for ${this.providerId}`, this.logContext, {
+      request,
+    });
     const behavior = getTokenBehavior(request.method.token);
 
     if (behavior === 'fail') {

@@ -1,3 +1,5 @@
+import { TestBed } from '@angular/core/testing';
+import { LoggerService } from '@core/logging';
 import { NextActionSpei } from '@payments/domain/models/payment/payment-action.types';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
@@ -32,29 +34,55 @@ describe('SpeiStrategy', () => {
     },
   };
 
+  const loggerMock = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  };
+
   beforeEach(() => {
     gatewayMock = {
       providerId: 'stripe',
       createIntent: vi.fn(() => of(intentResponse)),
     } as any;
 
-    strategy = new SpeiStrategy(gatewayMock as any);
+    TestBed.configureTestingModule({
+      providers: [{ provide: LoggerService, useValue: loggerMock }],
+    });
+
+    strategy = new SpeiStrategy(gatewayMock as any, loggerMock as any);
   });
 
   describe('validate()', () => {
     it('throws if currency is not MXN', () => {
       const req = { ...validReq, currency: 'USD' as const };
-      expect(() => strategy.validate(req)).toThrowError('errors.invalid_request');
+      expect(() => strategy.validate(req)).toThrowError(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: 'errors.invalid_request',
+        }),
+      );
     });
 
     it('throws if amount is below minimum', () => {
       const req = { ...validReq, amount: 0.5 };
-      expect(() => strategy.validate(req)).toThrowError('errors.min_amount');
+      expect(() => strategy.validate(req)).toThrowError(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: 'errors.min_amount',
+        }),
+      );
     });
 
     it('throws if amount exceeds maximum', () => {
       const req = { ...validReq, amount: 10_000_000 };
-      expect(() => strategy.validate(req)).toThrowError('errors.max_amount');
+      expect(() => strategy.validate(req)).toThrowError(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: 'errors.max_amount',
+        }),
+      );
     });
 
     it('accepts valid MXN amounts', () => {
@@ -67,8 +95,10 @@ describe('SpeiStrategy', () => {
       const req = { ...validReq, method: { type: 'spei' as const, token: 'tok_ignored' } };
 
       expect(() => strategy.validate(req)).not.toThrow();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Token provided but will be ignored'),
+      expect(loggerMock.warn).toHaveBeenCalledWith(
+        'Token provided but will be ignored for SPEI payments',
+        'SpeiStrategy',
+        { token: 'tok_ignored' },
       );
 
       consoleSpy.mockRestore();
@@ -115,7 +145,12 @@ describe('SpeiStrategy', () => {
       const invalidReq = { ...validReq, currency: 'USD' as const };
 
       // Error is thrown synchronously in start() before returning Observable
-      expect(() => strategy.start(invalidReq)).toThrowError('errors.invalid_request');
+      expect(() => strategy.start(invalidReq)).toThrowError(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: 'errors.invalid_request',
+        }),
+      );
 
       expect(gatewayMock.createIntent).not.toHaveBeenCalled();
     });

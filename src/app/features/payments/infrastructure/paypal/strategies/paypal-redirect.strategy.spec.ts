@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { LoggerService } from '@core/logging';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of } from 'rxjs';
 
@@ -23,6 +24,13 @@ describe('PaypalRedirectStrategy', () => {
     isTest: true,
   };
 
+  const loggerMock = {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  };
+
   beforeEach(() => {
     gatewayMock = {
       providerId: 'paypal',
@@ -38,10 +46,10 @@ describe('PaypalRedirectStrategy', () => {
     } as any;
 
     TestBed.configureTestingModule({
-      providers: [],
+      providers: [{ provide: LoggerService, useValue: loggerMock }],
     });
 
-    strategy = new PaypalRedirectStrategy(gatewayMock as any);
+    strategy = new PaypalRedirectStrategy(gatewayMock as any, loggerMock as any);
   });
 
   it('delegates to gateway.createIntent(req)', async () => {
