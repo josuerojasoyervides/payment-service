@@ -14,7 +14,7 @@ import { I18nKeys, I18nService } from '@core/i18n';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 
 import {
-  FieldConfig,
+  FieldRequirement,
   FieldRequirements,
   PaymentOptions,
 } from '../../../domain/ports/payment/payment-request-builder.port';
@@ -85,14 +85,14 @@ export class PaymentFormComponent implements OnDestroy {
   }
 
   /** Visible fields (not hidden) */
-  visibleFields(): FieldConfig[] {
+  visibleFields(): FieldRequirement[] {
     const reqs = this.requirements();
     if (!reqs) return [];
     return reqs.fields.filter((f) => f.type !== 'hidden');
   }
 
   /** Hidden fields */
-  hiddenFields(): FieldConfig[] {
+  hiddenFields(): FieldRequirement[] {
     const reqs = this.requirements();
     if (!reqs) return [];
     return reqs.fields.filter((f) => f.type === 'hidden');
@@ -121,12 +121,12 @@ export class PaymentFormComponent implements OnDestroy {
       // Estas URLs deben venir de StrategyContext (CheckoutComponent)
       // El formulario se enfoca en inputs reales del usuario (token, customerEmail, saveForFuture)
       if (
-        field.autoFill === 'currentUrl' &&
+        field.autoComplete === 'current-url' &&
         (field.name === 'returnUrl' || field.name === 'cancelUrl')
       ) {
         // Dejar vacío - estas URLs vienen del context, no del formulario
         defaultValue = '';
-      } else if (field.autoFill === 'currentUrl') {
+      } else if (field.autoComplete === 'current-url') {
         defaultValue = typeof window !== 'undefined' ? window.location.href : '';
       }
 
@@ -188,28 +188,10 @@ export class PaymentFormComponent implements OnDestroy {
     this.formValidChange.emit(this.form.valid);
   }
 
-  /** Translates a field label using i18n if needed */
-  translateFieldLabel(field: FieldConfig): string {
-    const labelKeyByName: Partial<Record<FieldConfig['name'], string>> = {
-      token: I18nKeys.ui.card_token,
-      saveForFuture: I18nKeys.ui.save_card_future,
-      customerEmail: I18nKeys.ui.email_label,
-    };
-
-    const key = labelKeyByName[field.name];
-    if (key) return this.i18n.t(key);
-
-    // fallback: si provider ya manda label, úsalo
-    return field.label;
-  }
-
   /** Translates the method description */
-  translateDescription(description: string | undefined): string {
-    return description ?? '';
-  }
-
-  translateInstructions(instructions: string | undefined): string {
-    return instructions ?? '';
+  translateText(key?: string, params?: Record<string, string | number>): string {
+    if (!key) return '';
+    return this.i18n.t(key, params);
   }
 
   readonly fieldRequiredText = computed(() => this.i18n.t(I18nKeys.ui.field_required));

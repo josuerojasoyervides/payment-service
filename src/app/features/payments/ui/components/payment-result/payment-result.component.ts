@@ -1,10 +1,11 @@
 import { CommonModule, CurrencyPipe, JsonPipe } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { hasStringProp } from '@payments/ui/shared/has-string-prop';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
-import { getStatusText, PaymentIntent, STATUS_BADGE_MAP } from '../../shared/ui.types';
+import { getStatusText, STATUS_BADGE_MAP } from '../../shared/ui.types';
 
 /**
  * Component that displays payment result.

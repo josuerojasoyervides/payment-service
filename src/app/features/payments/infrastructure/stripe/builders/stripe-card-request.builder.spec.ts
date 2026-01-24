@@ -49,52 +49,102 @@ describe('StripeCardRequestBuilder', () => {
   });
 
   describe('validation', () => {
-    it('throws when orderId is missing', () => {
-      expect(() =>
-        builder.withAmount(100, 'MXN').withOptions({ token: 'tok_test1234567890abc' }).build(),
-      ).toThrow(/orderId is required/);
+    it('throws PaymentError when orderId is missing', () => {
+      try {
+        builder.withAmount(100, 'MXN').build();
+        throw new Error('Expected builder.build() to throw');
+      } catch (e) {
+        expect(e).toMatchObject({
+          code: 'invalid_request',
+          messageKey: 'errors.order_id_required',
+          params: { field: 'orderId' },
+        });
+      }
     });
 
-    it('throws when amount is missing', () => {
-      expect(() =>
-        builder.forOrder('order_123').withOptions({ token: 'tok_test1234567890abc' }).build(),
-      ).toThrow(/amount must be greater than 0/);
+    it('throws PaymentError when amount is missing or invalid', () => {
+      try {
+        builder
+          .forOrder('order_123')
+          .withAmount(0 as any, 'MXN')
+          .build();
+        throw new Error('Expected builder.build() to throw');
+      } catch (e) {
+        expect(e).toMatchObject({
+          code: 'invalid_request',
+          messageKey: 'errors.amount_invalid',
+          params: { field: 'amount' },
+        });
+      }
     });
 
-    it('throws when amount is zero', () => {
-      expect(() =>
+    it('throws PaymentError when amount is zero', () => {
+      try {
         builder
           .forOrder('order_123')
           .withAmount(0, 'MXN')
           .withOptions({ token: 'tok_test1234567890abc' })
-          .build(),
-      ).toThrow(/amount must be greater than 0/);
+          .build();
+
+        throw new Error('Expected builder.build() to throw');
+      } catch (e) {
+        expect(e).toMatchObject({
+          code: 'invalid_request',
+          messageKey: 'errors.amount_invalid',
+          params: { field: 'amount', min: 1 },
+          raw: { amount: 0 },
+        });
+      }
     });
 
-    it('throws when amount is negative', () => {
-      expect(() =>
+    it('throws PaymentError when amount is negative', () => {
+      try {
         builder
           .forOrder('order_123')
           .withAmount(-100, 'MXN')
           .withOptions({ token: 'tok_test1234567890abc' })
-          .build(),
-      ).toThrow(/amount must be greater than 0/);
+          .build();
+
+        throw new Error('Expected builder.build() to throw');
+      } catch (e) {
+        expect(e).toMatchObject({
+          code: 'invalid_request',
+          messageKey: 'errors.amount_invalid',
+          params: { field: 'amount', min: 1 },
+          raw: { amount: -100 },
+        });
+      }
     });
 
-    it('throws when currency is missing', () => {
-      expect(() =>
+    it('throws PaymentError when currency is missing', () => {
+      try {
         builder
           .forOrder('order_123')
           .withAmount(100, undefined as any)
           .withOptions({ token: 'tok_test1234567890abc' })
-          .build(),
-      ).toThrow(/currency is required/);
+          .build();
+
+        throw new Error('Expected builder.build() to throw');
+      } catch (e) {
+        expect(e).toMatchObject({
+          code: 'invalid_request',
+          messageKey: 'errors.currency_required',
+          params: { field: 'currency' },
+        });
+      }
     });
 
-    it('throws when token is missing (Stripe Card requires token)', () => {
-      expect(() => builder.forOrder('order_123').withAmount(100, 'MXN').build()).toThrow(
-        /require a token/,
-      );
+    it('throws PaymentError when token is missing (Stripe Card requires token)', () => {
+      try {
+        builder.forOrder('order_123').withAmount(100, 'MXN').build();
+        throw new Error('Expected builder.build() to throw');
+      } catch (e) {
+        expect(e).toMatchObject({
+          code: 'invalid_request',
+          messageKey: 'errors.card_token_required',
+          params: { field: 'token' },
+        });
+      }
     });
   });
 

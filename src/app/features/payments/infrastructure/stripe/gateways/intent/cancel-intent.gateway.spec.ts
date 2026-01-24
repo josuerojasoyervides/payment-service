@@ -1,7 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
@@ -11,10 +10,6 @@ import { StripeCancelIntentGateway } from './cancel-intent.gateway';
 describe('StripeCancelIntentGateway', () => {
   let gateway: StripeCancelIntentGateway;
   let httpMock: HttpTestingController;
-
-  const i18nMock = {
-    t: vi.fn().mockReturnValue('Error del proveedor de pago'),
-  };
 
   const loggerMock = {
     error: vi.fn(),
@@ -29,7 +24,6 @@ describe('StripeCancelIntentGateway', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         StripeCancelIntentGateway,
-        { provide: I18nService, useValue: i18nMock },
         { provide: LoggerService, useValue: loggerMock },
       ],
     });

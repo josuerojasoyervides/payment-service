@@ -1,8 +1,12 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
+import {
+  CurrencyCode,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
 
-import { CurrencyCode, PaymentButtonState, PaymentProviderId } from '../../shared/ui.types';
+import { PaymentButtonState } from '../../shared/ui.types';
 
 /**
  * Payment button component with visual states.

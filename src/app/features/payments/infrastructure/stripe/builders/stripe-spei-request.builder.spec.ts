@@ -1,5 +1,21 @@
 import { StripeSpeiRequestBuilder } from './stripe-spei-request.builder';
 
+export function expectSyncPaymentError(fn: () => unknown, expected: any) {
+  try {
+    fn();
+    expect.fail('Expected to throw PaymentError');
+  } catch (e) {
+    // asegura shape mínimo (evita que pase un TypeError)
+    expect(e).toMatchObject({
+      code: expect.any(String),
+      messageKey: expect.any(String),
+      params: expect.any(Object),
+    });
+
+    expect(e).toMatchObject(expected);
+  }
+}
+
 describe('StripeSpeiRequestBuilder', () => {
   let builder: StripeSpeiRequestBuilder;
 
@@ -49,50 +65,87 @@ describe('StripeSpeiRequestBuilder', () => {
   });
 
   describe('validation', () => {
-    it('throws when orderId is missing', () => {
-      expect(() =>
-        builder.withAmount(100, 'MXN').withOptions({ customerEmail: 'test@example.com' }).build(),
-      ).toThrow(/orderId is required/);
-    });
-
-    it('throws when amount is missing or invalid', () => {
-      expect(() =>
-        builder.forOrder('order_123').withOptions({ customerEmail: 'test@example.com' }).build(),
-      ).toThrow(/amount must be greater than 0/);
-
-      expect(() =>
-        builder
-          .forOrder('order_123')
-          .withAmount(0, 'MXN')
-          .withOptions({ customerEmail: 'test@example.com' })
-          .build(),
-      ).toThrow(/amount must be greater than 0/);
-    });
-
-    it('throws when currency is missing', () => {
-      expect(() =>
-        builder
-          .forOrder('order_123')
-          .withAmount(100, undefined as any)
-          .withOptions({ customerEmail: 'test@example.com' })
-          .build(),
-      ).toThrow(/currency is required/);
-    });
-
-    it('throws when customerEmail is missing (SPEI requires email)', () => {
-      expect(() => builder.forOrder('order_123').withAmount(100, 'MXN').build()).toThrow(
-        /require customerEmail/,
+    it('throws PaymentError when orderId is missing', () => {
+      expectSyncPaymentError(
+        () =>
+          builder.withAmount(100, 'MXN').withOptions({ customerEmail: 'test@example.com' }).build(),
+        {
+          code: 'invalid_request',
+          messageKey: 'errors.order_id_required',
+          params: { field: 'orderId' },
+        },
       );
     });
 
-    it('throws when customerEmail is invalid format', () => {
-      expect(() =>
-        builder
-          .forOrder('order_123')
-          .withAmount(100, 'MXN')
-          .withOptions({ customerEmail: 'invalid-email' })
-          .build(),
-      ).toThrow(/valid email address/);
+    it('throws PaymentError when amount is missing or invalid', () => {
+      // amount missing (undefined)
+      expectSyncPaymentError(
+        () =>
+          builder.forOrder('order_123').withOptions({ customerEmail: 'test@example.com' }).build(),
+        {
+          code: 'invalid_request',
+          messageKey: 'errors.amount_invalid',
+          params: { field: 'amount', min: 1 },
+          raw: { amount: undefined },
+        },
+      );
+
+      // amount = 0
+      expectSyncPaymentError(
+        () =>
+          builder
+            .forOrder('order_123')
+            .withAmount(0, 'MXN')
+            .withOptions({ customerEmail: 'test@example.com' })
+            .build(),
+        {
+          code: 'invalid_request',
+          messageKey: 'errors.amount_invalid',
+          params: { field: 'amount', min: 1 },
+          raw: { amount: 0 },
+        },
+      );
+    });
+
+    it('throws PaymentError when currency is missing', () => {
+      expectSyncPaymentError(
+        () =>
+          builder
+            .forOrder('order_123')
+            .withAmount(100, undefined as any)
+            .withOptions({ customerEmail: 'test@example.com' })
+            .build(),
+        {
+          code: 'invalid_request',
+          messageKey: 'errors.currency_required',
+          params: { field: 'currency' },
+        },
+      );
+    });
+
+    it('throws PaymentError when customerEmail is missing (SPEI requires email)', () => {
+      expectSyncPaymentError(() => builder.forOrder('order_123').withAmount(100, 'MXN').build(), {
+        code: 'invalid_request',
+        messageKey: 'errors.customer_email_required',
+        params: { field: 'customerEmail' },
+      });
+    });
+
+    it('throws PaymentError when customerEmail is invalid format', () => {
+      expectSyncPaymentError(
+        () =>
+          builder
+            .forOrder('order_123')
+            .withAmount(100, 'MXN')
+            .withOptions({ customerEmail: 'invalid-email' })
+            .build(),
+        {
+          code: 'invalid_request',
+          messageKey: 'errors.customer_email_invalid',
+          params: { field: 'customerEmail' },
+          raw: { customerEmail: 'invalid-email' },
+        },
+      );
     });
   });
 

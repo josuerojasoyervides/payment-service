@@ -1,7 +1,9 @@
 import { inject, Injectable } from '@angular/core';
-import { I18nKeys, I18nService } from '@core/i18n';
-import { PaymentGateway } from '@payments/application/ports/payment-gateway.port';
+import { I18nKeys } from '@core/i18n';
+import { LoggerService } from '@core/logging';
+import { PaymentGatewayPort } from '@payments/application/ports/payment-gateway.port';
 import { ProviderFactory } from '@payments/application/ports/provider-factory.port';
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
 import { PaymentStrategy } from '../../../application/ports/payment-strategy.port';
@@ -10,7 +12,7 @@ import {
   PaymentRequestBuilder,
 } from '../../../domain/ports/payment/payment-request-builder.port';
 import { PaypalRedirectRequestBuilder } from '../builders/paypal-redirect-request.builder';
-import { PaypalPaymentGateway } from '../gateways/paypal-payment.gateway';
+import { PaypalIntentFacade } from '../facades/intent.facade';
 import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
 
 /**
@@ -29,9 +31,8 @@ import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
 export class PaypalProviderFactory implements ProviderFactory {
   readonly providerId = 'paypal' as const;
 
-  private readonly gateway = inject(PaypalPaymentGateway);
-  private readonly i18n = inject(I18nService);
-
+  private readonly gateway = inject(PaypalIntentFacade);
+  private readonly logger = inject(LoggerService);
   /**
    * Strategy cache.
    */
@@ -42,7 +43,7 @@ export class PaypalProviderFactory implements ProviderFactory {
    */
   static readonly SUPPORTED_METHODS: PaymentMethodType[] = ['card'];
 
-  getGateway(): PaymentGateway {
+  getGateway(): PaymentGatewayPort {
     return this.gateway;
   }
 
@@ -93,24 +94,22 @@ export class PaypalProviderFactory implements ProviderFactory {
     this.assertSupported(type);
 
     return {
-      description: I18nKeys.ui.pay_with_paypal,
-      instructions: I18nKeys.ui.paypal_redirect_secure_message,
+      descriptionKey: I18nKeys.ui.pay_with_paypal,
+      instructionsKey: I18nKeys.ui.paypal_redirect_secure_message,
       fields: [
         {
           name: 'returnUrl',
-          label: I18nKeys.ui.return_url_label,
+          labelKey: I18nKeys.ui.return_url_label,
           required: true,
           type: 'hidden',
-          autoFill: 'currentUrl',
-          placeholder: '',
+          autoComplete: 'current-url',
         },
         {
           name: 'cancelUrl',
-          label: I18nKeys.ui.cancel_url_label,
+          labelKey: I18nKeys.ui.cancel_url_label,
           required: false,
           type: 'hidden',
-          autoFill: 'currentUrl',
-          placeholder: '',
+          autoComplete: 'current-url',
         },
       ],
     };
@@ -122,20 +121,22 @@ export class PaypalProviderFactory implements ProviderFactory {
 
   private assertSupported(type: PaymentMethodType): void {
     if (!this.supportsMethod(type)) {
-      throw new Error(
-        `Payment method "${type}" is not supported by PayPal. ` +
-          `PayPal processes cards through its checkout flow. ` +
-          `Supported methods: ${PaypalProviderFactory.SUPPORTED_METHODS.join(', ')}`,
-      );
+      throw invalidRequestError(I18nKeys.errors.invalid_request, {
+        reason: 'unsupported_payment_method',
+        supportedMethods: PaypalProviderFactory.SUPPORTED_METHODS.join(', '),
+      });
     }
   }
 
   private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
     switch (type) {
       case 'card':
-        return new PaypalRedirectStrategy(this.gateway);
+        return new PaypalRedirectStrategy(this.gateway, this.logger);
       default:
-        throw new Error(`Unexpected payment method type: ${type}`);
+        throw invalidRequestError(I18nKeys.errors.invalid_request, {
+          reason: 'unexpected_payment_method_type',
+          type,
+        });
     }
   }
 }

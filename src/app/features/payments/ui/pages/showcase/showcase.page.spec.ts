@@ -67,7 +67,7 @@ describe('ShowcaseComponent', () => {
 
     it('debe tener sampleError configurado', () => {
       expect(component.sampleError.code).toBe('card_declined');
-      expect(component.sampleError.messageKey).toContain('rechazada');
+      expect(component.sampleError.messageKey).toContain('errors.card_declined');
     });
 
     it('debe tener speiInstructions configurado', () => {
@@ -94,38 +94,53 @@ describe('ShowcaseComponent', () => {
 
   describe('Handlers', () => {
     it('debe manejar onPayClick', () => {
-      const consoleSpy = vi.spyOn(console, 'log');
+      const consoleSpy = vi.spyOn(console, 'warn');
       component.onPayClick();
-      expect(consoleSpy).toHaveBeenCalledWith('[Showcase] Pay button clicked');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[ShowcaseComponent] Pay button clicked'),
+      );
       consoleSpy.mockRestore();
     });
 
     it('debe manejar onRetry', () => {
-      const consoleSpy = vi.spyOn(console, 'log');
+      const consoleSpy = vi.spyOn(console, 'warn');
       component.onRetry();
-      expect(consoleSpy).toHaveBeenCalledWith('[Showcase] Retry clicked');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[ShowcaseComponent] Retry button clicked'),
+      );
       consoleSpy.mockRestore();
     });
 
     it('debe manejar onNewPayment', () => {
-      const consoleSpy = vi.spyOn(console, 'log');
+      const consoleSpy = vi.spyOn(console, 'warn');
       component.onNewPayment();
-      expect(consoleSpy).toHaveBeenCalledWith('[Showcase] New payment clicked');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[ShowcaseComponent] New payment button clicked'),
+      );
       consoleSpy.mockRestore();
     });
 
     it('debe manejar onIntentAction con parámetros', () => {
-      const consoleSpy = vi.spyOn(console, 'log');
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
       component.onIntentAction('confirm', 'pi_test_123');
-      expect(consoleSpy).toHaveBeenCalledWith('[Showcase] Intent action: confirm, ID: pi_test_123');
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[ShowcaseComponent] Intent action: confirm, ID: pi_test_123'),
+        { action: 'confirm', intentId: 'pi_test_123' },
+      );
+
       consoleSpy.mockRestore();
     });
 
     it('debe manejar onFallbackConfirm y cerrar modal', () => {
       component.fallbackModal.open = true;
-      const consoleSpy = vi.spyOn(console, 'log');
+      const consoleSpy = vi.spyOn(console, 'warn');
       component.onFallbackConfirm('paypal');
-      expect(consoleSpy).toHaveBeenCalledWith('[Showcase] Fallback confirmed with: paypal');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[ShowcaseComponent] Fallback confirmed with: paypal'),
+        { provider: 'paypal' },
+      );
       expect(component.fallbackModal.open).toBe(false);
       consoleSpy.mockRestore();
     });

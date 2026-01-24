@@ -1,10 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { I18nService } from '@core/i18n';
 import { firstValueFrom, of } from 'rxjs';
 
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
-import { IntentFacade } from '../gateways/intent/intent.facade';
+import { StripeIntentFacade } from '../facades/intent.facade';
 import { StripeProviderFactory } from './stripe-provider.factory';
 
 describe('StripeProviderFactory', () => {
@@ -13,23 +12,11 @@ describe('StripeProviderFactory', () => {
   const gatewayStub = {
     providerId: 'stripe',
     createIntent: vi.fn(),
-  } satisfies Partial<IntentFacade>;
+  } satisfies Partial<StripeIntentFacade>;
 
   beforeEach(() => {
-    const i18nMock = {
-      t: vi.fn((key: string) => key),
-      setLanguage: vi.fn(),
-      getLanguage: vi.fn(() => 'es'),
-      has: vi.fn(() => true),
-      currentLang: { asReadonly: vi.fn() } as any,
-    } as any;
-
     TestBed.configureTestingModule({
-      providers: [
-        StripeProviderFactory,
-        { provide: IntentFacade, useValue: gatewayStub },
-        { provide: I18nService, useValue: i18nMock },
-      ],
+      providers: [StripeProviderFactory, { provide: StripeIntentFacade, useValue: gatewayStub }],
     });
 
     factory = TestBed.inject(StripeProviderFactory);
@@ -49,7 +36,14 @@ describe('StripeProviderFactory', () => {
 
   it('throws for unsupported payment method type', () => {
     expect(() => factory.createStrategy('unsupported' as any)).toThrow(
-      /Payment method "unsupported" is not supported by Stripe/,
+      expect.objectContaining({
+        code: 'invalid_request',
+        messageKey: 'errors.invalid_request',
+        params: {
+          reason: 'unsupported_payment_method',
+          supportedMethods: 'card, spei',
+        },
+      }),
     );
   });
 
@@ -84,8 +78,8 @@ describe('StripeProviderFactory', () => {
 
       expect(requirements.fields).toBeDefined();
       expect(requirements.fields.length).toBeGreaterThan(0);
-      expect(requirements.description).toBeDefined();
-      expect(requirements.instructions).toBeDefined();
+      expect(requirements.descriptionKey).toBeDefined();
+      expect(requirements.instructionsKey).toBeDefined();
 
       const tokenField = requirements.fields.find((f) => f.name === 'token');
       expect(tokenField).toBeDefined();
@@ -98,8 +92,8 @@ describe('StripeProviderFactory', () => {
 
       expect(requirements.fields).toBeDefined();
       expect(requirements.fields.length).toBeGreaterThan(0);
-      expect(requirements.description).toBeDefined();
-      expect(requirements.instructions).toBeDefined();
+      expect(requirements.descriptionKey).toBeDefined();
+      expect(requirements.instructionsKey).toBeDefined();
 
       const emailField = requirements.fields.find((f) => f.name === 'customerEmail');
       expect(emailField).toBeDefined();
@@ -109,7 +103,14 @@ describe('StripeProviderFactory', () => {
 
     it('throws for unsupported payment method type', () => {
       expect(() => factory.getFieldRequirements('unsupported' as any)).toThrow(
-        /Payment method "unsupported" is not supported by Stripe/,
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: 'errors.invalid_request',
+          params: {
+            reason: 'unsupported_payment_method',
+            supportedMethods: 'card, spei',
+          },
+        }),
       );
     });
   });

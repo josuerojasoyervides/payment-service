@@ -9,6 +9,7 @@ import {
 } from '@payments/domain/models/payment/payment-intent.types';
 import {
   FieldRequirements,
+  FieldType,
   PaymentOptions,
 } from '@payments/domain/ports/payment/payment-request-builder.port';
 /**
@@ -241,17 +242,31 @@ export const ACTION_REQUIRED_STATUSES = new Set<PaymentIntent['status']>([
 ]);
 
 /**
- * Re-exportar tipos del dominio para conveniencia.
+ * Payment form field configuration.
  */
+//TODO: Move this interface to the ui layer.
+export interface FieldConfig {
+  /** Field name (key in PaymentOptions) */
+  name: keyof PaymentOptions;
 
-// TODO! Get rid of this and use the types from the domain ports.
-export type {
-  CurrencyCode,
-  FallbackAvailableEvent,
-  FieldRequirements,
-  PaymentError,
-  PaymentIntent,
-  PaymentMethodType,
-  PaymentOptions,
-  PaymentProviderId,
-};
+  /** Label to display in UI */
+  label: string;
+
+  /** Whether required for this provider/method */
+  required: boolean;
+
+  /** Input type */
+  type: FieldType;
+
+  /** Input placeholder */
+  placeholder?: string;
+
+  /** Default value */
+  defaultValue?: string;
+
+  /**
+   * If 'hidden', UI must provide it but not display it.
+   * E.g., returnUrl can be the current URL
+   */
+  autoFill?: 'currentUrl' | 'none';
+}

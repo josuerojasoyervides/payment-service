@@ -1,153 +1,212 @@
-# Stabilization Plan — v2 (post refactor + antes de XState)
+# Stabilization Plan — v3 (pre‑XState)
 
-> Objetivo: **estabilizar** lo que ya existe, cerrar inconsistencias y dejar el terreno listo para migrar el flow complejo a XState **sin reescrituras**.
+> **Última actualización:** 2026-01-23  
+> Branch de referencia: `origin/refactor/stabilization-plan-v3`
+
+Objetivo: **estabilizar y cerrar ciclos** en lo que ya existe para que:
+
+- el módulo sea consistente,
+- sea fácil de refactorizar,
+- y quede listo para migrar flow complejo a XState **sin reescrituras**.
 
 ---
 
-## 0) Estado actual (snapshot real)
+## 0) Snapshot real (estado actual del repo)
 
-✅ Ya existen piezas clave que valen oro y NO hay que romper:
+✅ Ya existen piezas clave que NO se deben romper:
 
 - `ProviderFactoryRegistry` como única entrada a providers
-- `ProviderFactory.getGateway()` ya está implementado
+- Factories registradas vía token multi (`PAYMENT_PROVIDER_FACTORIES`)
 - Use cases separados por operación (start/confirm/cancel/get)
-- `PaymentsStore` reducido (rxMethods cortos)
-- `PaymentStatePort` + `PAYMENT_STATE` token (UI desacoplada del store)
+- Store con rxMethods cortos (sin mega‑pipes)
+- UI desacoplada usando `PAYMENT_STATE` token
 - `FallbackOrchestratorService` con estado + eventos (manual/auto)
-- Infra Stripe basada en “operations + facade” (IntentFacade)
-- Infra PayPal operando como “legacy gateway” (BasePaymentGateway)
+- Contrato base de error: `PaymentError` con `messageKey + params? + raw`
 
-⚠️ Pero hay inconsistencias que hoy son deuda encubierta:
+🟡 Inconsistencias que aún existen (y bloquean cierre):
 
-- Documentación vs código (reglas de Domain, error model, i18n)
-- Domain usa `Observable` + barrels (`index.ts`) aunque las reglas lo prohíben
-- `PaymentError` en código no tiene `messageKey/providerId/stacks` como la regla sugiere
-- UI traduce strings “ya traducidas” (doble i18n)
-- Fallback config tiene trigger codes que no existen en `PaymentErrorCode`
-- Confirm/Cancel/Get reportan failure con un request “dummy” (señal de API incorrecta)
-- StartPaymentUseCase puede devolver `EMPTY` → store se queda en `loading` mientras fallback decide (funciona, pero es frágil)
+- `messageKey` no está 100% blindado como “solo key i18n” (hay leaks posibles)
+- compatibilidad legacy en UI/store para errores viejos
+- providers no están estandarizados (Stripe “operations”, PayPal legacy)
+- docs desactualizados vs código actual
 
 ---
 
-## 1) Qué ya se puede marcar como HECHO ✅
+## 1) Checklist de estabilización (con estado)
 
 ### 1.1 Boundaries base (capas)
 
-- [x] Carpeta por capa: `domain / application / infrastructure / shared / ui`
-- [x] UI depende de `PAYMENT_STATE` + `ProviderFactoryRegistry` (no usa infraestructura directo)
-- [x] Use cases viven en `application/use-cases`
+- ✅ Carpeta por capa: `domain / application / infrastructure / shared / ui`
+- ✅ Domain TS puro (sin Angular/RxJS/HTTP/i18n keys)
+- ✅ UI no importa infraestructura directo
+
+**Riesgo:** `shared/` es mezcla → mantenerlo controlado (no dejar que se convierta en basurero).
+
+---
 
 ### 1.2 Registry + factories
 
-- [x] Registry central (`ProviderFactoryRegistry`)
-- [x] Factories registradas vía token multi (`PAYMENT_PROVIDER_FACTORIES`)
-- [x] `getGateway()` existe y se usa en confirm/cancel/get
-
-### 1.3 Fallback
-
-- [x] `FallbackOrchestratorService` controla estado (`FallbackState`) y eventos
-- [x] Store refleja fallback state y expone `executeFallback/cancelFallback`
-- [x] Soporta “manual vs auto” (aunque aún hay aristas)
+- ✅ Registry central (`ProviderFactoryRegistry`)
+- ✅ Factories registradas vía token multi
+- ✅ `getGateway()` existe y se usa en ejecución de operaciones
 
 ---
 
-## 2) Tareas de estabilización pendientes (sin XState todavía)
+### 1.3 Store & flow
 
-> Aquí no tocamos arquitectura mayor: sólo arreglamos inconsistencias para que la migración sea limpia.
-
-### 2.1 Alinear “source of truth”: reglas vs implementación
-
-- [ ] Decidir explícitamente qué significa `domain` en este repo:
-  - Opción A: “Domain puro” (sin RxJS) ⇒ mover ports a `application/ports`
-  - Opción B (más realista hoy): “Domain = contratos del módulo” ⇒ permitir RxJS en ports y ajustar `payments-architecture-rules.md`
-- [ ] Resolver barrels:
-  - Si se mantienen, documentarlo como excepción intencional.
-  - Si se eliminan, hacerlo incremental (sin refactor masivo).
-
-**Criterio de éxito:** documento y árbol del proyecto ya no se contradicen.
-
-### 2.2 `PaymentError`: una sola semántica, sin ambigüedad
-
-- [ ] Elegir “message vs messageKey”
-  - Recomendación: `messageKey` + `params` (y UI traduce)
-  - Alternativa: `message` ya listo (y UI no traduce)
-- [ ] Alinear `DEFAULT_FALLBACK_CONFIG.triggerErrorCodes` con `PaymentErrorCode`
-- [ ] Centralizar normalización en 1 lugar (helper) para evitar isPaymentError ad-hoc
-
-**Criterio de éxito:** ningún layer “inventa” errores; todos hablan el mismo idioma.
-
-### 2.3 Unificar patrón de gateways (Stripe vs PayPal)
-
-- [ ] Definir qué patrón queda como estándar:
-  - “Operations + Facade” (Stripe) **vs**
-  - “BasePaymentGateway” (PayPal)
-- [ ] No reescribir todo: solo elegir el estándar y adaptar el otro provider cuando toque.
-
-**Criterio de éxito:** agregar un provider nuevo no implica decidir arquitectura cada vez.
-
-### 2.4 Clarificar responsabilidades de i18n
-
-- [ ] Si `FieldRequirements` ya regresa texto traducido, eliminar traducción duplicada en UI.
-- [ ] Si `FieldRequirements` debe devolver keys, cambiar factories para exponer keys y UI traducir.
-
-**Criterio de éxito:** una sola capa traduce.
-
-### 2.5 API del fallback: eliminar “request dummy”
-
-- [ ] Ajustar el contrato de `FallbackOrchestratorService.reportFailure(...)` para que soporte operaciones no-start:
-  - Opción: `reportFailure({ providerId, error, request?: CreatePaymentRequest })`
-  - O “reportPaymentFailure” vs “reportGatewayFailure”
-- [ ] Confirm/Cancel/Get no deben inventar un request fake.
-
-**Criterio de éxito:** la API expresa la intención real.
-
-### 2.6 “Loading infinito” controlado
-
-- [ ] Definir estado UI explícito cuando hay fallback pending
-  - hoy: status queda `loading` y fallback.status=`pending`
-  - mejorar: derivar un “uiStatus” o mínimo, ajustar UI para no bloquear.
-- [ ] Asegurar que `startPayment` siempre termina en algún estado observable.
-
-**Criterio de éxito:** no hay pantallas colgadas sin explicación.
+- ✅ UI “consume state” (no hace orquestación)
+- ✅ Flow stateful implementado (intent/confirm/cancel/get)
+- 🟡 Store sin estados muertos
+  - hoy se ve estable, pero falta “hard proof” vía tests + cleanup final
 
 ---
 
-## 3) Plan incremental para introducir XState (después de 2.x)
+### 1.4 Fallback
 
-### 3.1 Objetivo mínimo del primer release con XState
-
-No es “migrar todo”; es:
-
-- Tener **una máquina** que modele el lifecycle real.
-- Que el store sea una **proyección** (snapshot → signals).
-- Que use cases sigan siendo el “motor de efectos”.
-
-### 3.2 Orden recomendado (corto y seguro)
-
-- [ ] Crear `PaymentFlowMachine` con estados mínimos:
-  - `idle → starting → succeeded/failed`
-- [ ] Conectar únicamente `startPayment` como primer caso
-- [ ] Exponer snapshot a través del store (sin romper UI)
-- [ ] Expandir estados:
-  - `processing / requires_action / awaiting_confirmation`
-- [ ] Integrar fallback como transiciones explícitas (manual/auto)
-- [ ] Agregar cancel/timeout/expire/retry
-
-### 3.3 Qué NO debe pasar en esta fase
-
-- ❌ Reemplazar NgRx Signals por otra cosa
-- ❌ Meter datos pesados al context de la máquina “porque sí”
-- ❌ Convertir el proyecto en un framework dentro de otro
+- ✅ Orchestrator funciona (manual/auto)
+- ✅ Fallback se decide en Store (no en UI/infra)
+- ✅ No deja UI colgada (handled → transición silenciosa)
+- ✅ Fallback aplicado solo a `startPayment/createIntent` (por diseño actual)
 
 ---
 
-## 4) Checklist final de estabilización (antes de “feature work”)
+### 1.5 I18n & errores (cierre de ciclo)
 
-- [ ] Tests verdes y con nombres claros (unit + integración donde aplique)
-- [ ] 1 semántica de error, 1 lugar de normalización
-- [ ] 1 patrón estándar de gateway
-- [ ] Fallback sin request dummy y sin loops
-- [ ] Docs alineadas con código (sin contradicciones)
-- [ ] Machine planificada y lista para entrar incrementalmente
+- ✅ UI-only translation (solo UI usa `i18n.t(...)`)
+- 🟡 PaymentError final (messageKey+params)
+  - contrato ya existe, pero hay compatibilidad legacy y riesgo de leaks
+- ❌ Enforcement automático aún pendiente (lint/test)
 
 ---
+
+### 1.6 Providers (consistencia)
+
+- ✅ Stripe sigue patrón “operations” por intent
+- ❌ PayPal sigue legacy (requiere refactor)
+- 🟡 Mock/Fake existe pero falta garantizar que cumpla el mismo contrato
+
+---
+
+### 1.7 Tests base
+
+- ✅ Tests principales pasan
+- 🟡 Falta endurecer tests para evitar regresiones del contrato de error/i18n
+
+---
+
+## 2) Bloqueadores actuales (P0)
+
+### P0.1 `messageKey` debe ser SIEMPRE key i18n
+
+**Regla:** no se permite texto real como `messageKey`.
+
+**Acciones**
+
+- Asegurar que cualquier mapper/error handler retorne **siempre** `I18nKeys.*`
+- Eliminar cualquier fallback tipo “si no hay key usa error.message”
+
+---
+
+### P0.2 Matar compatibilidad legacy de errores
+
+Mientras exista soporte legacy, el ciclo i18n/errores nunca se cierra.
+
+**Acciones**
+
+- UI: eliminar render condicional que use `message` legacy
+- Store: eliminar normalización que acepte `message` legacy
+- Specs: actualizar fixtures a `messageKey + params`
+
+---
+
+### P0.3 Docs alineados con repo
+
+Los docs deben describir el código real.
+
+**Acciones**
+
+- actualizar `architecture-rules.md`
+- actualizar `stabilization-plan.md`
+- actualizar `goals.md`
+
+---
+
+## 3) Pendientes importantes (P1)
+
+### P1.1 Refactor de PayPal al estándar de Stripe
+
+Objetivo: PayPal debe tener “operations” por operación:
+
+- createIntent
+- confirmIntent
+- cancelIntent
+- getIntent
+
+Y todos deben:
+
+- normalizar `PaymentError`
+- retornar domain models
+- no tocar fallback ni UI
+
+---
+
+### P1.2 Unificar API legacy vs refactor de gateway
+
+Hoy coexisten:
+
+- `PaymentGateway` (legacy con métodos)
+- `PaymentGatewayRefactor<TRequest,TResponse>` (execute genérico)
+- `PaymentGatewayPort<TRequest,TDto,TResponse>` (base)
+
+Objetivo de estabilización:
+
+- documentar claramente qué es legacy
+- definir plan de migración (sin romper use cases)
+
+---
+
+## 4) Migración a XState (P1/P2)
+
+Scope de migración (acordado):
+
+- flow de intent/confirm
+- fallback
+- retries/resiliencia
+
+NgRx Signals se queda para:
+
+- historial
+- estado actual
+- derived state para UI
+
+---
+
+## 5) Mini plan incremental (3 ramas sugeridas)
+
+### Rama 1 — Cerrar contrato de error (P0)
+
+- blindar `messageKey` como i18n key
+- eliminar soporte legacy de `message`
+
+### Rama 2 — Providers consistentes (P1)
+
+- refactor PayPal → operations
+- alinear contratos con Stripe
+
+### Rama 3 — XState kickoff (P1/P2)
+
+- crear machine base del flow
+- integrar con use cases/store sin reescribir UI
+
+---
+
+## 6) Definition of Done de esta estabilización
+
+✅ Se considera “cerrado” cuando:
+
+- `PaymentError` solo usa `messageKey + params? + raw`
+- `messageKey` es siempre key i18n
+- `i18n.t(...)` solo existe en UI
+- PayPal y Stripe comparten patrón de gateway/operations
+- tests mínimos por gateway existen y pasan
+- docs reflejan el estado real del repo

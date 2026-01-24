@@ -3,6 +3,7 @@ import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { LoggerService } from '@core/logging';
 import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
@@ -48,6 +49,7 @@ import { OrderItem, PaymentButtonState } from '../../shared/ui.types';
 })
 export class ShowcaseComponent {
   private readonly i18n = inject(I18nService);
+  private readonly logger = inject(LoggerService);
 
   // Order Summary state
   orderSummary = {
@@ -102,7 +104,7 @@ export class ShowcaseComponent {
 
   sampleError: PaymentError = {
     code: 'card_declined',
-    messageKey: this.i18n.t(I18nKeys.errors.card_declined),
+    messageKey: I18nKeys.errors.card_declined,
     raw: { originalError: 'card_declined' },
   };
 
@@ -154,23 +156,26 @@ export class ShowcaseComponent {
 
   // Handlers
   onPayClick(): void {
-    console.log('[Showcase] Pay button clicked');
+    this.logger.warn('Pay button clicked', 'ShowcaseComponent');
   }
 
   onRetry(): void {
-    console.log('[Showcase] Retry clicked');
+    this.logger.warn('Retry button clicked', 'ShowcaseComponent');
   }
 
   onNewPayment(): void {
-    console.log('[Showcase] New payment clicked');
+    this.logger.warn('New payment button clicked', 'ShowcaseComponent');
   }
 
   onIntentAction(action: string, intentId: string): void {
-    console.log(`[Showcase] Intent action: ${action}, ID: ${intentId}`);
+    this.logger.warn(`Intent action: ${action}, ID: ${intentId}`, 'ShowcaseComponent', {
+      action,
+      intentId,
+    });
   }
 
   onFallbackConfirm(provider: PaymentProviderId): void {
-    console.log(`[Showcase] Fallback confirmed with: ${provider}`);
+    this.logger.warn(`Fallback confirmed with: ${provider}`, 'ShowcaseComponent', { provider });
     this.fallbackModal.open = false;
   }
 

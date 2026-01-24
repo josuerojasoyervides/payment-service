@@ -1,3 +1,4 @@
+import { I18nKeys } from '@core/i18n';
 import { CurrencyCode } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
@@ -18,7 +19,7 @@ import {
  * - cancelUrl
  * - customerEmail (optional, Stripe gets it from token)
  */
-export class StripeCardRequestBuilder implements PaymentRequestBuilder {
+export class StripeCardRequestBuilder extends PaymentRequestBuilder {
   private orderId?: string;
   private amount?: number;
   private currency?: CurrencyCode;
@@ -36,54 +37,31 @@ export class StripeCardRequestBuilder implements PaymentRequestBuilder {
     return this;
   }
 
-  /**
-   * Receives generic options and extracts what Stripe Card needs.
-   */
   withOptions(options: PaymentOptions): this {
-    if (options.token !== undefined) {
-      this.token = options.token;
-    }
-    if (options.saveForFuture !== undefined) {
-      this.saveForFuture = options.saveForFuture;
-    }
+    if (options.token !== undefined) this.token = options.token;
+    if (options.saveForFuture !== undefined) this.saveForFuture = options.saveForFuture;
     return this;
   }
 
-  build(): CreatePaymentRequest {
-    this.validate();
+  protected override validateRequired(): void {
+    this.requireNonEmptyStringWithKey('orderId', this.orderId, I18nKeys.errors.order_id_required);
+    this.requirePositiveAmountWithKey('amount', this.amount, I18nKeys.errors.amount_invalid);
+    this.requireDefinedWithKey('currency', this.currency, I18nKeys.errors.currency_required);
+    this.requireNonEmptyStringWithKey('token', this.token, I18nKeys.errors.card_token_required);
+  }
 
+  protected override buildUnsafe(): CreatePaymentRequest {
     return {
       orderId: this.orderId!,
       amount: this.amount!,
       currency: this.currency!,
       method: {
         type: 'card',
-        token: this.token,
+        token: this.token!,
       },
       metadata: {
         saveForFuture: this.saveForFuture,
       },
     };
-  }
-
-  /**
-   * Stripe Card-specific validation.
-   */
-  private validate(): void {
-    if (!this.orderId) {
-      throw new Error('orderId is required');
-    }
-    if (!this.amount || this.amount <= 0) {
-      throw new Error('amount must be greater than 0');
-    }
-    if (!this.currency) {
-      throw new Error('currency is required');
-    }
-    if (!this.token) {
-      throw new Error(
-        'Stripe card payments require a token. ' +
-          'Use Stripe Elements to tokenize the card first.',
-      );
-    }
   }
 }

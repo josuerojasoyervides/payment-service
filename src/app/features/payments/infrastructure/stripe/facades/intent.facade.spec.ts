@@ -7,14 +7,14 @@ import {
 } from '@payments/domain/models/payment/payment-request.types';
 import { of } from 'rxjs';
 
-import { StripeCancelIntentGateway } from './cancel-intent.gateway';
-import { StripeConfirmIntentGateway } from './confirm-intent.gateway';
-import { StripeCreateIntentGateway } from './create-intent.gateway';
-import { StripeGetIntentGateway } from './get-intent.gateway';
-import { IntentFacade } from './intent.facade';
+import { StripeCancelIntentGateway } from '../gateways/intent/cancel-intent.gateway';
+import { StripeConfirmIntentGateway } from '../gateways/intent/confirm-intent.gateway';
+import { StripeCreateIntentGateway } from '../gateways/intent/create-intent.gateway';
+import { StripeGetIntentGateway } from '../gateways/intent/get-intent.gateway';
+import { StripeIntentFacade } from './intent.facade';
 
 describe('IntentFacade (adapter)', () => {
-  let gateway: IntentFacade;
+  let gateway: StripeIntentFacade;
 
   // Mocks de operaciones (NO HTTP)
   const createIntentOp = { execute: vi.fn() };
@@ -45,7 +45,7 @@ describe('IntentFacade (adapter)', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        IntentFacade,
+        StripeIntentFacade,
 
         { provide: StripeCreateIntentGateway, useValue: createIntentOp },
         { provide: StripeConfirmIntentGateway, useValue: confirmIntentOp },
@@ -54,7 +54,7 @@ describe('IntentFacade (adapter)', () => {
       ],
     });
 
-    gateway = TestBed.inject(IntentFacade);
+    gateway = TestBed.inject(StripeIntentFacade);
   });
 
   it('delegates createIntent to StripeCreateIntentGateway.execute', async () => {

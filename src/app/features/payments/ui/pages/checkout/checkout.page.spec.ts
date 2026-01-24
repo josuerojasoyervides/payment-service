@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
+import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
@@ -80,7 +81,7 @@ describe('CheckoutComponent', () => {
             fields: [
               {
                 name: 'token',
-                label: 'Token de tarjeta',
+                labelKey: I18nKeys.ui.card_token,
                 required: true,
                 type: 'hidden',
               },
@@ -91,7 +92,7 @@ describe('CheckoutComponent', () => {
           fields: [
             {
               name: 'customerEmail',
-              label: 'Email',
+              labelKey: I18nKeys.ui.email_label,
               required: true,
               type: 'email',
             },

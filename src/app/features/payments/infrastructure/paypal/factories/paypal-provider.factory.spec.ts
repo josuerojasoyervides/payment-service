@@ -1,8 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { I18nService } from '@core/i18n';
 import { firstValueFrom, of } from 'rxjs';
 
-import { PaypalPaymentGateway } from '../gateways/paypal-payment.gateway';
+import { PaypalIntentFacade } from '../facades/intent.facade';
 import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
 import { PaypalProviderFactory } from './paypal-provider.factory';
 
@@ -11,23 +10,11 @@ describe('PaypalProviderFactory', () => {
   const gatewayStub = {
     providerId: 'paypal',
     createIntent: vi.fn(),
-  } satisfies Partial<PaypalPaymentGateway>;
+  } satisfies Partial<PaypalIntentFacade>;
 
   beforeEach(() => {
-    const i18nMock = {
-      t: vi.fn((key: string) => key),
-      setLanguage: vi.fn(),
-      getLanguage: vi.fn(() => 'es'),
-      has: vi.fn(() => true),
-      currentLang: { asReadonly: vi.fn() } as any,
-    } as any;
-
     TestBed.configureTestingModule({
-      providers: [
-        PaypalProviderFactory,
-        { provide: PaypalPaymentGateway, useValue: gatewayStub },
-        { provide: I18nService, useValue: i18nMock },
-      ],
+      providers: [PaypalProviderFactory, { provide: PaypalIntentFacade, useValue: gatewayStub }],
     });
 
     factory = TestBed.inject(PaypalProviderFactory);
@@ -41,7 +28,14 @@ describe('PaypalProviderFactory', () => {
 
   it('throws for unsupported payment method type', () => {
     expect(() => factory.createStrategy('spei' as any)).toThrow(
-      /Payment method "spei" is not supported by PayPal/,
+      expect.objectContaining({
+        code: 'invalid_request',
+        messageKey: 'errors.invalid_request',
+        params: {
+          reason: 'unsupported_payment_method',
+          supportedMethods: 'card',
+        },
+      }),
     );
   });
 
@@ -84,8 +78,8 @@ describe('PaypalProviderFactory', () => {
 
       expect(requirements.fields).toBeDefined();
       expect(requirements.fields.length).toBeGreaterThan(0);
-      expect(requirements.description).toBeDefined();
-      expect(requirements.instructions).toBeDefined();
+      expect(requirements.descriptionKey).toBeDefined();
+      expect(requirements.instructionsKey).toBeDefined();
 
       const returnUrlField = requirements.fields.find((f) => f.name === 'returnUrl');
       expect(returnUrlField).toBeDefined();
@@ -106,7 +100,14 @@ describe('PaypalProviderFactory', () => {
 
     it('throws for unsupported payment method type', () => {
       expect(() => factory.getFieldRequirements('spei' as any)).toThrow(
-        /Payment method "spei" is not supported by PayPal/,
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: 'errors.invalid_request',
+          params: {
+            reason: 'unsupported_payment_method',
+            supportedMethods: 'card',
+          },
+        }),
       );
     });
   });

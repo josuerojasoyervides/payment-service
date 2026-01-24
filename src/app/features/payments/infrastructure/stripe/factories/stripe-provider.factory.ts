@@ -1,9 +1,11 @@
 import { inject, Injectable } from '@angular/core';
-import { I18nKeys, I18nService } from '@core/i18n';
+import { I18nKeys } from '@core/i18n';
+import { LoggerService } from '@core/logging';
 import { ProviderFactory } from '@payments/application/ports/provider-factory.port';
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PaymentGateway } from '../../../application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '../../../application/ports/payment-gateway.port';
 import { PaymentStrategy } from '../../../application/ports/payment-strategy.port';
 import {
   FieldRequirements,
@@ -13,7 +15,7 @@ import { CardStrategy } from '../../../shared/strategies/card-strategy';
 import { SpeiStrategy } from '../../../shared/strategies/spei-strategy';
 import { StripeCardRequestBuilder } from '../builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '../builders/stripe-spei-request.builder';
-import { IntentFacade } from '../gateways/intent/intent.facade';
+import { StripeIntentFacade } from '../facades/intent.facade';
 import { StripeTokenValidator } from '../validators/stripe-token.validator';
 
 /**
@@ -33,8 +35,8 @@ import { StripeTokenValidator } from '../validators/stripe-token.validator';
 export class StripeProviderFactory implements ProviderFactory {
   readonly providerId = 'stripe' as const;
 
-  private readonly gateway = inject(IntentFacade);
-  private readonly i18n = inject(I18nService);
+  private readonly gateway = inject(StripeIntentFacade);
+  private readonly logger = inject(LoggerService);
 
   /**
    * Strategy cache to avoid recreating them.
@@ -46,7 +48,7 @@ export class StripeProviderFactory implements ProviderFactory {
    */
   static readonly SUPPORTED_METHODS: PaymentMethodType[] = ['card', 'spei'];
 
-  getGateway(): PaymentGateway {
+  getGateway(): PaymentGatewayPort {
     return this.gateway;
   }
 
@@ -92,7 +94,10 @@ export class StripeProviderFactory implements ProviderFactory {
       case 'spei':
         return new StripeSpeiRequestBuilder();
       default:
-        throw new Error(`No builder for payment method: ${type}`);
+        throw invalidRequestError(I18nKeys.errors.invalid_request, {
+          reason: 'no_builder_for_payment_method',
+          type,
+        });
     }
   }
 
@@ -107,19 +112,18 @@ export class StripeProviderFactory implements ProviderFactory {
     switch (type) {
       case 'card':
         return {
-          description: I18nKeys.ui.card_payment_description,
-          instructions: I18nKeys.ui.enter_card_data,
+          descriptionKey: 'ui.card_payment_description',
+          instructionsKey: 'ui.enter_card_data',
           fields: [
             {
               name: 'token',
-              label: I18nKeys.ui.card_token,
+              labelKey: 'ui.card_token',
               required: true,
               type: 'hidden',
-              placeholder: '',
             },
             {
               name: 'saveForFuture',
-              label: I18nKeys.ui.save_card_future,
+              labelKey: 'ui.save_card_future',
               required: false,
               type: 'text',
               defaultValue: 'false',
@@ -128,18 +132,19 @@ export class StripeProviderFactory implements ProviderFactory {
         };
       case 'spei':
         return {
-          description: I18nKeys.ui.spei_bank_transfer,
-          instructions: I18nKeys.ui.spei_email_instructions,
+          descriptionKey: 'ui.spei_bank_transfer',
+          instructionsKey: 'ui.spei_email_instructions',
           fields: [
             {
               name: 'customerEmail',
-              label: I18nKeys.ui.email_label,
+              labelKey: 'ui.email_label',
+              placeholderKey: 'ui.email_placeholder',
               required: true,
               type: 'email',
-              placeholder: 'tu@email.com',
             },
           ],
         };
+
       default:
         return { fields: [] };
     }
@@ -151,21 +156,24 @@ export class StripeProviderFactory implements ProviderFactory {
 
   private assertSupported(type: PaymentMethodType): void {
     if (!this.supportsMethod(type)) {
-      throw new Error(
-        `Payment method "${type}" is not supported by Stripe. ` +
-          `Supported methods: ${StripeProviderFactory.SUPPORTED_METHODS.join(', ')}`,
-      );
+      throw invalidRequestError(I18nKeys.errors.invalid_request, {
+        reason: 'unsupported_payment_method',
+        supportedMethods: StripeProviderFactory.SUPPORTED_METHODS.join(', '),
+      });
     }
   }
 
   private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
     switch (type) {
       case 'card':
-        return new CardStrategy(this.gateway, new StripeTokenValidator());
+        return new CardStrategy(this.gateway, new StripeTokenValidator(), this.logger);
       case 'spei':
-        return new SpeiStrategy(this.gateway);
+        return new SpeiStrategy(this.gateway, this.logger);
       default:
-        throw new Error(`Unexpected payment method type: ${type}`);
+        throw invalidRequestError(I18nKeys.errors.invalid_request, {
+          reason: 'unexpected_payment_method_type',
+          type,
+        });
     }
   }
 }

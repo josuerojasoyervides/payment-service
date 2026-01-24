@@ -23,13 +23,9 @@ import {
   PaymentRequestBuilder,
 } from '@payments/domain/ports/payment/payment-request-builder.port';
 
-import { PaymentGateway } from './payment-gateway.port';
+import { PaymentGatewayPort } from './payment-gateway.port';
 import { PaymentStrategy } from './payment-strategy.port';
 
-/**
- * ! TODO This factory depends on the application layer. It should be moved to the application layer
- * ! or refactor the application ports
- * */
 export interface ProviderFactory {
   /** Unique provider identifier */
   readonly providerId: PaymentProviderId;
@@ -38,7 +34,7 @@ export interface ProviderFactory {
    * Returns this provider's gateway.
    * The gateway handles HTTP communication with the provider's API.
    */
-  getGateway(): PaymentGateway;
+  getGateway(): PaymentGatewayPort;
 
   /**
    * Creates a strategy for the payment method type.

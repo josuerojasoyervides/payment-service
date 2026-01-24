@@ -1,7 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
@@ -12,10 +11,6 @@ import { StripeCreateIntentGateway } from './create-intent.gateway';
 describe('StripeCreateIntentGateway', () => {
   let gateway: StripeCreateIntentGateway;
   let httpMock: HttpTestingController;
-
-  const i18nMock = {
-    t: vi.fn().mockReturnValue('Error del proveedor de pago'),
-  };
 
   const loggerMock = {
     error: vi.fn(),
@@ -30,7 +25,6 @@ describe('StripeCreateIntentGateway', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         StripeCreateIntentGateway,
-        { provide: I18nService, useValue: i18nMock },
         { provide: LoggerService, useValue: loggerMock },
       ],
     });

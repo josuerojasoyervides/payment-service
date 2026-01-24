@@ -1,3 +1,4 @@
+import { I18nKeys } from '@core/i18n';
 import { CurrencyCode } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
@@ -20,12 +21,16 @@ import {
  * - token (PayPal handles this internally)
  * - customerEmail (PayPal gets it from user)
  */
-export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
+export class PaypalRedirectRequestBuilder extends PaymentRequestBuilder {
   private orderId?: string;
   private amount?: number;
   private currency?: CurrencyCode;
   private returnUrl?: string;
   private cancelUrl?: string;
+
+  constructor() {
+    super();
+  }
 
   forOrder(orderId: string): this {
     this.orderId = orderId;
@@ -39,17 +44,26 @@ export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
   }
 
   withOptions(options: PaymentOptions): this {
+    if (options.cancelUrl !== undefined) this.cancelUrl = options.cancelUrl;
+
     if (options.returnUrl !== undefined) {
       this.returnUrl = options.returnUrl;
-    }
-    if (options.cancelUrl !== undefined) {
-      this.cancelUrl = options.cancelUrl;
+      if (!options.cancelUrl) {
+        this.cancelUrl = options.returnUrl;
+      }
     }
     return this;
   }
 
-  build(): CreatePaymentRequest {
-    this.validate();
+  protected override validateRequired(): void {
+    this.requireNonEmptyStringWithKey('orderId', this.orderId, I18nKeys.errors.order_id_required);
+    this.requirePositiveAmountWithKey('amount', this.amount, I18nKeys.errors.amount_invalid);
+    this.requireDefinedWithKey('currency', this.currency, I18nKeys.errors.currency_required);
+    this.validateOptionalUrl('returnUrl', this.returnUrl);
+    this.validateOptionalUrl('cancelUrl', this.cancelUrl);
+  }
+
+  protected override buildUnsafe(): CreatePaymentRequest {
     /**
      * ! TODO: PaypalRedirectRequestBuilder: confirma el “hack legítimo”
      * ! Este builder deja clarísimo que PayPal no tiene card como método,
@@ -62,36 +76,8 @@ export class PaypalRedirectRequestBuilder implements PaymentRequestBuilder {
       method: {
         type: 'card',
       },
-      returnUrl: this.returnUrl,
-      cancelUrl: this.cancelUrl ?? this.returnUrl,
+      returnUrl: this.returnUrl!,
+      cancelUrl: this.cancelUrl!,
     };
-  }
-
-  private validate(): void {
-    if (!this.orderId) {
-      throw new Error('orderId is required');
-    }
-    if (!this.amount || this.amount <= 0) {
-      throw new Error('amount must be greater than 0');
-    }
-    if (!this.currency) {
-      throw new Error('currency is required');
-    }
-    // returnUrl es opcional en el builder - puede venir de StrategyContext
-    // Solo validar formato si está presente
-    if (this.returnUrl) {
-      try {
-        new URL(this.returnUrl);
-      } catch {
-        throw new Error('returnUrl must be a valid URL');
-      }
-    }
-    if (this.cancelUrl) {
-      try {
-        new URL(this.cancelUrl);
-      } catch {
-        throw new Error('cancelUrl must be a valid URL');
-      }
-    }
   }
 }

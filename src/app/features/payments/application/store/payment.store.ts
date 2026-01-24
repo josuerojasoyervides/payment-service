@@ -107,9 +107,7 @@ export const PaymentsStore = signalStore(
     };
 
     const isPaymentError = (e: unknown): e is PaymentError => {
-      return (
-        typeof e === 'object' && e !== null && 'code' in e && ('messageKey' in e || 'message' in e)
-      );
+      return typeof e === 'object' && e !== null && 'code' in e && 'messageKey' in e;
     };
 
     const normalizeError = (e: unknown): PaymentError => {
@@ -117,7 +115,7 @@ export const PaymentsStore = signalStore(
         return {
           ...e,
           // ✅ si viene legacy message, úsalo como fallback
-          messageKey: e.messageKey ?? I18nKeys.errors.unknown_error,
+          messageKey: e.messageKey,
         };
       }
 

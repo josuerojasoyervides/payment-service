@@ -5,6 +5,11 @@
  */
 export interface Translations {
   errors: {
+    cancel_url_invalid: string;
+    customer_email_required: string;
+    customer_email_invalid: string;
+    return_url_required: string;
+    currency_not_supported: string;
     unknown_error: string;
     provider_error: string;
     invalid_request: string;

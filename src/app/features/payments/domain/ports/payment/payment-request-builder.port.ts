@@ -1,4 +1,7 @@
-import { CurrencyCode } from '../../models/payment/payment-intent.types';
+import { AutoCompleteHint } from '@payments/domain/models/payment/autocomplete-hint.types';
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
+
+import { CurrencyCode, PaymentMethodType } from '../../models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '../../models/payment/payment-request.types';
 
 /**
@@ -13,6 +16,40 @@ export interface PaymentOptions {
   cancelUrl?: string;
   customerEmail?: string;
   saveForFuture?: boolean;
+  description?: string;
+  createdAt?: Date;
+  paymentMethodTypes?: PaymentMethodType[];
+}
+
+/**
+ * Field types supported in the form.
+ */
+export type FieldType = 'text' | 'email' | 'hidden' | 'url';
+
+/**
+ * Field requirements for a specific provider/method.
+ *
+ * The UI queries this BEFORE rendering the form
+ * to know which fields to show.
+ */
+export interface FieldRequirement {
+  name: keyof PaymentOptions;
+  labelKey: string;
+  placeholderKey?: string;
+  descriptionKey?: string;
+  instructionsKey?: string;
+
+  required: boolean;
+  type: 'text' | 'email' | 'hidden';
+
+  autoComplete?: AutoCompleteHint;
+  defaultValue?: string;
+}
+
+export interface FieldRequirements {
+  descriptionKey?: string;
+  instructionsKey?: string;
+  fields: FieldRequirement[];
 }
 
 /**
@@ -23,80 +60,100 @@ export interface PaymentOptions {
  *
  * The UI never imports from infrastructure, only uses this interface.
  */
-export interface PaymentRequestBuilder {
-  /**
-   * Sets the order ID.
-   */
-  forOrder(orderId: string): this;
+export abstract class PaymentRequestBuilder {
+  abstract forOrder(orderId: string): this;
+  abstract withAmount(amount: number, currency: CurrencyCode): this;
+  abstract withOptions(options: PaymentOptions): this;
 
-  /**
-   * Sets amount and currency.
-   */
-  withAmount(amount: number, currency: CurrencyCode): this;
+  build(): CreatePaymentRequest {
+    this.validateRequired();
+    return this.buildUnsafe();
+  }
 
-  /**
-   * Sets payment method specific options.
-   *
-   * The UI passes all available options.
-   * The builder uses what it needs and validates required ones.
-   */
-  withOptions(options: PaymentOptions): this;
+  /** Cada builder define qué es “requerido” realmente */
+  protected abstract validateRequired(): void;
 
-  /**
-   * Builds the final request.
-   *
-   * @throws Error if required fields are missing for this provider/method
-   */
-  build(): CreatePaymentRequest;
-}
+  /** Aquí construyes ya con campos garantizados */
+  protected abstract buildUnsafe(): CreatePaymentRequest;
 
-/**
- * Field types supported in the form.
- */
-export type FieldType = 'text' | 'email' | 'hidden' | 'url';
+  protected requireDefined<T>(field: string, value: T | null | undefined): asserts value is T {
+    if (value === undefined || value === null) {
+      throw invalidRequestError('errors.required_field_missing', { field });
+    }
+  }
 
-/**
- * Payment form field configuration.
- */
-export interface FieldConfig {
-  /** Field name (key in PaymentOptions) */
-  name: keyof PaymentOptions;
+  protected requireNonEmptyString(field: string, value: string | undefined | null) {
+    if (value === undefined || value === null || value.trim().length === 0) {
+      throw invalidRequestError('errors.required_field_missing', { field });
+    }
+  }
 
-  /** Label to display in UI */
-  label: string;
+  protected requirePositiveAmount(field: string, value: number | undefined | null) {
+    if (value === undefined || value === null || value <= 0) {
+      throw invalidRequestError('errors.amount_invalid', { field, min: 1 }, { amount: value });
+    }
+  }
 
-  /** Whether required for this provider/method */
-  required: boolean;
+  protected validateOptionalUrl(
+    field: 'returnUrl' | 'cancelUrl',
+    value: string | undefined | null,
+  ) {
+    // si no viene, NO es error
+    if (value === undefined || value === null || value.trim().length === 0) return;
 
-  /** Input type */
-  type: FieldType;
+    try {
+      new URL(value);
+    } catch {
+      const fieldKey = field === 'returnUrl' ? 'return_url' : 'cancel_url';
+      throw invalidRequestError(`errors.${fieldKey}_invalid`, { field }, { [field]: value });
+    }
+  }
 
-  /** Input placeholder */
-  placeholder?: string;
+  protected requireDefinedWithKey<T>(
+    field: string,
+    value: T | undefined | null,
+    messageKey: string,
+  ): asserts value is T {
+    if (value === undefined || value === null) {
+      throw invalidRequestError(messageKey, { field });
+    }
+  }
 
-  /** Default value */
-  defaultValue?: string;
+  protected requireNonEmptyStringWithKey(
+    field: string,
+    value: string | undefined | null,
+    messageKey: string,
+  ): void {
+    if (value === undefined || value === null || value.trim().length === 0) {
+      throw invalidRequestError(messageKey, { field });
+    }
+  }
 
-  /**
-   * If 'hidden', UI must provide it but not display it.
-   * E.g., returnUrl can be the current URL
-   */
-  autoFill?: 'currentUrl' | 'none';
-}
+  protected requirePositiveAmountWithKey(
+    field: string,
+    value: number | undefined | null,
+    messageKey: string,
+  ): void {
+    if (value === undefined || value === null || value <= 0) {
+      throw invalidRequestError(messageKey, { field, min: 1 }, { amount: value });
+    }
+  }
 
-/**
- * Field requirements for a specific provider/method.
- *
- * The UI queries this BEFORE rendering the form
- * to know which fields to show.
- */
-export interface FieldRequirements {
-  /** Fields this provider/method needs */
-  fields: FieldConfig[];
+  protected requireEmailWithKey(
+    field: string,
+    value: string | undefined | null,
+    missingKey: string,
+    invalidKey: string,
+  ): void {
+    if (value === undefined || value === null || value.trim().length === 0) {
+      throw invalidRequestError(missingKey, { field });
+    }
 
-  /** Payment method description for UI */
-  description?: string;
+    const email = value.trim();
+    const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  /** Additional instructions for the user */
-  instructions?: string;
+    if (!isValid) {
+      throw invalidRequestError(invalidKey, { field }, { [field]: value });
+    }
+  }
 }

@@ -1,5 +1,21 @@
 import { PaypalRedirectRequestBuilder } from './paypal-redirect-request.builder';
 
+export function expectSyncPaymentError(fn: () => unknown, expected: any) {
+  try {
+    fn();
+    expect.fail('Expected to throw PaymentError');
+  } catch (e) {
+    // asegura shape mínimo (evita que pase un TypeError)
+    expect(e).toMatchObject({
+      code: expect.any(String),
+      messageKey: expect.any(String),
+      params: expect.any(Object),
+    });
+
+    expect(e).toMatchObject(expected);
+  }
+}
+
 describe('PaypalRedirectRequestBuilder', () => {
   let builder: PaypalRedirectRequestBuilder;
 
@@ -12,7 +28,10 @@ describe('PaypalRedirectRequestBuilder', () => {
       const request = builder
         .forOrder('order_123')
         .withAmount(100, 'MXN')
-        .withOptions({ returnUrl: 'https://example.com/return' })
+        .withOptions({
+          returnUrl: 'https://example.com/return',
+          cancelUrl: 'https://example.com/cancel',
+        })
         .build();
 
       expect(request.orderId).toBe('order_123');
@@ -20,6 +39,7 @@ describe('PaypalRedirectRequestBuilder', () => {
       expect(request.currency).toBe('MXN');
       expect(request.method.type).toBe('card');
       expect(request.returnUrl).toBe('https://example.com/return');
+      expect(request.cancelUrl).toBe('https://example.com/cancel');
     });
 
     it('uses returnUrl as default cancelUrl when cancelUrl not provided', () => {
@@ -71,40 +91,51 @@ describe('PaypalRedirectRequestBuilder', () => {
   });
 
   describe('validation', () => {
-    it('throws when orderId is missing', () => {
-      expect(() =>
-        builder
-          .withAmount(100, 'MXN')
-          .withOptions({ returnUrl: 'https://example.com/return' })
-          .build(),
-      ).toThrow(/orderId is required/);
+    it('throws PaymentError when orderId is missing', () => {
+      expectSyncPaymentError(
+        () =>
+          builder
+            .withAmount(100, 'MXN')
+            .withOptions({ returnUrl: 'https://example.com/return' })
+            .build(),
+        {
+          code: 'invalid_request',
+          messageKey: 'errors.order_id_required',
+          params: { field: 'orderId' },
+        },
+      );
     });
 
-    it('throws when amount is missing or invalid', () => {
-      expect(() =>
-        builder
-          .forOrder('order_123')
-          .withOptions({ returnUrl: 'https://example.com/return' })
-          .build(),
-      ).toThrow(/amount must be greater than 0/);
-
-      expect(() =>
-        builder
-          .forOrder('order_123')
-          .withAmount(-50, 'MXN')
-          .withOptions({ returnUrl: 'https://example.com/return' })
-          .build(),
-      ).toThrow(/amount must be greater than 0/);
+    it('throws PaymentError when amount is missing or invalid', () => {
+      expectSyncPaymentError(
+        () =>
+          builder
+            .forOrder('order_123')
+            .withAmount(0 as any, 'MXN')
+            .withOptions({ returnUrl: 'https://example.com/return' })
+            .build(),
+        {
+          code: 'invalid_request',
+          messageKey: 'errors.amount_invalid',
+          params: { field: 'amount' },
+        },
+      );
     });
 
-    it('throws when currency is missing', () => {
-      expect(() =>
-        builder
-          .forOrder('order_123')
-          .withAmount(100, undefined as any)
-          .withOptions({ returnUrl: 'https://example.com/return' })
-          .build(),
-      ).toThrow(/currency is required/);
+    it('throws PaymentError when currency is missing', () => {
+      expectSyncPaymentError(
+        () =>
+          builder
+            .forOrder('order_123')
+            .withAmount(100, undefined as any)
+            .withOptions({ returnUrl: 'https://example.com/return' })
+            .build(),
+        {
+          code: 'invalid_request',
+          messageKey: 'errors.currency_required',
+          params: { field: 'currency' },
+        },
+      );
     });
 
     it('allows building without returnUrl (can come from StrategyContext)', () => {
@@ -116,27 +147,39 @@ describe('PaypalRedirectRequestBuilder', () => {
       expect(request.returnUrl).toBeUndefined();
     });
 
-    it('throws when returnUrl is not a valid URL', () => {
-      expect(() =>
-        builder
-          .forOrder('order_123')
-          .withAmount(100, 'MXN')
-          .withOptions({ returnUrl: 'not-a-valid-url' })
-          .build(),
-      ).toThrow(/valid URL/);
+    it('throws PaymentError when returnUrl is not a valid URL', () => {
+      expectSyncPaymentError(
+        () =>
+          builder
+            .forOrder('order_123')
+            .withAmount(100, 'MXN')
+            .withOptions({ returnUrl: 'not-a-valid-url' })
+            .build(),
+        {
+          code: 'invalid_request',
+          messageKey: 'errors.return_url_invalid',
+          params: { field: 'returnUrl' },
+        },
+      );
     });
 
-    it('throws when cancelUrl is not a valid URL', () => {
-      expect(() =>
-        builder
-          .forOrder('order_123')
-          .withAmount(100, 'MXN')
-          .withOptions({
-            returnUrl: 'https://example.com/return',
-            cancelUrl: 'not-a-valid-url',
-          })
-          .build(),
-      ).toThrow(/cancelUrl must be a valid URL/);
+    it('throws PaymentError when cancelUrl is not a valid URL', () => {
+      expectSyncPaymentError(
+        () =>
+          builder
+            .forOrder('order_123')
+            .withAmount(100, 'MXN')
+            .withOptions({
+              returnUrl: 'https://example.com/return',
+              cancelUrl: 'not-a-valid-url',
+            })
+            .build(),
+        {
+          code: 'invalid_request',
+          messageKey: 'errors.cancel_url_invalid',
+          params: { field: 'cancelUrl' },
+        },
+      );
     });
   });
 

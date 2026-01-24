@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 
-import { getDefaultProviders, PaymentProviderId, ProviderOption } from '../../shared/ui.types';
+import { getDefaultProviders, ProviderOption } from '../../shared/ui.types';
 
 /**
  * Payment provider selector component.
