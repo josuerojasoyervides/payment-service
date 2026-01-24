@@ -10,26 +10,16 @@ import { PaymentProviderId } from '@payments/domain/models/payment/payment-inten
 
 import { FinishStatus } from './fallback-orchestrator.types';
 
-export function registerFailureTransition(
-  state: WritableSignal<FallbackState>,
-  providerId: PaymentProviderId,
-  error: PaymentError,
-  wasAutoFallback: boolean,
-): void {
-  const attempt: FailedAttempt = {
-    provider: providerId,
-    error,
-    timestamp: Date.now(),
-    wasAutoFallback,
-  };
-
-  state.update((s) => ({
-    ...s,
-    failedAttempts: [...s.failedAttempts, attempt],
-    currentProvider: providerId,
-  }));
+/**
+ * ✅ Reset / Initial
+ */
+export function resetTransition(state: WritableSignal<FallbackState>): void {
+  state.set(INITIAL_FALLBACK_STATE);
 }
 
+/**
+ * ✅ Manual fallback flow: pending → executing
+ */
 export function setPendingManualTransition(
   state: WritableSignal<FallbackState>,
   event: FallbackAvailableEvent,
@@ -55,6 +45,9 @@ export function setExecutingTransition(
   }));
 }
 
+/**
+ * ✅ Auto fallback flow: auto_executing
+ */
 export function setAutoExecutingTransition(
   state: WritableSignal<FallbackState>,
   provider: PaymentProviderId,
@@ -68,6 +61,32 @@ export function setAutoExecutingTransition(
   }));
 }
 
+/**
+ * ✅ Failure tracking (doesn't change status, only records attempt)
+ */
+export function registerFailureTransition(
+  state: WritableSignal<FallbackState>,
+  providerId: PaymentProviderId,
+  error: PaymentError,
+  wasAutoFallback: boolean,
+): void {
+  const attempt: FailedAttempt = {
+    provider: providerId,
+    error,
+    timestamp: Date.now(),
+    wasAutoFallback,
+  };
+
+  state.update((s) => ({
+    ...s,
+    failedAttempts: [...s.failedAttempts, attempt],
+    currentProvider: providerId,
+  }));
+}
+
+/**
+ * ✅ Terminal transitions
+ */
 export function setTerminalTransition(
   state: WritableSignal<FallbackState>,
   status: FinishStatus,
@@ -81,10 +100,9 @@ export function setTerminalTransition(
   }));
 }
 
-export function resetTransition(state: WritableSignal<FallbackState>): void {
-  state.set(INITIAL_FALLBACK_STATE);
-}
-
+/**
+ * ✅ Terminal special-case (failed due to missing original request)
+ */
 export function setFailedNoRequestTransition(state: WritableSignal<FallbackState>): void {
   state.update((s) => ({
     ...s,

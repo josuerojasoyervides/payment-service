@@ -6,10 +6,20 @@ import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-re
 
 import { ProviderFactoryRegistry } from '../../registry/provider-factory.registry';
 
+/**
+ * ✅ Eligibility / stopping conditions
+ */
 export function isEligibleForFallbackPolicy(config: FallbackConfig, error: PaymentError): boolean {
   return config.triggerErrorCodes.includes(error.code);
 }
 
+export function hasReachedMaxAttemptsPolicy(config: FallbackConfig, state: FallbackState): boolean {
+  return state.failedAttempts.length >= config.maxAttempts;
+}
+
+/**
+ * ✅ Auto-fallback decision chain
+ */
 export function getAutoFallbackCountPolicy(state: FallbackState): number {
   return state.failedAttempts.filter((a) => a.wasAutoFallback).length;
 }
@@ -22,6 +32,9 @@ export function shouldAutoFallbackPolicy(config: FallbackConfig, state: Fallback
   return config.mode === 'auto' && canAutoFallbackPolicy(config, state);
 }
 
+/**
+ * ✅ Alternative provider selection
+ */
 export function getAlternativeProvidersPolicy(
   registry: ProviderFactoryRegistry,
   config: FallbackConfig,
@@ -51,10 +64,9 @@ export function getAlternativeProvidersPolicy(
     });
 }
 
+/**
+ * ✅ Utility
+ */
 export function generateEventIdPolicy(): string {
   return `fb_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`;
-}
-
-export function hasReachedMaxAttemptsPolicy(config: FallbackConfig, state: FallbackState): boolean {
-  return state.failedAttempts.length >= config.maxAttempts;
 }
