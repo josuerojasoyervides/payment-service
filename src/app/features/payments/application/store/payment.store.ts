@@ -115,7 +115,7 @@ export const PaymentsStore = signalStore(
         return {
           ...e,
           // ✅ si viene legacy message, úsalo como fallback
-          messageKey: e.messageKey ?? I18nKeys.errors.unknown_error,
+          messageKey: e.messageKey,
         };
       }
 

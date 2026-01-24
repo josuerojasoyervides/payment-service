@@ -1,10 +1,17 @@
 import { PaypalRedirectRequestBuilder } from './paypal-redirect-request.builder';
 
-function expectSyncPaymentError(fn: () => unknown, expected: any) {
+export function expectSyncPaymentError(fn: () => unknown, expected: any) {
   try {
     fn();
-    throw new Error('Expected to throw PaymentError');
+    expect.fail('Expected to throw PaymentError');
   } catch (e) {
+    // asegura shape mínimo (evita que pase un TypeError)
+    expect(e).toMatchObject({
+      code: expect.any(String),
+      messageKey: expect.any(String),
+      params: expect.any(Object),
+    });
+
     expect(e).toMatchObject(expected);
   }
 }
@@ -21,7 +28,10 @@ describe('PaypalRedirectRequestBuilder', () => {
       const request = builder
         .forOrder('order_123')
         .withAmount(100, 'MXN')
-        .withOptions({ returnUrl: 'https://example.com/return' })
+        .withOptions({
+          returnUrl: 'https://example.com/return',
+          cancelUrl: 'https://example.com/cancel',
+        })
         .build();
 
       expect(request.orderId).toBe('order_123');
@@ -29,6 +39,7 @@ describe('PaypalRedirectRequestBuilder', () => {
       expect(request.currency).toBe('MXN');
       expect(request.method.type).toBe('card');
       expect(request.returnUrl).toBe('https://example.com/return');
+      expect(request.cancelUrl).toBe('https://example.com/cancel');
     });
 
     it('uses returnUrl as default cancelUrl when cancelUrl not provided', () => {
@@ -148,8 +159,6 @@ describe('PaypalRedirectRequestBuilder', () => {
           code: 'invalid_request',
           messageKey: 'errors.return_url_invalid',
           params: { field: 'returnUrl' },
-          // raw está en null porque invalidRequestError no lo está recibiendo en este caso
-          raw: null,
         },
       );
     });
@@ -169,7 +178,6 @@ describe('PaypalRedirectRequestBuilder', () => {
           code: 'invalid_request',
           messageKey: 'errors.cancel_url_invalid',
           params: { field: 'cancelUrl' },
-          raw: null,
         },
       );
     });

@@ -28,7 +28,14 @@ describe('PaypalProviderFactory', () => {
 
   it('throws for unsupported payment method type', () => {
     expect(() => factory.createStrategy('spei' as any)).toThrow(
-      /Payment method "spei" is not supported by PayPal/,
+      expect.objectContaining({
+        code: 'invalid_request',
+        messageKey: 'errors.invalid_request',
+        params: {
+          reason: 'unsupported_payment_method',
+          supportedMethods: 'card',
+        },
+      }),
     );
   });
 
@@ -93,7 +100,14 @@ describe('PaypalProviderFactory', () => {
 
     it('throws for unsupported payment method type', () => {
       expect(() => factory.getFieldRequirements('spei' as any)).toThrow(
-        /Payment method "spei" is not supported by PayPal/,
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: 'errors.invalid_request',
+          params: {
+            reason: 'unsupported_payment_method',
+            supportedMethods: 'card',
+          },
+        }),
       );
     });
   });

@@ -1,10 +1,17 @@
 import { StripeSpeiRequestBuilder } from './stripe-spei-request.builder';
 
-function expectSyncPaymentError(fn: () => unknown, expected: any) {
+export function expectSyncPaymentError(fn: () => unknown, expected: any) {
   try {
     fn();
-    throw new Error('Expected to throw PaymentError');
+    expect.fail('Expected to throw PaymentError');
   } catch (e) {
+    // asegura shape mínimo (evita que pase un TypeError)
+    expect(e).toMatchObject({
+      code: expect.any(String),
+      messageKey: expect.any(String),
+      params: expect.any(Object),
+    });
+
     expect(e).toMatchObject(expected);
   }
 }

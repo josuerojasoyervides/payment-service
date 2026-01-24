@@ -2,6 +2,9 @@ import type { Translations } from '../i18n.types';
 
 export const en: Translations = {
   errors: {
+    customer_email_invalid: 'Customer email is invalid',
+    cancel_url_invalid: 'Cancel URL is invalid',
+    customer_email_required: 'Customer email is required',
     return_url_required: 'Return URL is required',
     currency_not_supported: 'Currency not supported',
     unknown_error: 'Unknown error',
