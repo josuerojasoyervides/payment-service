@@ -9,7 +9,6 @@ import {
   FallbackUserResponse,
 } from '@payments/domain/models/fallback/fallback-event.types';
 import {
-  FailedAttempt,
   FallbackState,
   INITIAL_FALLBACK_STATE,
 } from '@payments/domain/models/fallback/fallback-state.types';
@@ -19,18 +18,25 @@ import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-re
 import { filter, Subject, takeUntil, timer } from 'rxjs';
 
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import {
+  registerFailureTransition,
+  resetTransition,
+  setAutoExecutingTransition,
+  setExecutingTransition,
+  setPendingManualTransition,
+  setTerminalTransition,
+} from './fallback/fallback-orchestrator.transitions';
+import {
+  AutoFallbackStartedPayload,
+  FallbackExecutePayload,
+  FinishStatus,
+  ReportFailurePayload,
+} from './fallback/fallback-orchestrator.types';
 
 /**
  * Token para inyectar configuración del fallback.
  */
 export const FALLBACK_CONFIG = new InjectionToken<Partial<FallbackConfig>>('FALLBACK_CONFIG');
-
-interface ReportFailurePayload {
-  providerId: PaymentProviderId;
-  error: PaymentError;
-  request: CreatePaymentRequest;
-  wasAutoFallback?: boolean;
-}
 
 /**
  * Fallback orchestration service between providers.
@@ -72,14 +78,8 @@ export class FallbackOrchestratorService {
 
   private readonly _fallbackAvailable$ = new Subject<FallbackAvailableEvent>();
   private readonly _userResponse$ = new Subject<FallbackUserResponse>();
-  private readonly _fallbackExecute$ = new Subject<{
-    request: CreatePaymentRequest;
-    provider: PaymentProviderId;
-  }>();
-  private readonly _autoFallbackStarted$ = new Subject<{
-    provider: PaymentProviderId;
-    delay: number;
-  }>();
+  private readonly _fallbackExecute$ = new Subject<FallbackExecutePayload>();
+  private readonly _autoFallbackStarted$ = new Subject<AutoFallbackStartedPayload>();
   private readonly _cancel$ = new Subject<void>();
 
   readonly fallbackAvailable$ = this._fallbackAvailable$.asObservable();
@@ -154,7 +154,7 @@ export class FallbackOrchestratorService {
     }
 
     // ✅ registrar intento fallido (AHORA sí existe)
-    this.registerFailure(providerId, error, !!wasAutoFallback);
+    registerFailureTransition(this._state, providerId, error, !!wasAutoFallback);
 
     // ✅ buscar alternativas
     const alternatives = this.getAlternativeProviders(providerId, request);
@@ -238,13 +238,7 @@ export class FallbackOrchestratorService {
         return;
       }
 
-      this._state.update((state) => ({
-        ...state,
-        status: 'executing',
-        pendingEvent: null,
-        currentProvider: response.selectedProvider!,
-        isAutoFallback: false,
-      }));
+      setExecutingTransition(this._state, response.selectedProvider);
 
       // Emitir evento con el originalRequest (sin modificar)
       this._fallbackExecute$.next({
@@ -294,7 +288,7 @@ export class FallbackOrchestratorService {
    */
   reset(): void {
     this._cancel$.next();
-    this._state.set(INITIAL_FALLBACK_STATE);
+    resetTransition(this._state);
   }
 
   /**
@@ -357,13 +351,7 @@ export class FallbackOrchestratorService {
     const delay = this.config.autoFallbackDelay;
 
     // Actualizar estado a auto_executing
-    this._state.update((state) => ({
-      ...state,
-      status: 'auto_executing',
-      currentProvider: provider,
-      pendingEvent: null,
-      isAutoFallback: true,
-    }));
+    setAutoExecutingTransition(this._state, provider);
 
     // Notificar que se inició un auto-fallback (para feedback en UI)
     this._autoFallbackStarted$.next({ provider, delay });
@@ -399,12 +387,7 @@ export class FallbackOrchestratorService {
       eventId: this.generateEventId(),
     };
 
-    this._state.update((state) => ({
-      ...state,
-      status: 'pending',
-      pendingEvent: event,
-      isAutoFallback: false,
-    }));
+    setPendingManualTransition(this._state, event);
 
     this._fallbackAvailable$.next(event);
 
@@ -466,35 +449,10 @@ export class FallbackOrchestratorService {
     this.emitFallbackAvailable(failedProvider, error, alternatives, originalRequest);
   }
 
-  private registerFailure(
-    providerId: PaymentProviderId,
-    error: PaymentError,
-    wasAutoFallback: boolean,
-  ): void {
-    const attempt: FailedAttempt = {
-      provider: providerId,
-      error,
-      timestamp: Date.now(),
-      wasAutoFallback,
-    };
-
-    this._state.update((s) => ({
-      ...s,
-      failedAttempts: [...s.failedAttempts, attempt],
-      currentProvider: providerId,
-    }));
-  }
-
-  private finish(status: 'completed' | 'cancelled' | 'failed') {
+  private finish(status: FinishStatus) {
     this._cancel$.next();
 
-    this._state.update((s) => ({
-      ...s,
-      status,
-      pendingEvent: null,
-      currentProvider: null,
-      isAutoFallback: false,
-    }));
+    setTerminalTransition(this._state, status);
 
     // ✅ reset después (microtask) para que UI alcance a ver el estado final
     queueMicrotask(() => {
