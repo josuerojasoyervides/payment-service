@@ -1,342 +1,360 @@
 # Payments Module — Architecture & Quality Rules
 
-> **Última actualización:** 2026-01-23  
-> Este repositorio es un laboratorio para practicar arquitectura realista aplicada a pagos y evolucionar hacia un módulo funcional **sin convertirlo en una telaraña**.
+> **Última revisión:** 2026-01-24  
+> Este repo es un laboratorio para practicar arquitectura aplicada a pagos **sin convertirlo en una telaraña**.
 
-Este documento define reglas de **diseño, boundaries, i18n, errores, providers y tests** para que el proyecto:
+## Cómo leer este documento (importante)
 
-- sea mantenible (sin acoplamientos raros),
-- sea extensible (agregar providers / métodos sin “romper todo”),
-- sea testeable (sin depender de UI ni HTTP real),
-- sea consistente (errores e i18n con contrato único).
+Este doc cumple 2 roles al mismo tiempo:
 
-> Filosofía: **Clean-ish pragmática**. Primero estabilidad y consistencia. Después features y XState.
+1. **North Star (guía)** — cómo _debería_ verse el módulo cuando esté “bien cerrado”.
+2. **Snapshot (historial)** — qué cosas ya están aplicadas hoy, qué está a medias y qué es deuda aceptada temporalmente.
 
----
+➡️ Por eso vas a ver secciones con:
 
-## 1) Principios NO negociables
-
-### 1.1 Propósito
-
-- Arquitectura limpia por capas (sin “cosas en cualquier lado”).
-- Flujos claros: **la UI no orquesta**, la Application sí.
-- Errors e i18n consistentes: **UI traduce, infra jamás**.
-
-### 1.2 Prohibiciones absolutas
-
-**Domain** debe ser **TypeScript puro**. Prohibido dentro de `domain/`:
-
-- Angular (`@angular/*`) ❌
-- RxJS (`Observable`, operadores) ❌
-- HTTP (`HttpClient`, `fetch`) ❌
-- i18n keys (`I18nKeys`) ❌
-- tipos/errores de providers (Stripe/PayPal DTOs) ❌
-- Date/time libs y side-effects ❌
-- Logger, caching, resiliencia ❌
+- **✅ Regla (target)**
+- **📌 Estado actual (as‑of 2026-01-24)**
+- **🧾 Desviación aceptada** (si existe) + **plan de cierre**
 
 ---
 
-## 2) Capas oficiales y reglas de dependencias
+## 0) Capas del módulo (target)
 
-Capas del módulo:
+> **Objetivo:** acoplamiento mínimo + evolución incremental.
 
-```
-src/app/features/payments/
-  domain/
-  application/
-  infrastructure/
-  shared/
-  ui/
-```
+**Capas (feature `payments/`):**
 
-### 2.1 Dependencias permitidas (regla de oro)
+- `domain/` → modelos, tipos, factories, reglas puras TS.
+- `application/` → casos de uso, puertos, servicios de orquestación (sin UI).
+- `infrastructure/` → integración con providers (Stripe/PayPal), mapping, DTOs.
+- `shared/` → utilidades compartidas del feature **que NO son UI** (helpers, mappers neutrales).
+- `ui/` → páginas, componentes, renderers, adapters a la vista.
+- `config/` → composición DI del feature (providers, tokens, wiring).
 
-- `domain/` → **nada**
-- `application/` → `domain/` (+ Angular DI/RxJS permitido)
-- `infrastructure/` → `application/` + `domain/`
-- `shared/` → depende del caso (ver sección 2.2)
-- `ui/` → `application/` + `domain/` (por tokens/ports/state), **nunca infrastructure**
+✅ **Regla:** una capa solo puede depender de capas “hacia adentro” (o laterales estrictamente controladas).
 
-> Regla simple: **UI y Domain no saben que existe infraestructura**.
-
-### 2.2 ¿Qué es `shared/` en este repo?
-
-`shared/` es un “cajón controlado” (mezcla intencional) para cosas reutilizables dentro del módulo, por ejemplo:
-
-- strategies de método de pago (`shared/strategies/card-strategy.ts`, `shared/strategies/spei-strategy.ts`)
-- helpers puros o adaptadores internos que no pertenecen claramente a 1 capa
-
-**Reglas de `shared/`:**
-
-- ✅ puede depender de `domain/` (tipos)
-- ✅ puede depender de `application/` si son helpers de aplicación (con criterio)
-- ❌ NO puede depender de `infrastructure/`
-- ❌ NO puede depender de `ui/`
+📌 **Estado actual:** la estructura ya existe y se respeta globalmente.
 
 ---
 
-## 3) Vocabulario (Ports & Adapters)
+## 1) Boundaries no negociables
 
-Este repo usa el estilo **Ports & Adapters**.
+### 1.1 Domain es TS puro
 
-- **Port:** interfaz/contrato entre capas (ej. `PaymentGateway`, `PaymentStatePort`)
-- **Adapter:** implementación concreta (ej. Stripe/PayPal gateway)
-- **Use Case:** orquestación del proceso desde Application (no UI)
-- **Orchestrator:** coordinación multi-step (ej. fallback)
-- **Registry + Factory:** registro de providers y creación de gateways sin acoplar UI/app a implementaciones
+✅ Regla (target)
 
-> Nota: este repo usa “Gateway” como “conexión al mundo externo”.
+- `domain/` **no** importa Angular, RxJS, HttpClient, `i18n.t`.
+- Solo tipos, factories, validators, normalización de datos **pura**.
+
+📌 Estado actual
+
+- Se cumple.
 
 ---
 
-## 4) Qué vive en cada capa
+### 1.2 UI nunca orquesta lógica de negocio
 
-### 4.1 Domain (`domain/`)
+✅ Regla (target)
 
-Debe contener **solo**:
+- UI solo:
+  - dispara acciones / use cases,
+  - renderiza estado,
+  - muestra errores traducidos,
+  - maneja navegación.
 
-- modelos: `PaymentIntent`, requests, types
-- contratos puros (ports TS puro si aplica)
-- reglas y tipos de dominio (`PaymentError`, enums, etc.)
+📌 Estado actual
 
-Ejemplo:
+- Se cumple: store/actions + orchestrator llevan el peso.
 
-- `domain/models/payment/payment-error.types.ts`
-- `domain/models/payment/payment-intent.types.ts`
-- `domain/models/payment/payment-request.types.ts`
+---
 
-### 4.2 Application (`application/`)
+### 1.3 Application no depende de Infrastructure
 
-Contiene el “cerebro” del módulo:
+✅ Regla (target)
 
-- use cases (start/confirm/cancel/get)
-- ports (interfaces de integración)
-- store (NgRx Signals)
-- orchestrators (fallback)
-- registry + factories
+- `application/` define contratos (“ports”) y orquestación.
+- `infrastructure/` los implementa.
 
-✅ En Application se permite:
+📌 Estado actual
 
-- Angular DI (`inject`, `Injectable`)
-- RxJS (`Observable`, operadores)
-- Signals (NgRx Signals o Angular signals)
-- interfaces, contratos y “wiring” de aplicación
+- Se cumple a nivel de imports.
 
-**UI NO implementa lógica de negocio**: UI solo dispara acciones y consume estado.
+🧾 Desviación aceptada (temporal)
 
-### 4.3 Infrastructure (`infrastructure/`)
+- Hay **abstract base classes con HttpClient** dentro de `application/ports/**` para evitar duplicación de gateways.
+- Esto rompe la pureza “ideal” de application.
 
-Implementaciones concretas hacia el mundo externo:
+🎯 Plan de cierre recomendado
 
-- Stripe / PayPal
-- DTOs
-- mappers (DTO → domain)
-- normalización de errores provider → `PaymentError`
+- Separar:
+  - `application/ports/**` → **solo interfaces**
+  - `infrastructure/base/**` → base classes con Angular inject/HttpClient/logger
 
-**Infra puede:**
+---
 
-- usar `HttpClient`
-- construir DTOs
-- mapear respuestas externas
+## 2) Dependencias permitidas (mapa rápido)
 
-**Infra NO puede:**
+✅ Regla (target)
 
-- traducir (`i18n.t(...)`) ❌
-- tocar store/UI ❌
-- decidir fallback ❌
+- `ui/` → puede importar `application/`, `domain/`, `shared/` (feature), y `src/app/shared/**` (UI global).
+- `application/` → puede importar `domain/` y `shared/` (feature).
+- `infrastructure/` → puede importar `application/` (ports), `domain/`, `shared/` (feature).
+- `shared/` (feature) → puede importar `domain/` únicamente.
+- `config/` → puede importar de todas para cablear DI (es composición).
 
-### 4.4 UI (`ui/`)
+❌ Prohibido
 
-- componentes
-- render de estados
-- disparo de acciones (start/confirm/etc)
-- traducción de errores (único lugar permitido)
+- `domain/` importando Angular/RxJS/HttpClient.
+- `ui/` importando `infrastructure/` directamente.
+- `shared/` (feature) importando `i18n.t()` o cosas UI.
 
-UI depende de `PAYMENT_STATE`/ports, **no** de implementaciones.
+---
+
+## 3) Providers: contratos y responsabilidades
+
+### 3.1 Qué debe hacer SIEMPRE un gateway (provider)
+
+✅ Regla (target)
+Un provider gateway SIEMPRE debe:
+
+- validar request (mínimo sanity check / required fields),
+- normalizar errores a `PaymentError` (sin texto traducido),
+- mapear DTO → Domain models,
+- log/telemetry **sin filtrar datos sensibles**.
+
+Opcional según caso:
+
+- retries/backoff (si la operación lo amerita),
+- caching (si el endpoint lo permite),
+- timeout / abort.
+
+📌 Estado actual
+
+- En general se cumple.
+- Falta estandarizar tests mínimos por gateway (ver §8).
+
+---
+
+### 3.2 Qué está prohibido para providers
+
+❌ Prohibido
+
+- tocar store/UI/router,
+- traducir (no `i18n.t`),
+- decidir fallback,
+- mutar estado global del módulo.
+
+📌 Estado actual
+
+- Se cumple.
+
+---
+
+## 4) Fallback policy
+
+✅ Regla (target)
+
+- El fallback se decide **en Application** (store/orchestrator), nunca en UI o infra.
+- El fallback se aplica **solo** a operaciones “arrancables” (ej: `startPayment/createIntent`), no a “confirm/capture” por defecto.
+
+📌 Estado actual
+
+- `FallbackOrchestratorService` existe y está integrado al store.
+- `allowFallback: true` solo se usa en el arranque.
 
 ---
 
 ## 5) I18n & PaymentError (contrato oficial)
 
-### 5.1 Regla: **UI-only translation**
+### 5.1 UI-only translation (definición correcta)
 
-- ✅ Único lugar donde se permite `i18n.t(...)`: `ui/**` (componentes UI)
-- ❌ Prohibido en `domain/`, `application/`, `infrastructure/`, `shared/`
+✅ Regla (target)
+`i18n.t(...)` solo se permite dentro del **UI Layer**, que incluye:
 
-> `I18nKeys` **sí se puede usar en infra/app** para retornar keys, pero nunca para traducir.
+- `src/app/features/**/ui/**`
+- `src/app/shared/**` _(UI global: navbar, language selector, etc.)_
+
+❌ Prohibido en:
+
+- `domain/`, `application/`, `infrastructure/`
+- `src/app/features/**/shared/**` _(shared del feature NO es UI)_
+
+📌 Estado actual
+
+- En `payments/` se cumple (no hay `i18n.t` fuera de `payments/ui/**`).
+- En `src/app/shared/**` sí existe traducción (y está permitido por esta regla).
+
+---
 
 ### 5.2 Contrato oficial: `PaymentError`
 
-Los errores **viajan como datos**, no como texto traducido.
+✅ Regla (target)
+Los errores viajan como datos estructurados, nunca como texto traducido.
 
 ```ts
 export type PaymentErrorParams = Record<string, string | number | boolean | null | undefined>;
 
 export interface PaymentError {
-  code: PaymentErrorCode;
-
-  /**
-   * i18n key used to render the message in UI.
-   * This is the long-term source of truth.
-   */
-  messageKey: string;
-
-  /**
-   * Optional interpolation params for `messageKey`.
-   */
-  params?: PaymentErrorParams;
-
-  raw: unknown;
+  code: string; // código técnico estable (provider + normalizado)
+  messageKey: string; // SIEMPRE key i18n (ej: I18nKeys.errors.provider_error)
+  params?: PaymentErrorParams; // params serializables para i18n
+  raw?: unknown; // error original / metadata para debug
 }
 ```
 
-**Reglas duras:**
+✅ Reglas fuertes
 
-- `messageKey` **SIEMPRE** debe ser una **key i18n válida** ✅
-- `raw` se conserva para debugging y trazabilidad ✅
-- `params` se usa para interpolación en UI ✅
-- Nunca existe “escape hatch” para mostrar mensajes crudos del provider ❌
+- `messageKey` **NO es el mensaje** ya traducido.
+- `raw` nunca se muestra al usuario (solo debug).
+- UI traduce una vez: `i18n.t(error.messageKey, error.params)`.
 
-### 5.3 Normalización de errores (dónde y cómo)
+📌 Estado actual
 
-- Los providers (infra/adapters) deben convertir errores externos a `PaymentError`.
-- Application/Store solo consume `PaymentError`.
-
-**Anti-regla importante:**
-
-- ❌ Jamás usar `providerError.message` como `messageKey`.  
-  Si necesitas conservarlo, va en `raw` o en `params` (pero UI no lo muestra).
-
-### 5.4 Enforcements recomendados (obligatorio)
-
-Este proyecto requiere enforcement automático:
-
-- Test o lint que falle si encuentra `i18n.t(` fuera de `ui/`
-- Test que falle si `PaymentError.messageKey` no empieza con prefijo esperado (ej: `errors.`)
+- Tipo/contrato ya existe y se usa.
+- Hay leaks puntuales que deben eliminarse (ver §5.4).
 
 ---
 
-## 6) Fallback policy (manual / auto)
+### 5.3 Normalización de errores (infra/app)
 
-### 6.1 Dónde se decide fallback
+✅ Regla (target)
+Infra y Application deben retornar `PaymentError` con:
 
-**Fallback se decide únicamente en Application (store/orchestrator)**.
+- `messageKey: I18nKeys.errors.xxx`
+- `params` si aplica
 
-- ✅ UI muestra modal y responde
-- ✅ Store decide cuándo disparar `reportFailure()`
-- ❌ Providers no deciden fallback
+❌ Nunca:
 
-### 6.2 Qué operaciones usan fallback (estado actual)
+- `messageKey = i18n.t(...)`
+- `message = "texto en español"`
 
-Hoy el fallback está implementado para:
+📌 Estado actual
 
-- ✅ `createIntent` / `startPayment` (único lugar con `allowFallback: true`)
-
-Confirm/cancel/get **no** disparan fallback por defecto (a menos que se agregue explícitamente).
-
-### 6.3 Modo manual vs auto
-
-`FallbackOrchestratorService` soporta ambos:
-
-- **manual** (default): emite `FallbackAvailableEvent` y UI decide
-- **auto**: ejecuta fallback después de un delay sin intervención
-
-Default actual (config):
-
-- `enabled: true`
-- `mode: "manual"`
-- `maxAttempts: 2`
-- `maxAutoFallbacks: 1`
-- `triggerErrorCodes: ['provider_unavailable','provider_error','network_error','timeout']`
-- `providerPriority: ['stripe','paypal']`
-
-### 6.4 “fallback handled” significa
-
-Si `reportFailure()` devuelve `true`:
-
-- el store hace transición silenciosa (sin dejar la UI en loading infinito)
-- el flujo continúa (manual → espera decisión / auto → ejecuta intento)
+- Infra/App retornan keys correctamente.
 
 ---
 
-## 7) Providers: estándar esperado
+### 5.4 Desviaciones actuales (deuda i18n)
 
-Providers disponibles:
+🧾 Deuda conocida (as-of 2026-01-24)
 
-- Stripe
-- PayPal
-- Mock/Fake
+1. **Legacy rendering en UI**  
+   Existe compatibilidad para un shape viejo que traía `message` (texto crudo).  
+   → Esto contradice el target: “errores siempre como datos”.
 
-### 7.1 Estándar deseado: Gateway + Operations (por operación)
+2. **`messageKey` convertido a texto traducido en un caso de UI demo/showcase**  
+   → Esto rompe el significado de `messageKey`.
 
-El patrón objetivo es **una operación = un gateway refactor** (como Stripe):
+3. **Tests usan `messageKey` como texto**  
+   → Esto debilita la disciplina del contrato.
 
-- `CreateIntentGateway` (execute)
-- `ConfirmIntentGateway`
-- `CancelIntentGateway`
-- `GetIntentGateway`
+🎯 Plan de cierre (P0)
 
-PayPal actualmente puede estar legacy (monolítico), pero debe migrar a este estándar.
-
-### 7.2 Qué debe hacer un provider gateway (mínimo)
-
-- ✅ normalizar errores a `PaymentError`
-- ✅ retornar modelos de dominio (no DTOs)
-- ✅ mapear status externo → status interno
-
-Opcional:
-
-- telemetry/logging (idealmente vía base/wrapper)
-
-### 7.3 Prohibiciones
-
-Un provider gateway NO puede:
-
-- tocar store ❌
-- tocar UI ❌
-- traducir ❌
-- decidir fallback ❌
+- Eliminar el render legacy de `error.message` (solo traducir por `messageKey`).
+- Prohibir `messageKey = i18n.t(...)` (solo keys).
+- Arreglar specs que usan texto como key.
+- (P1) Agregar enforcement automático (ver §9).
 
 ---
 
-## 8) Testing mínimo (scope realista)
+## 6) Naming (para no romper consistencia)
 
-No buscamos 100% coverage. Buscamos **tests que eviten regresiones**.
+✅ Regla (target)
 
-### 8.1 Regla mínima por Gateway
+- **Port** = contrato (interface/abstract class) que define el shape.
+- **Gateway** = implementación que habla con un provider (Stripe/PayPal).
+- **Operation** = unidad atómica de provider (“create/confirm/cancel/getStatus”).
+- **Facade** = wrapper por provider que compone operaciones y expone API consistente.
+- **Orchestrator** = lógica de coordinación entre providers (fallback, attempts, policies).
 
-Cada gateway debe tener tests para:
+📌 Estado actual
 
-- happy path (ok)
-- invalid request
-- provider error
-- normalize error
-- edge cases relevantes
-
-### 8.2 Regla mínima del Orchestrator/Store
-
-- fallback no genera loops
-- eventos expirados no rompen el flow
-- UI no se queda “colgada”
+- El repo ya usa `facades/`, `gateways/intent/*`, `FallbackOrchestratorService`.
 
 ---
 
-## 9) Anti-patterns (lo que NO se permite)
+## 7) Quality rules (prácticas mínimas)
 
-- UI importando `infrastructure/**`
-- `i18n.t(...)` fuera de UI
-- Domain importando Angular/RxJS
-- Gateways retornando DTOs crudos hacia arriba
-- `messageKey` usando texto real en vez de key i18n
+✅ Regla (target)
+
+- No barrel files globales que escondan boundaries.
+- Imports claros por capa.
+- Logs con contexto (providerId + operation) y sin secrets.
+
+📌 Estado actual
+
+- Se removieron barrel files antiguos.
 
 ---
 
-## 10) Evolución: cómo agregar cosas sin romper todo
+## 8) Testing rules (mínimo realista)
 
-Cuando agregues un provider o método:
+✅ Regla (target)
+Por cada gateway/operación importante debe existir mínimo:
 
-1. Define el contrato en Domain (models / request shape)
-2. Expón el port correcto en Application
-3. Implementa adapter en Infrastructure (con normalización de errores)
-4. Conecta por Factory/Registry
-5. UI solo consume el estado y traduce
+- **happy path**
+- **invalid request** (cuando aplique)
+- **provider error normalizado** (`PaymentError` correcto)
+- **mapping correcto** (DTO → Domain)
+
+📌 Estado actual
+
+- Hay specs, pero varios se quedan en happy path.
+- **Decisión:** o subimos los tests, o bajamos el estándar escrito aquí (pero hoy el doc es más estricto que la realidad).
+
+---
+
+## 9) Enforcement automático (recomendado)
+
+✅ Regla (target)
+Las reglas NO deben depender de “acordarse”. Deben fallar en CI.
+
+Recomendaciones prácticas:
+
+- Test de escaneo que falle si encuentra `i18n.t(` fuera del UI layer.
+- Test de escaneo que falle si encuentra `messageKey: this.i18n.t(`.
+- depcruise rule adicional: `application/**` no debe importar `HttpClient` (si decides cerrar esa deuda).
+
+📌 Estado actual
+
+- depcruise ya existe, pero falta enforcement para i18n/messageKey.
+
+---
+
+## 10) Checklist de estabilización (con estado)
+
+### 10.1 Boundaries base
+
+- ✅ Carpeta por capa (`domain / application / infrastructure / shared / ui / config`)
+- ✅ Domain TS puro
+- ✅ UI no importa infraestructura
+- ✅ Application no importa infraestructura
+
+### 10.2 Providers
+
+- ✅ Stripe y PayPal ya siguen el patrón facade + operations
+- 🟡 Tests mínimos por gateway (faltan casos de error/invalid request en varios)
+
+### 10.3 I18n & errores
+
+- ✅ UI-only translation (UI layer definido correctamente)
+- ✅ PaymentError = messageKey + params (+ raw)
+- 🟡 Hay deuda legacy (`error.message`) y leaks de `messageKey` con texto
+- ❌ Enforcement automático (lint/test) pendiente
+
+### 10.4 Fallback
+
+- ✅ Orchestrator integrado y estable
+- ✅ allowFallback solo en “arranque”
+- ✅ modo manual/auto configurado y aislado
+
+---
+
+## 11) “No inventar” — reglas de mantenimiento del doc
+
+✅ Regla
+
+- Si una regla ya no describe la realidad, se marca como:
+  - **North Star** (target) + **deuda** (por qué aún no está),
+  - o se elimina si dejó de tener sentido.
+- Cada cierre grande deja un “changelog” corto al inicio.
