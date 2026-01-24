@@ -7,6 +7,7 @@ import {
 import { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { Observable } from 'rxjs';
 
+import { STRIPE_API_BASE } from '../../constants/base-api.constant';
 import { StripePaymentIntentDto } from '../../dto/stripe.dto';
 import { mapPaymentIntent } from '../../mappers/payment-intent.mapper';
 import { getIdempotencyHeaders } from '../../validators/get-idempotency-headers';
@@ -19,7 +20,7 @@ export class StripeCancelIntentGateway extends PaymentOperationPort<
 > {
   readonly providerId: PaymentProviderId = 'stripe' as const;
 
-  private static readonly API_BASE = '/api/payments/stripe';
+  private static readonly API_BASE = STRIPE_API_BASE;
 
   constructor() {
     super();

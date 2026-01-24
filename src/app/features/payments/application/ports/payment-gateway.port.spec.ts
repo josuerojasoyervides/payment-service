@@ -15,7 +15,7 @@ import {
 } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, Observable, of, throwError } from 'rxjs';
 
-import { BasePaymentGateway } from './base-payment-gateway.port';
+import { BasePaymentGateway } from './payment-gateway.port';
 
 class PaymentGatewayTest extends BasePaymentGateway<any, any> {
   readonly providerId = 'paypal' as const;

@@ -2,6 +2,7 @@ import { I18nKeys } from '@core/i18n';
 import { NextActionPaypalApprove } from '@payments/domain/models/payment/payment-action.types';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import {
+  CurrencyCode,
   PaymentIntent,
   PaymentMethodType,
 } from '@payments/domain/models/payment/payment-intent.types';
@@ -43,13 +44,13 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
    * - Minimum amounts vary by currency
    */
   validate(req: CreatePaymentRequest): void {
-    const supportedCurrencies = ['USD', 'MXN', 'EUR', 'GBP', 'CAD', 'AUD'];
+    const supportedCurrencies: CurrencyCode[] = ['USD', 'MXN'];
 
     // Currency debe existir (normalmente ya viene validado por BasePaymentGateway),
     // pero aquí mantenemos regla específica PayPal.
     if (!req.currency || !supportedCurrencies.includes(req.currency)) {
       throw invalidRequestError(
-        'errors.currency_not_supported',
+        I18nKeys.errors.currency_not_supported,
         {
           field: 'currency',
           provider: 'paypal',
@@ -60,13 +61,9 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
       );
     }
 
-    const minAmounts: Record<string, number> = {
+    const minAmounts: Record<CurrencyCode, number> = {
       USD: 1,
       MXN: 10,
-      EUR: 1,
-      GBP: 1,
-      CAD: 1,
-      AUD: 1,
     };
 
     const minAmount = minAmounts[req.currency] ?? 1;
@@ -74,7 +71,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     // amount inválido o menor al mínimo de PayPal por moneda
     if (!Number.isFinite(req.amount) || req.amount < minAmount) {
       throw invalidRequestError(
-        'errors.amount_invalid',
+        I18nKeys.errors.amount_invalid,
         { field: 'amount', min: minAmount, currency: req.currency },
         { amount: req.amount, currency: req.currency, minAmount },
       );
@@ -99,7 +96,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     // No inventar URLs - si falta returnUrl => error claro y temprano
     if (!context?.returnUrl) {
       throw invalidRequestError(
-        'errors.return_url_required',
+        I18nKeys.errors.return_url_required,
         { field: 'returnUrl', provider: 'paypal' },
         { returnUrl: context?.returnUrl },
       );

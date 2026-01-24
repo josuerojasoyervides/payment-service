@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
+import { I18nKeys } from '@core/i18n';
 import { PaymentOperationPort } from '@payments/application/ports/payment-operation.port';
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import {
   PaymentIntent,
   PaymentProviderId,
@@ -7,6 +9,7 @@ import {
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { Observable } from 'rxjs';
 
+import { PAYPAL_API_BASE } from '../../constants/base-api.constant';
 import { PaypalCreateOrderRequest, PaypalOrderDto } from '../../dto/paypal.dto';
 import { mapOrder } from '../../mappers/map-order.mapper';
 
@@ -16,7 +19,7 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
   PaypalOrderDto,
   PaymentIntent
 > {
-  private readonly API_BASE = '/api/payments/paypal';
+  private readonly API_BASE = PAYPAL_API_BASE;
 
   readonly providerId: PaymentProviderId = 'paypal' as const;
   protected executeRaw(request: CreatePaymentRequest): Observable<PaypalOrderDto> {
@@ -40,11 +43,7 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
     // El builder/strategy deben garantizar que returnUrl esté presente
     // Si no está => error claro (no inventar URLs)
     if (!req.returnUrl) {
-      throw new Error(
-        'returnUrl is required for PayPal orders. ' +
-          'PaypalRedirectStrategy.prepare() must set returnUrl from StrategyContext. ' +
-          'Check that CheckoutComponent provides StrategyContext.returnUrl when starting payment.',
-      );
+      throw invalidRequestError(I18nKeys.errors.invalid_request, { returnUrl: req.returnUrl }, req);
     }
 
     const returnUrl = req.returnUrl;

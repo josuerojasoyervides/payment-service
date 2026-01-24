@@ -32,10 +32,5 @@ export function mapOrder(dto: PaypalOrderDto, providerId: PaymentProviderId): Pa
     }
   }
 
-  if (dto.status === 'COMPLETED' && purchaseUnit?.payments?.captures?.[0]) {
-    const capture = purchaseUnit.payments.captures[0];
-    console.log(`[PaypalGateway] Capture ID: ${capture.id}, Status: ${capture.status}`);
-  }
-
   return intent;
 }

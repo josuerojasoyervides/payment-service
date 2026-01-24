@@ -7,6 +7,7 @@ import {
 import { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { Observable } from 'rxjs';
 
+import { PAYPAL_API_BASE } from '../../constants/base-api.constant';
 import { PaypalOrderDto } from '../../dto/paypal.dto';
 import { mapOrder } from '../../mappers/map-order.mapper';
 
@@ -16,7 +17,7 @@ export class PaypalConfirmIntentGateway extends PaymentOperationPort<
   PaypalOrderDto,
   PaymentIntent
 > {
-  private readonly API_BASE = '/api/payments/paypal';
+  private readonly API_BASE = PAYPAL_API_BASE;
 
   readonly providerId: PaymentProviderId = 'paypal' as const;
   protected override executeRaw(request: ConfirmPaymentRequest): Observable<PaypalOrderDto> {
