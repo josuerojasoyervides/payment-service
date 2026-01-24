@@ -19,18 +19,17 @@ import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-re
 import { filter, Subject, takeUntil, timer } from 'rxjs';
 
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import {
+  AutoFallbackStartedPayload,
+  FallbackExecutePayload,
+  FinishStatus,
+  ReportFailurePayload,
+} from './fallback/fallback-orchestrator.types';
 
 /**
  * Token para inyectar configuración del fallback.
  */
 export const FALLBACK_CONFIG = new InjectionToken<Partial<FallbackConfig>>('FALLBACK_CONFIG');
-
-interface ReportFailurePayload {
-  providerId: PaymentProviderId;
-  error: PaymentError;
-  request: CreatePaymentRequest;
-  wasAutoFallback?: boolean;
-}
 
 /**
  * Fallback orchestration service between providers.
@@ -72,14 +71,8 @@ export class FallbackOrchestratorService {
 
   private readonly _fallbackAvailable$ = new Subject<FallbackAvailableEvent>();
   private readonly _userResponse$ = new Subject<FallbackUserResponse>();
-  private readonly _fallbackExecute$ = new Subject<{
-    request: CreatePaymentRequest;
-    provider: PaymentProviderId;
-  }>();
-  private readonly _autoFallbackStarted$ = new Subject<{
-    provider: PaymentProviderId;
-    delay: number;
-  }>();
+  private readonly _fallbackExecute$ = new Subject<FallbackExecutePayload>();
+  private readonly _autoFallbackStarted$ = new Subject<AutoFallbackStartedPayload>();
   private readonly _cancel$ = new Subject<void>();
 
   readonly fallbackAvailable$ = this._fallbackAvailable$.asObservable();
@@ -485,7 +478,7 @@ export class FallbackOrchestratorService {
     }));
   }
 
-  private finish(status: 'completed' | 'cancelled' | 'failed') {
+  private finish(status: FinishStatus) {
     this._cancel$.next();
 
     this._state.update((s) => ({
