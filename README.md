@@ -1,314 +1,490 @@
-# Payment Service
+# Payment Service — módulo de pagos en Angular (laboratorio de arquitectura)
 
-Módulo de pagos multi-proveedor para Angular con arquitectura hexagonal (Ports & Adapters) y Clean Architecture.
+Este repo es un **laboratorio personal** para diseñar y estabilizar un módulo de pagos “de verdad” (Stripe + PayPal), construido con una arquitectura que sea:
 
-## Objetivo
+- **fácil de probar**
+- **fácil de extender** (agregar providers, métodos, reglas)
+- **difícil de romper** (guardrails/architecture tests)
 
-Construir un sistema de pagos **extensible, resiliente y desacoplado** que soporte múltiples proveedores (Stripe, PayPal, futuro MercadoPago, Conekta, etc.) sin que la UI conozca los detalles de implementación de cada uno.
+Sí: por dentro hay un buen de abstracción 😅.
+La idea es que al principio sea _difícil de entrar_, pero una vez que entiendes el “mapa mental”, sea **muy fácil de mantener, escalar y modificar**.
 
-**Principios clave:**
+---
 
-- La UI solo conoce **abstracciones** (interfaces/ports), nunca implementaciones concretas
-- Cada provider define sus propios **requisitos de campos** y **builders**
-- Agregar un nuevo provider **no modifica código existente** (Open/Closed)
-- Validación específica de cada provider vive en **Infrastructure**, no en Domain
-- **Resiliencia integrada**: Circuit Breaker, Rate Limiting, Retry con backoff, Fallback entre proveedores
+## ¿Qué problema resuelve esta arquitectura?
 
-## Arquitectura
+Cuando metes pagos reales en un proyecto, normalmente pasa esto:
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                   UI                                        │
-│  Solo conoce interfaces: ProviderFactory, PaymentRequestBuilder, Store      │
-└──────────────────────────────────┬──────────────────────────────────────────┘
-                                   │
-┌──────────────────────────────────▼──────────────────────────────────────────┐
-│                              Application                                    │
-│                                                                             │
-│  ┌─────────────┐  ┌──────────────────┐  ┌────────────────────────────────┐  │
-│  │  Use Cases  │  │     Registry     │  │     FallbackOrchestrator       │  │
-│  │  - Start    │  │  Resuelve        │  │  - Modo manual/automático      │  │
-│  │  - Confirm  │  │  factories por   │  │  - Prioridad de providers      │  │
-│  │  - Cancel   │  │  providerId      │  │  - Timeout configurable        │  │
-│  │  - GetStatus│  │                  │  │                                │  │
-│  └─────────────┘  └──────────────────┘  └────────────────────────────────┘  │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                    PaymentsStore (NgRx Signals)                     │    │
-│  │  Estado reactivo: intent, status, error, fallback, history          │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-└──────────────────────────────────┬──────────────────────────────────────────┘
-                                   │
-┌──────────────────────────────────▼──────────────────────────────────────────┐
-│                             Infrastructure                                  │
-│                                                                             │
-│  ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────────┐   │
-│  │      Stripe      │    │      PayPal      │    │    (MercadoPago)     │   │
-│  ├──────────────────┤    ├──────────────────┤    ├──────────────────────┤   │
-│  │ Factory          │    │ Factory          │    │ Factory              │   │
-│  │ Gateway          │    │ Gateway          │    │ Gateway              │   │
-│  │ Builders:        │    │ Builders:        │    │ Builders:            │   │
-│  │  - Card          │    │  - Redirect      │    │  - Card, OXXO...     │   │
-│  │  - SPEI          │    │                  │    │                      │   │
-│  │ Validators:      │    │ Validators:      │    │                      │   │
-│  │  - Token         │    │  - Token         │    │                      │   │
-│  └──────────────────┘    └──────────────────┘    └──────────────────────┘   │
-│                                                                             │
-│  Shared: CardStrategy, SpeiStrategy (reutilizables entre providers)         │
-└──────────────────────────────────┬──────────────────────────────────────────┘
-                                   │
-┌──────────────────────────────────▼──────────────────────────────────────────┐
-│                               Domain                                        │
-│                                                                             │
-│  Ports (contratos):                    Models:                              │
-│  - PaymentGateway                      - PaymentIntent, PaymentError        │
-│  - PaymentStrategy                     - CreatePaymentRequest               │
-│  - ProviderFactory                     - FallbackConfig, FallbackState      │
-│  - PaymentRequestBuilder               - NextAction (3DS, redirect, SPEI)   │
-│  - TokenValidator                                                           │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                   │
-┌──────────────────────────────────▼──────────────────────────────────────────┐
-│                                Core                                         │
-│                                                                             │
-│  Servicios transversales de resiliencia y observabilidad:                   │
-│  - CircuitBreakerService    - RateLimiterService    - RetryService          │
-│  - CacheService             - LoggerService                                 │
-│                                                                             │
-│  Interceptors:                                                              │
-│  - ResilienceInterceptor (Circuit Breaker + Rate Limiting)                  │
-│  - RetryInterceptor (Exponential backoff)                                   │
-│  - CacheInterceptor                                                         │
-│  - LoggingInterceptor                                                       │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+1. El provider responde raro
+2. Aparece un edge-case
+3. Metes un `if` en la UI
+4. Luego otro `if` en la infraestructura
+5. En 2 semanas todo se vuelve “intocable” 🤡
 
-## Características Principales
+Aquí el objetivo es lo contrario:
 
-### Multi-Provider con Fallback Inteligente
+✅ Que puedas agregar un provider nuevo sin reescribir todo
+✅ Que el módulo siga siendo testeable aunque sea complejo
+✅ Que errores e i18n sean consistentes (y no un “cualquier cosa”)
+✅ Que fallback (Stripe → PayPal) sea una política central y no un hack
 
-- Soporta múltiples proveedores de pago simultáneamente
-- Fallback automático o manual cuando un provider falla
-- Prioridad configurable de proveedores
-- Detección de errores elegibles para fallback
+---
 
-### Resiliencia Integrada
+## Quick Start
 
-- **Circuit Breaker**: Previene llamadas a servicios que están fallando
-- **Rate Limiting**: Controla exceso de requests del cliente
-- **Retry con Backoff**: Reintentos inteligentes con espera exponencial
-- **Logging estructurado**: Trazabilidad con correlationId
+### Requisitos
 
-### Estado Reactivo
+- Node 20+
+- Bun (recomendado) o npm
 
-- NgRx Signals para estado inmutable
-- Computed properties optimizadas
-- Historial de transacciones
-- Integración con RxJS para efectos
-
-## Estructura del Proyecto
-
-```
-src/app/
-├── core/                           # Servicios transversales (por funcionalidad)
-│   ├── index.ts                    # Barrel principal
-│   ├── resilience/                 # Circuit Breaker + Rate Limiter + Retry
-│   │   ├── circuit-breaker/
-│   │   │   ├── circuit-breaker.service.ts
-│   │   │   ├── circuit-breaker.types.ts
-│   │   │   └── index.ts
-│   │   ├── rate-limiter/
-│   │   │   ├── rate-limiter.service.ts
-│   │   │   ├── rate-limiter.types.ts
-│   │   │   └── index.ts
-│   │   ├── retry/
-│   │   │   ├── retry.service.ts
-│   │   │   ├── retry.interceptor.ts
-│   │   │   ├── retry-with-backoff.operator.ts
-│   │   │   └── index.ts
-│   │   ├── resilience.interceptor.ts
-│   │   └── index.ts
-│   ├── caching/
-│   │   ├── cache.service.ts
-│   │   ├── cache.interceptor.ts
-│   │   └── index.ts
-│   ├── logging/
-│   │   ├── logger.service.ts
-│   │   ├── logging.interceptor.ts
-│   │   └── index.ts
-│   └── testing/
-│       └── fake-backend.interceptor.ts
-│
-└── features/payments/
-    ├── domain/
-    │   ├── models/                 # PaymentIntent, Errors, Requests, Fallback
-    │   └── ports/                  # Interfaces: Gateway, Strategy, Factory, Builder
-    │
-    ├── application/
-    │   ├── use-cases/              # Start, Confirm, Cancel, GetStatus
-    │   ├── registry/               # ProviderFactoryRegistry
-    │   ├── services/               # FallbackOrchestratorService
-    │   ├── store/                  # PaymentsStore (NgRx Signals)
-    │   ├── adapters/               # NgRxSignalsStateAdapter
-    │   └── tokens/                 # DI tokens
-    │
-    ├── infrastructure/
-    │   ├── stripe/
-    │   │   ├── factories/          # StripeProviderFactory
-    │   │   ├── gateways/           # StripePaymentGateway
-    │   │   ├── builders/           # StripeCardRequestBuilder, StripeSpeiRequestBuilder
-    │   │   ├── validators/         # StripeTokenValidator
-    │   │   └── dto/                # Tipos específicos de Stripe API
-    │   ├── paypal/
-    │   │   ├── factories/          # PaypalProviderFactory
-    │   │   ├── gateways/           # PaypalPaymentGateway
-    │   │   ├── builders/           # PaypalRedirectRequestBuilder
-    │   │   ├── strategies/         # PaypalRedirectStrategy
-    │   │   └── validators/         # PaypalTokenValidator
-    │   └── fake/                   # FakePaymentGateway para desarrollo
-    │
-    ├── shared/strategies/          # CardStrategy, SpeiStrategy (reutilizables)
-    │
-    ├── config/                     # payment.providers.ts
-    │
-    └── ui/pages/                   # Componentes de presentación
-        ├── checkout/
-        └── payments/
-```
-
-## Path Aliases
-
-El proyecto usa path aliases para imports más limpios:
-
-```typescript
-// Antes
-import { PaymentIntent } from '../../../domain/models/payment/payment-intent.types';
-
-// Después
-import { PaymentIntent } from '@payments/domain';
-import { PaymentGateway } from '@payments/ports';
-import { CircuitBreakerService } from '@core/services/circuit-breaker.service';
-```
-
-Aliases disponibles:
-
-- `@core/*` → `src/app/core/*`
-- `@payments/*` → `src/app/features/payments/*`
-- `@payments/domain` → Models del dominio
-- `@payments/ports` → Interfaces/contratos
-- `@payments/application/*` → Use cases, registry, store
-- `@payments/infrastructure/*` → Implementaciones de providers
-
-## Ejecución
+### Instalar dependencias
 
 ```bash
-# Instalar dependencias
 bun install
+# o
+npm install
+```
 
-# Servidor de desarrollo
+### Levantar el proyecto
+
+```bash
 bun start
-# La app estará en http://localhost:4200
+# o
+npm start
+```
 
-# Tests
+La app carga el módulo de pagos de forma lazy y trae varias páginas demo.
+
+### Tests
+
+```bash
 bun run test
-
-# Build
-bun run build
+# o
+npm run test
 ```
 
-## Patrones de Diseño Utilizados
+Para CI (no watch):
 
-| Patrón               | Implementación                                             | Propósito                                                               |
-| -------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------- |
-| **Abstract Factory** | `ProviderFactory`                                          | Crea familias de objetos relacionados (gateway + strategies + builders) |
-| **Strategy**         | `PaymentStrategy`                                          | Encapsula algoritmos de validación/preparación por método de pago       |
-| **Builder**          | `PaymentRequestBuilder`                                    | Construye requests complejos con validación                             |
-| **Template Method**  | `PaymentGateway`                                           | Define el esqueleto del algoritmo, subclases implementan detalles       |
-| **Registry**         | `ProviderFactoryRegistry`                                  | Punto único de acceso a factories con cache                             |
-| **Port/Adapter**     | `PaymentGateway` (port) → `StripePaymentGateway` (adapter) | Inversión de dependencias                                               |
-| **Circuit Breaker**  | `CircuitBreakerService`                                    | Resiliencia ante servicios que fallan repetidamente                     |
-| **Observer**         | `FallbackOrchestratorService`                              | Comunicación reactiva de eventos de fallback                            |
+```bash
+bun run test:ci
+# o
+npm run test:ci
+```
 
-## Ejemplo de Uso
+> Nota: el runner de tests está basado en **Vitest** (ver `tsconfig.spec.json`).
 
-### Iniciar un Pago
+---
 
-```typescript
-import { ProviderFactoryRegistry } from '@payments/application/registry/provider-factory.registry';
-import { PaymentsStore } from '@payments/application/store/payment.store';
+## “¿Dónde empiezo a leer?” (ruta recomendada)
 
-@Component({ ... })
-export class CheckoutComponent {
-    private readonly registry = inject(ProviderFactoryRegistry);
-    private readonly store = inject(PaymentsStore);
+Si solo abres la carpeta y ves 200 archivos, es normal perderse.
+Este es un tour de 10 minutos que casi siempre funciona:
 
-    // Signals del store
-    readonly isLoading = this.store.isLoading;
-    readonly intent = this.store.currentIntent;
-    readonly error = this.store.currentError;
-    readonly hasFallback = this.store.hasPendingFallback;
+1. **Rutas del módulo (wiring)**
+   - `src/app/features/payments/payments.routes.ts`
+     Aquí ves qué páginas existen y dónde se cargan los providers del módulo.
 
-    processPayment(provider: 'stripe' | 'paypal', method: 'card' | 'spei') {
-        const factory = this.registry.get(provider);
+2. **Providers / composición DI**
+   - `src/app/features/payments/config/payment.providers.ts`
+     Este archivo “conecta” Stripe/PayPal (reales o fake), factories, use cases, store, etc.
 
-        // Obtener requisitos de campos para el formulario
-        const requirements = factory.getFieldRequirements(method);
+3. **Store (API pública del módulo)**
+   - `src/app/features/payments/application/store/payment-store.ts`
+     Es el “punto de control” que usa la UI: `startPayment`, `confirm`, `cancel`, `getStatus`, etc.
 
-        // Construir request con el builder
-        const request = factory.createRequestBuilder(method)
-            .forOrder('order_123')
-            .withAmount(500, 'MXN')
-            .withOptions({ token: 'tok_visa_4242' })
-            .build();
+4. **Use Cases (los verbos del módulo)**
+   - `src/app/features/payments/application/use-cases/*.use-case.ts`
+     Aquí está el flujo “de negocio” sin UI.
 
-        // Ejecutar pago
-        this.store.startPayment({ request, providerId: provider });
-    }
+5. **ProviderFactoryRegistry (selección del provider)**
+   - `src/app/features/payments/application/registry/provider-factory.registry.ts`
+
+6. **Infrastructure del provider**
+   - `src/app/features/payments/infrastructure/stripe/**`
+   - `src/app/features/payments/infrastructure/paypal/**`
+
+7. **Domain (contratos/modelos puros)**
+   - `src/app/features/payments/domain/**`
+
+---
+
+## Estructura del módulo (mapa mental)
+
+Todo el feature vive aquí:
+
+```
+src/app/features/payments/
+├─ config/            # Cableado DI del módulo (composición)
+├─ domain/            # Modelos, contratos y reglas puras TS (sin frameworks)
+├─ application/       # Use cases, puertos, store, orquestación (sin UI)
+├─ infrastructure/    # Implementaciones Stripe/PayPal, DTOs, mappers, gateways
+├─ shared/            # Helpers compartidos del feature (NO UI)
+├─ ui/                # Páginas y componentes (render + traducción)
+└─ tests/             # Guardrails de arquitectura (boundaries)
+```
+
+### Domain (lo más importante)
+
+Es el “idioma” del módulo. Aquí defines cosas como:
+
+- `PaymentIntent` (estado de un pago)
+- `PaymentError` (error normalizado)
+- tipos de request (`CreatePaymentRequest`, etc.)
+- contratos (“ports”) como `PaymentRequestBuilder`
+
+**Regla:** Domain no conoce Angular, RxJS, HttpClient, ni `i18n.t`.
+
+### Application
+
+Aquí viven los “casos de uso” y la orquestación:
+
+- `StartPaymentUseCase`, `ConfirmPaymentUseCase`, etc.
+- `ProviderFactoryRegistry`
+- `PaymentsStore` (NgRx Signals)
+- `FallbackOrchestratorService`
+
+Application **no debería conocer providers específicos** (Stripe/PayPal).
+Solo conoce interfaces y modelos.
+
+### Infrastructure
+
+Implementa lo que Application define:
+
+- Gateways/facades que hablan con Stripe/PayPal
+- mappers DTO → Domain
+- normalización de errores
+- fake gateways (simulación)
+
+### UI
+
+Páginas y componentes:
+
+- `checkout`, `status`, `history`, `return`, `showcase`
+- renderiza estado
+- invoca store / use cases
+- **traduce** errores (UI-only translation)
+
+### Config
+
+Una capa especial (solo wiring):
+
+- aquí sí se permiten imports de todos lados
+- decide si usar real vs fake
+- registra factories y adapters
+
+---
+
+## Glosario (en español humano)
+
+### PaymentIntent
+
+Es “lo que está pasando” con un pago:
+
+- `id`
+- `status` (`processing`, `succeeded`, `failed`, etc.)
+- `amount`, `currency`
+- `provider` (`stripe` | `paypal`)
+- opcional: `redirectUrl` / `nextAction` si requiere pasos extra (3DS, PayPal approve)
+
+### PaymentError (contrato)
+
+Los errores viajan como **datos**, no como texto traducido:
+
+```ts
+export interface PaymentError {
+  code: string;
+  messageKey: string; // i18n key (ej: "errors.provider_error")
+  params?: Record<string, any>;
+  raw: unknown; // debug, NO UI
 }
 ```
 
-### Configurar Fallback Automático
+✅ `messageKey` es una **key**, no un texto final
+✅ `params` son datos serializables para interpolación
+❌ Infrastructure no traduce, no usa `i18n.t`
 
-```typescript
-// En providers del módulo
-{
-    provide: FALLBACK_CONFIG,
-    useValue: {
-        mode: 'auto',
-        autoFallbackDelay: 2000,
-        maxAutoFallbacks: 1,
-        providerPriority: ['stripe', 'paypal']
-    }
+---
+
+## Flujo principal: “Start Payment” (paso a paso)
+
+Ejemplo: pagar con tarjeta con Stripe (pero aplica igual a otros).
+
+1. UI arma un request (con builder o formulario)
+2. UI llama al Store
+3. Store llama al Use Case
+4. Use Case obtiene el ProviderFactory correcto
+5. Factory crea la Strategy (y gateways)
+6. Strategy ejecuta
+7. Infra habla con el provider
+8. Mapea response → `PaymentIntent`
+9. UI renderiza el intent
+
+Un diagrama tipo “secuencia”:
+
+```mermaid
+sequenceDiagram
+  participant UI
+  participant Store
+  participant UseCase as StartPaymentUseCase
+  participant Registry as ProviderFactoryRegistry
+  participant Factory as ProviderFactory
+  participant Strategy as PaymentStrategy
+  participant Gateway as Provider Gateway (Infra)
+
+  UI->>Store: startPayment(request, providerId)
+  Store->>UseCase: execute(request, providerId)
+  UseCase->>Registry: getFactory(providerId)
+  Registry->>Factory: (resolve)
+  UseCase->>Factory: createStrategy(context)
+  Factory->>Strategy: (strategy instance)
+  UseCase->>Strategy: prepare(request)
+  Strategy->>Gateway: create/confirm/get...
+  Gateway-->>Strategy: raw response
+  Strategy-->>UseCase: PaymentIntent (domain)
+  UseCase-->>Store: PaymentIntent
+  Store-->>UI: state updated
+```
+
+---
+
+## ¿Por qué existe `ProviderFactoryRegistry`?
+
+Porque el módulo soporta **múltiples providers** sin llenar la UI de `if (stripe)`.
+
+En vez de esto:
+
+```ts
+// ❌ Evitar
+if (provider === 'stripe') doStripe();
+else doPaypal();
+```
+
+Hacemos esto:
+
+```ts
+// ✅ Mejor: pedirle al registry lo que necesito
+const factory = registry.get(providerId);
+const strategy = factory.createStrategy(context);
+```
+
+**Analogía rápida:**
+Es como enchufes en un viaje:
+
+- Tú no quieres reescribir tu cargador por país.
+- Quieres un adaptador que te entregue _la misma salida_ aunque cambie el enchufe.
+
+---
+
+## ¿Qué es un Abstract Factory aquí? (sin humo)
+
+En el mundo real, Stripe y PayPal no solo cambian “un endpoint”.
+Cambian varias piezas al mismo tiempo:
+
+- cómo se crea la orden/intent
+- qué campos son necesarios (token, returnUrl, email…)
+- qué flujo de aprobación existe (PayPal redirect / 3DS)
+- cómo se leen status
+- cómo se normaliza el error
+
+Un **Abstract Factory** te permite pedir _un “paquete completo”_ de piezas compatibles:
+
+- builder de request
+- strategy
+- gateways
+- validators / mapping
+
+**Y el resto del sistema no necesita saber cuál provider es.**
+
+---
+
+## ¿Por qué existen Strategies?
+
+Porque **un provider puede tener varios “métodos”**:
+
+- tarjeta (card)
+- SPEI
+- redirect PayPal
+- 3DS / requires_action
+
+Cada método tiene reglas diferentes, entonces:
+
+- Strategy A = cómo iniciar/confirmar tarjeta
+- Strategy B = cómo iniciar SPEI
+- Strategy C = flujo redirect PayPal
+
+Así evitas un monstruo gigante tipo:
+
+```ts
+// ❌ Anti-pattern
+startPayment() {
+  if (method === 'card') { ... }
+  if (method === 'spei') { ... }
+  if (method === 'paypal') { ... }
+  // y crece infinito...
 }
 ```
 
-## Agregar un Nuevo Provider
+---
 
-Para agregar un nuevo provider (ej: MercadoPago):
+## Fallback: “si un provider falla, prueba otro”
 
-1. **Crear estructura en `infrastructure/mercadopago/`:**
-   - `gateways/mercadopago-payment.gateway.ts` - Extiende `PaymentGateway`
-   - `factories/mercadopago-provider.factory.ts` - Implementa `ProviderFactory`
-   - `builders/mercadopago-*-request.builder.ts` - Implementa `PaymentRequestBuilder`
-   - `validators/mercadopago-token.validator.ts` - Implementa `TokenValidator`
+El fallback vive en:
 
-2. **Registrar en DI** (`config/payment.providers.ts`):
-   ```typescript
-   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: MercadoPagoProviderFactory, multi: true }
-   ```
+- `src/app/features/payments/application/services/fallback-orchestrator.service.ts`
 
-**La UI no cambia.** Solo verá un nuevo provider disponible en el registry.
+Este servicio detecta fallas elegibles y decide:
 
-## Tecnologías
+- **modo manual:** mostrar modal y dejar que el usuario elija
+- **modo auto:** intentar el siguiente provider automáticamente
 
-- Angular 19+ (standalone components, signals)
-- NgRx Signals (estado reactivo)
-- TypeScript 5.x
-- RxJS 7+
-- Vitest (testing)
-- Bun (package manager)
+**La UI no decide fallback.**
+Solo responde a eventos (mostrar modal / reintentar).
 
-## Documentación
+> Esta parte es exactamente el tipo de lógica que se vuelve inmantenible si vive en UI.
 
-- [Progreso del módulo](./docs/payments-progress.md)
-- [Ejemplo de uso de builders](./docs/EJEMPLO-USO-BUILDERS.md)
+---
+
+## ¿Por qué podría necesitar una State Machine?
+
+Pagos tienen estados que NO son lineales:
+
+- start → requires_action → return → confirm → succeeded
+- start → provider_error → fallback → retry → ...
+- cancel vs timeout vs redirect abandonado
+- reintentos con TTL y timers
+
+Sin máquina de estados, acabas con banderas:
+
+- `isLoading`
+- `isProcessing`
+- `isRedirecting`
+- `isFallbackPending`
+- etc…
+
+Y se vuelve fácil meter estados imposibles como:
+“estoy en redirect **y** mostrando modal de fallback”.
+
+Una State Machine (XState) te obliga a modelar:
+
+✅ estados válidos
+✅ transiciones permitidas
+✅ eventos que disparan cambios
+
+Este repo está encaminado a eso (ver docs).
+
+---
+
+## I18n & errores (la regla que no se negocia)
+
+### UI-only translation
+
+✅ `i18n.t(...)` **solo** se permite en UI (y en shared UI global).
+❌ Domain/Application/Infrastructure no traducen.
+
+### ¿Por qué?
+
+Porque si infraestructura traduce, el texto queda “congelado” y no se puede:
+
+- cambiar idioma en runtime
+- cambiar copy sin tocar código
+- testear por key/params de forma estable
+
+### ¿Cómo se renderiza entonces?
+
+La UI recibe:
+
+```ts
+{ messageKey: "errors.timeout", params: { ... } }
+```
+
+y hace:
+
+```ts
+i18n.t(error.messageKey, error.params);
+```
+
+Helpers útiles:
+
+- `src/app/features/payments/ui/shared/render-payment-errors.ts`
+
+---
+
+## Guardrails: “no puedes meter deuda sin que te grite”
+
+Hay tests que funcionan como “policías de imports”:
+
+- `src/app/features/payments/tests/payments-boundaries.spec.ts`
+
+Ejemplos de reglas que protege:
+
+1. UI → **NO** importa Infrastructure
+2. Application → **NO** importa Infrastructure
+3. Domain → framework-free
+4. Infrastructure → **NO** importa UI
+
+La idea es que sea _más difícil romper arquitectura por accidente_.
+
+---
+
+## “¿Qué páginas tiene?” (para probar rápido)
+
+- `/payments/checkout` → flujo principal
+- `/payments/return` → retorno de 3DS/PayPal
+- `/payments/cancel` → cancelación PayPal
+- `/payments/status` → consultar estado por ID
+- `/payments/history` → historial de intents
+- `/payments/showcase` → demo de componentes
+
+---
+
+## Agregar un provider nuevo (mini guía)
+
+Cuando quieras añadir “ProviderX” sin destruir todo:
+
+1. Crea infraestructura:
+   - `infrastructure/providerx/**`
+   - gateways/facades + DTO + mappers + error normalization
+
+2. Crea su `ProviderFactory`:
+   - `infrastructure/providerx/factories/providerx-provider.factory.ts`
+
+3. Regístralo en config:
+   - `config/payment.providers.ts` (multi-token factories)
+
+4. (Opcional) agrega request builder / field requirements si UI necesita campos.
+
+Con eso, el resto del sistema debería seguir igual.
+
+---
+
+## Documentación interna del repo
+
+Si quieres “la versión formal” (north star + snapshot):
+
+- `docs/architecture-rules.md`
+- `docs/goals.md`
+- `docs/stabilization-plan.md`
+
+---
+
+## FAQ rápido (cosas que confunden al inicio)
+
+### “¿Por qué no usar servicios directos en UI?”
+
+Porque en pagos el caos llega rápido. Separar capas evita que la UI se vuelva un “God Object”.
+
+### “¿Esto es overkill?”
+
+Sí… a propósito 😄.
+El objetivo es practicar arquitectura aplicada con un caso realista.
+
+### “¿Por qué hay providers fake?”
+
+Porque te deja desarrollar UI + flujos + fallback sin depender de APIs reales.
+
+---
+
+## Disclaimer
+
+Este repo NO es un producto listo para producción.
+Es un proyecto de aprendizaje/arquitectura. **No lo uses como librería de pagos real sin hardening.**
