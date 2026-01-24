@@ -12,15 +12,20 @@ import { FallbackState } from '@payments/domain/models/fallback/fallback-state.t
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { filter, Subject, takeUntil, timer } from 'rxjs';
+import { Subject } from 'rxjs';
 
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import {
+  hasDifferentEventId,
+  isAutoExecutingGuard,
+  isEventExpiredByAgeGuard,
   isEventExpiredGuard,
   isFallbackEnabledGuard,
   isOriginalRequestAvailableGuard,
   isPendingEventForResponseGuard,
+  isPendingEventGuard,
   isResponseAcceptedGuard,
+  isSameEventAndNotRespondedGuard,
   isSelectedProviderInAlternativesGuard,
 } from './fallback/fallback-orchestrator.guards';
 import {
@@ -32,6 +37,7 @@ import {
   shouldAutoFallbackPolicy,
 } from './fallback/fallback-orchestrator.policy';
 import { createFallbackStateSignal } from './fallback/fallback-orchestrator.state';
+import { scheduleAfterDelay, scheduleTTL } from './fallback/fallback-orchestrator.timers';
 import {
   registerFailureTransition,
   resetTransition,
@@ -339,15 +345,15 @@ export class FallbackOrchestratorService {
     this._autoFallbackStarted$.next({ provider, delay });
 
     // Esperar el delay y luego ejecutar
-    timer(delay)
-      .pipe(
-        takeUntil(this._cancel$),
-        filter(() => this._state().status === 'auto_executing'),
-      )
-      .subscribe(() => {
-        // Emitir evento para que el componente ejecute el pago
+    scheduleAfterDelay(
+      delay,
+      this._cancel$,
+      () => isAutoExecutingGuard(this._state(), provider),
+      // Emitir evento para que el componente ejecute el pago
+      () => {
         this._fallbackExecute$.next({ request, provider });
-      });
+      },
+    );
   }
 
   /**
@@ -386,28 +392,29 @@ export class FallbackOrchestratorService {
    * que la UI quede colgada esperando una respuesta.
    */
   private setupTimeout(eventId: string): void {
-    timer(this.config.userResponseTimeout)
-      .pipe(
-        takeUntil(this._cancel$),
-        filter(() => {
-          const pendingEvent = this._state().pendingEvent;
-          // Solo procesar si el evento sigue siendo el mismo y no ha sido respondido
-          return pendingEvent?.eventId === eventId && this._state().status === 'pending';
-        }),
-      )
-      .subscribe(() => {
-        // Verificar que el evento sigue siendo válido antes de limpiar
+    const ttlMs = this.config.userResponseTimeout;
+    scheduleTTL(
+      ttlMs,
+      this._cancel$,
+      () =>
+        isSameEventAndNotRespondedGuard(
+          eventId,
+          this._state().pendingEvent?.eventId,
+          this._state().status,
+        ),
+      () => {
         const currentEvent = this._state().pendingEvent;
-        if (currentEvent?.eventId === eventId) {
-          const now = Date.now();
-          const eventAge = now - currentEvent.timestamp;
+        if (!isPendingEventGuard(currentEvent)) return;
 
-          // Si realmente expiró, limpiar el estado
-          if (eventAge >= this.config.userResponseTimeout) {
-            this.finish('cancelled');
-          }
+        if (hasDifferentEventId(currentEvent.eventId, eventId)) return;
+
+        const eventAge = Date.now() - currentEvent.timestamp;
+
+        if (isEventExpiredByAgeGuard(eventAge, ttlMs)) {
+          this.finish('cancelled');
         }
-      });
+      },
+    );
   }
 
   private startAutoFallback(provider: PaymentProviderId, request: CreatePaymentRequest): void {
