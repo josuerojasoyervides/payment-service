@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
+import { LoggerService } from '@core/logging';
 import { PaymentGatewayPort } from '@payments/application/ports/payment-gateway.port';
 import { ProviderFactory } from '@payments/application/ports/provider-factory.port';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
@@ -30,7 +31,7 @@ export class PaypalProviderFactory implements ProviderFactory {
   readonly providerId = 'paypal' as const;
 
   private readonly gateway = inject(PaypalIntentFacade);
-
+  private readonly logger = inject(LoggerService);
   /**
    * Strategy cache.
    */
@@ -130,7 +131,7 @@ export class PaypalProviderFactory implements ProviderFactory {
   private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
     switch (type) {
       case 'card':
-        return new PaypalRedirectStrategy(this.gateway);
+        return new PaypalRedirectStrategy(this.gateway, this.logger);
       default:
         throw new Error(`Unexpected payment method type: ${type}`);
     }

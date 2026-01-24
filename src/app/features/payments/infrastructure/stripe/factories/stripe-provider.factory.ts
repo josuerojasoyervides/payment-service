@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import { LoggerService } from '@core/logging';
 import { ProviderFactory } from '@payments/application/ports/provider-factory.port';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
@@ -33,6 +34,7 @@ export class StripeProviderFactory implements ProviderFactory {
   readonly providerId = 'stripe' as const;
 
   private readonly gateway = inject(StripeIntentFacade);
+  private readonly logger = inject(LoggerService);
 
   /**
    * Strategy cache to avoid recreating them.
@@ -159,9 +161,9 @@ export class StripeProviderFactory implements ProviderFactory {
   private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
     switch (type) {
       case 'card':
-        return new CardStrategy(this.gateway, new StripeTokenValidator());
+        return new CardStrategy(this.gateway, new StripeTokenValidator(), this.logger);
       case 'spei':
-        return new SpeiStrategy(this.gateway);
+        return new SpeiStrategy(this.gateway, this.logger);
       default:
         throw new Error(`Unexpected payment method type: ${type}`);
     }

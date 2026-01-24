@@ -1,3 +1,5 @@
+import { TestBed } from '@angular/core/testing';
+import { LoggerService } from '@core/logging';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of } from 'rxjs';
@@ -28,6 +30,13 @@ describe('CardStrategy', () => {
     currency: 'MXN',
   };
 
+  const loggerMock = {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  };
+
   beforeEach(() => {
     gatewayMock = {
       providerId: 'stripe',
@@ -47,13 +56,22 @@ describe('CardStrategy', () => {
       getAcceptedPatterns: vi.fn(() => ['tok_*', 'pm_*', 'card_*']),
     };
 
-    strategy = new CardStrategy(gatewayMock as any, tokenValidatorMock);
+    TestBed.configureTestingModule({
+      providers: [{ provide: LoggerService, useValue: loggerMock }],
+    });
+
+    strategy = new CardStrategy(gatewayMock as any, tokenValidatorMock, loggerMock as any);
   });
 
   describe('validate()', () => {
     it('throws if token is missing', () => {
       const req = { ...validReq, method: { type: 'card' as const } };
-      expect(() => strategy.validate(req)).toThrowError('errors.card_token_required');
+      expect(() => strategy.validate(req)).toThrowError(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: 'errors.card_token_required',
+        }),
+      );
     });
 
     it('throws if token has invalid format', () => {
@@ -75,12 +93,22 @@ describe('CardStrategy', () => {
 
     it('throws if amount is below minimum for MXN', () => {
       const req = { ...validReq, amount: 5, currency: 'MXN' as const };
-      expect(() => strategy.validate(req)).toThrowError('errors.min_amount');
+      expect(() => strategy.validate(req)).toThrowError(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: 'errors.min_amount',
+        }),
+      );
     });
 
     it('throws if amount is below minimum for USD', () => {
       const req = { ...validReq, amount: 0.5, currency: 'USD' as const };
-      expect(() => strategy.validate(req)).toThrowError('errors.min_amount');
+      expect(() => strategy.validate(req)).toThrowError(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: 'errors.min_amount',
+        }),
+      );
     });
   });
 
@@ -136,7 +164,12 @@ describe('CardStrategy', () => {
       const invalidReq = { ...validReq, method: { type: 'card' as const } };
 
       // Error is thrown synchronously in start() before returning Observable
-      expect(() => strategy.start(invalidReq)).toThrowError('errors.card_token_required');
+      expect(() => strategy.start(invalidReq)).toThrowError(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: 'errors.card_token_required',
+        }),
+      );
 
       expect(gatewayMock.createIntent).not.toHaveBeenCalled();
     });

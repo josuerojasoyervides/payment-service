@@ -44,8 +44,7 @@ describe('PaypalGetIntentGateway', () => {
         expect(intent.currency).toBe('MXN');
         expect(intent.status).toBeDefined();
       },
-      error: (error) => {
-        console.error(error);
+      error: () => {
         expect.fail('No debería emitir error');
       },
     });

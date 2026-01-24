@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
+import { LoggerService } from '@core/logging';
 
 import { Translations } from './i18n.types';
 import { en } from './translations/en';
@@ -27,6 +28,8 @@ import { es } from './translations/es';
  */
 @Injectable({ providedIn: 'root' })
 export class I18nService {
+  private readonly logger = inject(LoggerService);
+
   private readonly _currentLang = signal<string>('es');
   private readonly translationsMap: Record<string, Translations> = { es, en };
 
@@ -47,7 +50,7 @@ export class I18nService {
     const translation = this.getTranslation(key);
 
     if (!translation) {
-      console.warn(`[I18n] Translation missing for key: ${key}`);
+      this.logger.warn(`[I18n] Translation missing for key: ${key}`, 'I18nService', { key });
       return key;
     }
 
@@ -67,7 +70,11 @@ export class I18nService {
     if (this.translationsMap[lang]) {
       this._currentLang.set(lang);
     } else {
-      console.warn(`[I18n] Language "${lang}" not available, keeping current language`);
+      this.logger.warn(
+        `[I18n] Language "${lang}" not available, keeping current language`,
+        'I18nService',
+        { lang },
+      );
     }
   }
 

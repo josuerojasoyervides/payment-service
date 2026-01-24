@@ -26,15 +26,27 @@ export const LOGGER_CONFIG = new InjectionToken<Partial<LoggerConfig>>('LOGGER_C
  *
  * @example
  * ```typescript
+ * // Ejemplo básico con context
  * logger.info('Payment started', 'CheckoutComponent', { orderId: '123' });
+ * logger.debug('Validating form', 'PaymentFormComponent', { fieldCount: 5 });
+ * logger.warn('Low balance detected', 'BalanceService', { currentBalance: 10.50 });
+ * logger.error('Payment failed', 'PaymentGateway', error, { intentId: 'pi_123' });
  *
+ * // Ejemplo con correlation context
  * const ctx = logger.startCorrelation('payment-flow', { orderId: '123' });
- * logger.info('Creating intent', 'Gateway', {}, ctx.correlationId);
- * logger.endCorrelation(ctx);
+ * logger.info('Creating intent', 'StripeGateway', { amount: 100 }, ctx.correlationId);
+ * logger.info('Confirming payment', 'PayPalGateway', { orderId: 'ord_456' }, ctx.correlationId);
+ * logger.endCorrelation(ctx, { success: true });
  *
+ * // Ejemplo con measure para operaciones asíncronas
  * const result = await logger.measure('createIntent', async () => {
  *   return gateway.createIntent(req);
- * }, 'StripeGateway');
+ * }, 'StripeGateway', { provider: 'stripe' });
+ *
+ * // Ejemplo con measureSync para operaciones síncronas
+ * const isValid = logger.measureSync('validateToken', () => {
+ *   return tokenValidator.validate(token);
+ * }, 'TokenValidator', { tokenLength: token.length });
  * ```
  */
 @Injectable({ providedIn: 'root' })
@@ -54,6 +66,10 @@ export class LoggerService {
 
   /**
    * Debug level log.
+   * @param message Log message (e.g., 'Validating form')
+   * @param context Log context (e.g., 'LoggerService')
+   * @param metadata Additional metadata (e.g., { fieldCount: 5 })
+   * @param correlationId Correlation ID (e.g., '1234567890')
    */
   debug(
     message: string,
@@ -66,6 +82,10 @@ export class LoggerService {
 
   /**
    * Info level log.
+   * @param message Log message (e.g., 'Payment started')
+   * @param context Log context (e.g., 'LoggerService')
+   * @param metadata Additional metadata (e.g., { orderId: '123' })
+   * @param correlationId Correlation ID (e.g., '1234567890')
    */
   info(
     message: string,
@@ -78,6 +98,10 @@ export class LoggerService {
 
   /**
    * Warn level log.
+   * @param message Log message (e.g., 'Token provided but will be ignored for SPEI payments')
+   * @param context Log context (e.g., 'LoggerService')
+   * @param metadata Additional metadata (e.g., { intentId: 'pi_123' })
+   * @param correlationId Correlation ID (e.g., '1234567890')
    */
   warn(
     message: string,
@@ -90,6 +114,11 @@ export class LoggerService {
 
   /**
    * Error level log.
+   * @param message Log message (e.g., 'Failed to copy')
+   * @param context Log context (e.g., 'LoggerService')
+   * @param error Error object (e.g., error object)
+   * @param metadata Additional metadata (e.g., { intentId: 'pi_123' })
+   * @param correlationId Correlation ID (e.g., '1234567890')
    */
   error(
     message: string,

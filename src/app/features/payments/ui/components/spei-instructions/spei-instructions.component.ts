@@ -1,6 +1,7 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { LoggerService } from '@core/logging';
 import { ClabeFormatPipe } from '@shared/pipes/clabe-format.pipe';
 
 /**
@@ -30,6 +31,7 @@ import { ClabeFormatPipe } from '@shared/pipes/clabe-format.pipe';
 })
 export class SpeiInstructionsComponent {
   private readonly i18n = inject(I18nService);
+  private readonly logger = inject(LoggerService);
 
   /** Interbank CLABE */
   readonly clabe = input.required<string>();
@@ -93,7 +95,7 @@ export class SpeiInstructionsComponent {
         }
       }, 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
+      this.logger.error('Failed to copy:', 'SpeiInstructionsComponent', err);
     }
   }
 }

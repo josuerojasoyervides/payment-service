@@ -20,7 +20,7 @@ export abstract class PaymentOperationPort<
   protected readonly logger = inject(LoggerService);
 
   protected get logContext(): string {
-    return `${this.providerId}Gateway`;
+    return `${this.providerId} Gateway`;
   }
 
   execute(request: TRequest): Observable<TResponse> {

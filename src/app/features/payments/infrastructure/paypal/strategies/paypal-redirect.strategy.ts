@@ -1,4 +1,5 @@
 import { I18nKeys } from '@core/i18n';
+import { LoggerService } from '@core/logging';
 import { NextActionPaypalApprove } from '@payments/domain/models/payment/payment-action.types';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import {
@@ -34,7 +35,10 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
   private static readonly DEFAULT_LANDING_PAGE = 'LOGIN';
   private static readonly DEFAULT_USER_ACTION = 'PAY_NOW';
 
-  constructor(private readonly gateway: PaymentGatewayPort) {}
+  constructor(
+    private readonly gateway: PaymentGatewayPort,
+    private readonly logger: LoggerService,
+  ) {}
 
   /**
    * Validates the request for PayPal.
@@ -79,7 +83,13 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
 
     // Token se ignora en PayPal redirect flow (no tronamos, solo warning)
     if (req.method?.token) {
-      console.warn('[PaypalRedirectStrategy] Token provided but PayPal uses its own checkout flow');
+      this.logger.warn(
+        '[PaypalRedirectStrategy] Token provided but PayPal uses its own checkout flow',
+        'PaypalRedirectStrategy',
+        {
+          token: req.method.token,
+        },
+      );
     }
   }
 
@@ -140,7 +150,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
 
     const { preparedRequest, metadata } = this.prepare(req, context);
 
-    console.log(`[PaypalRedirectStrategy] Creating PayPal order:`, {
+    this.logger.warn(`[PaypalRedirectStrategy] Creating PayPal order:`, 'PaypalRedirectStrategy', {
       orderId: req.orderId,
       amount: req.amount,
       currency: req.currency,
@@ -149,7 +159,13 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
 
     return this.gateway.createIntent(preparedRequest).pipe(
       tap((intent) => {
-        console.log(`[PaypalRedirectStrategy] PayPal order created: ${intent.id}`);
+        this.logger.warn(
+          `[PaypalRedirectStrategy] PayPal order created: ${intent.id}`,
+          'PaypalRedirectStrategy',
+          {
+            intentId: intent.id,
+          },
+        );
       }),
       map((intent) => this.enrichIntentWithPaypalApproval(intent, metadata)),
     );
@@ -183,7 +199,13 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     const approveUrl = this.extractApproveUrl(intent);
 
     if (!approveUrl) {
-      console.error('[PaypalRedirectStrategy] No approve URL found in PayPal response');
+      this.logger.error(
+        '[PaypalRedirectStrategy] No approve URL found in PayPal response',
+        'PaypalRedirectStrategy',
+        {
+          intentId: intent.id,
+        },
+      );
 
       // Fallback: si el intent ya trae redirectUrl, úsalo como redirect genérico
       if (intent.redirectUrl) {

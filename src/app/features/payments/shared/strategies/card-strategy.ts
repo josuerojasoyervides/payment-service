@@ -1,5 +1,6 @@
 import { I18nKeys } from '@core/i18n';
-import { PaymentValidationError } from '@payments/application/errors/payment-validation.error';
+import { LoggerService } from '@core/logging';
+import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import {
   PaymentIntent,
   PaymentMethodType,
@@ -32,13 +33,13 @@ import {
  */
 export class CardStrategy implements PaymentStrategy {
   readonly type: PaymentMethodType = 'card';
-
   /** Generic pattern to detect saved cards (PaymentMethod) */
   private static readonly SAVED_CARD_PATTERN = /^pm_[a-zA-Z0-9]+$/;
 
   constructor(
     private readonly gateway: PaymentGatewayPort,
     private readonly tokenValidator: TokenValidator = new NullTokenValidator(),
+    private readonly logger: LoggerService,
   ) {}
 
   /**
@@ -51,14 +52,14 @@ export class CardStrategy implements PaymentStrategy {
   validate(req: CreatePaymentRequest): void {
     if (this.tokenValidator.requiresToken()) {
       if (!req.method.token) {
-        throw new Error(I18nKeys.errors.card_token_required);
+        throw invalidRequestError(I18nKeys.errors.card_token_required);
       }
       this.tokenValidator.validate(req.method.token);
     }
 
     const minAmount = req.currency === 'MXN' ? 10 : 1;
     if (req.amount < minAmount) {
-      throw new PaymentValidationError(I18nKeys.errors.min_amount, {
+      throw invalidRequestError(I18nKeys.errors.min_amount, {
         amount: minAmount,
         currency: req.currency,
       });
@@ -117,7 +118,7 @@ export class CardStrategy implements PaymentStrategy {
     this.validate(req);
 
     const { preparedRequest, metadata } = this.prepare(req, context);
-    console.log(`[CardStrategy] Starting payment:`, {
+    this.logger.info('Starting payment', 'CardStrategy', {
       orderId: req.orderId,
       amount: req.amount,
       currency: req.currency,
@@ -128,7 +129,9 @@ export class CardStrategy implements PaymentStrategy {
     return this.gateway.createIntent(preparedRequest).pipe(
       tap((intent) => {
         if (this.requiresUserAction(intent)) {
-          console.log(`[CardStrategy] 3DS required for intent ${intent.id}`);
+          this.logger.info('3DS required for intent', 'CardStrategy', {
+            intentId: intent.id,
+          });
         }
       }),
       map((intent) => this.enrichIntentWith3dsInfo(intent, context)),

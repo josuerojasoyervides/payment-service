@@ -21,7 +21,9 @@ export abstract class FakeConfirmIntentGateway extends PaymentOperationPort<
   abstract override readonly providerId: PaymentProviderId;
 
   protected override executeRaw(request: ConfirmPaymentRequest): Observable<any> {
-    console.log(`[FakeGateway] Confirming intent ${request.intentId}`);
+    this.logger.warn(`[FakeGateway] Confirming intent ${request.intentId}`, this.logContext, {
+      request,
+    });
 
     if (this.providerId === 'paypal') {
       return simulateNetworkDelay(createConfirmedPaypalOrder(request.intentId));
