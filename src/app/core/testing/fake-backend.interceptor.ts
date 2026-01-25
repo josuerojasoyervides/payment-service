@@ -51,6 +51,7 @@ export class FakePaymentsBackendInterceptor implements HttpInterceptor {
     const method = body?.method?.type;
 
     if (method === 'card' && body?.method?.token === 'declined') {
+      // TODO : ¿Esto debería usar i18n?
       return throwError(() => ({
         error: { code: 'card_declined', message: 'Card was declined (fake)' },
         status: 402,

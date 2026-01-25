@@ -37,7 +37,7 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
     return mapOrder(dto, this.providerId);
   }
 
-  // TODO: This mocked method should not exist if we are using the fake gateway
+  // TODO : This mocked method should not exist if we are using the fake gateway
   private buildPaypalCreateRequest(req: CreatePaymentRequest): PaypalCreateOrderRequest {
     // returnUrl/cancelUrl deben venir del request preparado (PaypalRedirectStrategy.prepare)
     // que usa StrategyContext como ÚNICA fuente
