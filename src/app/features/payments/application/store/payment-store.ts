@@ -25,14 +25,13 @@ export const PaymentsStore = signalStore(
 
   withMethods((store) => {
     const fallbackOrchestrator = inject(FallbackOrchestratorService);
-    const getPaymentStatusUseCase = inject(GetPaymentStatusUseCase);
     const stateMachine = inject(PaymentFlowActorService);
+    const getPaymentStatusUseCase = inject(GetPaymentStatusUseCase);
 
     const actions = createPaymentsStoreActions(store, {
       fallbackOrchestrator,
-      getPaymentStatusUseCase,
-
       stateMachine,
+      getPaymentStatusUseCase,
     });
 
     setupFallbackExecuteListener(fallbackOrchestrator, actions.startPayment);
