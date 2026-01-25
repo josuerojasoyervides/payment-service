@@ -10,6 +10,7 @@ import {
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
 import { CancelPaymentUseCase } from '../use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '../use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
@@ -30,6 +31,7 @@ export const PaymentsStore = signalStore(
     const confirmPaymentUseCase = inject(ConfirmPaymentUseCase);
     const cancelPaymentUseCase = inject(CancelPaymentUseCase);
     const getPaymentStatusUseCase = inject(GetPaymentStatusUseCase);
+    const stateMachine = inject(PaymentFlowActorService);
 
     const actions = createPaymentsStoreActions(store, {
       fallbackOrchestrator,
@@ -37,6 +39,8 @@ export const PaymentsStore = signalStore(
       confirmPaymentUseCase,
       cancelPaymentUseCase,
       getPaymentStatusUseCase,
+
+      stateMachine,
     });
 
     setupFallbackExecuteListener(fallbackOrchestrator, actions.startPayment);

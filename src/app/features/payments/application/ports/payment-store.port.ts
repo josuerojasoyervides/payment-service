@@ -59,7 +59,7 @@ export interface PaymentDebugSummary {
  * }
  * ```
  */
-export interface PaymentStatePort {
+export interface PaymentStorePort {
   // ============================================================
   // ESTADO REACTIVO (Signals)
   // ============================================================

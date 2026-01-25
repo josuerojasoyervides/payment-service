@@ -14,7 +14,7 @@ import {
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
 
-import { PaymentDebugSummary, PaymentStatePort, Unsubscribe } from '../state/payment-state.port';
+import { PaymentDebugSummary, PaymentStorePort, Unsubscribe } from '../ports/payment-store.port';
 import { PaymentsStore } from '../store/payment-store';
 import { PaymentHistoryEntry } from '../store/payment-store.history.types';
 import { PaymentsState } from '../store/payment-store.state';
@@ -42,7 +42,7 @@ import { PaymentsState } from '../store/payment-store.state';
  * ```
  */
 @Injectable()
-export class NgRxSignalsStateAdapter implements PaymentStatePort {
+export class NgRxSignalsStateAdapter implements PaymentStorePort {
   private readonly store = inject(PaymentsStore);
 
   // ============================================================
