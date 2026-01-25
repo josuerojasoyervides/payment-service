@@ -8,10 +8,17 @@ import { firstValueFrom } from 'rxjs';
 import { createActor, SnapshotFrom } from 'xstate';
 
 import { createPaymentFlowMachine } from './payment-flow.machine';
+import { PaymentFlowEvent } from './payment-flow.types';
 
 @Injectable()
 export class PaymentFlowActorService {
-  private actor = createActor(
+  private readonly start = inject(StartPaymentUseCase);
+  private readonly confirm = inject(ConfirmPaymentUseCase);
+  private readonly cancel = inject(CancelPaymentUseCase);
+  private readonly status = inject(GetPaymentStatusUseCase);
+  private readonly logger = inject(LoggerService);
+
+  private readonly actor = createActor(
     createPaymentFlowMachine({
       startPayment: async (providerId, request, flowContext) =>
         firstValueFrom(this.start.execute(request, providerId, flowContext)),
@@ -28,33 +35,30 @@ export class PaymentFlowActorService {
   );
 
   snapshot = signal(this.actor.getSnapshot());
-
-  private readonly start = inject(StartPaymentUseCase);
-  private readonly confirm = inject(ConfirmPaymentUseCase);
-  private readonly cancel = inject(CancelPaymentUseCase);
-  private readonly status = inject(GetPaymentStatusUseCase);
-  private readonly logger = inject(LoggerService);
+  lastSentEvent = signal<PaymentFlowEvent | null>(null);
 
   constructor() {
-    this.actor.subscribe((snapshot: SnapshotFrom<typeof createPaymentFlowMachine>) => {
+    this.actor.subscribe((snapshot) => {
       this.snapshot.set(snapshot);
       this.loggerMessage(snapshot);
-      this.actor.start();
     });
+
+    this.actor.start();
   }
 
-  send(event: Parameters<typeof this.actor.send>[0]) {
+  send(event: PaymentFlowEvent) {
+    this.lastSentEvent.set(event);
     this.actor.send(event);
   }
 
-  loggerMessage(snapshot: SnapshotFrom<typeof createPaymentFlowMachine>) {
+  private loggerMessage(snapshot: SnapshotFrom<ReturnType<typeof createPaymentFlowMachine>>) {
     this.logger.info(
       'PaymentFlowMachine snapshot updated',
       'PaymentFlowActorService',
       {
         state: snapshot.value,
         context: snapshot.context,
-        event: snapshot.machine,
+        lastSentEvent: this.lastSentEvent(),
       },
       this.logger.getCorrelationId(),
     );

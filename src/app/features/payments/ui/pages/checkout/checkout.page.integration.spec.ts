@@ -3,8 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LoggerService } from '@core/logging';
 
+import type { PaymentStorePort } from '../../../application/ports/payment-store.port';
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
-import type { PaymentStorePort } from '../../../application/store/payment-store.port';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import providePayments from '../../../config/payment.providers';
 import { CheckoutComponent } from './checkout.page';

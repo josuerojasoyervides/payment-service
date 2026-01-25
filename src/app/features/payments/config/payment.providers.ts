@@ -1,4 +1,5 @@
 import { EnvironmentProviders, inject, Provider } from '@angular/core';
+import { PaymentFlowActorService } from '@payments/application/state-machine/payment-flow.actor.service';
 import { FakeCancelIntentGateway } from '@payments/infrastructure/fake/gateways/intent/cancel-intent.gateway';
 import { FakeConfirmIntentGateway } from '@payments/infrastructure/fake/gateways/intent/confirm-intent.gateway';
 import { FakeCreateIntentGateway } from '@payments/infrastructure/fake/gateways/intent/create-intent.gateway';
@@ -125,6 +126,7 @@ const APPLICATION_PROVIDERS: Provider[] = [
   ProviderFactoryRegistry,
   FallbackOrchestratorService,
   PaymentsStore,
+  PaymentFlowActorService,
   { provide: PAYMENT_STATE, useClass: NgRxSignalsStateAdapter },
 ];
 

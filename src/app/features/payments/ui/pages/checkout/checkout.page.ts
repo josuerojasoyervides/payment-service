@@ -220,6 +220,13 @@ export class CheckoutComponent {
         },
       };
 
+      /*       this.flow.send({
+        type: 'START',
+        providerId: provider,
+        request,
+        flowContext: context,
+      }); */
+
       this.paymentState.startPayment(request, provider, context);
     } catch (error) {
       this.logger.error('Failed to build payment request', 'CheckoutPage', error);

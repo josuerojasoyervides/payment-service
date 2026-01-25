@@ -22,6 +22,7 @@ import {
 
 import { StrategyContext } from '../ports/payment-strategy.port';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
 import { CancelPaymentUseCase } from '../use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '../use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
@@ -42,6 +43,7 @@ export interface PaymentsStoreDeps {
   confirmPaymentUseCase: ConfirmPaymentUseCase;
   cancelPaymentUseCase: CancelPaymentUseCase;
   getPaymentStatusUseCase: GetPaymentStatusUseCase;
+  stateMachine: PaymentFlowActorService;
 }
 
 export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: PaymentsStoreDeps) {
@@ -124,6 +126,13 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
       switchMap(({ request, providerId, context }) => {
         const wasAutoFallback = store.fallback().status === 'auto_executing';
 
+        deps.stateMachine.send({
+          type: 'START',
+          providerId,
+          request,
+          flowContext: context,
+        });
+
         return deps.startPaymentUseCase.execute(request, providerId, context, wasAutoFallback).pipe(
           run({
             providerId,
@@ -142,11 +151,13 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
     providerId: PaymentProviderId;
   }>(
     pipe(
-      switchMap(({ request, providerId }) =>
-        deps.confirmPaymentUseCase
+      switchMap(({ request, providerId }) => {
+        deps.stateMachine.send({ type: 'CONFIRM' }); // ✅ shadow
+
+        return deps.confirmPaymentUseCase
           .execute(request, providerId)
-          .pipe(run({ providerId }), onSuccess(providerId)),
-      ),
+          .pipe(run({ providerId }), onSuccess(providerId));
+      }),
     ),
   );
 
@@ -155,11 +166,12 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
     providerId: PaymentProviderId;
   }>(
     pipe(
-      switchMap(({ request, providerId }) =>
-        deps.cancelPaymentUseCase
+      switchMap(({ request, providerId }) => {
+        deps.stateMachine.send({ type: 'CANCEL' }); // ✅ shadow
+        return deps.cancelPaymentUseCase
           .execute(request, providerId)
-          .pipe(run({ providerId }), onSuccess(providerId)),
-      ),
+          .pipe(run({ providerId }), onSuccess(providerId));
+      }),
     ),
   );
 
@@ -168,11 +180,12 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
     providerId: PaymentProviderId;
   }>(
     pipe(
-      switchMap(({ request, providerId }) =>
-        deps.getPaymentStatusUseCase
+      switchMap(({ request, providerId }) => {
+        deps.stateMachine.send({ type: 'REFRESH' }); // ✅ shadow
+        return deps.getPaymentStatusUseCase
           .execute(request, providerId)
-          .pipe(run({ providerId }), onSuccess(providerId)),
-      ),
+          .pipe(run({ providerId }), onSuccess(providerId));
+      }),
     ),
   );
 
