@@ -18,11 +18,14 @@ import {
   MonoTypeOperatorFunction,
   Observable,
   pipe,
+  switchMap,
+  take,
   tap,
 } from 'rxjs';
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
+import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
 import { normalizePaymentError } from './payment-store.errors';
 import { addToHistory } from './payment-store.history';
 import {
@@ -36,6 +39,7 @@ import { PaymentsStoreContext, RunOptions } from './payment-store.types';
 export interface PaymentsStoreDeps {
   fallbackOrchestrator: FallbackOrchestratorService;
   stateMachine: PaymentFlowActorService;
+  getPaymentStatusUseCase: GetPaymentStatusUseCase;
 }
 
 export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: PaymentsStoreDeps) {
@@ -149,8 +153,28 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
     providerId: PaymentProviderId;
   }>(
     pipe(
-      tap(({ request, providerId }) => {
+      switchMap(({ request, providerId }) => {
+        // 1) Intentar XState primero
+        const accepted = deps.stateMachine.send({
+          type: 'REFRESH',
+          providerId,
+          intentId: request.intentId,
+        });
+
+        // ✅ loading siempre mientras se resuelve
         applyLoadingState(store, providerId);
+
+        // 2) Si la máquina lo aceptó, ella se encarga (machine-bridge actualiza el store)
+        if (accepted) return EMPTY;
+
+        // 3) Si la máquina lo rechazó, fallback legacy usecase
+        return deps.getPaymentStatusUseCase.execute(request, providerId).pipe(
+          take(1),
+          legacyOnSuccess(providerId),
+          legacyRun({
+            providerId,
+          }),
+        );
       }),
       ignoreElements(),
     ),

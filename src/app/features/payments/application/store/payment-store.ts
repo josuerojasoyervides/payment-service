@@ -11,6 +11,7 @@ import { PaymentProviderId } from '@payments/domain/models/payment/payment-inten
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
+import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
 import { createPaymentsStoreActions } from './payment-store.actions';
 import { setupFallbackExecuteListener } from './payment-store.fallback';
 import { setupPaymentFlowMachineBridge } from './payment-store.machine-bridge';
@@ -25,10 +26,12 @@ export const PaymentsStore = signalStore(
   withMethods((store) => {
     const fallbackOrchestrator = inject(FallbackOrchestratorService);
     const stateMachine = inject(PaymentFlowActorService);
+    const getPaymentStatusUseCase = inject(GetPaymentStatusUseCase);
 
     const actions = createPaymentsStoreActions(store, {
       fallbackOrchestrator,
       stateMachine,
+      getPaymentStatusUseCase,
     });
 
     setupFallbackExecuteListener(fallbackOrchestrator, actions.startPayment);

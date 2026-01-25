@@ -365,22 +365,36 @@ describe('PaymentsStore', () => {
   // ============================================================
   // refreshPayment
   // ============================================================
+  // ============================================================
+  // refreshPayment
+  // ============================================================
   describe('refreshPayment', () => {
+    const flush = async () => {
+      TestBed.tick();
+      await Promise.resolve();
+      await Promise.resolve();
+      TestBed.tick();
+    };
     it('refreshPayment -> uses legacy usecase', async () => {
-      // si tu lógica intenta machine primero:
+      // fuerza legacy path (machine reject)
       (stateMachineMock.send as any).mockReturnValueOnce(false);
 
       store.refreshPayment({
-        request: { intentId: 'pi_1' } as any,
+        request: { intentId: 'pi_123' },
         providerId: 'stripe',
       });
 
-      await Promise.resolve();
-      await Promise.resolve();
+      await flush();
 
       expect(getPaymentStatusUseCaseMock.execute).toHaveBeenCalledTimes(1);
-      // si refreshPayment intenta send:
-      // expect(stateMachineMock.send).toHaveBeenCalledTimes(1);
+
+      // opcional pero recomendado:
+      expect(stateMachineMock.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'REFRESH',
+          providerId: 'stripe',
+        }),
+      );
     });
 
     it('refreshPayment -> usecase error => status=error', async () => {
@@ -389,12 +403,11 @@ describe('PaymentsStore', () => {
       getPaymentStatusUseCaseMock.execute.mockReturnValueOnce(throwError(() => paymentError));
 
       store.refreshPayment({
-        request: { intentId: 'pi_1' } as any,
+        request: { intentId: 'pi_123' },
         providerId: 'stripe',
       });
 
-      await Promise.resolve();
-      await Promise.resolve();
+      await flush();
 
       expect(store.status()).toBe('error');
       expect(store.error()).toEqual(paymentError);
