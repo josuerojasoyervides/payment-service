@@ -5,7 +5,7 @@ import { ConfirmPaymentUseCase } from '@payments/application/use-cases/confirm-p
 import { GetPaymentStatusUseCase } from '@payments/application/use-cases/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/use-cases/start-payment.use-case';
 import { firstValueFrom } from 'rxjs';
-import { createActor, SnapshotFrom } from 'xstate';
+import { createActor } from 'xstate';
 
 import {
   isPaymentFlowSnapshot,
@@ -60,7 +60,7 @@ export class PaymentFlowActorService {
 
   private readonly initialSnapshot = this.actor.getSnapshot();
 
-  snapshot = signal<SnapshotFrom<typeof this.machine>>(this.initialSnapshot);
+  snapshot = signal<PaymentFlowSnapshot>(this.initialSnapshot);
   lastSentEvent = signal<PaymentFlowEvent | null>(null);
 
   constructor() {

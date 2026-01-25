@@ -4,21 +4,11 @@ import {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import {
-  CancelPaymentRequest,
-  ConfirmPaymentRequest,
-  CreatePaymentRequest,
-  GetPaymentStatusRequest,
-} from '@payments/domain/models/payment/payment-request.types';
-import {
-  ActorRefFrom,
-  EventObject,
-  PromiseActorLogic,
-  SnapshotFrom,
-  UnknownActorLogic,
-} from 'xstate';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { ActorRefFrom, SnapshotFrom } from 'xstate';
 
-import { createPaymentFlowMachine } from './payment-flow.machine';
+// ✅ IMPORTANT: type-only import to avoid runtime circular dependency
+import type { createPaymentFlowMachine } from './payment-flow.machine';
 
 export type ActorId = 'start' | 'confirm' | 'cancel' | 'status';
 
@@ -32,33 +22,6 @@ export interface ErrorEvent<TActor extends ActorId> {
   error: unknown;
 }
 
-/**
- * Dependencias = “lo que el mundo exterior hace”.
- * La máquina NO sabe de Angular, solo llama funciones.
- */
-export interface PaymentFlowDeps {
-  startPayment: (
-    providerId: PaymentProviderId,
-    request: CreatePaymentRequest,
-    flowContext?: PaymentFlowContext,
-  ) => Promise<PaymentIntent>;
-
-  confirmPayment: (
-    providerId: PaymentProviderId,
-    request: ConfirmPaymentRequest,
-  ) => Promise<PaymentIntent>;
-
-  cancelPayment: (
-    providerId: PaymentProviderId,
-    request: CancelPaymentRequest,
-  ) => Promise<PaymentIntent>;
-
-  getStatus: (
-    providerId: PaymentProviderId,
-    request: GetPaymentStatusRequest,
-  ) => Promise<PaymentIntent>;
-}
-
 export type PaymentFlowEvent =
   | {
       type: 'START';
@@ -70,12 +33,12 @@ export type PaymentFlowEvent =
   | { type: 'CANCEL'; providerId: PaymentProviderId; intentId: string }
   | { type: 'REFRESH'; providerId: PaymentProviderId; intentId: string }
   | { type: 'RESET' }
-  // ✅ Done events
+  // ✅ Done events (invoke resolve)
   | DoneEvent<'start', PaymentIntent>
   | DoneEvent<'confirm', PaymentIntent>
   | DoneEvent<'cancel', PaymentIntent>
   | DoneEvent<'status', PaymentIntent>
-  // ✅ Error events
+  // ✅ Error events (invoke reject)
   | ErrorEvent<'start'>
   | ErrorEvent<'confirm'>
   | ErrorEvent<'cancel'>
@@ -117,29 +80,9 @@ export interface StatusInput {
   intentId: string;
 }
 
+/**
+ * Convenience exports
+ */
 export type PaymentFlowMachine = ReturnType<typeof createPaymentFlowMachine>;
 export type PaymentFlowSnapshot = SnapshotFrom<PaymentFlowMachine>;
 export type PaymentFlowActorRef = ActorRefFrom<PaymentFlowMachine>;
-
-// ✅ tu actor map tipado
-export interface PaymentFlowActorLogicMap {
-  [key: string]: UnknownActorLogic;
-
-  start: PromiseActorLogic<PaymentIntent, StartInput, EventObject>;
-  confirm: PromiseActorLogic<PaymentIntent, ConfirmInput, EventObject>;
-  cancel: PromiseActorLogic<PaymentIntent, CancelInput, EventObject>;
-  status: PromiseActorLogic<PaymentIntent, StatusInput, EventObject>;
-}
-
-/**
- * ✅ “ToProvidedActor” casero:
- * Crea el union:
- * {src:'start', logic:..., id:...} | {src:'confirm'...} | ...
- */
-export type ProvidedActorFromMap<TMap extends object> = {
-  [K in Extract<keyof TMap, string>]: {
-    src: K;
-    logic: TMap[K];
-    id: string | undefined;
-  };
-}[Extract<keyof TMap, string>];

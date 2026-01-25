@@ -36,7 +36,6 @@ import {
   applySilentFailureState,
 } from './payment-store.transitions';
 import { PaymentsStoreContext, RunOptions } from './payment-store.types';
-
 export interface PaymentsStoreDeps {
   fallbackOrchestrator: FallbackOrchestratorService;
   startPaymentUseCase: StartPaymentUseCase;

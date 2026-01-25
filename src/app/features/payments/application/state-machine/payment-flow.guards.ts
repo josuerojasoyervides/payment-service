@@ -1,6 +1,6 @@
 import type { InspectionEvent } from 'xstate';
 
-import { isFinalStatus, needsUserAction } from './payment-flow.helpers';
+import { isFinalStatus, needsUserAction } from './payment-flow.policy';
 import type { PaymentFlowMachineContext, PaymentFlowSnapshot } from './payment-flow.types';
 /**
  * Evento "@xstate.snapshot" pero con snapshot tipado a TSnap.

@@ -1,29 +1,105 @@
-import { setup } from 'xstate';
+// src/app/features/payments/application/state-machine/payment-flow.machine.ts
 
-import { paymentFlowActions } from './payment-flow.actions';
-import { createPaymentFlowActors } from './payment-flow.actors';
-import { paymentFlowGuards } from './payment-flow.guards';
-import { PaymentFlowDeps, PaymentFlowEvent, PaymentFlowMachineContext } from './payment-flow.types';
+import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import { assign, fromPromise, setup } from 'xstate';
 
-export interface machineTypes {
-  context: PaymentFlowMachineContext;
-  events: PaymentFlowEvent;
-}
+import { normalizePaymentError } from '../store/payment-store.errors';
+import { PaymentFlowDeps } from './payment-flow.deps';
+import { isFinalStatus, needsUserAction } from './payment-flow.policy';
+import {
+  CancelInput,
+  ConfirmInput,
+  PaymentFlowEvent,
+  PaymentFlowMachineContext,
+  StartInput,
+  StatusInput,
+} from './payment-flow.types';
 
-export const machineTypes: machineTypes = {
-  context: {} as PaymentFlowMachineContext,
-  events: {} as PaymentFlowEvent,
-};
+/**
+ * ==========================
+ * Machine Factory
+ * ==========================
+ */
 
 export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
   setup({
-    types: machineTypes,
+    types: {} as {
+      context: PaymentFlowMachineContext;
+      events: PaymentFlowEvent;
+    },
 
-    actors: createPaymentFlowActors(deps),
+    /**
+     * Actors = operaciones async (invokes)
+     */
+    actors: {
+      start: fromPromise<PaymentIntent, StartInput>(async ({ input }) => {
+        return deps.startPayment(input.providerId, input.request, input.flowContext);
+      }),
 
-    actions: paymentFlowActions,
+      confirm: fromPromise<PaymentIntent, ConfirmInput>(async ({ input }) => {
+        return deps.confirmPayment(input.providerId, {
+          intentId: input.intentId,
+          returnUrl: input.returnUrl,
+        });
+      }),
 
-    guards: paymentFlowGuards,
+      cancel: fromPromise<PaymentIntent, CancelInput>(async ({ input }) => {
+        return deps.cancelPayment(input.providerId, { intentId: input.intentId });
+      }),
+
+      status: fromPromise<PaymentIntent, StatusInput>(async ({ input }) => {
+        return deps.getStatus(input.providerId, { intentId: input.intentId });
+      }),
+    },
+
+    /**
+     * Actions = mutan context (solo context, nada de side effects externos)
+     */
+    actions: {
+      setStartInput: assign(({ event }) => {
+        if (event.type !== 'START') return {};
+
+        return {
+          providerId: event.providerId,
+          request: event.request,
+          flowContext: event.flowContext ?? null,
+          intent: null,
+          error: null,
+        };
+      }),
+
+      setIntent: assign(({ event }) => {
+        if (!('output' in event)) return {};
+        return { intent: event.output, error: null };
+      }),
+
+      setError: assign(({ event }) => {
+        if (!('error' in event)) return {};
+        return {
+          intent: null,
+          error: normalizePaymentError(event.error),
+        };
+      }),
+
+      clear: assign(() => ({
+        providerId: null,
+        request: null,
+        flowContext: null,
+        intent: null,
+        error: null,
+      })),
+    },
+
+    /**
+     * Guards = decisiones puras
+     */
+    guards: {
+      hasIntent: ({ context }) => !!context.intent,
+
+      needsUserAction: ({ context }) => needsUserAction(context.intent),
+
+      isFinal: ({ context }) => isFinalStatus(context.intent?.status),
+    },
   }).createMachine({
     id: 'paymentFlow',
     initial: 'idle',
@@ -46,7 +122,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       starting: {
         invoke: {
           src: 'start',
-          input: ({ context }: { context: PaymentFlowMachineContext }) => ({
+          input: ({ context }) => ({
             providerId: context.providerId!,
             request: context.request!,
             flowContext: context.flowContext ?? undefined,
@@ -68,6 +144,8 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         on: {
           CONFIRM: { target: 'confirming' },
           CANCEL: { target: 'cancelling' },
+
+          // ✅ útil si hay flujos que requieren acción pero aún quieres refrescar status
           REFRESH: { target: 'fetchingStatus' },
         },
       },
@@ -75,7 +153,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       confirming: {
         invoke: {
           src: 'confirm',
-          input: ({ context }: { context: PaymentFlowMachineContext }) => ({
+          input: ({ context }) => ({
             providerId: context.providerId!,
             intentId: context.intent!.id,
             returnUrl: context.flowContext?.returnUrl,
@@ -87,7 +165,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
 
       afterConfirm: {
         always: [
-          { guard: 'needsUserAction', target: 'requiresAction' }, // ✅ NUEVO
+          { guard: 'needsUserAction', target: 'requiresAction' },
           { guard: 'isFinal', target: 'done' },
           { target: 'polling' },
         ],
@@ -103,7 +181,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       fetchingStatus: {
         invoke: {
           src: 'status',
-          input: ({ context }: { context: PaymentFlowMachineContext }) => ({
+          input: ({ context }) => ({
             providerId: context.providerId!,
             intentId: context.intent!.id,
           }),
@@ -113,13 +191,18 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       afterStatus: {
-        always: [{ guard: 'isFinal', target: 'done' }, { target: 'polling' }],
+        always: [
+          // ✅ refresh puede regresar un nuevo requires_action
+          { guard: 'needsUserAction', target: 'requiresAction' },
+          { guard: 'isFinal', target: 'done' },
+          { target: 'polling' },
+        ],
       },
 
       cancelling: {
         invoke: {
           src: 'cancel',
-          input: ({ context }: { context: PaymentFlowMachineContext }) => ({
+          input: ({ context }) => ({
             providerId: context.providerId!,
             intentId: context.intent!.id,
           }),
