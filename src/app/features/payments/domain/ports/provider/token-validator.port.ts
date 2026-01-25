@@ -79,12 +79,12 @@ export abstract class BaseTokenValidator implements TokenValidator {
     }
 
     if (!token) {
-      // TODO: Fix this magic strings
+      // TODO : Fix this magic strings
       throw new Error(`Token is required for this payment method`);
     }
 
     if (!this.isValid(token)) {
-      // TODO: Fix this magic strings
+      // TODO : Fix this magic strings
       throw new Error(
         `Invalid token format. Expected: ${this.patternDescriptions.join(' or ')}. ` +
           `Got: ${this.maskToken(token)}`,
@@ -117,7 +117,7 @@ export abstract class BaseTokenValidator implements TokenValidator {
    */
   protected maskToken(token: string): string {
     if (!token || token.length < 8) {
-      // TODO: Fix this magic strings
+      // TODO : Fix this magic strings
       return '[invalid]';
     }
     return `${token.substring(0, 4)}...${token.substring(token.length - 4)}`;

@@ -85,6 +85,7 @@ interface LogMethodOptions {
 
 /**
  * Helper function to log without DI dependency.
+ * @deprecated until we have a proper logging service integration
  */
 function logToConsole(
   level: 'debug' | 'info' | 'warn' | 'error',

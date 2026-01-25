@@ -244,7 +244,7 @@ export const ACTION_REQUIRED_STATUSES = new Set<PaymentIntent['status']>([
 /**
  * Payment form field configuration.
  */
-//TODO: Move this interface to the ui layer.
+// TODO : Move this interface to the ui layer.
 export interface FieldConfig {
   /** Field name (key in PaymentOptions) */
   name: keyof PaymentOptions;
