@@ -23,7 +23,6 @@ import {
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
-import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
 import { normalizePaymentError } from './payment-store.errors';
 import { addToHistory } from './payment-store.history';
 import {
@@ -36,7 +35,6 @@ import { PaymentsStoreContext, RunOptions } from './payment-store.types';
 
 export interface PaymentsStoreDeps {
   fallbackOrchestrator: FallbackOrchestratorService;
-  getPaymentStatusUseCase: GetPaymentStatusUseCase; // legacy refresh
   stateMachine: PaymentFlowActorService;
 }
 
@@ -152,20 +150,6 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
   }>(
     pipe(
       tap(({ request, providerId }) => {
-        const accepted = deps.stateMachine.send({
-          type: 'REFRESH',
-          providerId,
-          intentId: request.intentId,
-        });
-
-        if (!accepted) {
-          deps.getPaymentStatusUseCase
-            .execute(request, providerId)
-            .pipe(legacyRun({ providerId }), legacyOnSuccess(providerId))
-            .subscribe();
-          return;
-        }
-
         applyLoadingState(store, providerId);
       }),
       ignoreElements(),
