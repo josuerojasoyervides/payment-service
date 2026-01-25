@@ -104,6 +104,11 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
     id: 'paymentFlow',
     initial: 'idle',
 
+    // RESET from any state
+    on: {
+      RESET: { target: '.idle', actions: 'clear' },
+    },
+
     context: () => ({
       providerId: null,
       request: null,

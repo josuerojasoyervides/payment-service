@@ -11,12 +11,10 @@ import { PaymentProviderId } from '@payments/domain/models/payment/payment-inten
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
-import { CancelPaymentUseCase } from '../use-cases/cancel-payment.use-case';
-import { ConfirmPaymentUseCase } from '../use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
-import { StartPaymentUseCase } from '../use-cases/start-payment.use-case';
 import { createPaymentsStoreActions } from './payment-store.actions';
 import { setupFallbackExecuteListener } from './payment-store.fallback';
+import { setupPaymentFlowMachineBridge } from './payment-store.machine-bridge';
 import { buildPaymentsSelectors } from './payment-store.selectors';
 import { initialPaymentsState, PaymentsState } from './payment-store.state';
 
@@ -27,17 +25,11 @@ export const PaymentsStore = signalStore(
 
   withMethods((store) => {
     const fallbackOrchestrator = inject(FallbackOrchestratorService);
-    const startPaymentUseCase = inject(StartPaymentUseCase);
-    const confirmPaymentUseCase = inject(ConfirmPaymentUseCase);
-    const cancelPaymentUseCase = inject(CancelPaymentUseCase);
     const getPaymentStatusUseCase = inject(GetPaymentStatusUseCase);
     const stateMachine = inject(PaymentFlowActorService);
 
     const actions = createPaymentsStoreActions(store, {
       fallbackOrchestrator,
-      startPaymentUseCase,
-      confirmPaymentUseCase,
-      cancelPaymentUseCase,
       getPaymentStatusUseCase,
 
       stateMachine,
@@ -109,9 +101,16 @@ export const PaymentsStore = signalStore(
   withHooks((store) => ({
     onInit() {
       const fallbackOrchestrator = inject(FallbackOrchestratorService);
-
+      const stateMachine = inject(PaymentFlowActorService);
+      // 1) Bridge fallback orchestrator -> store
       effect(() => {
         patchState(store, { fallback: fallbackOrchestrator.state() });
+      });
+
+      // 2) Bridge xstate machine -> store (PR2)
+      setupPaymentFlowMachineBridge(store, {
+        fallbackOrchestrator,
+        stateMachine,
       });
     },
   })),
