@@ -152,7 +152,12 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
   }>(
     pipe(
       switchMap(({ request, providerId }) => {
-        deps.stateMachine.send({ type: 'CONFIRM' }); // ✅ shadow
+        deps.stateMachine.send({
+          type: 'CONFIRM',
+          providerId,
+          intentId: request.intentId,
+          returnUrl: request.returnUrl,
+        }); // ✅ shadow
 
         return deps.confirmPaymentUseCase
           .execute(request, providerId)
@@ -167,7 +172,7 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
   }>(
     pipe(
       switchMap(({ request, providerId }) => {
-        deps.stateMachine.send({ type: 'CANCEL' }); // ✅ shadow
+        deps.stateMachine.send({ type: 'CANCEL', providerId, intentId: request.intentId }); // ✅ shadow
         return deps.cancelPaymentUseCase
           .execute(request, providerId)
           .pipe(run({ providerId }), onSuccess(providerId));
@@ -181,7 +186,7 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
   }>(
     pipe(
       switchMap(({ request, providerId }) => {
-        deps.stateMachine.send({ type: 'REFRESH' }); // ✅ shadow
+        deps.stateMachine.send({ type: 'REFRESH', providerId, intentId: request.intentId }); // ✅ shadow
         return deps.getPaymentStatusUseCase
           .execute(request, providerId)
           .pipe(run({ providerId }), onSuccess(providerId));

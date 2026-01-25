@@ -7,8 +7,18 @@ import { StartPaymentUseCase } from '@payments/application/use-cases/start-payme
 import { firstValueFrom } from 'rxjs';
 import { createActor, SnapshotFrom } from 'xstate';
 
+import {
+  isPaymentFlowSnapshot,
+  isSnapshotInspectionEventWithSnapshot,
+} from './payment-flow.guards';
 import { createPaymentFlowMachine } from './payment-flow.machine';
-import { PaymentFlowEvent } from './payment-flow.types';
+import {
+  PaymentFlowActorRef,
+  PaymentFlowEvent,
+  PaymentFlowMachine,
+  PaymentFlowPublicEvent,
+  PaymentFlowSnapshot,
+} from './payment-flow.types';
 
 @Injectable()
 export class PaymentFlowActorService {
@@ -18,49 +28,69 @@ export class PaymentFlowActorService {
   private readonly status = inject(GetPaymentStatusUseCase);
   private readonly logger = inject(LoggerService);
 
-  private readonly actor = createActor(
-    createPaymentFlowMachine({
-      startPayment: async (providerId, request, flowContext) =>
-        firstValueFrom(this.start.execute(request, providerId, flowContext)),
+  private readonly machine: PaymentFlowMachine = createPaymentFlowMachine({
+    startPayment: async (providerId, request, flowContext) =>
+      firstValueFrom(this.start.execute(request, providerId, flowContext)),
+    confirmPayment: async (providerId, request) =>
+      firstValueFrom(this.confirm.execute(request, providerId)),
+    cancelPayment: async (providerId, request) =>
+      firstValueFrom(this.cancel.execute(request, providerId)),
+    getStatus: async (providerId, request) =>
+      firstValueFrom(this.status.execute(request, providerId)),
+  });
 
-      confirmPayment: async (providerId, request) =>
-        firstValueFrom(this.confirm.execute(request, providerId)),
+  private readonly actor: PaymentFlowActorRef = createActor(this.machine, {
+    inspect: (insp) => {
+      if (!isSnapshotInspectionEventWithSnapshot(insp, isPaymentFlowSnapshot)) return;
 
-      cancelPayment: async (providerId, request) =>
-        firstValueFrom(this.cancel.execute(request, providerId)),
+      const snap = insp.snapshot as PaymentFlowSnapshot;
 
-      getStatus: async (providerId, request) =>
-        firstValueFrom(this.status.execute(request, providerId)),
-    }),
-  );
+      this.logger.info(
+        'PaymentFlowMachine transition',
+        'PaymentFlowActorService',
+        {
+          event: insp.event,
+          state: snap.value,
+          context: snap.context,
+        },
+        this.logger.getCorrelationId(),
+      );
+    },
+  });
 
-  snapshot = signal(this.actor.getSnapshot());
+  private readonly initialSnapshot = this.actor.getSnapshot();
+
+  snapshot = signal<SnapshotFrom<typeof this.machine>>(this.initialSnapshot);
   lastSentEvent = signal<PaymentFlowEvent | null>(null);
 
   constructor() {
     this.actor.subscribe((snapshot) => {
       this.snapshot.set(snapshot);
-      this.loggerMessage(snapshot);
+      this.logger.info('PaymentFlowMachine snapshot updated', 'PaymentFlowActorService', {
+        state: snapshot.value,
+        context: snapshot.context,
+        lastSentEvent: this.lastSentEvent(),
+      });
     });
 
     this.actor.start();
   }
 
-  send(event: PaymentFlowEvent) {
+  send(event: PaymentFlowPublicEvent): boolean {
+    const snap = this.actor.getSnapshot();
+
+    if (!snap.can(event)) {
+      this.logger.warn(
+        'Event ignored by machine (cannot transition)',
+        'PaymentFlowActorService',
+        { event, state: snap.value, context: snap.context },
+        this.logger.getCorrelationId(),
+      );
+      return false;
+    }
+
     this.lastSentEvent.set(event);
     this.actor.send(event);
-  }
-
-  private loggerMessage(snapshot: SnapshotFrom<ReturnType<typeof createPaymentFlowMachine>>) {
-    this.logger.info(
-      'PaymentFlowMachine snapshot updated',
-      'PaymentFlowActorService',
-      {
-        state: snapshot.value,
-        context: snapshot.context,
-        lastSentEvent: this.lastSentEvent(),
-      },
-      this.logger.getCorrelationId(),
-    );
+    return true;
   }
 }

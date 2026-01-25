@@ -1,93 +1,29 @@
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { assign, fromPromise, setup } from 'xstate';
+import { setup } from 'xstate';
 
-import { normalizePaymentError } from '../store/payment-store.errors';
-import { isFinalStatus, needsUserAction } from './payment-flow.helpers';
-import {
-  CancelInput,
-  ConfirmInput,
-  PaymentFlowDeps,
-  PaymentFlowEvent,
-  PaymentFlowMachineContext,
-  StartInput,
-  StatusInput,
-} from './payment-flow.types';
+import { paymentFlowActions } from './payment-flow.actions';
+import { createPaymentFlowActors } from './payment-flow.actors';
+import { paymentFlowGuards } from './payment-flow.guards';
+import { PaymentFlowDeps, PaymentFlowEvent, PaymentFlowMachineContext } from './payment-flow.types';
 
-/**
- * Máquina “pura”
- */
+export interface machineTypes {
+  context: PaymentFlowMachineContext;
+  events: PaymentFlowEvent;
+}
+
+export const machineTypes: machineTypes = {
+  context: {} as PaymentFlowMachineContext,
+  events: {} as PaymentFlowEvent,
+};
+
 export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
   setup({
-    types: {} as {
-      context: PaymentFlowMachineContext;
-      events: PaymentFlowEvent;
-    },
+    types: machineTypes,
 
-    actors: {
-      start: fromPromise<PaymentIntent, StartInput>(async ({ input }: { input: StartInput }) => {
-        return deps.startPayment(input.providerId, input.request, input.flowContext);
-      }),
+    actors: createPaymentFlowActors(deps),
 
-      confirm: fromPromise<PaymentIntent, ConfirmInput>(
-        async ({ input }: { input: ConfirmInput }) => {
-          return deps.confirmPayment(input.providerId, {
-            intentId: input.intentId,
-            returnUrl: input.returnUrl,
-          });
-        },
-      ),
+    actions: paymentFlowActions,
 
-      cancel: fromPromise<PaymentIntent, CancelInput>(async ({ input }: { input: CancelInput }) => {
-        return deps.cancelPayment(input.providerId, { intentId: input.intentId });
-      }),
-
-      status: fromPromise<PaymentIntent, StatusInput>(async ({ input }: { input: StatusInput }) => {
-        return deps.getStatus(input.providerId, { intentId: input.intentId });
-      }),
-    },
-
-    actions: {
-      setStartInput: assign(({ event }) => {
-        if (event.type !== 'START') return {};
-
-        return {
-          providerId: event.providerId,
-          request: event.request,
-          flowContext: event.flowContext ?? null,
-          intent: null,
-          error: null,
-        };
-      }),
-
-      setIntent: assign(({ event }) => {
-        if (!('output' in event)) return {};
-        return { intent: event.output, error: null };
-      }),
-
-      setError: assign(({ event }) => {
-        if (!('error' in event)) return {};
-        return {
-          intent: null,
-          error: normalizePaymentError(event.error),
-        };
-      }),
-
-      clear: assign(() => ({
-        providerId: null,
-        request: null,
-        flowContext: null,
-        intent: null,
-        error: null,
-      })),
-    },
-
-    guards: {
-      hasIntent: ({ context }: { context: PaymentFlowMachineContext }) => !!context.intent,
-      needsUserAction: ({ context }: { context: PaymentFlowMachineContext }) =>
-        needsUserAction(context.intent),
-      isFinal: ({ context }: { context: PaymentFlowMachineContext }) =>
-        isFinalStatus(context.intent?.status),
-    },
+    guards: paymentFlowGuards,
   }).createMachine({
     id: 'paymentFlow',
     initial: 'idle',
@@ -132,6 +68,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         on: {
           CONFIRM: { target: 'confirming' },
           CANCEL: { target: 'cancelling' },
+          REFRESH: { target: 'fetchingStatus' },
         },
       },
 
@@ -149,7 +86,11 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       afterConfirm: {
-        always: [{ guard: 'isFinal', target: 'done' }, { target: 'polling' }],
+        always: [
+          { guard: 'needsUserAction', target: 'requiresAction' }, // ✅ NUEVO
+          { guard: 'isFinal', target: 'done' },
+          { target: 'polling' },
+        ],
       },
 
       polling: {
