@@ -86,8 +86,8 @@ describe('PaypalProviderFactory', () => {
       expect(returnUrlField).toBeDefined();
       expect(returnUrlField?.required).toBe(true);
       expect(returnUrlField?.type).toBe('hidden');
-      // autoFill puede estar definido, pero PaymentFormComponent lo ignora para returnUrl/cancelUrl
-      // Estas URLs vienen de StrategyContext, no del formulario
+      // autoFill can be set, but PaymentFormComponent ignores it for returnUrl/cancelUrl
+      // These URLs come from StrategyContext, not from the form
     });
 
     it('includes cancelUrl as optional field', () => {

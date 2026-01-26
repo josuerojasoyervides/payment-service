@@ -243,7 +243,7 @@ export class CacheService {
   }
 
   /**
-   * Obtiene información del estado del caché.
+   * Get cache state information.
    */
   getInfo(): CacheInfo {
     const total = this.stats.hits + this.stats.misses;
@@ -278,7 +278,7 @@ export class CacheService {
   }
 
   /**
-   * Obtiene todas las keys del caché.
+   * Get all cache keys.
    */
   keys(): string[] {
     return Array.from(this.cache.keys());
@@ -305,7 +305,7 @@ export class CacheService {
   }
 
   /**
-   * Resetea las estadísticas.
+   * Reset statistics.
    */
   resetStats(): void {
     this.stats = {
@@ -323,7 +323,7 @@ export class CacheService {
   }
 
   /**
-   * Verifica si una URL debe ser excluida del caché.
+   * Check if a URL should be excluded from cache.
    */
   shouldExclude(url: string): boolean {
     return isExcludedFromCache(url, this.config.excludePatterns);
@@ -349,7 +349,7 @@ export class CacheService {
   }
 
   /**
-   * Obtiene el TTL para una key basándose en patrones.
+   * Get TTL for a key based on patterns.
    */
   private getTTLForKey(key: string): number {
     return getTTLForUrl(key, this.ttlPatterns, this.config.defaultTTL);

@@ -11,15 +11,15 @@ import { safeDefer } from '../helpers/safe-defer';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 
 /**
- * Caso de uso: Obtener estado de un pago.
+ * Use case: Get payment status.
  *
- * Consulta el estado actual de un PaymentIntent dentro de un provider específico.
- * - Polling después de 3DS
- * - Verificar estado de SPEI
- * - Refrescar UI después de retorno de PayPal
+ * Fetch current status of a PaymentIntent for a specific provider.
+ * - Polling after 3DS
+ * - SPEI status checks
+ * - UI refresh after PayPal return
  *
- * ✅ No aplica fallback aquí: el intent ya vive en un provider determinado.
- * Si falla, se propaga el error y el Store/UI decide cómo presentarlo.
+ * ✅ Fallback does not apply here: intent already lives in a specific provider.
+ * On failure, the error is propagated and Store/UI decide how to present it.
  */
 @Injectable()
 export class GetPaymentStatusUseCase {

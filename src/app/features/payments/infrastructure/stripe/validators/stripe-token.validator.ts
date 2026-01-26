@@ -1,12 +1,12 @@
 import { BaseTokenValidator } from '../../../domain/ports/provider/token-validator.port';
 
 /**
- * Validador de tokens para Stripe.
+ * Token validator for Stripe.
  *
- * Stripe usa varios formatos de token según el origen:
- * - tok_* : Token de Stripe.js/Elements (tokenización client-side)
- * - pm_*  : PaymentMethod ID (método guardado o creado)
- * - card_*: Card ID legacy (deprecated pero aún soportado)
+ * Stripe uses multiple token formats based on origin:
+ * - tok_* : Stripe.js/Elements token (client-side tokenization)
+ * - pm_*  : PaymentMethod ID (saved or created method)
+ * - card_*: Legacy Card ID (deprecated but still supported)
  *
  * @example
  * ```typescript
@@ -18,7 +18,7 @@ import { BaseTokenValidator } from '../../../domain/ports/provider/token-validat
  */
 export class StripeTokenValidator extends BaseTokenValidator {
   protected readonly patterns = [
-    /^tok_[a-zA-Z0-9]{14,}$/, // Token de Stripe.js
+    /^tok_[a-zA-Z0-9]{14,}$/, // Stripe.js token
     /^pm_[a-zA-Z0-9]{14,}$/, // PaymentMethod ID
     /^card_[a-zA-Z0-9]{14,}$/, // Card ID legacy
   ];
@@ -30,23 +30,23 @@ export class StripeTokenValidator extends BaseTokenValidator {
   ];
 
   /**
-   * Detecta si el token es de una tarjeta guardada (PaymentMethod).
+   * Detect whether the token is for a saved card (PaymentMethod).
    *
-   * Esto es útil para determinar si se necesita SCA (Strong Customer Authentication).
+   * Useful to decide if SCA (Strong Customer Authentication) is needed.
    */
   isSavedCard(token: string): boolean {
     return /^pm_[a-zA-Z0-9]+$/.test(token);
   }
 
   /**
-   * Detecta si el token es de Stripe.js (recién tokenizado).
+   * Detect whether the token is from Stripe.js (freshly tokenized).
    */
   isStripeJsToken(token: string): boolean {
     return /^tok_[a-zA-Z0-9]+$/.test(token);
   }
 
   /**
-   * Obtiene el tipo de token.
+   * Get the token type.
    */
   getTokenType(token: string): 'stripe_js' | 'payment_method' | 'card' | 'unknown' {
     if (/^tok_/.test(token)) return 'stripe_js';

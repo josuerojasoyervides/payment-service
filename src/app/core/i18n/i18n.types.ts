@@ -147,7 +147,7 @@ export interface Translations {
     action_requires_attention: string;
     view_action_details: string;
 
-    // Páginas
+    // Pages
     checkout: string;
     payment_system: string;
     view_history: string;

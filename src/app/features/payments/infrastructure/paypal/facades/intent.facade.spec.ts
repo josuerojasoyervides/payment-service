@@ -16,7 +16,7 @@ import { PaypalIntentFacade } from './intent.facade';
 describe('IntentFacade (adapter)', () => {
   let gateway: PaypalIntentFacade;
 
-  // Mocks de operaciones (NO HTTP)
+  // Operation mocks (NO HTTP)
   const createIntentOp = { execute: vi.fn() };
   const confirmIntentOp = { execute: vi.fn() };
   const cancelIntentOp = { execute: vi.fn() };

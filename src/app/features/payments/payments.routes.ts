@@ -3,30 +3,30 @@ import { Routes } from '@angular/router';
 import providePayments from './config/payment.providers';
 
 /**
- * Rutas del módulo de pagos con carga lazy.
+ * Payments module routes with lazy loading.
  *
- * Este archivo define las rutas hijas del módulo de pagos
- * y configura los providers que se cargan solo cuando
- * el usuario navega a estas rutas.
+ * This file defines child routes for the payments module
+ * and configures providers that load only when
+ * the user navigates to these routes.
  *
- * Rutas disponibles:
- * - /payments/checkout - Flujo principal de checkout
- * - /payments/return - Retorno de 3DS/PayPal
- * - /payments/cancel - Cancelación desde PayPal
- * - /payments/history - Historial de pagos
- * - /payments/status - Consulta de estado por ID
- * - /payments/showcase - Demo de componentes
+ * Available routes:
+ * - /payments/checkout - Main checkout flow
+ * - /payments/return - 3DS/PayPal return
+ * - /payments/cancel - PayPal cancel
+ * - /payments/history - Payment history
+ * - /payments/status - Status lookup by ID
+ * - /payments/showcase - Component demo
  *
- * Beneficios:
- * - Carga lazy: El código se descarga solo cuando es necesario
- * - Providers scoped: Los servicios de pago no se cargan globalmente
- * - Mejor performance inicial: Menos código en el bundle principal
+ * Benefits:
+ * - Lazy loading: code downloads only when needed
+ * - Scoped providers: payment services are not global
+ * - Better initial performance: less code in main bundle
  */
 export const PAYMENT_ROUTES: Routes = [
   {
     path: '',
     providers: [
-      // Cargar todos los providers de pagos cuando se accede a esta ruta
+      // Load all payment providers when this route is accessed
       ...providePayments(),
     ],
     children: [
@@ -39,30 +39,30 @@ export const PAYMENT_ROUTES: Routes = [
         path: 'checkout',
         loadComponent: () =>
           import('./ui/pages/checkout/checkout.page').then((m) => m.CheckoutComponent),
-        title: 'Checkout - Pago',
+        title: 'Checkout - Payment',
       },
       {
         path: 'return',
         loadComponent: () => import('./ui/pages/return/return.page').then((m) => m.ReturnComponent),
-        title: 'Pago Completado',
+        title: 'Payment Completed',
         data: { returnFlow: true },
       },
       {
         path: 'cancel',
         loadComponent: () => import('./ui/pages/return/return.page').then((m) => m.ReturnComponent),
-        title: 'Pago Cancelado',
+        title: 'Payment Canceled',
         data: { cancelFlow: true },
       },
       {
         path: 'history',
         loadComponent: () =>
           import('./ui/pages/history/history.page').then((m) => m.HistoryComponent),
-        title: 'Historial de Pagos',
+        title: 'Payment History',
       },
       {
         path: 'status',
         loadComponent: () => import('./ui/pages/status/status.page').then((m) => m.StatusComponent),
-        title: 'Consultar Estado',
+        title: 'Check Status',
       },
       {
         path: 'showcase',

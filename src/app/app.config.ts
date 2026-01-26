@@ -13,36 +13,36 @@ import { loggingInterceptor } from './core/logging';
 import { resilienceInterceptor, retryInterceptor } from './core/resilience';
 import { FakePaymentsBackendInterceptor } from './core/testing';
 /**
- * Configuración principal de la aplicación.
+ * Main application configuration.
  *
- * Los providers de pagos se cargan de forma lazy con el módulo de payments.
- * Los interceptors globales (cache, retry, resilience, logging) se cargan aquí.
+ * Payment providers are lazy-loaded with the payments module.
+ * Global interceptors (cache, retry, resilience, logging) are registered here.
  *
- * Orden de interceptors (importante):
- * 1. cacheInterceptor - Caché de respuestas (evita requests innecesarios)
- * 2. retryInterceptor - Reintenta requests fallidos con backoff
- * 3. resilienceInterceptor - Circuit breaker y rate limiting
- * 4. loggingInterceptor - Logging estructurado
+ * Interceptor order (important):
+ * 1. cacheInterceptor - Response cache (avoids unnecessary requests)
+ * 2. retryInterceptor - Retries failed requests with backoff
+ * 3. resilienceInterceptor - Circuit breaker and rate limiting
+ * 4. loggingInterceptor - Structured logging
  */
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
 
-    // HTTP Client con interceptors funcionales y basados en clase
+    // HTTP client with functional and class-based interceptors
     provideHttpClient(
-      // Interceptors funcionales (nuevos)
+      // Functional interceptors (new)
       withInterceptors([
         cacheInterceptor,
         retryInterceptor,
-        resilienceInterceptor, // Circuit breaker y rate limiting
-        loggingInterceptor, // Logging estructurado
+        resilienceInterceptor, // Circuit breaker and rate limiting
+        loggingInterceptor, // Structured logging
       ]),
-      // Interceptors basados en clase (legacy)
+      // Class-based interceptors (legacy)
       withInterceptorsFromDi(),
     ),
 
-    // Fake backend para desarrollo
+    // Fake backend for development
     { provide: HTTP_INTERCEPTORS, useClass: FakePaymentsBackendInterceptor, multi: true },
   ],
 };

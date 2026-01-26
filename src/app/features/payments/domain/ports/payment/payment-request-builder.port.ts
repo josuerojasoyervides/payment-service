@@ -70,10 +70,10 @@ export abstract class PaymentRequestBuilder {
     return this.buildUnsafe();
   }
 
-  /** Cada builder define qué es “requerido” realmente */
+  /** Each builder defines what is truly required */
   protected abstract validateRequired(): void;
 
-  /** Aquí construyes ya con campos garantizados */
+  /** Build with guaranteed fields */
   protected abstract buildUnsafe(): CreatePaymentRequest;
 
   protected requireDefined<T>(field: string, value: T | null | undefined): asserts value is T {
@@ -98,7 +98,7 @@ export abstract class PaymentRequestBuilder {
     field: 'returnUrl' | 'cancelUrl',
     value: string | undefined | null,
   ) {
-    // si no viene, NO es error
+    // If it's missing, it's NOT an error
     if (value === undefined || value === null || value.trim().length === 0) return;
 
     try {

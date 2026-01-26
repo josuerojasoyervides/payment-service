@@ -7,56 +7,56 @@ describe('ClabeFormatPipe', () => {
     pipe = new ClabeFormatPipe();
   });
 
-  it('debe crear la instancia', () => {
+  it('should create the instance', () => {
     expect(pipe).toBeTruthy();
   });
 
   describe('transform', () => {
-    it('debe formatear una CLABE válida de 18 dígitos', () => {
+    it('should format a valid 18-digit CLABE', () => {
       const clabe = '646180157000000001';
       const result = pipe.transform(clabe);
       expect(result).toBe('646 180 15700000000 1');
     });
 
-    it('debe formatear CLABE con formato correcto: XXX XXX XXXXXXXXXXX X', () => {
+    it('should format CLABE using XXX XXX XXXXXXXXXXX X', () => {
       const clabe = '646180111812345678';
       const result = pipe.transform(clabe);
       expect(result).toBe('646 180 11181234567 8');
     });
 
-    it('debe manejar CLABE como número', () => {
+    it('should handle CLABE passed as a number', () => {
       const clabe = '646180157000000001';
       const result = pipe.transform(clabe);
       expect(result).toBe('646 180 15700000000 1');
     });
 
-    it('debe manejar CLABE con espacios existentes', () => {
+    it('should handle CLABE with existing spaces', () => {
       const clabe = '646 180 15700000000 1';
       const result = pipe.transform(clabe);
       expect(result).toBe('646 180 15700000000 1');
     });
 
-    it('debe retornar string vacío si el valor es null', () => {
+    it('should return empty string when value is null', () => {
       expect(pipe.transform(null)).toBe('');
     });
 
-    it('debe retornar string vacío si el valor es undefined', () => {
+    it('should return empty string when value is undefined', () => {
       expect(pipe.transform(undefined)).toBe('');
     });
 
-    it('debe retornar el valor sin formatear si no tiene 18 dígitos', () => {
+    it('should return unformatted value when it does not have 18 digits', () => {
       const shortClabe = '123456789';
       const result = pipe.transform(shortClabe);
       expect(result).toBe(shortClabe);
     });
 
-    it('debe retornar el valor sin formatear si tiene más de 18 dígitos', () => {
+    it('should return unformatted value when it has more than 18 digits', () => {
       const longClabe = '64618015700000000123';
       const result = pipe.transform(longClabe);
       expect(result).toBe(longClabe);
     });
 
-    it('debe formatear diferentes CLABEs correctamente', () => {
+    it('should format multiple CLABEs correctly', () => {
       const testCases = [
         { input: '646180157000000001', expected: '646 180 15700000000 1' },
         { input: '646180111812345678', expected: '646 180 11181234567 8' },

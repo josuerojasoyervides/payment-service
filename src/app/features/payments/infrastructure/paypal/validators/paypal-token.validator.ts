@@ -1,30 +1,30 @@
 import { NullTokenValidator } from '@payments/domain/ports/provider/token-validator.port';
 
 /**
- * Validador de tokens para PayPal.
+ * Token validator for PayPal.
  *
- * PayPal NO usa tokens de la misma forma que Stripe.
- * En lugar de tokenizar tarjetas client-side, PayPal usa un flujo de redirección:
+ * PayPal does NOT use tokens the same way as Stripe.
+ * Instead of tokenizing cards client-side, PayPal uses a redirect flow:
  *
- * 1. Se crea una Order en PayPal
- * 2. El usuario es redirigido a PayPal para aprobar
- * 3. PayPal redirige de vuelta con un token de aprobación
- * 4. Se captura el pago usando el Order ID
+ * 1. Create an Order in PayPal
+ * 2. User is redirected to PayPal for approval
+ * 3. PayPal redirects back with an approval token
+ * 4. Capture the payment using the Order ID
  *
- * Por lo tanto, este validador es un "no-op" que siempre pasa.
- * Las validaciones de PayPal ocurren en la estrategia (URLs de retorno, etc).
+ * This validator is a no-op that always passes.
+ * PayPal validations happen in the strategy (return URLs, etc.).
  *
  * @example
  * ```typescript
  * const validator = new PaypalTokenValidator();
- * validator.requiresToken();     // false
- * validator.validate('anything'); // No hace nada
+ * validator.requiresToken();      // false
+ * validator.validate('anything'); // Does nothing
  * validator.isValid('anything');  // true
  * ```
  */
 export class PaypalTokenValidator extends NullTokenValidator {
   /**
-   * Override para dar mensaje más específico.
+   * Override to provide a more specific message.
    */
   override getAcceptedPatterns(): string[] {
     return ['(PayPal uses redirect flow, no client-side token required)'];

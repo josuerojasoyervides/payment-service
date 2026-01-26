@@ -1,10 +1,10 @@
 /**
- * Módulo de Resiliencia
+ * Resilience module.
  *
- * Provee servicios e interceptors para manejo de fallos:
- * - Circuit Breaker: Previene llamadas a servicios que están fallando
- * - Rate Limiter: Controla exceso de requests
- * - Retry: Reintentos automáticos con backoff exponencial
+ * Provides services and interceptors for failure handling:
+ * - Circuit Breaker: prevents calls to failing services
+ * - Rate Limiter: controls request bursts
+ * - Retry: automatic retries with exponential backoff
  */
 
 // Circuit Breaker
@@ -16,6 +16,6 @@ export * from './rate-limiter';
 // Retry
 export * from './retry';
 
-// Resilience Interceptor (combina Circuit Breaker + Rate Limiter)
+// Resilience Interceptor (combines Circuit Breaker + Rate Limiter)
 export * from './resilience.interceptor';
 export * from './resilience.types';

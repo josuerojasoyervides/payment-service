@@ -75,7 +75,7 @@ describe('PaypalCreateIntentGateway', () => {
         {
           reference_id: 'order_1',
           custom_id: 'order_1',
-          description: 'Orden order_1',
+          description: 'Order order_1',
           amount: {
             currency_code: 'MXN',
             value: '100.00',
@@ -140,7 +140,7 @@ describe('PaypalCreateIntentGateway', () => {
 
     gateway.execute(req).subscribe({
       next: () => {
-        expect.fail('Se esperaba error');
+        expect.fail('Expected error');
       },
       error: (err) => {
         expect(err.code).toBe('provider_error');

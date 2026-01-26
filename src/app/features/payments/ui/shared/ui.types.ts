@@ -13,7 +13,7 @@ import {
   PaymentOptions,
 } from '@payments/domain/ports/payment/payment-request-builder.port';
 /**
- * Item de orden para mostrar en el resumen.
+ * Order item shown in summary.
  */
 export interface OrderItem {
   name: string;
@@ -22,7 +22,7 @@ export interface OrderItem {
 }
 
 /**
- * Datos de la orden para el checkout.
+ * Order data for checkout.
  */
 export interface OrderData {
   orderId: string;
@@ -32,12 +32,12 @@ export interface OrderData {
 }
 
 /**
- * Estado del botón de pago.
+ * Payment button state.
  */
 export type PaymentButtonState = 'idle' | 'loading' | 'success' | 'error';
 
 /**
- * Configuración de proveedor para el selector.
+ * Provider configuration for the selector.
  */
 export interface ProviderOption {
   id: PaymentProviderId;
@@ -47,7 +47,7 @@ export interface ProviderOption {
 }
 
 /**
- * Configuración de método de pago para el selector.
+ * Payment method configuration for the selector.
  */
 export interface MethodOption {
   type: PaymentMethodType;
@@ -57,7 +57,7 @@ export interface MethodOption {
 }
 
 /**
- * Props para el componente de resumen de orden.
+ * Props for the order summary component.
  */
 export interface OrderSummaryProps {
   orderId: string;
@@ -67,7 +67,7 @@ export interface OrderSummaryProps {
 }
 
 /**
- * Props para el selector de proveedor.
+ * Props for the provider selector.
  */
 export interface ProviderSelectorProps {
   providers: PaymentProviderId[];
@@ -76,7 +76,7 @@ export interface ProviderSelectorProps {
 }
 
 /**
- * Props para el selector de método.
+ * Props for the method selector.
  */
 export interface MethodSelectorProps {
   methods: PaymentMethodType[];
@@ -85,7 +85,7 @@ export interface MethodSelectorProps {
 }
 
 /**
- * Props para el formulario de pago.
+ * Props for the payment form.
  */
 export interface PaymentFormProps {
   requirements: FieldRequirements | null;
@@ -93,7 +93,7 @@ export interface PaymentFormProps {
 }
 
 /**
- * Props para el botón de pago.
+ * Props for the payment button.
  */
 export interface PaymentButtonProps {
   amount: number;
@@ -104,7 +104,7 @@ export interface PaymentButtonProps {
 }
 
 /**
- * Props para el resultado del pago.
+ * Props for the payment result.
  */
 export interface PaymentResultProps {
   intent: PaymentIntent | null;
@@ -112,7 +112,7 @@ export interface PaymentResultProps {
 }
 
 /**
- * Props para el modal de fallback.
+ * Props for the fallback modal.
  */
 export interface FallbackModalProps {
   event: FallbackAvailableEvent | null;
@@ -120,26 +120,26 @@ export interface FallbackModalProps {
 }
 
 /**
- * Configuración por defecto de proveedores.
- * @deprecated Usar getDefaultProviders() con I18nService en su lugar
+ * Default provider configuration.
+ * @deprecated Use getDefaultProviders() with I18nService instead
  */
 export const DEFAULT_PROVIDERS: ProviderOption[] = [
   {
     id: 'stripe',
     name: 'Stripe',
     icon: '💳',
-    description: 'Tarjetas de crédito/débito y SPEI',
+    description: 'Credit/debit cards and SPEI',
   },
   {
     id: 'paypal',
     name: 'PayPal',
     icon: '🅿️',
-    description: 'Pago con cuenta PayPal',
+    description: 'Pay with a PayPal account',
   },
 ];
 
 /**
- * Obtiene la configuración de proveedores usando i18n.
+ * Get provider configuration using i18n.
  */
 export function getDefaultProviders(i18n: { t: (key: string) => string }): ProviderOption[] {
   return [
@@ -159,26 +159,26 @@ export function getDefaultProviders(i18n: { t: (key: string) => string }): Provi
 }
 
 /**
- * Configuración por defecto de métodos de pago.
- * @deprecated Usar getDefaultMethods() con I18nService en su lugar
+ * Default payment method configuration.
+ * @deprecated Use getDefaultMethods() with I18nService instead
  */
 export const DEFAULT_METHODS: MethodOption[] = [
   {
     type: 'card',
-    name: 'Tarjeta',
+    name: 'Card',
     icon: '💳',
-    description: 'Crédito o débito',
+    description: 'Credit or debit',
   },
   {
     type: 'spei',
     name: 'SPEI',
     icon: '🏦',
-    description: 'Transferencia bancaria',
+    description: 'Bank transfer',
   },
 ];
 
 /**
- * Obtiene la configuración de métodos usando i18n.
+ * Get method configuration using i18n.
  */
 export function getDefaultMethods(i18n: { t: (key: string) => string }): MethodOption[] {
   return [
@@ -198,7 +198,7 @@ export function getDefaultMethods(i18n: { t: (key: string) => string }): MethodO
 }
 
 /**
- * Mapeo de estados de pago a clases de badge.
+ * Map payment states to badge classes.
  */
 export const STATUS_BADGE_MAP: Record<string, string> = {
   requires_payment_method: 'badge-pending',
@@ -211,21 +211,21 @@ export const STATUS_BADGE_MAP: Record<string, string> = {
 };
 
 /**
- * Mapeo de estados de pago a textos legibles.
- * @deprecated Usar getStatusText() con I18nService en su lugar
+ * Map payment states to human-readable text.
+ * @deprecated Use getStatusText() with I18nService instead
  */
 export const STATUS_TEXT_MAP: Record<string, string> = {
-  requires_payment_method: 'Requiere método de pago',
-  requires_confirmation: 'Pendiente de confirmación',
-  requires_action: 'Acción requerida',
-  processing: 'Procesando',
-  succeeded: 'Completado',
-  failed: 'Fallido',
-  canceled: 'Cancelado',
+  requires_payment_method: 'Payment method required',
+  requires_confirmation: 'Pending confirmation',
+  requires_action: 'Action required',
+  processing: 'Processing',
+  succeeded: 'Completed',
+  failed: 'Failed',
+  canceled: 'Canceled',
 };
 
 /**
- * Obtiene el texto de un estado usando i18n.
+ * Get status text using i18n.
  */
 export function getStatusText(
   i18n: { t: (key: string) => string; has: (key: string) => boolean },

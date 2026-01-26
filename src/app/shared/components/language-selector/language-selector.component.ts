@@ -9,9 +9,9 @@ export interface LanguageOption {
 }
 
 /**
- * Componente selector de idioma.
+ * Language selector component.
  *
- * Muestra un selector dropdown elegante para cambiar el idioma de la aplicación.
+ * Shows a dropdown to change the application language.
  *
  * @example
  * ```html
@@ -29,14 +29,14 @@ export class LanguageSelectorComponent {
   private readonly i18n = inject(I18nService);
 
   readonly languages: LanguageOption[] = [
-    { code: 'es', name: 'Español', flag: '🇪🇸' },
+    { code: 'es', name: 'Spanish', flag: '🇪🇸' },
     { code: 'en', name: 'English', flag: '🇺🇸' },
   ];
 
-  /** Idioma actual */
+  /** Current language */
   readonly currentLang = this.i18n.currentLang;
 
-  /** Idioma seleccionado con metadata */
+  /** Selected language with metadata */
   readonly selectedLanguage = computed(() => {
     const lang = this.currentLang();
     return this.languages.find((l) => l.code === lang) || this.languages[0];
@@ -45,7 +45,7 @@ export class LanguageSelectorComponent {
   isOpen = false;
 
   /**
-   * Cambia el idioma de la aplicación.
+   * Change the application language.
    */
   selectLanguage(langCode: string): void {
     this.i18n.setLanguage(langCode);
@@ -53,14 +53,14 @@ export class LanguageSelectorComponent {
   }
 
   /**
-   * Alterna el estado del dropdown.
+   * Toggle dropdown state.
    */
   toggleDropdown(): void {
     this.isOpen = !this.isOpen;
   }
 
   /**
-   * Cierra el dropdown.
+   * Close the dropdown.
    */
   closeDropdown(): void {
     this.isOpen = false;

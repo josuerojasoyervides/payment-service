@@ -3,7 +3,7 @@ import type { InspectionEvent } from 'xstate';
 import { isFinalStatus, needsUserAction } from './payment-flow.policy';
 import type { PaymentFlowMachineContext, PaymentFlowSnapshot } from './payment-flow.types';
 /**
- * Evento "@xstate.snapshot" pero con snapshot tipado a TSnap.
+ * "@xstate.snapshot" event with snapshot typed as TSnap.
  */
 export type SnapshotInspectionEvent<TSnap> = Extract<
   InspectionEvent,
@@ -17,8 +17,8 @@ export function isMachineSnapshotLike(
 }
 
 /**
- * Guard genérico: si el evento es '@xstate.snapshot' y su snapshot pasa el validator,
- * TS sabe que snapshot es TSnap.
+ * Generic guard: if the event is '@xstate.snapshot' and the snapshot passes validation,
+ * TS knows snapshot is TSnap.
  */
 export function isSnapshotInspectionEventWithSnapshot<TSnap>(
   ev: InspectionEvent,
@@ -32,7 +32,7 @@ export function isSnapshotInspectionEventWithSnapshot<TSnap>(
 }
 
 /**
- * Validator específico para tu máquina.
+ * Validator specific to this machine.
  */
 export function isPaymentFlowSnapshot(s: unknown): s is PaymentFlowSnapshot {
   return isMachineSnapshotLike(s);

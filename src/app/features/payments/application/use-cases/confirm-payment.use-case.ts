@@ -11,14 +11,14 @@ import { safeDefer } from '../helpers/safe-defer';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 
 /**
- * Caso de uso: Confirmar un pago.
+ * Use case: Confirm a payment.
  *
- * Confirma un PaymentIntent en un provider específico:
- * - Stripe: confirma PaymentIntent
- * - PayPal: captura la Order aprobada
+ * Confirms a PaymentIntent for a specific provider:
+ * - Stripe: confirms PaymentIntent
+ * - PayPal: captures the approved Order
  *
- * ✅ No aplica fallback aquí: el intent ya existe en un provider determinado.
- * Si falla, se propaga el error y el Store/UI decide cómo presentarlo.
+ * ✅ Fallback does not apply here: intent already exists in a specific provider.
+ * On failure, the error is propagated and Store/UI decide how to present it.
  */
 @Injectable()
 export class ConfirmPaymentUseCase {

@@ -6,8 +6,8 @@ import { StrategyContext } from '../ports/payment-strategy.port';
 import { PaymentFlowActorService } from './payment-flow.actor.service';
 import { PaymentFlowPublicEvent } from './payment-flow.types';
 
-// Si ya tienes un tipo formal para flowContext en tu proyecto, úsalo aquí.
-// Si no, esta es una versión mínima para no usar `any`.
+// If you already have a formal flowContext type in your project, use it here.
+// Otherwise, this is a minimal version to avoid `any`.
 export type PaymentFlowContext = StrategyContext;
 
 @Injectable()

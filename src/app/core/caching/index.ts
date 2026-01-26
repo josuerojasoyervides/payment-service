@@ -1,10 +1,10 @@
 /**
- * Módulo de Caching
+ * Caching module.
  *
- * Provee servicios e interceptors para caching HTTP:
- * - Cache en memoria con LRU eviction
- * - TTL configurable por patrón de URL
- * - Invalidación automática en mutaciones
+ * Provides services and interceptors for HTTP caching:
+ * - In-memory cache with LRU eviction
+ * - TTL configurable per URL pattern
+ * - Automatic invalidation on mutations
  */
 
 export * from './cache.interceptor';

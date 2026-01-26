@@ -2,10 +2,10 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 describe('Payments i18n architecture rules', () => {
-  // ✅ Siempre apunta al módulo payments desde la raíz del repo
+  // ✅ Always point to the payments module from repo root
   const paymentsRoot = join(process.cwd(), 'src', 'app', 'features', 'payments');
 
-  // 🔒 Safety check real (no heurísticas)
+  // 🔒 Real safety check (no heuristics)
   if (!existsSync(paymentsRoot)) {
     throw new Error(`paymentsRoot does not exist: ${paymentsRoot}`);
   }

@@ -36,7 +36,7 @@ export class StripeCreateRequestBuilder extends PaymentRequestBuilder {
   private token?: string;
   private paymentMethodTypes?: PaymentMethodType[];
 
-  // opcionales que tal vez sí quieres pasar a CreatePaymentRequest como metadata:
+  // Optional fields you may want to pass into CreatePaymentRequest as metadata:
   private saveForFuture?: boolean;
   private description?: string;
   private createdAt?: Date;
@@ -64,12 +64,12 @@ export class StripeCreateRequestBuilder extends PaymentRequestBuilder {
   }
 
   protected override validateRequired(): void {
-    // básicos
+    // Required basics
     this.requireNonEmptyString('orderId', this.orderId);
     this.requirePositiveAmount('amount', this.amount);
     this.requireDefined('currency', this.currency);
 
-    // método elegido
+    // Selected method
     this.requireDefined('paymentMethodTypes', this.paymentMethodTypes);
 
     if (this.paymentMethodTypes.length !== 1) {

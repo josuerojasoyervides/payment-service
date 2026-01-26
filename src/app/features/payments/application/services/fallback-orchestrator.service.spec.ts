@@ -143,10 +143,10 @@ describe('FallbackOrchestratorService', () => {
     });
 
     it('respects maxAttempts configuration (real flow)', () => {
-      // 1) stripe falla
+      // 1) stripe fails
       expect(service.reportFailure('stripe', providerUnavailableError, mockRequest)).toBe(true);
 
-      // 2) user acepta paypal
+      // 2) user accepts paypal
       service.respondToFallback({
         eventId: service.pendingEvent()!.eventId,
         accepted: true,
@@ -154,13 +154,13 @@ describe('FallbackOrchestratorService', () => {
         timestamp: Date.now(),
       });
 
-      // 3) paypal falla (esto intenta seguir fallback y ya no hay alternativas)
+      // 3) paypal fails (tries to continue fallback but no alternatives left)
       service.notifyFailure('paypal', providerUnavailableError, mockRequest);
 
-      // Aquí ya traes 2 intentos registrados
+      // Two attempts are already recorded
       expect(service.failedAttempts().length).toBe(2);
 
-      // 4) tercer intento -> debería resetear
+      // 4) third attempt -> should reset
       const third = service.reportFailure('stripe', providerUnavailableError, mockRequest);
       expect(third).toBe(false);
 
@@ -169,13 +169,13 @@ describe('FallbackOrchestratorService', () => {
     });
 
     it('resets when maxAttempts reached', () => {
-      // 1) falla stripe
+      // 1) stripe fails
       expect(service.reportFailure('stripe', providerUnavailableError, mockRequest)).toBe(true);
 
-      // 2) falla paypal (ya no hay alternativas -> false)
+      // 2) paypal fails (no alternatives -> false)
       expect(service.reportFailure('paypal', providerUnavailableError, mockRequest)).toBe(false);
 
-      // 3) vuelve a fallar stripe, aquí debería resetear porque ya llegaste al límite
+      // 3) stripe fails again, should reset because limit reached
       const third = service.reportFailure('stripe', providerUnavailableError, mockRequest);
       expect(third).toBe(false);
 
@@ -197,29 +197,29 @@ describe('FallbackOrchestratorService', () => {
     });
 
     it('excludes previously failed providers from alternativeProviders', () => {
-      // Primer fallo con stripe => failedAttempts = [stripe]
+      // First failure with stripe => failedAttempts = [stripe]
       const first = service.reportFailure('stripe', providerUnavailableError, mockRequest);
       expect(first).toBe(true);
 
-      // Segundo fallo con paypal => stripe ya está en failedAttempts,
-      // entonces no hay alternativas disponibles
+      // Second failure with paypal => stripe already in failedAttempts,
+      // so no alternatives are available
       const second = service.reportFailure('paypal', providerUnavailableError, mockRequest);
 
       expect(second).toBe(false);
     });
 
     it('only includes providers available in registry', () => {
-      // Configurar registry para que solo tenga stripe disponible
+      // Configure registry to only have stripe available
       registryMock.getAvailableProviders.mockReturnValue(['stripe']);
 
       const result = service.reportFailure('stripe', providerUnavailableError, mockRequest);
 
-      // No debería haber alternativas disponibles
+      // There should be no alternatives available
       expect(result).toBe(false);
     });
 
     it('only includes providers that support the same payment method type', () => {
-      // Mock para que paypal no soporte el método 'card'
+      // Mock paypal to not support the 'card' method
       const stripeFactoryMock = {
         providerId: 'stripe' as const,
         supportsMethod: vi.fn(() => true),
@@ -227,7 +227,7 @@ describe('FallbackOrchestratorService', () => {
 
       const paypalFactoryMock = {
         providerId: 'paypal' as const,
-        supportsMethod: vi.fn(() => false), // PayPal no soporta card en este test
+        supportsMethod: vi.fn(() => false), // PayPal does not support card in this test
       };
 
       registryMock.get.mockImplementation((providerId: PaymentProviderId) => {
@@ -243,7 +243,7 @@ describe('FallbackOrchestratorService', () => {
 
       service.reportFailure('stripe', providerUnavailableError, mockRequest);
 
-      // PayPal no debería estar en las alternativas si no soporta el método
+      // PayPal should not be in alternatives if it does not support the method
       if (emittedEvent) {
         expect(emittedEvent.alternativeProviders).not.toContain('paypal');
       }
@@ -366,7 +366,7 @@ describe('FallbackOrchestratorService', () => {
       const event = service.pendingEvent()!;
       expect(event).not.toBeNull();
 
-      // Simular evento expirado (timestamp muy antiguo, antes del TTL)
+      // Simulate expired event (timestamp too old, before TTL)
       const ttl = service.getConfig().userResponseTimeout;
       const expiredTimestamp = baseTime - ttl - 1000;
       const expiredEvent: typeof event = {
@@ -374,13 +374,13 @@ describe('FallbackOrchestratorService', () => {
         timestamp: expiredTimestamp,
       };
 
-      // Simular que el evento está expirado en el state
+      // Simulate event expired in state
       (service as any)['_state'].update((s: any) => ({
         ...s,
         pendingEvent: expiredEvent,
       }));
 
-      // Avanzar tiempo para simular que pasó el TTL
+      // Advance time to simulate TTL passing
       vi.advanceTimersByTime(ttl + 100);
 
       service.respondToFallback({
@@ -390,7 +390,7 @@ describe('FallbackOrchestratorService', () => {
         timestamp: baseTime + ttl + 100,
       });
 
-      // Debe limpiar el estado pero no ejecutar fallback
+      // Should clear state but not execute fallback
       expect(service.state().status).toBe('cancelled');
       expect(service.pendingEvent()).toBeNull();
 
@@ -411,10 +411,10 @@ describe('FallbackOrchestratorService', () => {
         timestamp: baseTime,
       });
 
-      // ✅ Estado terminal inmediato
+      // ✅ Immediate terminal state
       expect(service.state().status).toBe('cancelled');
 
-      // ✅ después del microtask se resetea a idle
+      // ✅ after microtask it resets to idle
       await Promise.resolve();
       expect(service.state().status).toBe('idle');
 

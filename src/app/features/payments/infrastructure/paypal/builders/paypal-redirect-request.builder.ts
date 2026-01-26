@@ -65,9 +65,9 @@ export class PaypalRedirectRequestBuilder extends PaymentRequestBuilder {
 
   protected override buildUnsafe(): CreatePaymentRequest {
     /**
-     *  TODO : PaypalRedirectRequestBuilder: confirma el “hack legítimo”
-     * ! Este builder deja clarísimo que PayPal no tiene card como método,
-     * ! sino que está usando card como etiqueta de compatibilidad:
+     * TODO: PaypalRedirectRequestBuilder - confirm this \"legit hack\".
+     * This builder makes it explicit that PayPal does not have a card method,
+     * it uses card only as a compatibility label.
      */
     return {
       orderId: this.orderId!,

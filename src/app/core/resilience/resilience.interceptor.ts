@@ -8,27 +8,27 @@ import { RateLimiterService, RateLimitExceededError } from './rate-limiter';
 import { DEFAULT_RESILIENCE_CONFIG } from './resilience.types';
 
 /**
- * Patrones de URL a excluir del circuit breaker y rate limiting.
+ * URL patterns excluded from circuit breaker and rate limiting.
  */
 const EXCLUDE_PATTERNS = DEFAULT_RESILIENCE_CONFIG.excludePatterns;
 
 /**
- * Interceptor de resiliencia que combina Circuit Breaker y Rate Limiting.
+ * Resilience interceptor combining Circuit Breaker and Rate Limiting.
  *
- * Características:
- * - Circuit Breaker: Previene llamadas a servicios fallando
- * - Rate Limiting: Previene exceso de llamadas
- * - Logging integrado para debugging
+ * Features:
+ * - Circuit Breaker: prevents calls to failing services
+ * - Rate Limiting: prevents request floods
+ * - Integrated logging for debugging
  *
- * Orden de verificación:
- * 1. Rate Limiting (si está habilitado)
- * 2. Circuit Breaker (si está habilitado)
- * 3. Request original
- * 4. Registro de resultado (éxito/fallo)
+ * Check order:
+ * 1. Rate Limiting (if enabled)
+ * 2. Circuit Breaker (if enabled)
+ * 3. Original request
+ * 4. Result logging (success/failure)
  *
  * @example
  * ```typescript
- * // En app.config.ts
+ * // In app.config.ts
  * provideHttpClient(
  *   withInterceptors([resilienceInterceptor, loggingInterceptor])
  * )
@@ -41,12 +41,12 @@ export const resilienceInterceptor: HttpInterceptorFn = (req, next) => {
 
   const endpoint = req.url;
 
-  // Verificar si debemos excluir esta URL
+  // Check if we should exclude this URL
   if (shouldExclude(endpoint)) {
     return next(req);
   }
 
-  // 1. Verificar Rate Limiting
+  // 1. Check rate limiting
   try {
     if (!rateLimiter.canRequest(endpoint)) {
       const retryAfter = rateLimiter.getRetryAfter(endpoint);
@@ -69,7 +69,7 @@ export const resilienceInterceptor: HttpInterceptorFn = (req, next) => {
       );
     }
 
-    // Registrar el request para rate limiting
+    // Record request for rate limiting
     rateLimiter.recordRequest(endpoint);
   } catch (e) {
     if (e instanceof RateLimitExceededError) {
@@ -84,7 +84,7 @@ export const resilienceInterceptor: HttpInterceptorFn = (req, next) => {
           }),
       );
     }
-    // Otro error, continuar
+    // Other error, continue
   }
 
   // 2. Verificar Circuit Breaker
@@ -109,7 +109,7 @@ export const resilienceInterceptor: HttpInterceptorFn = (req, next) => {
           }),
       );
     }
-    // Otro error, continuar
+    // Other error, continue
   }
 
   // 3. Ejecutar request y registrar resultado
@@ -130,14 +130,14 @@ export const resilienceInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 /**
- * Verifica si la URL debe excluirse del procesamiento.
+ * Check if the URL should be excluded from processing.
  */
 function shouldExclude(url: string): boolean {
   return EXCLUDE_PATTERNS.some((pattern) => pattern.test(url));
 }
 
 /**
- * Enriquece el error HTTP con información de resiliencia.
+ * Enrich HTTP error with resilience information.
  */
 function enrichError(
   error: HttpErrorResponse,
@@ -148,7 +148,7 @@ function enrichError(
   const circuitInfo = circuitBreaker.getCircuitInfo(endpoint);
   const limitInfo = rateLimiter.getLimitInfo(endpoint);
 
-  // Crear nuevo error con metadata adicional
+  // Create new error with additional metadata
   const enrichedError = new HttpErrorResponse({
     error: {
       ...extractErrorBody(error.error),
@@ -177,7 +177,7 @@ function enrichError(
 }
 
 /**
- * Extrae el body del error de forma segura.
+ * Extract error body safely.
  */
 function extractErrorBody(error: unknown): Record<string, unknown> {
   if (!error) return {};

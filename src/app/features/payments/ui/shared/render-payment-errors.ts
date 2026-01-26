@@ -38,16 +38,16 @@ function sanitizeI18nParams(params: unknown): I18nSafeParams | undefined {
       continue;
     }
 
-    // Evitar cosas como { a: {x:1} } => "[object Object]"
-    // Si luego quieres permitir Date, BigInt, etc. aquí es el lugar.
+    // Avoid cases like { a: {x:1} } => "[object Object]"
+    // If you later want to allow Date, BigInt, etc., this is the place.
   }
 
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
 function looksLikeI18nKey(value: string): boolean {
-  // Keys tipo: "errors.provider_error", "ui.payment_problem"
-  // Evita traducciones accidentales de strings humanos
+  // Keys like: "errors.provider_error", "ui.payment_problem"
+  // Avoid accidental translation of human strings
   return value.includes('.') && !value.includes(' ');
 }
 

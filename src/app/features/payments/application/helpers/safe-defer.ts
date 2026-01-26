@@ -1,9 +1,9 @@
 import { defer, Observable } from 'rxjs';
 
 /**
- * Estándar del proyecto:
- * cualquier error sync dentro de fn debe caer dentro del Observable,
- * para evitar "Unhandled Error" y UI colgada.
+ * Project standard:
+ * any sync error inside fn must be captured by the Observable,
+ * to avoid "Unhandled Error" and stuck UI.
  */
 export function safeDefer<T>(fn: () => Observable<T>): Observable<T> {
   return defer(fn);
