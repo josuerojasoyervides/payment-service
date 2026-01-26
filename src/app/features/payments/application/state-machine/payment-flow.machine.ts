@@ -19,6 +19,13 @@ import {
   StartInput,
   StatusInput,
 } from './payment-flow.types';
+import { createCancelStates } from './stages/payment-flow-cancel.stage';
+import { createConfirmStates } from './stages/payment-flow-confirm.stage';
+import { createDoneStates } from './stages/payment-flow-done.stage';
+import { createFallbackStates } from './stages/payment-flow-fallback.stage';
+import { createIdleStates } from './stages/payment-flow-idle.stage';
+import { createPollingStates } from './stages/payment-flow-polling.stage';
+import { createStartStates } from './stages/payment-flow-start.stage';
 
 export const createPaymentFlowMachine = (
   deps: PaymentFlowDeps,
@@ -253,193 +260,13 @@ export const createPaymentFlowMachine = (
     }),
 
     states: {
-      idle: {
-        tags: ['idle'],
-        on: {
-          START: { target: 'starting', actions: 'setStartInput' },
-          REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
-          CONFIRM: { target: 'confirming', actions: 'setConfirmInput' },
-          CANCEL: { target: 'cancelling', actions: 'setCancelInput' },
-        },
-      },
-
-      starting: {
-        tags: ['loading', 'starting'],
-        invoke: {
-          src: 'start',
-          input: ({ context }) => ({
-            providerId: context.providerId!,
-            request: context.request!,
-            flowContext: context.flowContext ?? undefined,
-          }),
-          onDone: { target: 'afterStart', actions: 'setIntent' },
-          onError: { target: 'failed', actions: 'setError' },
-        },
-      },
-
-      afterStart: {
-        tags: ['loading', 'afterStart'],
-        always: [
-          { guard: 'needsUserAction', target: 'requiresAction' },
-          { guard: 'isFinal', target: 'done' },
-          { target: 'polling' },
-        ],
-      },
-
-      requiresAction: {
-        tags: ['ready', 'requiresAction'],
-        on: {
-          CONFIRM: { target: 'confirming', actions: 'setConfirmInput' },
-          CANCEL: { target: 'cancelling', actions: 'setCancelInput' },
-          REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
-        },
-      },
-
-      confirming: {
-        tags: ['loading', 'confirming'],
-        invoke: {
-          src: 'confirm',
-          input: ({ context, event }) => {
-            if (event.type === 'CONFIRM') {
-              return {
-                providerId: event.providerId,
-                intentId: event.intentId,
-                returnUrl: event.returnUrl,
-              };
-            }
-
-            return {
-              providerId: context.providerId!,
-              intentId: context.intentId ?? context.intent!.id,
-              returnUrl: context.flowContext?.returnUrl,
-            };
-          },
-          onDone: { target: 'afterConfirm', actions: 'setIntent' },
-          onError: { target: 'failed', actions: 'setError' },
-        },
-      },
-
-      afterConfirm: {
-        tags: ['loading', 'afterConfirm'],
-        always: [
-          { guard: 'needsUserAction', target: 'requiresAction' },
-          { guard: 'isFinal', target: 'done' },
-          { target: 'polling' },
-        ],
-      },
-
-      polling: {
-        tags: ['ready', 'polling'],
-        entry: ['incrementPollAttempt'],
-        after: {
-          pollDelay: { target: 'fetchingStatus', guard: 'canPoll' },
-        },
-        on: {
-          REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
-          CANCEL: { target: 'cancelling' },
-        },
-      },
-
-      fetchingStatus: {
-        tags: ['loading', 'fetchingStatus'],
-        always: [
-          {
-            guard: 'hasRefreshKeys',
-            target: 'fetchingStatusInvoke',
-          },
-          {
-            // si falta providerId/intentId, es bug del caller
-            target: 'failed',
-            actions: 'setRefreshError',
-          },
-        ],
-      },
-
-      fetchingStatusInvoke: {
-        tags: ['loading', 'fetchingStatusInvoke'],
-        invoke: {
-          src: 'status',
-          input: ({ context }) => ({
-            providerId: context.providerId!,
-            intentId: context.intentId ?? context.intent!.id,
-          }),
-          onDone: { target: 'afterStatus', actions: 'setIntent' },
-          onError: [
-            {
-              guard: 'canRetryStatus',
-              target: 'statusRetrying',
-              actions: ['incrementStatusRetry', 'clearError'],
-            },
-            { target: 'failed', actions: 'setError' },
-          ],
-        },
-      },
-
-      afterStatus: {
-        tags: ['ready', 'afterStatus'],
-        always: [
-          { guard: 'needsUserAction', target: 'requiresAction' },
-          { guard: 'isFinal', target: 'done' },
-          { target: 'polling' },
-        ],
-      },
-
-      statusRetrying: {
-        tags: ['loading', 'statusRetrying'],
-        after: {
-          statusRetryDelay: { target: 'fetchingStatus' },
-        },
-      },
-
-      cancelling: {
-        tags: ['loading', 'cancelling'],
-        invoke: {
-          src: 'cancel',
-          input: ({ context, event }) => {
-            if (event.type === 'CANCEL') {
-              return { providerId: event.providerId, intentId: event.intentId };
-            }
-
-            return {
-              providerId: context.providerId!,
-              intentId: context.intentId ?? context.intent!.id,
-            };
-          },
-          onDone: { target: 'done', actions: 'setIntent' },
-          onError: { target: 'failed', actions: 'setError' },
-        },
-      },
-
-      failed: {
-        tags: ['error', 'failed'],
-        always: [{ guard: 'canFallback', target: 'fallbackCandidate' }],
-        on: {
-          RESET: { target: 'idle', actions: 'clear' },
-          REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
-          FALLBACK_REQUESTED: {
-            target: 'fallbackCandidate',
-            actions: 'setFallbackRequested',
-          },
-          FALLBACK_EXECUTE: { target: 'starting', actions: 'setFallbackStartInput' },
-        },
-      },
-
-      fallbackCandidate: {
-        tags: ['ready', 'fallbackCandidate', 'fallback'],
-        on: {
-          RESET: { target: 'idle', actions: 'clear' },
-          FALLBACK_EXECUTE: { target: 'starting', actions: 'setFallbackStartInput' },
-          FALLBACK_ABORT: { target: 'done', actions: 'clear' },
-        },
-      },
-
-      done: {
-        tags: ['ready', 'done'],
-        on: {
-          RESET: { target: 'idle', actions: 'clear' },
-          REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
-        },
-      },
+      ...createIdleStates(),
+      ...createStartStates(),
+      ...createConfirmStates(),
+      ...createPollingStates(),
+      ...createCancelStates(),
+      ...createFallbackStates(),
+      ...createDoneStates(),
     },
   });
 };
