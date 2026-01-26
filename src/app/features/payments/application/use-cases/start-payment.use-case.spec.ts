@@ -12,6 +12,7 @@ import { firstValueFrom, of, throwError } from 'rxjs';
 import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
 import { PaymentStrategy, StrategyContext } from '../ports/payment-strategy.port';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import { ProviderMethodPolicyRegistry } from '../registry/provider-method-policy.registry';
 import { StartPaymentUseCase } from './start-payment.use-case';
 
 describe('StartPaymentUseCase', () => {
@@ -55,12 +56,22 @@ describe('StartPaymentUseCase', () => {
     getAvailableProviders: vi.fn((): PaymentProviderId[] => ['stripe', 'paypal']),
     getProvidersForMethod: vi.fn((): PaymentProviderId[] => ['stripe']),
   };
+  const policyRegistryMock = {
+    getPolicy: vi.fn(() => ({
+      providerId: 'stripe',
+      method: 'card',
+      requires: { token: true },
+      flow: { usesRedirect: false, requiresUserAction: true, supportsPolling: true },
+      stages: { authorize: true, capture: true, settle: true },
+    })),
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
         StartPaymentUseCase,
         { provide: ProviderFactoryRegistry, useValue: registryMock },
+        { provide: ProviderMethodPolicyRegistry, useValue: policyRegistryMock },
         IdempotencyKeyFactory,
       ],
     });
@@ -114,6 +125,28 @@ describe('StartPaymentUseCase', () => {
   });
 
   describe('error handling', () => {
+    it('throws when token is required by policy but missing', async () => {
+      policyRegistryMock.getPolicy.mockReturnValueOnce({
+        providerId: 'stripe',
+        method: 'card',
+        requires: { token: true },
+        flow: { usesRedirect: false, requiresUserAction: true, supportsPolling: true },
+        stages: { authorize: true, capture: true, settle: true },
+      });
+
+      const reqMissingToken: CreatePaymentRequest = {
+        ...req,
+        method: { type: 'card' },
+      };
+
+      await expect(
+        firstValueFrom(useCase.execute(reqMissingToken, 'stripe')),
+      ).rejects.toMatchObject({
+        code: 'invalid_request',
+        messageKey: I18nKeys.errors.card_token_required,
+      });
+    });
+
     it('propagates errors from registry.get()', async () => {
       registryMock.get.mockImplementationOnce(() => {
         throw new Error('Registry failed');
