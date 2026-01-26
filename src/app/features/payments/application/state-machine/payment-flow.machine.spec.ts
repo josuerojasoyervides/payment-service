@@ -175,6 +175,55 @@ describe('PaymentFlowMachine', () => {
     expect(deps.getStatus).not.toHaveBeenCalled();
   });
 
+  it('CONFIRM from idle uses event payload', async () => {
+    const { actor, deps } = setup();
+
+    actor.send({
+      type: 'CONFIRM',
+      providerId: 'paypal',
+      intentId: 'ORDER_1',
+      returnUrl: 'https://return.test',
+    });
+
+    await waitForSnapshot(
+      actor,
+      (s) => s.value === 'afterConfirm' || s.value === 'polling' || s.value === 'done',
+    );
+
+    expect(deps.confirmPayment).toHaveBeenCalledWith('paypal', {
+      intentId: 'ORDER_1',
+      returnUrl: 'https://return.test',
+    });
+  });
+
+  it('CANCEL from idle uses event payload', async () => {
+    const { actor, deps } = setup();
+
+    actor.send({
+      type: 'CANCEL',
+      providerId: 'stripe',
+      intentId: 'pi_cancel',
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'cancelling');
+    await waitForSnapshot(actor, (s) => s.value === 'done');
+
+    expect(deps.cancelPayment).toHaveBeenCalledWith('stripe', { intentId: 'pi_cancel' });
+  });
+
+  it('REFRESH fails when providerId is missing', async () => {
+    const { actor, deps } = setup();
+
+    actor.send({
+      type: 'REFRESH',
+      intentId: 'pi_missing_provider',
+    } as any);
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
+    expect(snap.hasTag('error')).toBe(true);
+    expect(deps.getStatus).not.toHaveBeenCalled();
+  });
+
   it('FALLBACK_REQUESTED -> fallbackCandidate', async () => {
     const { actor } = setup({ startReject: true });
 

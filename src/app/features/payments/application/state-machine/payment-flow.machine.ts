@@ -72,6 +72,28 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         };
       }),
 
+      setConfirmInput: assign(({ event }) => {
+        if (event.type !== 'CONFIRM') return {};
+
+        return {
+          providerId: event.providerId,
+          intentId: event.intentId,
+          intent: null,
+          error: null,
+        };
+      }),
+
+      setCancelInput: assign(({ event }) => {
+        if (event.type !== 'CANCEL') return {};
+
+        return {
+          providerId: event.providerId,
+          intentId: event.intentId,
+          intent: null,
+          error: null,
+        };
+      }),
+
       setIntent: assign(({ event }) => {
         if (!('output' in event)) return {};
         return {
@@ -192,6 +214,8 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         on: {
           START: { target: 'starting', actions: 'setStartInput' },
           REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
+          CONFIRM: { target: 'confirming', actions: 'setConfirmInput' },
+          CANCEL: { target: 'cancelling', actions: 'setCancelInput' },
         },
       },
 
@@ -221,8 +245,8 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       requiresAction: {
         tags: ['ready', 'requiresAction'],
         on: {
-          CONFIRM: { target: 'confirming' },
-          CANCEL: { target: 'cancelling' },
+          CONFIRM: { target: 'confirming', actions: 'setConfirmInput' },
+          CANCEL: { target: 'cancelling', actions: 'setCancelInput' },
           REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
         },
       },
@@ -231,11 +255,21 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         tags: ['loading', 'confirming'],
         invoke: {
           src: 'confirm',
-          input: ({ context }) => ({
-            providerId: context.providerId!,
-            intentId: context.intent!.id,
-            returnUrl: context.flowContext?.returnUrl,
-          }),
+          input: ({ context, event }) => {
+            if (event.type === 'CONFIRM') {
+              return {
+                providerId: event.providerId,
+                intentId: event.intentId,
+                returnUrl: event.returnUrl,
+              };
+            }
+
+            return {
+              providerId: context.providerId!,
+              intentId: context.intentId ?? context.intent!.id,
+              returnUrl: context.flowContext?.returnUrl,
+            };
+          },
           onDone: { target: 'afterConfirm', actions: 'setIntent' },
           onError: { target: 'failed', actions: 'setError' },
         },
@@ -299,10 +333,16 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         tags: ['loading', 'cancelling'],
         invoke: {
           src: 'cancel',
-          input: ({ context }) => ({
-            providerId: context.providerId!,
-            intentId: context.intent!.id,
-          }),
+          input: ({ context, event }) => {
+            if (event.type === 'CANCEL') {
+              return { providerId: event.providerId, intentId: event.intentId };
+            }
+
+            return {
+              providerId: context.providerId!,
+              intentId: context.intentId ?? context.intent!.id,
+            };
+          },
           onDone: { target: 'done', actions: 'setIntent' },
           onError: { target: 'failed', actions: 'setError' },
         },
