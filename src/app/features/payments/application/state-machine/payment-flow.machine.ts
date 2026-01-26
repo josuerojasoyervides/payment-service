@@ -62,12 +62,12 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         };
       }),
 
-      setRefreshInput: assign(({ event }) => {
+      setRefreshInput: assign(({ event, context }) => {
         if (event.type !== 'REFRESH') return {};
 
         return {
-          providerId: event.providerId,
-          intentId: event.intentId,
+          providerId: event.providerId ?? context.providerId,
+          intentId: event.intentId ?? context.intentId ?? context.intent?.id ?? null,
           error: null,
         };
       }),
@@ -86,6 +86,17 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         return {
           intent: null,
           error: normalizePaymentError(event.error),
+        };
+      }),
+
+      setRefreshError: assign(({ context }) => {
+        const missing = [
+          !context.providerId ? 'providerId' : null,
+          !(context.intentId ?? context.intent?.id) ? 'intentId' : null,
+        ].filter(Boolean);
+
+        return {
+          error: normalizePaymentError(new Error(`Missing ${missing.join(' & ')} for REFRESH`)),
         };
       }),
 
@@ -256,10 +267,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
           {
             // si falta providerId/intentId, es bug del caller
             target: 'failed',
-            actions: assign({
-              error: () =>
-                normalizePaymentError(new Error('Missing providerId/intentId for REFRESH')),
-            }),
+            actions: 'setRefreshError',
           },
         ],
       },
