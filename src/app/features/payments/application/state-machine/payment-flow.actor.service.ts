@@ -66,11 +66,6 @@ export class PaymentFlowActorService {
   constructor() {
     this.actor.subscribe((snapshot) => {
       this.snapshot.set(snapshot);
-      this.logger.info('PaymentFlowMachine snapshot updated', 'PaymentFlowActorService', {
-        state: snapshot.value,
-        context: snapshot.context,
-        lastSentEvent: this.lastSentEvent(),
-      });
     });
 
     this.actor.start();

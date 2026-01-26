@@ -121,6 +121,12 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       idle: {
         on: {
           START: { target: 'starting', actions: 'setStartInput' },
+          REFRESH: {
+            target: 'fetchingStatus',
+            actions: assign({
+              providerId: ({ event }) => event.providerId,
+            }),
+          },
         },
       },
 
@@ -186,10 +192,18 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       fetchingStatus: {
         invoke: {
           src: 'status',
-          input: ({ context }) => ({
-            providerId: context.providerId!,
-            intentId: context.intent!.id,
-          }),
+          input: ({ context, event }) => {
+            const refreshEvent = event.type === 'REFRESH' ? event : null;
+
+            const providerId = context.providerId ?? refreshEvent?.providerId ?? null;
+            const intentId = context.intent?.id ?? refreshEvent?.intentId ?? null;
+
+            if (!providerId || !intentId) {
+              throw new Error('Missing providerId/intentId for status refresh');
+            }
+
+            return { providerId, intentId };
+          },
           onDone: { target: 'afterStatus', actions: 'setIntent' },
           onError: { target: 'failed', actions: 'setError' },
         },
