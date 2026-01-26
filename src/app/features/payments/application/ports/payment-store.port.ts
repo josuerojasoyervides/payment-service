@@ -14,8 +14,8 @@ import {
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
 
-import { PaymentHistoryEntry } from '../store/payment-store.history.types';
-import { PaymentFlowStatus, PaymentsState } from '../store/payment-store.state';
+import { PaymentHistoryEntry } from '../store/history/payment-store.history.types';
+import { PaymentFlowStatus, PaymentsState } from '../store/projection/payment-store.state';
 
 /**
  * Unsubscribe function.

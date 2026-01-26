@@ -15,9 +15,9 @@ import {
 } from '@payments/domain/models/payment/payment-request.types';
 
 import { PaymentDebugSummary, PaymentStorePort, Unsubscribe } from '../ports/payment-store.port';
+import { PaymentHistoryEntry } from '../store/history/payment-store.history.types';
 import { PaymentsStore } from '../store/payment-store';
-import { PaymentHistoryEntry } from '../store/payment-store.history.types';
-import { PaymentsState } from '../store/payment-store.state';
+import { PaymentsState } from '../store/projection/payment-store.state';
 
 /**
  * Adapter that implements PaymentStatePort using NgRx Signals.

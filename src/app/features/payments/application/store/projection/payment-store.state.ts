@@ -9,7 +9,7 @@ import {
 } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
-import { PaymentHistoryEntry } from './payment-store.history.types';
+import { PaymentHistoryEntry } from '../history/payment-store.history.types';
 
 /**
  * Possible payment flow states in the UI.

@@ -1,7 +1,7 @@
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { assign, fromPromise, setup } from 'xstate';
 
-import { normalizePaymentError } from '../store/payment-store.errors';
+import { normalizePaymentError } from '../store/projection/payment-store.errors';
 import { PaymentFlowDeps } from './payment-flow.deps';
 import {
   getPollingDelayMs,
