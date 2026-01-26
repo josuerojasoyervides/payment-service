@@ -88,9 +88,9 @@ Este es un tour de 10 minutos que casi siempre funciona:
    - `src/app/features/payments/config/payment.providers.ts`
      Este archivo “conecta” Stripe/PayPal (reales o fake), factories, use cases, store, etc.
 
-3. **Store (API pública del módulo)**
-   - `src/app/features/payments/application/store/payment-store.ts`
-     Es el “punto de control” que usa la UI: `startPayment`, `confirm`, `cancel`, `getStatus`, etc.
+3. **Flow Facade (API pública del flujo)**
+   - `src/app/features/payments/application/state-machine/payment-flow.facade.ts`
+     Es el punto de control de la UI: `start`, `confirm`, `cancel`, `refresh`, `reset`.
 
 4. **Use Cases (los verbos del módulo)**
    - `src/app/features/payments/application/use-cases/*.use-case.ts`
@@ -140,7 +140,8 @@ Aquí viven los “casos de uso” y la orquestación:
 
 - `StartPaymentUseCase`, `ConfirmPaymentUseCase`, etc.
 - `ProviderFactoryRegistry`
-- `PaymentsStore` (NgRx Signals)
+- `PaymentFlowFacade` + `PaymentFlowActorService` (XState)
+- `PaymentsStore` (adapter/bridge del estado)
 - `FallbackOrchestratorService`
 
 Application **no debería conocer providers específicos** (Stripe/PayPal).
@@ -210,29 +211,30 @@ export interface PaymentError {
 Ejemplo: pagar con tarjeta con Stripe (pero aplica igual a otros).
 
 1. UI arma un request (con builder o formulario)
-2. UI llama al Store
-3. Store llama al Use Case
-4. Use Case obtiene el ProviderFactory correcto
-5. Factory crea la Strategy (y gateways)
-6. Strategy ejecuta
-7. Infra habla con el provider
-8. Mapea response → `PaymentIntent`
-9. UI renderiza el intent
+2. UI llama al Flow Facade
+3. Flow Facade dispara evento XState
+4. Actor invoca el Use Case
+5. Use Case obtiene el ProviderFactory correcto
+6. Factory crea la Strategy (y gateways)
+7. Strategy ejecuta
+8. Infra habla con el provider
+9. Mapea response → `PaymentIntent`
+10. UI renderiza el intent
 
 Un diagrama tipo “secuencia”:
 
 ```mermaid
 sequenceDiagram
   participant UI
-  participant Store
+  participant Flow as PaymentFlowFacade
   participant UseCase as StartPaymentUseCase
   participant Registry as ProviderFactoryRegistry
   participant Factory as ProviderFactory
   participant Strategy as PaymentStrategy
   participant Gateway as Provider Gateway (Infra)
 
-  UI->>Store: startPayment(request, providerId)
-  Store->>UseCase: execute(request, providerId)
+  UI->>Flow: start(providerId, request, context)
+  Flow->>UseCase: execute(request, providerId)
   UseCase->>Registry: getFactory(providerId)
   Registry->>Factory: (resolve)
   UseCase->>Factory: createStrategy(context)
@@ -241,8 +243,8 @@ sequenceDiagram
   Strategy->>Gateway: create/confirm/get...
   Gateway-->>Strategy: raw response
   Strategy-->>UseCase: PaymentIntent (domain)
-  UseCase-->>Store: PaymentIntent
-  Store-->>UI: state updated
+  UseCase-->>Flow: PaymentIntent
+  Flow-->>UI: state updated
 ```
 
 ---

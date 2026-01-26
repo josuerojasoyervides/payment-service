@@ -8,11 +8,10 @@ import {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { of, Subject, throwError } from 'rxjs';
+import { Subject } from 'rxjs';
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
-import { GetPaymentStatusUseCase } from '../use-cases/get-payment-status.use-case';
 import { PaymentsStore } from './payment-store';
 import { HISTORY_MAX_ENTRIES } from './payment-store.history.types';
 import { initialPaymentsState } from './payment-store.state';
@@ -66,13 +65,6 @@ describe('PaymentsStore', () => {
     respondToFallback: vi.fn(),
     reset: vi.fn(),
     fallbackExecute$: fallbackExecute$.asObservable(),
-  };
-
-  // -------------------
-  // Legacy UseCase mock (only for refresh fallback path)
-  // -------------------
-  const getPaymentStatusUseCaseMock = {
-    execute: vi.fn(() => of({ ...intent, status: 'requires_action' as const })),
   };
 
   // -------------------
@@ -151,10 +143,7 @@ describe('PaymentsStore', () => {
 
   const stateMachineMock: Partial<PaymentFlowActorService> = {
     snapshot: machineSnapshot as any,
-    send: vi.fn((event: any) => {
-      if (event?.type === 'REFRESH') return false;
-      return true;
-    }),
+    send: vi.fn(() => true),
   };
 
   beforeEach(() => {
@@ -174,7 +163,6 @@ describe('PaymentsStore', () => {
         PaymentsStore,
         { provide: FallbackOrchestratorService, useValue: fallbackOrchestratorMock },
         { provide: PaymentFlowActorService, useValue: stateMachineMock },
-        { provide: GetPaymentStatusUseCase, useValue: getPaymentStatusUseCaseMock },
       ],
     });
 
@@ -375,19 +363,14 @@ describe('PaymentsStore', () => {
       TestBed.tick();
     };
 
-    it('refreshPayment -> uses XState when accepted (no legacy usecase)', async () => {
-      // fuerza que la máquina ACEPTE REFRESH
-      (stateMachineMock.send as any).mockReturnValueOnce(true);
-
+    it('refreshPayment -> uses XState when accepted', async () => {
       store.refreshPayment({
         request: { intentId: 'pi_123' },
         providerId: 'stripe',
       });
 
-      // flush effects/rxMethod
       await powerFlush();
 
-      // ✅ la máquina fue usada
       expect(stateMachineMock.send).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'REFRESH',
@@ -396,13 +379,8 @@ describe('PaymentsStore', () => {
         }),
       );
 
-      // ✅ NO se debe usar legacy path
-      expect(getPaymentStatusUseCaseMock.execute).not.toHaveBeenCalled();
-
-      // ✅ el store se queda loading mientras XState resuelve
       expect(store.status()).toBe('loading');
 
-      // Simulamos que la máquina ya resolvió status (snapshot listo)
       machineSnapshot.set({
         state: 'done',
         context: {
@@ -417,12 +395,11 @@ describe('PaymentsStore', () => {
 
       await powerFlush();
 
-      // ✅ store actualizado por bridge
       expect(store.status()).toBe('ready');
       expect(store.intent()?.id).toBe('pi_123');
     });
-    it('refreshPayment -> uses legacy usecase', async () => {
-      // fuerza legacy path (machine reject)
+
+    it('refreshPayment -> ignores when machine rejects', async () => {
       (stateMachineMock.send as any).mockReturnValueOnce(false);
 
       store.refreshPayment({
@@ -432,31 +409,15 @@ describe('PaymentsStore', () => {
 
       await powerFlush();
 
-      expect(getPaymentStatusUseCaseMock.execute).toHaveBeenCalledTimes(1);
-
-      // opcional pero recomendado:
       expect(stateMachineMock.send).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'REFRESH',
           providerId: 'stripe',
+          intentId: 'pi_123',
         }),
       );
-    });
 
-    it('refreshPayment -> usecase error => status=error', async () => {
-      (stateMachineMock.send as any).mockReturnValueOnce(false);
-
-      getPaymentStatusUseCaseMock.execute.mockReturnValueOnce(throwError(() => paymentError));
-
-      store.refreshPayment({
-        request: { intentId: 'pi_123' },
-        providerId: 'stripe',
-      });
-
-      await powerFlush();
-
-      expect(store.status()).toBe('error');
-      expect(store.error()).toEqual(paymentError);
+      expect(store.status()).not.toBe('loading');
     });
   });
 
