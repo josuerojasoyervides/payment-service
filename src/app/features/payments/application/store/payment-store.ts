@@ -45,10 +45,12 @@ export const PaymentsStore = signalStore(
         if (!pendingEvent) {
           const currentRequest = store.currentRequest();
           if (!currentRequest) return;
+          const failedProviderId = store.selectedProvider() ?? store.intent()?.provider ?? null;
           stateMachine.send({
             type: 'FALLBACK_EXECUTE',
             providerId,
             request: currentRequest,
+            ...(failedProviderId && { failedProviderId }),
           });
           return;
         }

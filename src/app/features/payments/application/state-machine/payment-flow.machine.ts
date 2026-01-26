@@ -128,6 +128,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
             ...context.fallback,
             eligible: true,
             request: event.request,
+            failedProviderId: event.failedProviderId ?? context.fallback.failedProviderId,
             selectedProviderId: event.providerId,
           },
         };

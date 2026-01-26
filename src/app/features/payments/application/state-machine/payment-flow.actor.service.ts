@@ -96,11 +96,12 @@ export class PaymentFlowActorService {
 
     this.fallbackOrchestrator.fallbackExecute$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ provider, request }) => {
+      .subscribe(({ provider, request, fromProvider }) => {
         this.send({
           type: 'FALLBACK_EXECUTE',
           providerId: provider,
           request,
+          failedProviderId: fromProvider,
         });
       });
     this.destroyRef.onDestroy(() => {

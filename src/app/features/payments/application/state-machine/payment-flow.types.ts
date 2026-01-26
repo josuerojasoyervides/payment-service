@@ -32,7 +32,7 @@ export type PaymentFlowEvent =
     }
   | { type: 'CONFIRM'; providerId: PaymentProviderId; intentId: string; returnUrl?: string }
   | { type: 'CANCEL'; providerId: PaymentProviderId; intentId: string }
-  | { type: 'REFRESH'; providerId: PaymentProviderId; intentId: string }
+  | { type: 'REFRESH'; providerId?: PaymentProviderId; intentId?: string }
   | { type: 'RESET' }
   | {
       type: 'FALLBACK_REQUESTED';
@@ -40,7 +40,12 @@ export type PaymentFlowEvent =
       request: CreatePaymentRequest;
       mode?: FallbackMode;
     }
-  | { type: 'FALLBACK_EXECUTE'; providerId: PaymentProviderId; request: CreatePaymentRequest }
+  | {
+      type: 'FALLBACK_EXECUTE';
+      providerId: PaymentProviderId;
+      request: CreatePaymentRequest;
+      failedProviderId?: PaymentProviderId;
+    }
   | { type: 'FALLBACK_ABORT' }
   // ✅ Done events (invoke resolve)
   | DoneEvent<'start', PaymentIntent>

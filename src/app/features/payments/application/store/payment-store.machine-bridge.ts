@@ -7,7 +7,12 @@ import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.ser
 import { PaymentFlowSnapshot } from '../state-machine/payment-flow.types';
 import { normalizePaymentError } from './payment-store.errors';
 import { addToHistory } from './payment-store.history';
-import { applyFailureState, applyLoadingState, applyReadyState } from './payment-store.transitions';
+import {
+  applyFailureState,
+  applyLoadingState,
+  applyReadyState,
+  applySilentFailureState,
+} from './payment-store.transitions';
 import type { PaymentsStoreContext } from './payment-store.types';
 
 /**
@@ -87,6 +92,19 @@ export function setupPaymentFlowMachineBridge(
       addToHistory(store, intent, providerId);
     }
     return;
+  });
+
+  /**
+   * ============================================================
+   * Effect #2b: fallback candidate without intent → ready (silent)
+   * ============================================================
+   */
+  effect(() => {
+    const snapshot = machineSnapshot();
+    if (!snapshot.hasTag('fallback')) return;
+    if (machineIntent()) return;
+
+    applySilentFailureState(store);
   });
 
   /**
