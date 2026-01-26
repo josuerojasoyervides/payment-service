@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { AutofocusDirective } from '@shared/directives/autofocus.directive';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 
 import {
@@ -41,7 +42,7 @@ type DynamicForm = FormRecord<DynamicControl>;
 @Component({
   selector: 'app-payment-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AutofocusDirective],
   templateUrl: './payment-form.component.html',
 })
 export class PaymentFormComponent implements OnDestroy {

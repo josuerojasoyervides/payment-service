@@ -72,7 +72,7 @@
           <dt class="text-green-700">{{ statusLabel() }}</dt>
           <dd>
             <span [class]="statusBadgeClass()">
-              {{ statusText() }}
+              {{ intent()!.status | paymentStatusLabel }}
             </span>
           </dd>
 

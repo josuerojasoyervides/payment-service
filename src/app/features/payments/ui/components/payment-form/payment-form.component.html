@@ -14,7 +14,7 @@
     }
 
     <form [formGroup]="form" class="space-y-4">
-      @for (field of visibleFields(); track field.name) {
+      @for (field of visibleFields(); track field.name; let index = $index) {
         <div class="space-y-1">
           @if (field.name === 'saveForFuture') {
             <!-- Checkbox para saveForFuture -->
@@ -42,6 +42,7 @@
               [formControlName]="field.name"
               [placeholder]="translateText(field.placeholderKey)"
               class="input"
+              [appAutofocus]="index === 0"
               [class.input-error]="isFieldInvalid(field.name)" />
 
             @if (isFieldInvalid(field.name)) {

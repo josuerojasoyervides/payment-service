@@ -11,3 +11,4 @@ export * from './log-method.decorator';
 export * from './logger.service';
 export * from './logging.interceptor';
 export * from './logging.types';
+export * from './trace-operation.decorator';

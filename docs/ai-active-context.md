@@ -41,13 +41,14 @@
 
 - [x] **Branch:** `chore/remove-fake-backend-interceptor` | **Commit:** `chore(core): remove fake backend interceptor`
 - [x] **Branch:** `docs/clean-ports-debt-notes` | **Commit:** `docs: remove port migration requirement`
-- [ ] **Branch:** `feat/fallback-hardening-limits` | **Commit:** `feat(fallback): enforce limits and expand coverage` (active)
+- [x] **Branch:** `feat/fallback-hardening-limits` | **Commit:** `feat(fallback): enforce limits and expand coverage`
+- [ ] **Branch:** `feat/ui-qol-utilities` | **Commit:** `feat(ui): add status label pipe, click tracking, and autofocus` (active)
 - [ ] **Branch:** `docs/fallback-hardening` | **Commit:** `docs(fallback): document limits and reset behavior`
 - [ ] **Branch:** `feat/i18n-translate-pipe` | **Commit:** `feat(i18n): add translate pipe`
 
 ## ⏭️ Immediate Next Action
 
-- [ ] Finish fallback hardening branch (verify tests, commit, update backlog).
+- [ ] Finish UI QoL utilities branch (verify, commit, update backlog).
 
 ---
 
