@@ -121,7 +121,7 @@ Optional (case-by-case):
 - caching,
 - timeout/abort.
 
-**Current state:** generally satisfied; minimal gateway test coverage still needs completion.
+**Current state:** satisfied; minimal gateway test coverage complete.
 
 ---
 
@@ -201,8 +201,9 @@ export interface PaymentError {
 - Flow logic lives in XState.
 - Store is projection only (snapshot + fallback + history).
 - UI consumes facades only.
+- Public commands are separated from internal/system events.
 
-**Current state:** integrated (flow facade + actor + bridge).
+**Current state:** integrated (flow facade + actor + bridge) with command/system event separation.
 
 ---
 

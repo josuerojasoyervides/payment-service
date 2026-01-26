@@ -7,7 +7,7 @@
 
 - the module is consistent,
 - it is easy to refactor,
-- it is ready to migrate complex flow to XState **without rewrites**.
+- it is ready to evolve complex flow in XState **without rewrites**.
 
 This plan is deliberately aggressive: consistency and testability first, features later.
 
@@ -79,7 +79,7 @@ This plan is deliberately aggressive: consistency and testability first, feature
 **Status:**
 
 - Orchestrator works and is integrated
-- Hardening tests are still incomplete
+- Hardening completed (limits + reset behavior + tests)
 
 ---
 
@@ -142,7 +142,7 @@ You can mark this "closed" when all are true:
 ### P1 — Stability
 
 - [x] Complete minimal tests for critical gateways
-- [ ] Fallback hardening (attempt counters + auto fallback limits)
+- [x] Fallback hardening (attempt counters + auto fallback limits)
 
 ### P2 — Refinements
 
