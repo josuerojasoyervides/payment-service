@@ -4,7 +4,9 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PaymentFlowFacade } from '../../../application/state-machine/payment-flow.facade';
+import { mapReturnQueryToReference } from '../../../application/adapters/events/external/payment-flow-return.mapper';
+import { ExternalEventAdapter } from '../../../application/adapters/external-event.adapter';
+import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
 import { ReturnComponent } from './return.page';
 
 describe('ReturnComponent', () => {
@@ -12,6 +14,7 @@ describe('ReturnComponent', () => {
   let fixture: ComponentFixture<ReturnComponent>;
   let mockFlowFacade: any;
   let mockActivatedRoute: any;
+  let mockExternalEvents: any;
 
   const mockIntent: PaymentIntent = {
     id: 'pi_test_123',
@@ -39,6 +42,13 @@ describe('ReturnComponent', () => {
       refresh: vi.fn(() => true),
     };
 
+    mockExternalEvents = {
+      providerUpdate: vi.fn(),
+      webhookReceived: vi.fn(),
+      validationFailed: vi.fn(),
+      statusConfirmed: vi.fn(),
+    };
+
     // I18nService mock
     const mockI18n: I18nService = {
       t: vi.fn((key: string) => {
@@ -57,6 +67,7 @@ describe('ReturnComponent', () => {
         { provide: PaymentFlowFacade, useValue: mockFlowFacade },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: I18nService, useValue: mockI18n },
+        { provide: ExternalEventAdapter, useValue: mockExternalEvents },
       ],
     }).compileComponents();
 
@@ -109,7 +120,10 @@ describe('ReturnComponent', () => {
         payment_intent: 'pi_test_123',
       };
       component.ngOnInit();
-      expect(mockFlowFacade.refresh).toHaveBeenCalledWith('stripe', 'pi_test_123');
+      expect(mockExternalEvents.providerUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ providerId: 'stripe', referenceId: 'pi_test_123' }),
+        { refresh: true },
+      );
     });
   });
 
@@ -129,7 +143,10 @@ describe('ReturnComponent', () => {
         token: 'ORDER_FAKE_XYZ',
       };
       component.ngOnInit();
-      expect(mockFlowFacade.refresh).toHaveBeenCalledWith('paypal', 'ORDER_FAKE_XYZ');
+      expect(mockExternalEvents.providerUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ providerId: 'paypal', referenceId: 'ORDER_FAKE_XYZ' }),
+        { refresh: true },
+      );
     });
   });
 
@@ -146,7 +163,10 @@ describe('ReturnComponent', () => {
         payment_intent: 'pi_test_123',
       };
       component.ngOnInit();
-      expect(mockFlowFacade.refresh).not.toHaveBeenCalled();
+      expect(mockExternalEvents.providerUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ providerId: 'stripe', referenceId: 'pi_test_123' }),
+        { refresh: false },
+      );
     });
 
     it('should detect cancellation from redirect_status', () => {
@@ -158,16 +178,15 @@ describe('ReturnComponent', () => {
     });
   });
 
-  describe('Detect provider', () => {
+  describe('Return mapper', () => {
     it('should detect PayPal when PayPal token exists', () => {
-      component.paypalToken.set('ORDER_FAKE_XYZ');
-      const provider = (component as any).detectProvider();
-      expect(provider).toBe('paypal');
+      const reference = mapReturnQueryToReference({ token: 'ORDER_FAKE_XYZ' });
+      expect(reference.providerId).toBe('paypal');
     });
 
     it('should detect Stripe by default', () => {
-      const provider = (component as any).detectProvider();
-      expect(provider).toBe('stripe');
+      const reference = mapReturnQueryToReference({});
+      expect(reference.providerId).toBe('stripe');
     });
   });
 

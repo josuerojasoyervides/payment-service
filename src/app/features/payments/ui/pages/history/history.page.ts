@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
-import { PaymentHistoryFacade } from '@payments/application/facades/payment-history.facade';
-import { PaymentHistoryEntry } from '@payments/application/store/payment-store.history.types';
+import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
+import { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import {
   PaymentIntent,
   PaymentProviderId,
@@ -11,8 +11,6 @@ import {
 import { ACTION_REQUIRED_STATUSES } from '@payments/ui/shared/ui.types';
 
 import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
-
-type IntentStatus = PaymentIntent['status'];
 
 /**
  * Payment history page.

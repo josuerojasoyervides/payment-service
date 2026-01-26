@@ -3,12 +3,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { FallbackOrchestratorService } from '@payments/application/services/fallback-orchestrator.service';
-import { PaymentFlowFacade } from '@payments/application/state-machine/payment-flow.facade';
-import { CancelPaymentUseCase } from '@payments/application/use-cases/cancel-payment.use-case';
-import { ConfirmPaymentUseCase } from '@payments/application/use-cases/confirm-payment.use-case';
-import { GetPaymentStatusUseCase } from '@payments/application/use-cases/get-payment-status.use-case';
-import { StartPaymentUseCase } from '@payments/application/use-cases/start-payment.use-case';
+import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
+import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
+import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
+import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
+import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
 import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
@@ -18,7 +18,7 @@ import {
 } from '@payments/domain/models/payment/payment-intent.types';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
-import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
+import { ProviderFactoryRegistry } from '../../../application/orchestration/registry/provider-factory.registry';
 import {
   FieldRequirements,
   PaymentOptions,

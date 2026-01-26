@@ -1,8 +1,8 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
-import { PaymentHistoryFacade } from '@payments/application/facades/payment-history.facade';
-import { PaymentHistoryEntry } from '@payments/application/store/payment-store.history.types';
+import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
+import { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 
 import { HistoryComponent } from './history.page';
 

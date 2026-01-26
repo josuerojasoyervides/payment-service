@@ -3,7 +3,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
-import { PaymentFlowFacade } from '@payments/application/state-machine/payment-flow.facade';
+import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import {
   PaymentIntent,
   PaymentProviderId,
@@ -70,11 +70,11 @@ export class StatusComponent {
     this.flow.refresh(this.selectedProvider(), this.intentId.trim());
   }
 
-  confirmPayment(intentId: string): void {
+  confirmPayment(_intentId: string): void {
     this.flow.confirm();
   }
 
-  cancelPayment(intentId: string): void {
+  cancelPayment(_intentId: string): void {
     this.flow.cancel();
   }
 

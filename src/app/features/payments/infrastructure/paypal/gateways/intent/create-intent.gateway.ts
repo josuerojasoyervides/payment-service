@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
-import { PaymentOperationPort } from '@payments/application/ports/payment-operation.port';
+import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import {
   PaymentIntent,
@@ -38,6 +38,7 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
   }
 
   // TODO : This mocked method should not exist if we are using the fake gateway
+  // TODO : Check if this method is working as expected.
   private buildPaypalCreateRequest(req: CreatePaymentRequest): PaypalCreateOrderRequest {
     // returnUrl/cancelUrl must come from the prepared request (PaypalRedirectStrategy.prepare)
     // which uses StrategyContext as the ONLY source

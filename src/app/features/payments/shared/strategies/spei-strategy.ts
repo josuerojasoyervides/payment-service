@@ -9,12 +9,12 @@ import {
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { map, Observable, tap } from 'rxjs';
 
-import { PaymentGatewayPort } from '../../application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '../../application/api/ports/payment-gateway.port';
 import {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
-} from '../../application/ports/payment-strategy.port';
+} from '../../application/api/ports/payment-strategy.port';
 
 /**
  * Strategy for payments via SPEI (Interbank Electronic Payments System).
@@ -91,7 +91,7 @@ export class SpeiStrategy implements PaymentStrategy {
    * - Generates standardized payment concept
    * - Prepares metadata for tracking
    */
-  prepare(req: CreatePaymentRequest, context?: StrategyContext): StrategyPrepareResult {
+  prepare(req: CreatePaymentRequest, _context?: StrategyContext): StrategyPrepareResult {
     const expiryHours = SpeiStrategy.DEFAULT_EXPIRY_HOURS;
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + expiryHours);

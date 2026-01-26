@@ -1,4 +1,4 @@
-import { PaymentGatewayPort } from '@payments/application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import {
   PaymentIntent,
   PaymentProviderId,
