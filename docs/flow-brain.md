@@ -181,6 +181,7 @@ done
 - Event map: `src/app/features/payments/application/adapters/events/payment-flow.events.ts`
 - Fallback: `src/app/features/payments/application/orchestration/services/fallback-orchestrator.service.ts`
 - Store bridge: `src/app/features/payments/application/orchestration/store/projection/payment-store.machine-bridge.ts`
+- Contract tests: `src/app/features/payments/tests/payment-flow.contract.spec.ts`
 
 ---
 

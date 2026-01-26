@@ -13,13 +13,14 @@
 
 ## 📍 Mission State (New-Chat Context)
 
-- **Critical Task:** Flow segmentation Step 1 (1.1–1.5) completed; ready for Step 2 (stage-based event contract).
-- **Open/Relevant Files:** `docs/flow-scale-plan.md`, `docs/ai-active-context.md`, `docs/architecture-rules.md`, `docs/stabilization-plan.md`, `docs/goals.md`.
+- **Critical Task:** Flow scalability plan Steps 1–4 completed; docs refresh and cleanup in progress.
+- **Open/Relevant Files:** `docs/ai-active-context.md`, `docs/flow-brain.md`, `docs/architecture-rules.md`, `docs/stabilization-plan.md`, `docs/goals.md`.
 - **Error Context:** None.
 
 ## 🛠️ Technical Snapshot (Angular)
 
 - **Signal/Observable State:** XState is source of truth; store is projection + fallback + history.
+- **Application layout:** `application/{api,orchestration,adapters}` with flow, store, and services under orchestration.
 - **Dependency Injection:** `app.config.ts` wires HttpClient interceptors; fake backend interceptor removed.
 
 ## 🚀 Git Planning & Workflow
@@ -48,13 +49,11 @@
 - [x] **Branch:** `refactor/flow-public-events` | **Commit:** `refactor(flow): separate command and system events`
 - [x] **Branch:** `chore/store-fallback-cleanup` | **Commit:** `chore(payments): clean store/fallback visuals`
 - [x] **Branch:** `feat/flow-retry-polling` | **Commit:** `feat(flow): add retry/backoff and polling cadence`
-- [ ] **Branch:** `docs/final-state-refresh` | **Commit:** `docs: refresh project status` (active)
-- [ ] **Branch:** `feat/external-event-mappers` | **Commit:** `feat(flow): add external event mappers`
+- [x] **Branch:** `feat/external-event-mappers` | **Commit:** `feat(flow): add external event mappers`
 
 ## ⏭️ Immediate Next Action
 
-- [ ] Decide Step 2 (stage-based event contract) structure and start implementation.
-- [ ] Finish docs refresh branch (verify, commit, update backlog).
+- [ ] Close docs refresh (update flow brain, remove temporary plan).
 
 ---
 
