@@ -7,7 +7,7 @@ import {
 } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
-import { PaymentsStoreContext } from './payment-store.types';
+import { PaymentsStoreContext } from '../payment-store.types';
 
 /**
  * Transition: marks the store as `loading` right away.
