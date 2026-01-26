@@ -187,6 +187,39 @@ describe('FallbackOrchestratorService', () => {
       expect(service.failedAttempts()).toEqual([]);
     });
 
+    it('stops immediately when maxAttempts is 1', async () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          FallbackOrchestratorService,
+          { provide: ProviderFactoryRegistry, useValue: registryMock },
+          {
+            provide: FALLBACK_CONFIG,
+            useValue: {
+              enabled: true,
+              mode: 'manual',
+              maxAttempts: 1,
+              triggerErrorCodes: ['provider_unavailable'],
+              userResponseTimeout: 5000,
+              providerPriority: ['stripe', 'paypal'],
+            } satisfies Partial<FallbackConfig>,
+          },
+        ],
+      });
+
+      const limitedService = TestBed.inject(FallbackOrchestratorService);
+
+      const result = limitedService.reportFailure('stripe', providerUnavailableError, mockRequest);
+
+      expect(result).toBe(false);
+      expect(limitedService.state().status).toBe('failed');
+      await Promise.resolve();
+      expect(limitedService.state().status).toBe('idle');
+      expect(limitedService.failedAttempts()).toEqual([]);
+
+      limitedService.reset();
+    });
+
     it('excludes failedProvider from alternativeProviders', () => {
       let emittedEvent: any = null;
       service.fallbackAvailable$.subscribe((event) => {
@@ -810,6 +843,33 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
       service.reportFailure('stripe', providerUnavailableError, mockRequest);
 
       expect(eventEmitted).toBe(false);
+    });
+
+    it('should go manual when maxAutoFallbacks is 0', () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          FallbackOrchestratorService,
+          { provide: ProviderFactoryRegistry, useValue: registryMock },
+          {
+            provide: FALLBACK_CONFIG,
+            useValue: {
+              mode: 'auto',
+              autoFallbackDelay: 100,
+              maxAutoFallbacks: 0,
+            },
+          },
+        ],
+      });
+
+      const limitedService = TestBed.inject(FallbackOrchestratorService);
+
+      limitedService.reportFailure('stripe', providerUnavailableError, mockRequest);
+
+      expect(limitedService.state().status).toBe('pending');
+      expect(limitedService.pendingEvent()).not.toBeNull();
+
+      limitedService.reset();
     });
   });
 

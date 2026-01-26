@@ -41,14 +41,13 @@
 
 - [x] **Branch:** `chore/remove-fake-backend-interceptor` | **Commit:** `chore(core): remove fake backend interceptor`
 - [x] **Branch:** `docs/clean-ports-debt-notes` | **Commit:** `docs: remove port migration requirement`
-- [ ] **Branch:** `feat/fallback-hardening-limits` | **Commit:** `feat(fallback): enforce maxAttempts and maxAutoFallbacks`
-- [ ] **Branch:** `test/fallback-hardening-coverage` | **Commit:** `test(fallback): add maxAttempts/maxAutoFallbacks coverage`
+- [ ] **Branch:** `feat/fallback-hardening-limits` | **Commit:** `feat(fallback): enforce limits and expand coverage` (active)
 - [ ] **Branch:** `docs/fallback-hardening` | **Commit:** `docs(fallback): document limits and reset behavior`
 - [ ] **Branch:** `feat/i18n-translate-pipe` | **Commit:** `feat(i18n): add translate pipe`
 
 ## ⏭️ Immediate Next Action
 
-- [ ] Decide on i18n translate pipe implementation (scope + usage).
+- [ ] Finish fallback hardening branch (verify tests, commit, update backlog).
 
 ---
 
