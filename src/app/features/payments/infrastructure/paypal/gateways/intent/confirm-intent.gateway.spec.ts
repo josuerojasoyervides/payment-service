@@ -3,12 +3,12 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
-import { StripeCancelIntentGateway } from './cancel-intent.gateway';
+import { PaypalConfirmIntentGateway } from './confirm-intent.gateway';
 
-describe('StripeCancelIntentGateway', () => {
-  let gateway: StripeCancelIntentGateway;
+describe('PaypalConfirmIntentGateway', () => {
+  let gateway: PaypalConfirmIntentGateway;
   let httpMock: HttpTestingController;
 
   const loggerMock = {
@@ -23,12 +23,13 @@ describe('StripeCancelIntentGateway', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        StripeCancelIntentGateway,
+        PaypalConfirmIntentGateway,
+        IdempotencyKeyFactory,
         { provide: LoggerService, useValue: loggerMock },
       ],
     });
 
-    gateway = TestBed.inject(StripeCancelIntentGateway);
+    gateway = TestBed.inject(PaypalConfirmIntentGateway);
     httpMock = TestBed.inject(HttpTestingController);
   });
 
@@ -36,45 +37,40 @@ describe('StripeCancelIntentGateway', () => {
     httpMock.verify();
   });
 
-  it('POST /intents/:id/cancel with idempotency headers', () => {
-    const req: CancelPaymentRequest = {
-      intentId: 'pi_123',
-      idempotencyKey: 'idem_cancel_123',
-    };
-
-    gateway.execute(req).subscribe({
+  it('POST /orders/:id/capture with idempotency header', () => {
+    gateway.execute({ intentId: 'ORDER_1' }).subscribe({
       next: (intent: PaymentIntent) => {
-        expect(intent.provider).toBe('stripe');
-        expect(intent.id).toBe('pi_123');
-        expect(intent.status).toBeDefined();
+        expect(intent.id).toBe('ORDER_1');
+        expect(intent.provider).toBe('paypal');
+        expect(intent.status).toBe('succeeded');
       },
-      error: (e) => {
-        throw e;
+      error: () => {
+        expect.fail('No debería emitir error');
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/intents/pi_123/cancel');
-
+    const httpReq = httpMock.expectOne('/api/payments/paypal/orders/ORDER_1/capture');
     expect(httpReq.request.method).toBe('POST');
     expect(httpReq.request.body).toEqual({});
-
-    expect(httpReq.request.headers.has('Idempotency-Key')).toBe(true);
+    expect(httpReq.request.headers.get('PayPal-Request-Id')).toBe('paypal:confirm:ORDER_1');
 
     httpReq.flush({
-      id: 'pi_123',
-      status: 'canceled',
-      amount: 10000,
-      currency: 'mxn',
+      id: 'ORDER_1',
+      status: 'COMPLETED',
+      purchase_units: [
+        {
+          amount: {
+            value: '100.00',
+            currency_code: 'MXN',
+          },
+        },
+      ],
+      links: [],
     });
   });
 
   it('propagates provider error when backend fails', () => {
-    const req: CancelPaymentRequest = {
-      intentId: 'pi_error',
-      idempotencyKey: 'idem_cancel_error',
-    };
-
-    gateway.execute(req).subscribe({
+    gateway.execute({ intentId: 'ORDER_ERROR' }).subscribe({
       next: () => {
         expect.fail('Se esperaba error');
       },
@@ -84,11 +80,11 @@ describe('StripeCancelIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/intents/pi_error/cancel');
+    const httpReq = httpMock.expectOne('/api/payments/paypal/orders/ORDER_ERROR/capture');
     expect(httpReq.request.method).toBe('POST');
 
     httpReq.flush(
-      { message: 'Stripe error' },
+      { message: 'Paypal error' },
       { status: 500, statusText: 'Internal Server Error' },
     );
   });

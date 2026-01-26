@@ -1,4 +1,4 @@
-# Stabilization Plan — v3 (pre‑XState)
+# Stabilization Plan — v3 (XState)
 
 > **Última revisión:** 2026-01-24  
 > Branch de referencia (histórica): `origin/refactor/stabilization-plan-v3`
@@ -56,8 +56,8 @@ Este plan es deliberadamente agresivo: primero consistencia y testabilidad, desp
 📌 Estado actual:
 
 - ✅ UI-only translation se cumple en el feature (fuera de UI no hay `i18n.t`)
-- 🟡 PaymentError existe pero aún hay “escape hatches”
-- ❌ Enforcement automático pendiente
+- ✅ PaymentError ya no acepta rendering legacy de `message`
+- ✅ Enforcement automático agregado (guardrails en tests)
 
 ---
 
@@ -113,7 +113,7 @@ Este plan es deliberadamente agresivo: primero consistencia y testabilidad, desp
 📌 Estado actual:
 
 - ✅ depcruise existe para boundaries generales
-- ❌ No existe enforcement específico de i18n/messageKey
+- ✅ Guardrails de i18n/messageKey agregados en tests
 
 ---
 
@@ -152,9 +152,9 @@ Puedes marcar “cerrado” cuando todo esto sea cierto:
 
 ### P0 — Bloqueadores
 
-- [ ] Matar legacy error rendering (`message`)
-- [ ] Eliminar `messageKey` traducido (y texto literal en specs)
-- [ ] Agregar enforcement mínimo (scan tests / lint)
+- [x] Matar legacy error rendering (`message`)
+- [x] Eliminar `messageKey` traducido (y texto literal en specs)
+- [x] Agregar enforcement mínimo (scan tests / lint)
 
 ### P1 — Estabilidad
 

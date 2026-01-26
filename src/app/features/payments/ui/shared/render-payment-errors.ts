@@ -55,22 +55,10 @@ function looksLikeI18nKey(value: string): boolean {
  * Strict renderer: UI must only render i18n keys.
  *
  * ✅ Accepts: { messageKey, params } shapes
- * ✅ Accepts: Error whose `message` is an i18n key
- * ❌ Rejects: legacy human text (will become unknown_error)
+ * ❌ Rejects: legacy human text or Error.message (will become unknown_error)
  */
 export function renderPaymentError(i18n: I18nService, error: unknown): string {
   if (!error) return i18n.t(I18nKeys.errors.unknown_error);
-
-  // Si te llega Error nativo (throw new Error(...))
-  if (error instanceof Error) {
-    const msg = error.message;
-
-    if (typeof msg === 'string' && looksLikeI18nKey(msg)) {
-      return i18n.t(msg);
-    }
-
-    return i18n.t(I18nKeys.errors.unknown_error);
-  }
 
   // Generic error shape: { messageKey, params }
   if (isObject(error) && 'messageKey' in error) {

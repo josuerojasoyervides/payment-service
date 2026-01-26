@@ -3,7 +3,8 @@ import { Component, computed, effect, inject, isDevMode, signal } from '@angular
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-// Domain types
+import { FallbackOrchestratorService } from '@payments/application/services/fallback-orchestrator.service';
+import { PaymentFlowFacade } from '@payments/application/state-machine/payment-flow.facade';
 import {
   CurrencyCode,
   PaymentMethodType,
@@ -18,10 +19,8 @@ import { PaymentFormComponent } from '@payments/ui/components/payment-form/payme
 import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
 
-// Port and token (decoupled from implementation)
 import { StrategyContext } from '../../../application/ports/payment-strategy.port';
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import {
   FieldRequirements,
   PaymentOptions,
@@ -59,10 +58,18 @@ import {
 export class CheckoutComponent {
   readonly isDevMode = isDevMode();
 
-  private readonly paymentState = inject(PAYMENT_STATE);
   private readonly registry = inject(ProviderFactoryRegistry);
   private readonly logger = inject(LoggerService);
   private readonly i18n = inject(I18nService);
+  private readonly fallback = inject(FallbackOrchestratorService);
+  private readonly flow = inject(PaymentFlowFacade);
+
+  readonly isLoading = this.flow.isLoading;
+  readonly isReady = this.flow.isReady;
+  readonly hasError = this.flow.hasError;
+
+  readonly currentIntent = this.flow.intent;
+  readonly currentError = this.flow.error;
 
   readonly orderId = signal('order_' + Math.random().toString(36).substring(7));
   readonly amount = signal(499.99);
@@ -74,14 +81,8 @@ export class CheckoutComponent {
   private readonly formOptions = signal<PaymentOptions>({});
   readonly isFormValid = signal(false);
 
-  readonly isLoading = this.paymentState.isLoading;
-  readonly isReady = this.paymentState.isReady;
-  readonly hasError = this.paymentState.hasError;
-  readonly currentIntent = this.paymentState.intent;
-  readonly currentError = this.paymentState.error;
-
-  readonly hasPendingFallback = this.paymentState.hasPendingFallback;
-  readonly pendingFallbackEvent = this.paymentState.pendingFallbackEvent;
+  readonly hasPendingFallback = this.fallback.isPending;
+  readonly pendingFallbackEvent = this.fallback.pendingEvent;
 
   readonly availableProviders = computed<PaymentProviderId[]>(() => {
     return this.registry.getAvailableProviders();
@@ -119,11 +120,19 @@ export class CheckoutComponent {
     }
   });
 
-  readonly showResult = computed(() => {
-    return this.isReady() || this.hasError();
-  });
+  readonly showResult = computed(() => this.isReady() || this.hasError());
 
-  readonly debugInfo = this.paymentState.debugSummary;
+  readonly debugInfo = computed(() => {
+    const snap = this.flow.snapshot();
+
+    return {
+      state: snap.value,
+      providerId: snap.context.providerId,
+      intentId: snap.context.intentId ?? snap.context.intent?.id ?? null,
+      tags: snap.tags ? Array.from(snap.tags) : [],
+      lastEvent: this.flow.lastSentEvent(),
+    };
+  });
 
   constructor() {
     effect(() => {
@@ -150,18 +159,20 @@ export class CheckoutComponent {
         });
       }
     });
+
+    effect(() => {
+      const url = this.flow.redirectUrl();
+      if (url) this.onPaypalRequested(url);
+    });
   }
 
   selectProvider(provider: PaymentProviderId): void {
     this.selectedProvider.set(provider);
-    this.paymentState.selectProvider(provider);
-    this.paymentState.clearError();
     this.logger.info('Provider selected', 'CheckoutPage', { provider });
   }
 
   selectMethod(method: PaymentMethodType): void {
     this.selectedMethod.set(method);
-    this.paymentState.clearError();
     this.logger.info('Method selected', 'CheckoutPage', { method });
   }
 
@@ -220,7 +231,21 @@ export class CheckoutComponent {
         },
       };
 
-      this.paymentState.startPayment(request, provider, context);
+      /*       this.flow.send({
+        type: 'START',
+        providerId: provider,
+        request,
+        flowContext: context,
+      }); */
+
+      const ok = this.flow.start(provider, request, context);
+
+      if (!ok) {
+        this.logger.warn('START event ignored by machine', 'CheckoutPage', {
+          provider,
+          method,
+        });
+      }
     } catch (error) {
       this.logger.error('Failed to build payment request', 'CheckoutPage', error);
     }
@@ -231,12 +256,30 @@ export class CheckoutComponent {
   // === Fallback handlers ===
   confirmFallback(provider: PaymentProviderId): void {
     this.logger.info('Fallback confirmed', 'CheckoutPage', { provider });
-    this.paymentState.executeFallback(provider);
+    const event = this.pendingFallbackEvent();
+    if (!event) return;
+
+    this.fallback.respondToFallback({
+      eventId: event.eventId,
+      accepted: true,
+      selectedProvider: provider,
+      timestamp: Date.now(),
+    });
   }
 
   cancelFallback(): void {
     this.logger.info('Fallback cancelled', 'CheckoutPage');
-    this.paymentState.cancelFallback();
+    const event = this.pendingFallbackEvent();
+    if (event) {
+      this.fallback.respondToFallback({
+        eventId: event.eventId,
+        accepted: false,
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
+    this.fallback.reset();
   }
 
   onPaypalRequested(url: string): void {
@@ -245,11 +288,22 @@ export class CheckoutComponent {
       window.location.href = url;
     }
   }
+  confirmPayment(): void {
+    const ok = this.flow.confirm();
+    if (!ok) this.logger.warn('CONFIRM ignored', 'CheckoutPage');
+  }
+
+  cancelPayment(): void {
+    const ok = this.flow.cancel();
+    if (!ok) this.logger.warn('CANCEL ignored', 'CheckoutPage');
+  }
 
   resetPayment(): void {
-    this.paymentState.reset();
+    this.flow.reset();
+
     this.orderId.set('order_' + Math.random().toString(36).substring(7));
     this.isFormValid.set(false);
+
     this.logger.info('Payment reset', 'CheckoutPage');
   }
 

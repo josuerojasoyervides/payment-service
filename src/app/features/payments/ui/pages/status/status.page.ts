@@ -3,13 +3,13 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { PaymentFlowFacade } from '@payments/application/state-machine/payment-flow.facade';
 import {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { NextActionCardComponent } from '../../components/next-action-card/next-action-card.component';
 import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
@@ -33,14 +33,14 @@ import { PaymentIntentCardComponent } from '../../components/payment-intent-card
   templateUrl: './status.component.html',
 })
 export class StatusComponent {
-  private readonly paymentState = inject(PAYMENT_STATE);
+  private readonly flow = inject(PaymentFlowFacade);
   private readonly i18n = inject(I18nService);
 
   intentId = '';
   readonly selectedProvider = signal<PaymentProviderId>('stripe');
   readonly result = signal<PaymentIntent | null>(null);
-  readonly error = this.paymentState.error;
-  readonly isLoading = this.paymentState.isLoading;
+  readonly error = this.flow.error;
+  readonly isLoading = this.flow.isLoading;
 
   readonly examples = computed(() => [
     {
@@ -57,7 +57,7 @@ export class StatusComponent {
 
   constructor() {
     effect(() => {
-      const intent = this.paymentState.intent();
+      const intent = this.flow.intent();
       if (intent) this.result.set(intent);
     });
   }
@@ -66,21 +66,20 @@ export class StatusComponent {
     if (!this.intentId.trim()) return;
 
     this.result.set(null);
-    this.paymentState.clearError?.();
 
-    this.paymentState.refreshPayment({ intentId: this.intentId.trim() }, this.selectedProvider());
+    this.flow.refresh(this.selectedProvider(), this.intentId.trim());
   }
 
   confirmPayment(intentId: string): void {
-    this.paymentState.confirmPayment({ intentId }, this.selectedProvider());
+    this.flow.confirm();
   }
 
   cancelPayment(intentId: string): void {
-    this.paymentState.cancelPayment({ intentId }, this.selectedProvider());
+    this.flow.cancel();
   }
 
   refreshPayment(intentId: string): void {
-    this.paymentState.refreshPayment({ intentId }, this.selectedProvider());
+    this.flow.refresh(this.selectedProvider(), intentId);
   }
 
   useExample(example: { id: string; provider: PaymentProviderId }): void {

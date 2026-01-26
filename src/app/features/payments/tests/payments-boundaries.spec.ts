@@ -62,6 +62,7 @@ describe('Payments boundaries guardrails', () => {
   }
 
   const allFiles = walk(paymentsRoot);
+  const allowedMessageKeyPrefixes = ['errors.', 'ui.', 'messages.'];
 
   it('UI must not import Infrastructure', () => {
     const violations: string[] = [];
@@ -139,6 +140,63 @@ describe('Payments boundaries guardrails', () => {
       ];
       if (matches.length > 0) {
         violations.push([`${rel(file)} imports ui`, ...matches.map((m) => `  ↳ ${m}`)].join('\n'));
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it('i18n.t must be used only in UI layer', () => {
+    const violations: string[] = [];
+
+    for (const file of allFiles) {
+      const relPath = rel(file);
+      if (relPath.startsWith('ui/')) continue;
+
+      const content = read(file);
+      if (content.includes('i18n.t(')) {
+        violations.push(`${relPath} contains i18n.t(`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it('messageKey must not be assigned from i18n.t()', () => {
+    const violations: string[] = [];
+    const re = /messageKey\s*:\s*[^,\n]*i18n\.t\s*\(/g;
+
+    for (const file of allFiles) {
+      const content = read(file);
+      const matches = content.match(re);
+      if (matches && matches.length > 0) {
+        violations.push(
+          [`${rel(file)} uses i18n.t() for messageKey`, ...matches.map((m) => `  ↳ ${m}`)].join(
+            '\n',
+          ),
+        );
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it('messageKey string literals must look like i18n keys', () => {
+    const violations: string[] = [];
+    const re = /messageKey\s*:\s*['"]([^'"]+)['"]/g;
+
+    for (const file of allFiles) {
+      const content = read(file);
+      let match: RegExpExecArray | null;
+
+      while ((match = re.exec(content))) {
+        const value = match[1];
+        const okPrefix = allowedMessageKeyPrefixes.some((prefix) => value.startsWith(prefix));
+        const okFormat = value.includes('.') && !value.includes(' ');
+
+        if (!okPrefix || !okFormat) {
+          violations.push(`${rel(file)} has invalid messageKey literal: "${value}"`);
+        }
       }
     }
 

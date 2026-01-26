@@ -1,15 +1,15 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
+import { PaymentHistoryFacade } from '@payments/application/facades/payment-history.facade';
 import { PaymentHistoryEntry } from '@payments/application/store/payment-store.history.types';
 
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { HistoryComponent } from './history.page';
 
 describe('HistoryComponent', () => {
   let component: HistoryComponent;
   let fixture: ComponentFixture<HistoryComponent>;
-  let mockPaymentState: any;
+  let mockHistoryFacade: any;
 
   const mockHistoryEntries: PaymentHistoryEntry[] = [
     {
@@ -39,8 +39,8 @@ describe('HistoryComponent', () => {
   ];
 
   beforeEach(async () => {
-    // Mock del payment state
-    mockPaymentState = {
+    // Mock del history facade
+    mockHistoryFacade = {
       history: signal<PaymentHistoryEntry[]>([]),
       historyCount: signal(0),
       isLoading: signal(false),
@@ -52,7 +52,10 @@ describe('HistoryComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [HistoryComponent, RouterLink],
-      providers: [{ provide: PAYMENT_STATE, useValue: mockPaymentState }, provideRouter([])],
+      providers: [
+        { provide: PaymentHistoryFacade, useValue: mockHistoryFacade },
+        provideRouter([]),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HistoryComponent);
@@ -65,19 +68,19 @@ describe('HistoryComponent', () => {
     });
 
     it('debe exponer history del payment state', () => {
-      mockPaymentState.history.set(mockHistoryEntries);
+      mockHistoryFacade.history.set(mockHistoryEntries);
       fixture.detectChanges();
       expect(component.history()).toEqual(mockHistoryEntries);
     });
 
     it('debe exponer historyCount del payment state', () => {
-      mockPaymentState.historyCount.set(3);
+      mockHistoryFacade.historyCount.set(3);
       fixture.detectChanges();
       expect(component.historyCount()).toBe(3);
     });
 
     it('debe exponer isLoading del payment state', () => {
-      mockPaymentState.isLoading.set(true);
+      mockHistoryFacade.isLoading.set(true);
       fixture.detectChanges();
       expect(component.isLoading()).toBe(true);
     });
@@ -137,47 +140,35 @@ describe('HistoryComponent', () => {
   describe('Acciones de pago', () => {
     it('debe confirmar pago correctamente', () => {
       component.confirmPayment('pi_test_1', 'stripe');
-      expect(mockPaymentState.confirmPayment).toHaveBeenCalledWith(
-        { intentId: 'pi_test_1' },
-        'stripe',
-      );
+      expect(mockHistoryFacade.confirmPayment).toHaveBeenCalledWith('pi_test_1', 'stripe');
     });
 
     it('debe cancelar pago correctamente', () => {
       component.cancelPayment('pi_test_1', 'stripe');
-      expect(mockPaymentState.cancelPayment).toHaveBeenCalledWith(
-        { intentId: 'pi_test_1' },
-        'stripe',
-      );
+      expect(mockHistoryFacade.cancelPayment).toHaveBeenCalledWith('pi_test_1', 'stripe');
     });
 
     it('debe refrescar pago correctamente', () => {
       component.refreshPayment('pi_test_1', 'stripe');
-      expect(mockPaymentState.refreshPayment).toHaveBeenCalledWith(
-        { intentId: 'pi_test_1' },
-        'stripe',
-      );
+      expect(mockHistoryFacade.refreshPayment).toHaveBeenCalledWith('pi_test_1', 'stripe');
     });
 
     it('debe funcionar con diferentes providers', () => {
       component.confirmPayment('pi_test_2', 'paypal');
-      expect(mockPaymentState.confirmPayment).toHaveBeenCalledWith(
-        { intentId: 'pi_test_2' },
-        'paypal',
-      );
+      expect(mockHistoryFacade.confirmPayment).toHaveBeenCalledWith('pi_test_2', 'paypal');
     });
   });
 
   describe('clearHistory', () => {
     it('debe limpiar el historial', () => {
       component.clearHistory();
-      expect(mockPaymentState.clearHistory).toHaveBeenCalled();
+      expect(mockHistoryFacade.clearHistory).toHaveBeenCalled();
     });
   });
 
   describe('Integración con historial', () => {
     it('debe mostrar todas las entradas del historial', () => {
-      mockPaymentState.history.set(mockHistoryEntries);
+      mockHistoryFacade.history.set(mockHistoryEntries);
       fixture.detectChanges();
       const history = component.history();
       expect(history.length).toBe(3);
@@ -187,15 +178,15 @@ describe('HistoryComponent', () => {
     });
 
     it('debe actualizar historyCount cuando cambia el historial', () => {
-      mockPaymentState.history.set(mockHistoryEntries);
-      mockPaymentState.historyCount.set(3);
+      mockHistoryFacade.history.set(mockHistoryEntries);
+      mockHistoryFacade.historyCount.set(3);
       fixture.detectChanges();
       expect(component.historyCount()).toBe(3);
     });
 
     it('debe manejar historial vacío', () => {
-      mockPaymentState.history.set([]);
-      mockPaymentState.historyCount.set(0);
+      mockHistoryFacade.history.set([]);
+      mockHistoryFacade.historyCount.set(0);
       fixture.detectChanges();
       expect(component.history().length).toBe(0);
       expect(component.historyCount()).toBe(0);
