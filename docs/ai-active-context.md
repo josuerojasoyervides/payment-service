@@ -46,11 +46,12 @@
 - [ ] **Branch:** `docs/fallback-hardening` | **Commit:** `docs(fallback): document limits and reset behavior`
 - [x] **Branch:** `feat/i18n-translate-pipe` | **Commit:** `feat(i18n): add template translation pipe`
 - [x] **Branch:** `refactor/flow-public-events` | **Commit:** `refactor(flow): separate command and system events`
-- [ ] **Branch:** `chore/store-fallback-cleanup` | **Commit:** `chore(payments): clean store/fallback visuals` (active)
+- [x] **Branch:** `chore/store-fallback-cleanup` | **Commit:** `chore(payments): clean store/fallback visuals`
+- [ ] **Branch:** `feat/flow-retry-polling` | **Commit:** `feat(flow): add retry/backoff and polling cadence` (active)
 
 ## ⏭️ Immediate Next Action
 
-- [ ] Finish store/fallback cleanup branch (verify, commit, update backlog).
+- [ ] Finish flow retry/polling branch (verify, commit, update backlog).
 
 ---
 

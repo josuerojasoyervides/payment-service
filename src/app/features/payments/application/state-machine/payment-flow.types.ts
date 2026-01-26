@@ -74,6 +74,14 @@ export interface PaymentFlowFallbackContext {
   selectedProviderId: PaymentProviderId | null;
 }
 
+export interface PaymentFlowPollingState {
+  attempt: number;
+}
+
+export interface PaymentFlowStatusRetryState {
+  count: number;
+}
+
 export interface PaymentFlowMachineContext {
   providerId: PaymentProviderId | null;
   request: CreatePaymentRequest | null;
@@ -83,6 +91,8 @@ export interface PaymentFlowMachineContext {
   intentId: string | null;
   error: PaymentError | null;
   fallback: PaymentFlowFallbackContext;
+  polling: PaymentFlowPollingState;
+  statusRetry: PaymentFlowStatusRetryState;
 }
 
 export interface StartInput {
