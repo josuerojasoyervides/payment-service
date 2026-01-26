@@ -118,6 +118,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
 
     states: {
       idle: {
+        tags: ['idle'],
         on: {
           START: { target: 'starting', actions: 'setStartInput' },
           REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
@@ -125,6 +126,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       starting: {
+        tags: ['loading', 'starting'],
         invoke: {
           src: 'start',
           input: ({ context }) => ({
@@ -138,6 +140,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       afterStart: {
+        tags: ['loading', 'afterStart'],
         always: [
           { guard: 'needsUserAction', target: 'requiresAction' },
           { guard: 'isFinal', target: 'done' },
@@ -146,6 +149,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       requiresAction: {
+        tags: ['ready', 'requiresAction'],
         on: {
           CONFIRM: { target: 'confirming' },
           CANCEL: { target: 'cancelling' },
@@ -154,6 +158,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       confirming: {
+        tags: ['loading', 'confirming'],
         invoke: {
           src: 'confirm',
           input: ({ context }) => ({
@@ -167,6 +172,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       afterConfirm: {
+        tags: ['loading', 'afterConfirm'],
         always: [
           { guard: 'needsUserAction', target: 'requiresAction' },
           { guard: 'isFinal', target: 'done' },
@@ -175,6 +181,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       polling: {
+        tags: ['ready', 'polling'],
         on: {
           REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
           CANCEL: { target: 'cancelling' },
@@ -182,6 +189,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       fetchingStatus: {
+        tags: ['loading', 'fetchingStatus'],
         always: [
           {
             guard: 'hasRefreshKeys',
@@ -199,6 +207,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       fetchingStatusInvoke: {
+        tags: ['loading', 'fetchingStatusInvoke'],
         invoke: {
           src: 'status',
           input: ({ context }) => ({
@@ -211,6 +220,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       afterStatus: {
+        tags: ['ready', 'afterStatus'],
         always: [
           { guard: 'needsUserAction', target: 'requiresAction' },
           { guard: 'isFinal', target: 'done' },
@@ -219,6 +229,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       cancelling: {
+        tags: ['loading', 'cancelling'],
         invoke: {
           src: 'cancel',
           input: ({ context }) => ({
@@ -231,6 +242,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       failed: {
+        tags: ['error', 'failed'],
         on: {
           RESET: { target: 'idle', actions: 'clear' },
           REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
@@ -238,6 +250,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       done: {
+        tags: ['ready', 'done'],
         on: {
           RESET: { target: 'idle', actions: 'clear' },
           REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },

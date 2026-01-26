@@ -1,4 +1,4 @@
-import { DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
+import { computed, DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
 import { LoggerService } from '@core/logging';
 import { CancelPaymentUseCase } from '@payments/application/use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '@payments/application/use-cases/confirm-payment.use-case';
@@ -67,13 +67,20 @@ export class PaymentFlowActorService {
 
       this.prevSnapshot = snap;
     },
-  }).start();
+  });
 
   private _snapshot = signal(this.actor.getSnapshot() as PaymentFlowSnapshot);
   readonly snapshot: Signal<PaymentFlowSnapshot> = this._snapshot.asReadonly();
-  lastSentEvent = signal<PaymentFlowEvent | null>(null);
+  readonly lastSentEvent = signal<PaymentFlowEvent | null>(null);
+
+  readonly isIdle = computed(() => this.snapshot().hasTag('idle'));
+  readonly isLoading = computed(() => this.snapshot().hasTag('loading'));
+  readonly isReady = computed(() => this.snapshot().hasTag('ready'));
+  readonly hasError = computed(() => this.snapshot().hasTag('error'));
 
   constructor() {
+    this.actor.start();
+
     this.prevSnapshot = this.actor.getSnapshot() as PaymentFlowSnapshot;
     this.actor.subscribe((snapshot) => {
       this._snapshot.set(snapshot);
@@ -86,6 +93,7 @@ export class PaymentFlowActorService {
 
   send(event: PaymentFlowPublicEvent): boolean {
     const snap = this.snapshot();
+
     const prevState = this.prevSnapshot?.value ?? null;
     const changed = false; // No hay transición cuando el evento es ignorado
     const tags = snap.tags ? Array.from(snap.tags) : undefined;
