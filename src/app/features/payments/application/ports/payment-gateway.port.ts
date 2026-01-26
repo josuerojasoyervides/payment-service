@@ -192,7 +192,7 @@ export abstract class BasePaymentGateway<
     }
 
     if (!req.method?.type) {
-      throw invalidRequestError('errors.payment_method_type_required', { field: 'method.type' });
+      throw invalidRequestError(I18nKeys.errors.method_type_required, { field: 'method.type' });
     }
 
     // Base rule: card requires token

@@ -1,3 +1,5 @@
+import { I18nKeys } from '@core/i18n';
+
 import { StripeCardRequestBuilder } from './stripe-card-request.builder';
 
 describe('StripeCardRequestBuilder', () => {
@@ -56,7 +58,7 @@ describe('StripeCardRequestBuilder', () => {
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: 'errors.order_id_required',
+          messageKey: I18nKeys.errors.order_id_required,
           params: { field: 'orderId' },
         });
       }
@@ -72,7 +74,7 @@ describe('StripeCardRequestBuilder', () => {
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: 'errors.amount_invalid',
+          messageKey: I18nKeys.errors.amount_invalid,
           params: { field: 'amount' },
         });
       }
@@ -90,7 +92,7 @@ describe('StripeCardRequestBuilder', () => {
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: 'errors.amount_invalid',
+          messageKey: I18nKeys.errors.amount_invalid,
           params: { field: 'amount', min: 1 },
           raw: { amount: 0 },
         });
@@ -109,7 +111,7 @@ describe('StripeCardRequestBuilder', () => {
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: 'errors.amount_invalid',
+          messageKey: I18nKeys.errors.amount_invalid,
           params: { field: 'amount', min: 1 },
           raw: { amount: -100 },
         });
@@ -128,7 +130,7 @@ describe('StripeCardRequestBuilder', () => {
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: 'errors.currency_required',
+          messageKey: I18nKeys.errors.currency_required,
           params: { field: 'currency' },
         });
       }
@@ -141,7 +143,7 @@ describe('StripeCardRequestBuilder', () => {
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: 'errors.card_token_required',
+          messageKey: I18nKeys.errors.card_token_required,
           params: { field: 'token' },
         });
       }

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
@@ -69,7 +70,7 @@ describe('CardStrategy', () => {
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: 'errors.card_token_required',
+          messageKey: I18nKeys.errors.card_token_required,
         }),
       );
     });
@@ -96,7 +97,7 @@ describe('CardStrategy', () => {
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: 'errors.min_amount',
+          messageKey: I18nKeys.errors.min_amount,
         }),
       );
     });
@@ -106,7 +107,7 @@ describe('CardStrategy', () => {
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: 'errors.min_amount',
+          messageKey: I18nKeys.errors.min_amount,
         }),
       );
     });
@@ -167,7 +168,7 @@ describe('CardStrategy', () => {
       expect(() => strategy.start(invalidReq)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: 'errors.card_token_required',
+          messageKey: I18nKeys.errors.card_token_required,
         }),
       );
 

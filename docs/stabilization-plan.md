@@ -114,7 +114,7 @@ Este plan es deliberadamente agresivo: primero consistencia y testabilidad, desp
 📌 Estado actual:
 
 - ✅ depcruise existe para boundaries generales
-- ✅ Guardrails de i18n/messageKey agregados en tests
+- ✅ Guardrails de i18n/messageKey agregados en tests (incluye specs fuera de UI y prohibe literals)
 
 ---
 

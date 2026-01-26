@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { I18nKeys } from '@core/i18n';
 import { firstValueFrom, of } from 'rxjs';
 
 import { PaypalIntentFacade } from '../facades/intent.facade';
@@ -30,7 +31,7 @@ describe('PaypalProviderFactory', () => {
     expect(() => factory.createStrategy('spei' as any)).toThrow(
       expect.objectContaining({
         code: 'invalid_request',
-        messageKey: 'errors.invalid_request',
+        messageKey: I18nKeys.errors.invalid_request,
         params: {
           reason: 'unsupported_payment_method',
           supportedMethods: 'card',
@@ -102,7 +103,7 @@ describe('PaypalProviderFactory', () => {
       expect(() => factory.getFieldRequirements('spei' as any)).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: 'errors.invalid_request',
+          messageKey: I18nKeys.errors.invalid_request,
           params: {
             reason: 'unsupported_payment_method',
             supportedMethods: 'card',

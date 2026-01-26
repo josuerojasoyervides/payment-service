@@ -156,17 +156,17 @@ describe('StatusComponent', () => {
   describe('Manejo de errores', () => {
     it('debe obtener mensaje de error correctamente', () => {
       const errorMsg = component.getErrorMessage(mockError);
-      expect(errorMsg).toBe('errors.provider_error');
+      expect(errorMsg).toBe(I18nKeys.errors.provider_error);
     });
 
     it('debe retornar mensaje genérico para errores desconocidos', () => {
       const errorMsg = component.getErrorMessage('string error');
-      expect(errorMsg).toBe('errors.unknown_error');
+      expect(errorMsg).toBe(I18nKeys.errors.unknown_error);
     });
 
     it('debe retornar mensaje genérico para objetos sin message', () => {
       const errorMsg = component.getErrorMessage({ code: 'unknown' });
-      expect(errorMsg).toBe('errors.unknown_error');
+      expect(errorMsg).toBe(I18nKeys.errors.unknown_error);
     });
 
     it('debe exponer error del payment state', () => {

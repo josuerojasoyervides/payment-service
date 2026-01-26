@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { I18nKeys } from '@core/i18n';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import {
   PaymentIntent,
@@ -98,7 +99,7 @@ class PaymentGatewayTest extends BasePaymentGateway<any, any> {
   protected override normalizeError(err: unknown): PaymentError {
     return {
       code: 'provider_error',
-      messageKey: 'errors.provider_error',
+      messageKey: I18nKeys.errors.provider_error,
       raw: err,
     };
   }
@@ -194,7 +195,7 @@ describe('PaymentGateway (abstract class)', () => {
       it('throws if orderId is missing (validateCreate)', () => {
         expectSyncPaymentError(() => gateway.createIntent(validReq({ orderId: '' })), {
           code: 'invalid_request',
-          messageKey: 'errors.order_id_required',
+          messageKey: I18nKeys.errors.order_id_required,
           params: { field: 'orderId' },
         });
       });
@@ -202,7 +203,7 @@ describe('PaymentGateway (abstract class)', () => {
       it('throws if currency is missing (validateCreate)', () => {
         expectSyncPaymentError(() => gateway.createIntent(validReq({ currency: '' as any })), {
           code: 'invalid_request',
-          messageKey: 'errors.currency_required',
+          messageKey: I18nKeys.errors.currency_required,
           params: { field: 'currency' },
         });
       });
@@ -210,7 +211,7 @@ describe('PaymentGateway (abstract class)', () => {
       it('throws if amount is not valid (validateCreate)', () => {
         expectSyncPaymentError(() => gateway.createIntent(validReq({ amount: 0 })), {
           code: 'invalid_request',
-          messageKey: 'errors.amount_invalid',
+          messageKey: I18nKeys.errors.amount_invalid,
           params: { field: 'amount', min: 1 },
           raw: { amount: 0 },
         });
@@ -219,7 +220,7 @@ describe('PaymentGateway (abstract class)', () => {
       it('throws if method type is missing', () => {
         expectSyncPaymentError(() => gateway.createIntent(validReq({ method: undefined as any })), {
           code: 'invalid_request',
-          messageKey: 'errors.payment_method_type_required',
+          messageKey: I18nKeys.errors.method_type_required,
           params: { field: 'method.type' },
         });
       });
@@ -229,7 +230,7 @@ describe('PaymentGateway (abstract class)', () => {
           () => gateway.createIntent(validReq({ method: { type: 'card' } } as any)),
           {
             code: 'invalid_request',
-            messageKey: 'errors.card_token_required',
+            messageKey: I18nKeys.errors.card_token_required,
             params: { field: 'method.token' },
           },
         );
@@ -279,7 +280,7 @@ describe('PaymentGateway (abstract class)', () => {
 
         await expect(firstValueFrom(gateway.createIntent(validReq()))).rejects.toMatchObject({
           code: 'provider_error',
-          messageKey: 'errors.provider_error',
+          messageKey: I18nKeys.errors.provider_error,
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
       });
@@ -289,7 +290,7 @@ describe('PaymentGateway (abstract class)', () => {
 
         await expect(firstValueFrom(gateway.createIntent(validReq()))).rejects.toMatchObject({
           code: 'provider_error',
-          messageKey: 'errors.provider_error',
+          messageKey: I18nKeys.errors.provider_error,
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
       });
@@ -301,7 +302,7 @@ describe('PaymentGateway (abstract class)', () => {
       it('throws if intentId is missing (validateConfirm)', () => {
         expectSyncPaymentError(() => gateway.confirmIntent(validConfirmReq({ intentId: '' })), {
           code: 'invalid_request',
-          messageKey: 'errors.intent_id_required',
+          messageKey: I18nKeys.errors.intent_id_required,
           params: { field: 'intentId' },
         });
       });
@@ -327,7 +328,7 @@ describe('PaymentGateway (abstract class)', () => {
           firstValueFrom(gateway.confirmIntent(validConfirmReq())),
         ).rejects.toMatchObject({
           code: 'provider_error',
-          messageKey: 'errors.provider_error',
+          messageKey: I18nKeys.errors.provider_error,
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
       });
@@ -339,7 +340,7 @@ describe('PaymentGateway (abstract class)', () => {
           firstValueFrom(gateway.confirmIntent(validConfirmReq())),
         ).rejects.toMatchObject({
           code: 'provider_error',
-          messageKey: 'errors.provider_error',
+          messageKey: I18nKeys.errors.provider_error,
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
       });
@@ -351,7 +352,7 @@ describe('PaymentGateway (abstract class)', () => {
       it('throws if intentId is missing (validateCancel)', () => {
         expectSyncPaymentError(() => gateway.cancelIntent(validCancelReq({ intentId: '' })), {
           code: 'invalid_request',
-          messageKey: 'errors.intent_id_required',
+          messageKey: I18nKeys.errors.intent_id_required,
           params: { field: 'intentId' },
         });
       });
@@ -375,7 +376,7 @@ describe('PaymentGateway (abstract class)', () => {
 
         await expect(firstValueFrom(gateway.cancelIntent(validCancelReq()))).rejects.toMatchObject({
           code: 'provider_error',
-          messageKey: 'errors.provider_error',
+          messageKey: I18nKeys.errors.provider_error,
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
       });
@@ -385,7 +386,7 @@ describe('PaymentGateway (abstract class)', () => {
 
         await expect(firstValueFrom(gateway.cancelIntent(validCancelReq()))).rejects.toMatchObject({
           code: 'provider_error',
-          messageKey: 'errors.provider_error',
+          messageKey: I18nKeys.errors.provider_error,
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
       });
@@ -397,7 +398,7 @@ describe('PaymentGateway (abstract class)', () => {
       it('throws if intentId is missing (validateGetStatus)', () => {
         expectSyncPaymentError(() => gateway.getIntent(validGetStatusReq({ intentId: '' })), {
           code: 'invalid_request',
-          messageKey: 'errors.intent_id_required',
+          messageKey: I18nKeys.errors.intent_id_required,
           params: { field: 'intentId' },
         });
       });
@@ -421,7 +422,7 @@ describe('PaymentGateway (abstract class)', () => {
 
         await expect(firstValueFrom(gateway.getIntent(validGetStatusReq()))).rejects.toMatchObject({
           code: 'provider_error',
-          messageKey: 'errors.provider_error',
+          messageKey: I18nKeys.errors.provider_error,
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
       });
@@ -431,7 +432,7 @@ describe('PaymentGateway (abstract class)', () => {
 
         await expect(firstValueFrom(gateway.getIntent(validGetStatusReq()))).rejects.toMatchObject({
           code: 'provider_error',
-          messageKey: 'errors.provider_error',
+          messageKey: I18nKeys.errors.provider_error,
           raw: { kind: 'RAW_ERROR', detail: 'boom' },
         });
       });

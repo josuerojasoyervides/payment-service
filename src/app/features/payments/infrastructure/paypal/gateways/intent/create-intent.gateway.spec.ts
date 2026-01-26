@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
@@ -124,7 +125,7 @@ describe('PaypalCreateIntentGateway', () => {
     } catch (err) {
       const error = err as PaymentError;
       expect(error.code).toBe('invalid_request');
-      expect(error.messageKey).toBe('errors.invalid_request');
+      expect(error.messageKey).toBe(I18nKeys.errors.invalid_request);
     }
   });
 

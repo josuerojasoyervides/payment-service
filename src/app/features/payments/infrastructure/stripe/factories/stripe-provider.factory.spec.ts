@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { I18nKeys } from '@core/i18n';
 import { firstValueFrom, of } from 'rxjs';
 
 import { CardStrategy } from '../../../shared/strategies/card-strategy';
@@ -38,7 +39,7 @@ describe('StripeProviderFactory', () => {
     expect(() => factory.createStrategy('unsupported' as any)).toThrow(
       expect.objectContaining({
         code: 'invalid_request',
-        messageKey: 'errors.invalid_request',
+        messageKey: I18nKeys.errors.invalid_request,
         params: {
           reason: 'unsupported_payment_method',
           supportedMethods: 'card, spei',
@@ -105,7 +106,7 @@ describe('StripeProviderFactory', () => {
       expect(() => factory.getFieldRequirements('unsupported' as any)).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: 'errors.invalid_request',
+          messageKey: I18nKeys.errors.invalid_request,
           params: {
             reason: 'unsupported_payment_method',
             supportedMethods: 'card, spei',

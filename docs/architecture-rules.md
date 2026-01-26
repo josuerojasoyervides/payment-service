@@ -305,7 +305,7 @@ Recomendaciones prácticas:
 
 📌 Estado actual
 
-- Guardrails de i18n/messageKey ya existen en tests.
+- Guardrails de i18n/messageKey ya existen en tests (incluye specs fuera de UI).
 
 ---
 

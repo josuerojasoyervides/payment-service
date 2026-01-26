@@ -8,7 +8,7 @@ describe('Payments boundaries guardrails', () => {
     throw new Error(`paymentsRoot does not exist: ${paymentsRoot}`);
   }
 
-  function walk(dir: string): string[] {
+  function walk(dir: string, includeSpecs = false): string[] {
     const entries = readdirSync(dir);
     const out: string[] = [];
 
@@ -22,7 +22,7 @@ describe('Payments boundaries guardrails', () => {
       }
 
       if (!entry.endsWith('.ts')) continue;
-      if (entry.endsWith('.spec.ts')) continue;
+      if (!includeSpecs && entry.endsWith('.spec.ts')) continue;
 
       out.push(full);
     }
@@ -62,6 +62,7 @@ describe('Payments boundaries guardrails', () => {
   }
 
   const allFiles = walk(paymentsRoot);
+  const allFilesWithSpecs = walk(paymentsRoot, true);
   const allowedMessageKeyPrefixes = ['errors.', 'ui.', 'messages.'];
 
   it('UI must not import Infrastructure', () => {
@@ -149,7 +150,7 @@ describe('Payments boundaries guardrails', () => {
   it('i18n.t must be used only in UI layer', () => {
     const violations: string[] = [];
 
-    for (const file of allFiles) {
+    for (const file of allFilesWithSpecs) {
       const relPath = rel(file);
       if (relPath.startsWith('ui/')) continue;
 
@@ -166,7 +167,7 @@ describe('Payments boundaries guardrails', () => {
     const violations: string[] = [];
     const re = /messageKey\s*:\s*[^,\n]*i18n\.t\s*\(/g;
 
-    for (const file of allFiles) {
+    for (const file of allFilesWithSpecs) {
       const content = read(file);
       const matches = content.match(re);
       if (matches && matches.length > 0) {
@@ -197,6 +198,27 @@ describe('Payments boundaries guardrails', () => {
         if (!okPrefix || !okFormat) {
           violations.push(`${rel(file)} has invalid messageKey literal: "${value}"`);
         }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it('specs outside UI must use I18nKeys for messageKey', () => {
+    const violations: string[] = [];
+    const re = /messageKey\s*:\s*['"]([^'"]+)['"]/g;
+
+    for (const file of allFilesWithSpecs) {
+      const relPath = rel(file);
+      if (!relPath.endsWith('.spec.ts')) continue;
+      if (relPath.startsWith('ui/')) continue;
+
+      const content = read(file);
+      let match: RegExpExecArray | null;
+
+      while ((match = re.exec(content))) {
+        const value = match[1];
+        violations.push(`${relPath} has string messageKey in spec: "${value}"`);
       }
     }
 
