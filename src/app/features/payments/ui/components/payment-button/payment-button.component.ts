@@ -5,6 +5,7 @@ import {
   CurrencyCode,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
+import { TrackClickDirective } from '@shared/directives/track-click.directive';
 
 import { PaymentButtonState } from '../../shared/ui.types';
 
@@ -29,7 +30,7 @@ import { PaymentButtonState } from '../../shared/ui.types';
 @Component({
   selector: 'app-payment-button',
   standalone: true,
-  imports: [CommonModule, CurrencyPipe],
+  imports: [CommonModule, CurrencyPipe, TrackClickDirective],
   templateUrl: './payment-button.component.html',
 })
 export class PaymentButtonComponent {

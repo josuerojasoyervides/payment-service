@@ -49,7 +49,7 @@
       </div>
       <div>
         <p class="font-mono text-sm text-gray-600">{{ intent().id }}</p>
-        <span [class]="statusBadgeClass()">{{ statusText() }}</span>
+        <span [class]="statusBadgeClass()">{{ intent().status | paymentStatusLabel }}</span>
       </div>
     </div>
     <div class="text-right">
