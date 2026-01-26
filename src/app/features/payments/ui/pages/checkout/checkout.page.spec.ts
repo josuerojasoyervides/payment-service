@@ -69,7 +69,20 @@ describe('CheckoutComponent', () => {
     hasError: signal(false),
     intent: signal<PaymentIntent | null>(null),
     error: signal<PaymentError | null>(null),
+    hasPendingFallback: signal(false),
+    pendingFallbackEvent: signal<FallbackAvailableEvent | null>(null),
+    debugSummary: signal({
+      status: 'idle',
+      intentId: null,
+      provider: null,
+      fallbackStatus: 'idle',
+      historyCount: 0,
+    }),
     redirectUrl: computed(() => null),
+    selectProvider: vi.fn(),
+    clearError: vi.fn(),
+    executeFallback: vi.fn(),
+    cancelFallback: vi.fn(),
 
     start: vi.fn(() => true),
     confirm: vi.fn(() => true),
@@ -140,24 +153,12 @@ describe('CheckoutComponent', () => {
       hasError: signal(false),
       intent: signal<PaymentIntent | null>(null),
       error: signal<PaymentError | null>(null),
-      hasPendingFallback: signal(false),
-      pendingFallbackEvent: signal<FallbackAvailableEvent | null>(null),
-      debugSummary: signal({
-        status: 'idle',
-        intentId: null,
-        provider: null,
-        fallbackStatus: 'idle',
-        historyCount: 0,
-      }),
-      selectProvider: vi.fn(),
-      clearError: vi.fn(),
-      startPayment: vi.fn(),
-      confirmPayment: vi.fn(),
-      cancelPayment: vi.fn(),
-      refreshPayment: vi.fn(),
+      redirectUrl: computed(() => null),
+      start: vi.fn(() => true),
+      confirm: vi.fn(() => true),
+      cancel: vi.fn(() => true),
+      refresh: vi.fn(() => true),
       reset: vi.fn(),
-      executeFallback: vi.fn(),
-      cancelFallback: vi.fn(),
     };
 
     // Mock del logger
@@ -282,8 +283,8 @@ describe('CheckoutComponent', () => {
     it('debe seleccionar provider correctamente', () => {
       component.selectProvider('paypal');
       expect(component.selectedProvider()).toBe('paypal');
-      expect(mockFlowFacade.selectProvider).toHaveBeenCalledWith('paypal');
-      expect(mockFlowFacade.clearError).toHaveBeenCalled();
+      expect(mockPaymentState.selectProvider).toHaveBeenCalledWith('paypal');
+      expect(mockPaymentState.clearError).toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith('Provider selected', 'CheckoutPage', {
         provider: 'paypal',
       });
@@ -292,7 +293,7 @@ describe('CheckoutComponent', () => {
     it('debe seleccionar método correctamente', () => {
       component.selectMethod('spei');
       expect(component.selectedMethod()).toBe('spei');
-      expect(mockFlowFacade.clearError).toHaveBeenCalled();
+      expect(mockPaymentState.clearError).toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith('Method selected', 'CheckoutPage', {
         method: 'spei',
       });
@@ -351,20 +352,19 @@ describe('CheckoutComponent', () => {
     it('no debe procesar pago si falta provider', () => {
       component.selectedProvider.set(null);
       component.processPayment();
-      expect(mockFlowFacade.startPayment).not.toHaveBeenCalled();
+      expect(mockFlowFacade.start).not.toHaveBeenCalled();
     });
 
     it('no debe procesar pago si falta método', () => {
       component.selectedMethod.set(null);
       component.processPayment();
-      expect(mockFlowFacade.startPayment).not.toHaveBeenCalled();
+      expect(mockFlowFacade.start).not.toHaveBeenCalled();
     });
 
     it('no debe procesar pago si el form es inválido', () => {
       component.isFormValid.set(false);
       component.processPayment();
-      expect(mockFlowFacade.startPayment).not.toHaveBeenCalled();
-      expect(mockFlowFacade.start).toHaveBeenCalled();
+      expect(mockFlowFacade.start).not.toHaveBeenCalled();
     });
 
     it('sí debe procesar pago si isFormValid es true', () => {
@@ -372,7 +372,7 @@ describe('CheckoutComponent', () => {
       component.onFormChange({ token: 'tok_test' });
       component.processPayment();
 
-      // Debe procesar el pago (startPayment debe ser llamado)
+      // Debe procesar el pago (start debe ser llamado)
       expect(mockFlowFacade.start).toHaveBeenCalledWith(
         'stripe',
         expect.any(Object), // request
@@ -431,7 +431,7 @@ describe('CheckoutComponent', () => {
   describe('Fallback', () => {
     it('debe confirmar fallback', () => {
       component.confirmFallback('paypal');
-      expect(mockFlowFacade.executeFallback).toHaveBeenCalledWith('paypal');
+      expect(mockPaymentState.executeFallback).toHaveBeenCalledWith('paypal');
       expect(mockLogger.info).toHaveBeenCalledWith('Fallback confirmed', 'CheckoutPage', {
         provider: 'paypal',
       });
@@ -439,13 +439,13 @@ describe('CheckoutComponent', () => {
 
     it('debe cancelar fallback', () => {
       component.cancelFallback();
-      expect(mockFlowFacade.cancelFallback).toHaveBeenCalled();
+      expect(mockPaymentState.cancelFallback).toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith('Fallback cancelled', 'CheckoutPage');
     });
 
     it('debe detectar cuando hay fallback pendiente', () => {
-      mockFlowFacade.hasPendingFallback.set(true);
-      mockFlowFacade.pendingFallbackEvent.set(mockFallbackEvent);
+      mockPaymentState.hasPendingFallback.set(true);
+      mockPaymentState.pendingFallbackEvent.set(mockFallbackEvent);
       fixture.detectChanges();
       expect(component.hasPendingFallback()).toBe(true);
       expect(component.pendingFallbackEvent()).toEqual(mockFallbackEvent);
