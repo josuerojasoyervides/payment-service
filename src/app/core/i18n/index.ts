@@ -17,5 +17,6 @@
  */
 
 export * from './i18n.keys';
+export * from './i18n.pipe';
 export * from './i18n.service';
 export * from './i18n.types';

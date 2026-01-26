@@ -10,7 +10,7 @@ import {
   output,
 } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
-import { I18nKeys, I18nService } from '@core/i18n';
+import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
 import { AutofocusDirective } from '@shared/directives/autofocus.directive';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 
@@ -42,7 +42,7 @@ type DynamicForm = FormRecord<DynamicControl>;
 @Component({
   selector: 'app-payment-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AutofocusDirective],
+  imports: [CommonModule, ReactiveFormsModule, AutofocusDirective, I18nPipe],
   templateUrl: './payment-form.component.html',
 })
 export class PaymentFormComponent implements OnDestroy {
@@ -187,12 +187,6 @@ export class PaymentFormComponent implements OnDestroy {
 
     this.formChange.emit(options);
     this.formValidChange.emit(this.form.valid);
-  }
-
-  /** Translates the method description */
-  translateText(key?: string, params?: Record<string, string | number>): string {
-    if (!key) return '';
-    return this.i18n.t(key, params);
   }
 
   readonly fieldRequiredText = computed(() => this.i18n.t(I18nKeys.ui.field_required));
