@@ -1,12 +1,12 @@
 import { inject, Injectable } from '@angular/core';
 
+import { PaymentFlowActorService } from '../orchestration/flow/payment-flow.actor.service';
 import {
   ProviderUpdatePayload,
   StatusConfirmedPayload,
   ValidationFailedPayload,
   WebhookReceivedPayload,
-} from '../events/payment-flow.events';
-import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
+} from './events/payment-flow.events';
 
 @Injectable()
 export class ExternalEventAdapter {

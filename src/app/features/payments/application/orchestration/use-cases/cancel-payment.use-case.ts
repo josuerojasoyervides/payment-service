@@ -4,10 +4,10 @@ import {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { Observable } from 'rxjs';
 
-import { safeDefer } from '../../../../shared/rxjs/safe-defer';
-import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
+import { safeDefer } from '../../../../../shared/rxjs/safe-defer';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 
 /**

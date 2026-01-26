@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { PaymentOperationPort } from '@payments/application/ports/payment-operation.port';
+import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import {
   PaymentIntent,
   PaymentProviderId,

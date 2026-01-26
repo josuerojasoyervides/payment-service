@@ -4,9 +4,9 @@ import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
+import { mapReturnQueryToReference } from '../../../application/adapters/events/external/payment-flow-return.mapper';
 import { ExternalEventAdapter } from '../../../application/adapters/external-event.adapter';
-import { mapReturnQueryToReference } from '../../../application/events/external/payment-flow-return.mapper';
-import { PaymentFlowFacade } from '../../../application/state-machine/payment-flow.facade';
+import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
 import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
 function normalizeQueryParams(params: Params): Record<string, string> {

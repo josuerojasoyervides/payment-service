@@ -1,5 +1,5 @@
 import { Signal } from '@angular/core';
-import { StrategyContext } from '@payments/application/ports/payment-strategy.port';
+import { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
 import { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
@@ -14,8 +14,11 @@ import {
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
 
-import { PaymentHistoryEntry } from '../store/history/payment-store.history.types';
-import { PaymentFlowStatus, PaymentsState } from '../store/projection/payment-store.state';
+import { PaymentHistoryEntry } from '../../orchestration/store/history/payment-store.history.types';
+import {
+  PaymentFlowStatus,
+  PaymentsState,
+} from '../../orchestration/store/projection/payment-store.state';
 
 /**
  * Unsubscribe function.

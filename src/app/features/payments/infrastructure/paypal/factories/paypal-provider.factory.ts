@@ -1,12 +1,12 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { PaymentGatewayPort } from '@payments/application/ports/payment-gateway.port';
-import { ProviderFactory } from '@payments/application/ports/provider-factory.port';
+import { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PaymentStrategy } from '../../../application/ports/payment-strategy.port';
+import { PaymentStrategy } from '../../../application/api/ports/payment-strategy.port';
 import {
   FieldRequirements,
   PaymentRequestBuilder,

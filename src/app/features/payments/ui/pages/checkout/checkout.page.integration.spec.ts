@@ -3,8 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LoggerService } from '@core/logging';
 
-import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
-import { PaymentFlowFacade } from '../../../application/state-machine/payment-flow.facade';
+import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
+import { ProviderFactoryRegistry } from '../../../application/orchestration/registry/provider-factory.registry';
 import providePayments from '../../../config/payment.providers';
 import { CheckoutComponent } from './checkout.page';
 

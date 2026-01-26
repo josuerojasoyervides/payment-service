@@ -173,14 +173,14 @@ done
 
 ## Where to look in code
 
-- Machine: `src/app/features/payments/application/state-machine/payment-flow.machine.ts`
-- Policy + config: `src/app/features/payments/application/state-machine/payment-flow.policy.ts`
-- Actor: `src/app/features/payments/application/state-machine/payment-flow.actor.service.ts`
-- Facade: `src/app/features/payments/application/state-machine/payment-flow.facade.ts`
+- Machine: `src/app/features/payments/application/orchestration/flow/payment-flow.machine.ts`
+- Policy + config: `src/app/features/payments/application/orchestration/flow/payment-flow.policy.ts`
+- Actor: `src/app/features/payments/application/orchestration/flow/payment-flow.actor.service.ts`
+- Facade: `src/app/features/payments/application/orchestration/flow/payment-flow.facade.ts`
 - External events: `src/app/features/payments/application/adapters/external-event.adapter.ts`
-- Event map: `src/app/features/payments/application/events/payment-flow.events.ts`
-- Fallback: `src/app/features/payments/application/services/fallback-orchestrator.service.ts`
-- Store bridge: `src/app/features/payments/application/store/projection/payment-store.machine-bridge.ts`
+- Event map: `src/app/features/payments/application/adapters/events/payment-flow.events.ts`
+- Fallback: `src/app/features/payments/application/orchestration/services/fallback-orchestrator.service.ts`
+- Store bridge: `src/app/features/payments/application/orchestration/store/projection/payment-store.machine-bridge.ts`
 
 ---
 

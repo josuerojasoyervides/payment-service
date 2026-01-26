@@ -1,6 +1,6 @@
 import { EnvironmentProviders, inject, Provider, ProviderToken, Type } from '@angular/core';
-import { PaymentFlowActorService } from '@payments/application/state-machine/payment-flow.actor.service';
-import { PaymentFlowFacade } from '@payments/application/state-machine/payment-flow.facade';
+import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
+import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import { FakeCancelIntentGateway } from '@payments/infrastructure/fake/gateways/intent/cancel-intent.gateway';
 import { FakeConfirmIntentGateway } from '@payments/infrastructure/fake/gateways/intent/confirm-intent.gateway';
@@ -21,17 +21,17 @@ import { FakeStripeGetIntentGateway } from '@payments/infrastructure/stripe/fake
 
 import { ExternalEventAdapter } from '../application/adapters/external-event.adapter';
 import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
-import { ProviderFactoryRegistry } from '../application/registry/provider-factory.registry';
-import { ProviderMethodPolicyRegistry } from '../application/registry/provider-method-policy.registry';
-import { FallbackOrchestratorService } from '../application/services/fallback-orchestrator.service';
-import { PaymentsStore } from '../application/store/payment-store';
-import { PAYMENT_PROVIDER_FACTORIES } from '../application/tokens/payment-provider-factories.token';
-import { PAYMENT_PROVIDER_METHOD_POLICIES } from '../application/tokens/payment-provider-method-policies.token';
-import { PAYMENT_STATE } from '../application/tokens/payment-state.token';
-import { CancelPaymentUseCase } from '../application/use-cases/cancel-payment.use-case';
-import { ConfirmPaymentUseCase } from '../application/use-cases/confirm-payment.use-case';
-import { GetPaymentStatusUseCase } from '../application/use-cases/get-payment-status.use-case';
-import { StartPaymentUseCase } from '../application/use-cases/start-payment.use-case';
+import { PAYMENT_PROVIDER_FACTORIES } from '../application/api/tokens/payment-provider-factories.token';
+import { PAYMENT_PROVIDER_METHOD_POLICIES } from '../application/api/tokens/payment-provider-method-policies.token';
+import { PAYMENT_STATE } from '../application/api/tokens/payment-state.token';
+import { ProviderFactoryRegistry } from '../application/orchestration/registry/provider-factory.registry';
+import { ProviderMethodPolicyRegistry } from '../application/orchestration/registry/provider-method-policy.registry';
+import { FallbackOrchestratorService } from '../application/orchestration/services/fallback-orchestrator.service';
+import { PaymentsStore } from '../application/orchestration/store/payment-store';
+import { CancelPaymentUseCase } from '../application/orchestration/use-cases/cancel-payment.use-case';
+import { ConfirmPaymentUseCase } from '../application/orchestration/use-cases/confirm-payment.use-case';
+import { GetPaymentStatusUseCase } from '../application/orchestration/use-cases/get-payment-status.use-case';
+import { StartPaymentUseCase } from '../application/orchestration/use-cases/start-payment.use-case';
 import { FakePaymentGateway } from '../infrastructure/fake/gateways/fake-payment.gateway';
 import { PaypalIntentFacade } from '../infrastructure/paypal/facades/intent.facade';
 import { PaypalProviderFactory } from '../infrastructure/paypal/factories/paypal-provider.factory';

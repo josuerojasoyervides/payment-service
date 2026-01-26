@@ -1,8 +1,8 @@
 import { computed, effect, Signal } from '@angular/core';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PaymentFlowActorService } from '../../state-machine/payment-flow.actor.service';
-import { PaymentFlowSnapshot } from '../../state-machine/payment-flow.types';
+import { PaymentFlowActorService } from '../../flow/payment-flow.actor.service';
+import { PaymentFlowSnapshot } from '../../flow/payment-flow.types';
 import { addToHistory } from '../history/payment-store.history';
 import type { PaymentsStoreContext } from '../payment-store.types';
 import { normalizePaymentError } from './payment-store.errors';

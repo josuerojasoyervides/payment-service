@@ -3,8 +3,8 @@ import { Component, computed, effect, inject, isDevMode, signal } from '@angular
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { FallbackOrchestratorService } from '@payments/application/services/fallback-orchestrator.service';
-import { PaymentFlowFacade } from '@payments/application/state-machine/payment-flow.facade';
+import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
 import {
   CurrencyCode,
   PaymentMethodType,
@@ -19,8 +19,8 @@ import { PaymentFormComponent } from '@payments/ui/components/payment-form/payme
 import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
 
-import { StrategyContext } from '../../../application/ports/payment-strategy.port';
-import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
+import { StrategyContext } from '../../../application/api/ports/payment-strategy.port';
+import { ProviderFactoryRegistry } from '../../../application/orchestration/registry/provider-factory.registry';
 import {
   FieldRequirements,
   PaymentOptions,

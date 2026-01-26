@@ -7,8 +7,8 @@ import {
 import {
   ProviderMethodPolicy,
   ProviderMethodPolicyPort,
-} from '../ports/provider-method-policy.port';
-import { PAYMENT_PROVIDER_METHOD_POLICIES } from '../tokens/payment-provider-method-policies.token';
+} from '../../api/ports/provider-method-policy.port';
+import { PAYMENT_PROVIDER_METHOD_POLICIES } from '../../api/tokens/payment-provider-method-policies.token';
 
 @Injectable()
 export class ProviderMethodPolicyRegistry {

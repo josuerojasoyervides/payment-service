@@ -2,8 +2,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
-import { PAYMENT_PROVIDER_FACTORIES } from '../application/tokens/payment-provider-factories.token';
-import { PAYMENT_STATE } from '../application/tokens/payment-state.token';
+import { PAYMENT_PROVIDER_FACTORIES } from '../application/api/tokens/payment-provider-factories.token';
+import { PAYMENT_STATE } from '../application/api/tokens/payment-state.token';
 import { PaypalProviderFactory } from '../infrastructure/paypal/factories/paypal-provider.factory';
 import { StripeIntentFacade } from '../infrastructure/stripe/facades/intent.facade';
 import { StripeProviderFactory } from '../infrastructure/stripe/factories/stripe-provider.factory';

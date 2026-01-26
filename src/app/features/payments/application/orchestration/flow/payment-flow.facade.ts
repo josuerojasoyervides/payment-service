@@ -2,7 +2,7 @@ import { computed, inject, Injectable } from '@angular/core';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
-import { StrategyContext } from '../ports/payment-strategy.port';
+import { StrategyContext } from '../../api/ports/payment-strategy.port';
 import { PaymentFlowActorService } from './payment-flow.actor.service';
 import { PaymentFlowPublicEvent } from './payment-flow.types';
 
