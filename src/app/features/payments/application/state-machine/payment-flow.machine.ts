@@ -71,6 +71,7 @@ export const createPaymentFlowMachine = (
     },
 
     actions: {
+      noop: () => undefined,
       setStartInput: assign(({ event }) => {
         if (event.type !== 'START') return {};
 
@@ -240,6 +241,10 @@ export const createPaymentFlowMachine = (
 
     on: {
       RESET: { target: '.idle', actions: 'clear' },
+      PROVIDER_UPDATE: { actions: 'noop' },
+      WEBHOOK_RECEIVED: { actions: 'noop' },
+      VALIDATION_FAILED: { actions: 'noop' },
+      STATUS_CONFIRMED: { actions: 'noop' },
     },
 
     context: () => ({

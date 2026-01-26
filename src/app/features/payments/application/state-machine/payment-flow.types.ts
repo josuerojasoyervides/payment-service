@@ -16,6 +16,12 @@ import type {
   StatesConfig,
 } from 'xstate';
 
+import type {
+  ProviderUpdatePayload,
+  StatusConfirmedPayload,
+  ValidationFailedPayload,
+  WebhookReceivedPayload,
+} from '../events/payment-flow.events';
 // ✅ IMPORTANT: type-only import to avoid runtime circular dependency
 import type { createPaymentFlowMachine } from './payment-flow.machine';
 
@@ -56,7 +62,11 @@ export type PaymentFlowSystemEvent =
       request: CreatePaymentRequest;
       failedProviderId?: PaymentProviderId;
     }
-  | { type: 'FALLBACK_ABORT' };
+  | { type: 'FALLBACK_ABORT' }
+  | { type: 'PROVIDER_UPDATE'; payload: ProviderUpdatePayload }
+  | { type: 'WEBHOOK_RECEIVED'; payload: WebhookReceivedPayload }
+  | { type: 'VALIDATION_FAILED'; payload: ValidationFailedPayload }
+  | { type: 'STATUS_CONFIRMED'; payload: StatusConfirmedPayload };
 
 export type PaymentFlowEvent =
   | PaymentFlowCommandEvent
