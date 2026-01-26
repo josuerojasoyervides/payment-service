@@ -7,7 +7,7 @@ export function expectSyncPaymentError(fn: () => unknown, expected: any) {
     fn();
     expect.fail('Expected to throw PaymentError');
   } catch (e) {
-    // asegura shape mínimo (evita que pase un TypeError)
+    // ensure minimum shape (avoid TypeError)
     expect(e).toMatchObject({
       code: expect.any(String),
       messageKey: expect.any(String),

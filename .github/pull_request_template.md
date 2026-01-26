@@ -1,37 +1,37 @@
 # PR Title
 
-<!-- Ej: "Fix PaymentError messageKey mapping in Status page" -->
+<!-- Example: "Fix PaymentError messageKey mapping in Status page" -->
 
-## 🎯 Qué cambia
-
--
-
-## 🧠 Por qué
+## 🎯 What changes
 
 -
 
-## ✅ Checklist rápido
+## 🧠 Why
 
-### Arquitectura
+-
 
-- [ ] Domain sigue TS puro (sin Angular/RxJS/Http/i18n/logger)
-- [ ] No agregué `switch(providerId)` ni if/else gigante
-- [ ] No introduje `any` / hacks
+## ✅ Quick checklist
 
-### Estabilidad
+### Architecture
 
-- [ ] No hay throws sync escapando el stream (safeDefer si aplica)
-- [ ] Fallback contract no se rompe (handled → EMPTY)
+- [ ] Domain remains pure TS (no Angular/RxJS/Http/i18n/logger)
+- [ ] I did not add `switch(providerId)` or giant if/else blocks
+- [ ] I did not introduce `any` / hacks
+
+### Stability
+
+- [ ] No sync throws escape the stream (safeDefer if applicable)
+- [ ] Fallback contract remains intact (handled -> EMPTY)
 
 ### UX
 
-- [ ] No dejo loading infinito (timeout o salida clara)
+- [ ] No infinite loading (timeout or clear exit)
 
 ### Tests
 
-- [ ] Tests actualizados o agregados (unit/integration si aplica)
-- [ ] Vitest pasa sin “Unhandled errors”
+- [ ] Tests updated or added (unit/integration as applicable)
+- [ ] Vitest passes without \"Unhandled errors\"
 
-## 📦 Archivos tocados
+## 📦 Files touched
 
 -

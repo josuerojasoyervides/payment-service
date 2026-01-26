@@ -32,8 +32,8 @@ export type GetStatus = (
 ) => Promise<PaymentIntent>;
 
 /**
- * Dependencias = “lo que el mundo exterior hace”.
- * La máquina NO sabe de Angular, solo llama funciones async.
+ * Dependencies = \"what the outside world does\".
+ * The machine knows nothing about Angular; it only calls async functions.
  */
 export interface PaymentFlowDeps {
   startPayment: StartPayment;

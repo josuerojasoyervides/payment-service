@@ -68,7 +68,7 @@ describe('StripeCreateIntentGateway', () => {
         order_id: 'order_1',
         created_at: expect.any(String),
       },
-      description: 'Orden order_1',
+      description: 'Order order_1',
     });
 
     expect(httpReq.request.headers.get('Idempotency-Key')).toContain('idem_123');
@@ -127,7 +127,7 @@ describe('StripeCreateIntentGateway', () => {
 
     gateway.execute(req).subscribe({
       next: () => {
-        expect.fail('Se esperaba error');
+        expect.fail('Expected error');
       },
       error: (err: PaymentError) => {
         expect(err.code).toBe('provider_error');

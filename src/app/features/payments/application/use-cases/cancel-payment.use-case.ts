@@ -11,14 +11,14 @@ import { safeDefer } from '../helpers/safe-defer';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 
 /**
- * Caso de uso: Cancelar un pago.
+ * Use case: Cancel a payment.
  *
- * Cancela un PaymentIntent dentro de un provider específico:
- * - Stripe: cancela PaymentIntent
- * - PayPal: void/cancel de Order si no ha sido capturada
+ * Cancels a PaymentIntent for a specific provider:
+ * - Stripe: cancels PaymentIntent
+ * - PayPal: void/cancel Order if not captured yet
  *
- * ✅ No aplica fallback aquí: el intent ya vive en un provider determinado.
- * Si falla, se propaga el error y el Store/UI decide cómo presentarlo.
+ * ✅ Fallback does not apply here: intent already lives in a specific provider.
+ * On failure, the error is propagated and Store/UI decide how to present it.
  */
 @Injectable()
 export class CancelPaymentUseCase {

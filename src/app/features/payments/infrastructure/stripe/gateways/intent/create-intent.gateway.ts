@@ -68,7 +68,7 @@ export class StripeCreateIntentGateway extends PaymentOperationPort<
         order_id: req.orderId,
         created_at: new Date().toISOString(),
       },
-      description: `Orden ${req.orderId}`,
+      description: `Order ${req.orderId}`,
     };
   }
 }

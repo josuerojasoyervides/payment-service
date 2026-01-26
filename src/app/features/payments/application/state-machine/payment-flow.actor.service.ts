@@ -114,7 +114,7 @@ export class PaymentFlowActorService {
     const snap = this.snapshot();
 
     const prevState = this.prevSnapshot?.value ?? null;
-    const changed = false; // No hay transición cuando el evento es ignorado
+    const changed = false; // No transition when the event is ignored
     const tags = snap.tags ? Array.from(snap.tags) : undefined;
 
     if (!snap.can(event)) {

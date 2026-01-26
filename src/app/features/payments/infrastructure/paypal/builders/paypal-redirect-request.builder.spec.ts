@@ -7,7 +7,7 @@ export function expectSyncPaymentError(fn: () => unknown, expected: any) {
     fn();
     expect.fail('Expected to throw PaymentError');
   } catch (e) {
-    // asegura shape mínimo (evita que pase un TypeError)
+    // ensure minimum shape (avoid TypeError)
     expect(e).toMatchObject({
       code: expect.any(String),
       messageKey: expect.any(String),
@@ -141,7 +141,7 @@ describe('PaypalRedirectRequestBuilder', () => {
     });
 
     it('allows building without returnUrl (can come from StrategyContext)', () => {
-      // returnUrl es opcional en el builder - puede venir de StrategyContext
+      // returnUrl is optional in the builder - it can come from StrategyContext
       const request = builder.forOrder('order_123').withAmount(100, 'MXN').build();
 
       expect(request.orderId).toBe('order_123');

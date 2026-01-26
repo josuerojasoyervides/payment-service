@@ -8,24 +8,24 @@ import { CacheService } from './cache.service';
 import { generateCacheKey, parseCacheControlMaxAge, shouldSkipCache } from './cache.types';
 
 /**
- * Interceptor HTTP que implementa caching de respuestas.
+ * HTTP interceptor that implements response caching.
  *
- * Características:
- * - Cachea solo métodos GET por defecto
- * - Respeta headers Cache-Control
- * - Agrega header X-Cache: HIT o MISS
- * - TTL configurable por URL pattern
- * - Invalidación automática en mutaciones
+ * Features:
+ * - Caches GET requests by default
+ * - Respects Cache-Control headers
+ * - Adds X-Cache: HIT or MISS
+ * - TTL configurable per URL pattern
+ * - Automatic invalidation on mutations
  *
- * Orden recomendado de interceptors:
- * 1. cacheInterceptor (este) - PRIMERO para evitar requests innecesarios
+ * Recommended interceptor order:
+ * 1. cacheInterceptor (this) - FIRST to avoid unnecessary requests
  * 2. retryInterceptor
  * 3. resilienceInterceptor
  * 4. loggingInterceptor
  *
  * @example
  * ```typescript
- * // En app.config.ts
+ * // In app.config.ts
  * provideHttpClient(
  *   withInterceptors([
  *     cacheInterceptor,

@@ -14,30 +14,30 @@ import {
 } from './retry.types';
 
 /**
- * Token para inyectar configuración del Retry.
+ * Token for injecting Retry configuration.
  */
 export const RETRY_CONFIG = new InjectionToken<Partial<RetryConfig>>('RETRY_CONFIG');
 
 /**
- * Servicio de Retry con backoff exponencial.
+ * Retry service with exponential backoff.
  *
- * Implementa lógica de reintentos automáticos para requests HTTP
- * con backoff exponencial y jitter para evitar thundering herd.
+ * Implements automatic retry logic for HTTP requests
+ * with exponential backoff and jitter to avoid thundering herd.
  *
- * Características:
- * - Backoff exponencial configurable
- * - Jitter para distribuir reintentos
- * - Respeta header Retry-After
- * - Integración con LoggerService
- * - Tracking de estados de retry
+ * Features:
+ * - Configurable exponential backoff
+ * - Jitter to spread retries
+ * - Respects Retry-After header
+ * - LoggerService integration
+ * - Retry state tracking
  *
  * @example
  * ```typescript
- * // Verificar si debe reintentar
+ * // Check if it should retry
  * if (retryService.shouldRetry(error, 'GET', attempt)) {
  *   const delay = retryService.getDelay(attempt, error);
  *   await sleep(delay);
- *   // Reintentar...
+ *   // Retry...
  * }
  * ```
  */
@@ -47,7 +47,7 @@ export class RetryService {
   private readonly config: RetryConfig;
   private readonly logger = inject(LoggerService);
 
-  /** Estado de retry por URL (para debugging/observabilidad) */
+  /** Retry state per URL (for debugging/observability) */
   private readonly retryStates = new Map<string, RetryState>();
 
   constructor() {
@@ -55,22 +55,22 @@ export class RetryService {
   }
 
   /**
-   * Obtiene la configuración actual de retry.
+   * Get the current retry configuration.
    */
   getConfig(): Readonly<RetryConfig> {
     return this.config;
   }
 
   /**
-   * Determina si un request debe ser reintentado.
+   * Determine if a request should be retried.
    *
-   * @param error Error HTTP que ocurrió
-   * @param method Método HTTP del request
-   * @param attempt Número del intento actual (1-based)
-   * @returns true si debe reintentar
+   * @param error HTTP error that occurred
+   * @param method HTTP method of the request
+   * @param attempt Current attempt number (1-based)
+   * @returns true if it should retry
    */
   shouldRetry(error: HttpErrorResponse, method: string, attempt: number): boolean {
-    // Verificar si quedan intentos
+    // Check if attempts remain
     if (attempt >= this.config.maxRetries) {
       this.logger.debug(`Max retries (${this.config.maxRetries}) reached`, 'RetryService', {
         attempt,
@@ -99,14 +99,14 @@ export class RetryService {
   }
 
   /**
-   * Calcula el delay para el próximo intento.
+   * Calculate delay for the next attempt.
    *
-   * @param attempt Número del intento (1-based)
-   * @param error Error HTTP (opcional, para extraer Retry-After)
-   * @returns Delay en milisegundos
+   * @param attempt Attempt number (1-based)
+   * @param error HTTP error (optional, to read Retry-After)
+   * @returns Delay in milliseconds
    */
   getDelay(attempt: number, error?: HttpErrorResponse): number {
-    // Si hay header Retry-After, usarlo con prioridad
+    // Prefer Retry-After header if present
     if (error) {
       const retryAfter = parseRetryAfterHeader(error);
       if (retryAfter !== undefined) {
@@ -118,18 +118,18 @@ export class RetryService {
       }
     }
 
-    // Calcular backoff exponencial con jitter
+    // Calculate exponential backoff with jitter
     return calculateBackoffDelay(attempt, this.config);
   }
 
   /**
-   * Registra un intento de retry para tracking.
+   * Record a retry attempt for tracking.
    *
-   * @param url URL del request
-   * @param method Método HTTP
-   * @param attempt Número del intento
-   * @param delay Delay usado
-   * @param error Error que causó el retry
+   * @param url Request URL
+   * @param method HTTP method
+   * @param attempt Attempt number
+   * @param delay Delay used
+   * @param error Error that triggered the retry
    */
   recordAttempt(
     url: string,
@@ -223,35 +223,35 @@ export class RetryService {
   }
 
   /**
-   * Obtiene el estado de retry para un URL específico.
+   * Get retry state for a specific URL.
    */
   getRetryState(url: string, method: string): RetryState | undefined {
     return this.retryStates.get(`${method}:${url}`);
   }
 
   /**
-   * Obtiene todos los estados de retry activos.
+   * Get all active retry states.
    */
   getAllRetryStates(): Map<string, RetryState> {
     return new Map(this.retryStates);
   }
 
   /**
-   * Limpia el estado de retry para un URL específico.
+   * Clear retry state for a specific URL.
    */
   clearRetryState(url: string, method: string): void {
     this.retryStates.delete(`${method}:${url}`);
   }
 
   /**
-   * Limpia todos los estados de retry.
+   * Clear all retry states.
    */
   clearAllRetryStates(): void {
     this.retryStates.clear();
   }
 
   /**
-   * Crea un delay promise para usar en async/await.
+   * Create a delay promise for async/await.
    */
   delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));

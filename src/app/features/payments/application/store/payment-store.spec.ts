@@ -23,7 +23,7 @@ describe('PaymentsStore', () => {
     TestBed.tick();
     // 1 vuelta de microtasks
     /* await Promise.resolve(); */
-    // 2 vueltas por si hay effects encadenados
+    // 2 passes in case of chained effects
     /* await Promise.resolve(); */
   };
 
@@ -262,7 +262,7 @@ describe('PaymentsStore', () => {
       expect(store.error()).toBeNull();
       expect(store.selectedProvider()).toBe('stripe');
 
-      // 2) la máquina produce intent
+      // 2) the machine produces an intent
       setMachineReady();
       await flush();
 
@@ -317,7 +317,7 @@ describe('PaymentsStore', () => {
         }),
       );
 
-      // y si la máquina responde ok
+      // and if the machine responds ok
       setMachineReady();
       await flush();
 

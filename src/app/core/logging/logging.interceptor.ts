@@ -6,18 +6,18 @@ import { LoggerService } from './logger.service';
 import { HttpLogInfo } from './logging.types';
 
 /**
- * Interceptor funcional para logging de requests HTTP.
+ * Functional interceptor for HTTP request logging.
  *
- * Características:
- * - Loguea todos los requests salientes con método y URL
- * - Loguea respuestas con status y duración
- * - Loguea errores con detalles
- * - Propaga correlation ID en headers
- * - Mide tiempos de respuesta
+ * Features:
+ * - Logs all outbound requests with method and URL
+ * - Logs responses with status and duration
+ * - Logs errors with details
+ * - Propagates correlation IDs via headers
+ * - Measures response time
  *
  * @example
  * ```typescript
- * // En app.config.ts
+ * // In app.config.ts
  * provideHttpClient(
  *   withInterceptors([loggingInterceptor])
  * )
@@ -28,20 +28,20 @@ export const loggingInterceptor: HttpInterceptorFn = (req, next) => {
   const correlationId = logger.getCorrelationId();
   const startTime = performance.now();
 
-  // Agregar correlation ID al header para tracing end-to-end
+  // Attach correlation ID for end-to-end tracing
   const clonedReq = req.clone({
     setHeaders: {
       'X-Correlation-ID': correlationId,
     },
   });
 
-  // Extraer info del request (sin body sensible por defecto)
+  // Extract request info (exclude sensitive body by default)
   const logInfo: HttpLogInfo = {
     method: req.method,
     url: sanitizeUrl(req.url),
   };
 
-  // Log del request saliente
+  // Outbound request log
   logger.debug(
     `HTTP ${req.method} ${sanitizeUrl(req.url)}`,
     'HttpClient',
@@ -90,10 +90,10 @@ export const loggingInterceptor: HttpInterceptorFn = (req, next) => {
 };
 
 /**
- * Sanitiza la URL removiendo tokens o datos sensibles.
+ * Sanitize the URL by removing tokens or sensitive data.
  */
 function sanitizeUrl(url: string): string {
-  // Remover query params que puedan contener tokens
+  // Remove query params that can contain tokens
   const sensitiveParams = ['token', 'key', 'secret', 'password', 'apiKey', 'api_key'];
 
   try {
@@ -120,13 +120,13 @@ function getContentLength(response: HttpResponse<unknown>): number | undefined {
 }
 
 /**
- * Sanitiza el body del error para logging seguro.
+ * Sanitize error body for safe logging.
  */
 function sanitizeErrorBody(errorBody: unknown): unknown {
   if (!errorBody) return undefined;
 
   if (typeof errorBody === 'string') {
-    // Truncar strings muy largos
+    // Truncate long strings
     return errorBody.length > 500 ? errorBody.substring(0, 500) + '...' : errorBody;
   }
 

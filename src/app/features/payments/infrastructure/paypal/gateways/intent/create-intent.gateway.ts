@@ -39,10 +39,10 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
 
   // TODO : This mocked method should not exist if we are using the fake gateway
   private buildPaypalCreateRequest(req: CreatePaymentRequest): PaypalCreateOrderRequest {
-    // returnUrl/cancelUrl deben venir del request preparado (PaypalRedirectStrategy.prepare)
-    // que usa StrategyContext como ÚNICA fuente
-    // El builder/strategy deben garantizar que returnUrl esté presente
-    // Si no está => error claro (no inventar URLs)
+    // returnUrl/cancelUrl must come from the prepared request (PaypalRedirectStrategy.prepare)
+    // which uses StrategyContext as the ONLY source
+    // Builder/strategy must guarantee returnUrl is present
+    // If missing => clear error (do not invent URLs)
     if (!req.returnUrl) {
       throw invalidRequestError(I18nKeys.errors.invalid_request, { returnUrl: req.returnUrl }, req);
     }
@@ -56,7 +56,7 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
         {
           reference_id: req.orderId,
           custom_id: req.orderId,
-          description: `Orden ${req.orderId}`,
+          description: `Order ${req.orderId}`,
           amount: {
             currency_code: req.currency,
             value: req.amount.toFixed(2),

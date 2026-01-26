@@ -1,56 +1,56 @@
 /**
- * Port para validación de tokens de pago.
+ * Port for payment token validation.
  *
- * Cada proveedor implementa su propia lógica de validación
- * ya que los formatos de token varían:
+ * Each provider implements its own validation logic
+ * because token formats vary:
  * - Stripe: tok_*, pm_*, card_*
- * - PayPal: No usa tokens (redirect flow)
+ * - PayPal: does not use tokens (redirect flow)
  * - Conekta: tok_*
  * - MercadoPago: card_token_*
  *
- * Esto permite que las estrategias compartidas (CardStrategy)
- * deleguen la validación específica al proveedor.
+ * This allows shared strategies (CardStrategy)
+ * to delegate provider-specific validation.
  */
 export interface TokenValidator {
   /**
-   * Valida que el token tenga el formato correcto para este proveedor.
+   * Validate that the token has the correct format for this provider.
    *
-   * @param token Token a validar
-   * @throws Error si el token es inválido
+   * @param token Token to validate
+   * @throws Error if the token is invalid
    */
   validate(token: string): void;
 
   /**
-   * Verifica si un token tiene formato válido sin lanzar error.
+   * Check whether a token has a valid format without throwing.
    *
-   * @param token Token a verificar
-   * @returns true si el token es válido
+   * @param token Token to check
+   * @returns true if the token is valid
    */
   isValid(token: string): boolean;
 
   /**
-   * Retorna los patrones de token aceptados (para documentación/debugging).
+   * Return the accepted token patterns (for docs/debugging).
    *
-   * @returns Array de strings describiendo los patrones aceptados
+   * @returns Array of strings describing accepted patterns
    */
   getAcceptedPatterns(): string[];
 
   /**
-   * Indica si este proveedor requiere token para el método de pago.
+   * Indicates whether this provider requires a token for the payment method.
    *
-   * Por ejemplo, PayPal no requiere token (usa redirect).
+   * For example, PayPal does not require tokens (uses redirect).
    */
   requiresToken(): boolean;
 }
 
 /**
- * Validador nulo para proveedores que no usan tokens.
+ * Null validator for providers that do not use tokens.
  *
- * Útil para PayPal u otros proveedores con flujo redirect.
+ * Useful for PayPal or other providers with redirect flow.
  */
 export class NullTokenValidator implements TokenValidator {
   validate(_token: string): void {
-    // No-op: este proveedor no usa tokens
+    // No-op: this provider does not use tokens
   }
 
   isValid(_token: string): boolean {
@@ -67,7 +67,7 @@ export class NullTokenValidator implements TokenValidator {
 }
 
 /**
- * Validador base que puede ser extendido por proveedores.
+ * Base validator that can be extended by providers.
  */
 export abstract class BaseTokenValidator implements TokenValidator {
   protected abstract readonly patterns: RegExp[];
@@ -113,7 +113,7 @@ export abstract class BaseTokenValidator implements TokenValidator {
   }
 
   /**
-   * Enmascara el token para logging seguro.
+   * Mask the token for safe logging.
    */
   protected maskToken(token: string): string {
     if (!token || token.length < 8) {

@@ -5,12 +5,12 @@ import {
 } from '@payments/domain/models/payment/payment-intent.types';
 
 /**
- * Configuración del historial.
+ * History configuration.
  */
 export const HISTORY_MAX_ENTRIES = 10;
 
 /**
- * Entrada del historial de pagos.
+ * Payment history entry.
  */
 export interface PaymentHistoryEntry {
   intentId: string;

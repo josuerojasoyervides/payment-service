@@ -45,7 +45,7 @@ describe('StripeGetIntentGateway', () => {
         expect(intent.status).toBeDefined();
       },
       error: () => {
-        expect.fail('No debería emitir error');
+        expect.fail('should not emit error');
       },
     });
 
@@ -66,7 +66,7 @@ describe('StripeGetIntentGateway', () => {
   it('propagates provider error when backend fails', () => {
     gateway.execute({ intentId: 'pi_error' }).subscribe({
       next: () => {
-        expect.fail('Se esperaba error');
+        expect.fail('Expected error');
       },
       error: (err) => {
         expect(err.code).toBe('provider_error');

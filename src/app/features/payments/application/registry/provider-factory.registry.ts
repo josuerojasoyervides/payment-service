@@ -8,20 +8,20 @@ import { ProviderFactory } from '../ports/provider-factory.port';
 import { PAYMENT_PROVIDER_FACTORIES } from '../tokens/payment-provider-factories.token';
 
 /**
- * Registro de factories de proveedores de pago.
+ * Registry of payment provider factories.
  *
- * Centraliza el acceso a las factories de cada proveedor.
- * Valida que no haya duplicados y que los providers existan.
+ * Centralizes access to provider factories.
+ * Validates no duplicates and that providers exist.
  *
- * Patrón: Registry
- * - Punto único de acceso a las factories
- * - Cachea referencias para mejor rendimiento
+ * Pattern: Registry
+ * - Single access point for factories
+ * - Caches references for performance
  */
 @Injectable()
 export class ProviderFactoryRegistry {
   private readonly factories = inject<ProviderFactory[]>(PAYMENT_PROVIDER_FACTORIES);
 
-  /** Cache de factories por providerId */
+  /** Factory cache per providerId */
   private readonly factoryMap = new Map<PaymentProviderId, ProviderFactory>();
 
   constructor() {
@@ -29,10 +29,10 @@ export class ProviderFactoryRegistry {
   }
 
   /**
-   * Obtiene la factory para un proveedor.
+   * Get the factory for a provider.
    *
-   * @param providerId ID del proveedor (stripe, paypal)
-   * @throws Error si el provider no está registrado
+   * @param providerId Provider ID (stripe, paypal)
+   * @throws Error if provider is not registered
    */
   get(providerId: PaymentProviderId): ProviderFactory {
     const factory = this.factoryMap.get(providerId);
@@ -46,21 +46,21 @@ export class ProviderFactoryRegistry {
   }
 
   /**
-   * Verifica si un proveedor está registrado.
+   * Check if a provider is registered.
    */
   has(providerId: PaymentProviderId): boolean {
     return this.factoryMap.has(providerId);
   }
 
   /**
-   * Retorna los IDs de todos los proveedores disponibles.
+   * Return IDs of all available providers.
    */
   getAvailableProviders(): PaymentProviderId[] {
     return Array.from(this.factoryMap.keys());
   }
 
   /**
-   * Retorna todos los proveedores que soportan un método de pago.
+   * Return all providers that support a payment method.
    */
   getProvidersForMethod(type: PaymentMethodType): PaymentProviderId[] {
     return Array.from(this.factoryMap.entries())
@@ -69,7 +69,7 @@ export class ProviderFactoryRegistry {
   }
 
   /**
-   * Construye el mapa de factories validando duplicados.
+   * Build factory map while validating duplicates.
    */
   private buildFactoryMap(): void {
     for (const factory of this.factories) {

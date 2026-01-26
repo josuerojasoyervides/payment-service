@@ -26,9 +26,9 @@ export function mapOrder(dto: PaypalOrderDto, providerId: PaymentProviderId): Pa
     const approveUrl = findPaypalLink(dto.links, 'approve');
     if (approveUrl) {
       intent.redirectUrl = approveUrl;
-      // No construir nextAction aquí - PaypalRedirectStrategy.enrichIntentWithPaypalApproval
-      // lo construirá con las URLs correctas desde StrategyContext (metadata)
-      // Si necesitamos construir aquí, requeriríamos acceso al request original con returnUrl/cancelUrl
+      // Do not build nextAction here - PaypalRedirectStrategy.enrichIntentWithPaypalApproval
+      // will build it with the correct URLs from StrategyContext (metadata)
+      // If we needed to build here, we'd require access to the original request (returnUrl/cancelUrl)
     }
   }
 

@@ -14,16 +14,16 @@ export type FinishStatus = 'completed' | 'cancelled' | 'failed';
 export interface FallbackExecutePayload {
   request: CreatePaymentRequest;
 
-  /** provider destino (al que se intentará el fallback) */
+  /** Target provider (fallback destination) */
   provider: PaymentProviderId;
 
-  /** provider que falló y detonó el fallback */
+  /** Provider that failed and triggered fallback */
   fromProvider: PaymentProviderId;
 
-  /** correlación del flow completo */
+  /** Correlation for the full flow */
   eventId: string;
 
-  /** true si fue auto, false si fue manual */
+  /** True if auto, false if manual */
   wasAutoFallback: boolean;
 }
 

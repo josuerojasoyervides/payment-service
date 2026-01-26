@@ -12,38 +12,38 @@ import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-re
 import { PaymentHistoryEntry } from './payment-store.history.types';
 
 /**
- * Estados posibles del flujo de pago en la UI.
+ * Possible payment flow states in the UI.
  */
 export type PaymentFlowStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 /**
- * Estado principal del módulo de pagos.
+ * Main payments module state.
  */
 export interface PaymentsState {
-  /** Estado actual del pago */
+  /** Current payment state */
   status: PaymentFlowStatus;
 
-  /** Intent del pago actual (si existe) */
+  /** Current payment intent (if any) */
   intent: PaymentIntent | null;
 
-  /** Error actual (si existe) */
+  /** Current error (if any) */
   error: PaymentError | null;
 
-  /** Provider actualmente seleccionado */
+  /** Currently selected provider */
   selectedProvider: PaymentProviderId | null;
 
-  /** Request actual en proceso */
+  /** Current request in progress */
   currentRequest: CreatePaymentRequest | null;
 
-  /** Estado del sistema de fallback */
+  /** Fallback system state */
   fallback: FallbackState;
 
-  /** Historial de intents para debugging */
+  /** Intent history for debugging */
   history: PaymentHistoryEntry[];
 }
 
 /**
- * Estado inicial del store de pagos.
+ * Initial payments store state.
  */
 export const initialPaymentsState: PaymentsState = {
   status: 'idle',

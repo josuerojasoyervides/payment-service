@@ -18,12 +18,12 @@ describe('ShowcaseComponent', () => {
     component = fixture.componentInstance;
   });
 
-  describe('Inicialización', () => {
-    it('debe crear el componente', () => {
+  describe('Initialization', () => {
+    it('should create the component', () => {
       expect(component).toBeTruthy();
     });
 
-    it('debe inicializar orderSummary con valores por defecto', () => {
+    it('should initialize orderSummary with default values', () => {
       expect(component.orderSummary.orderId).toBe('order_demo_123');
       expect(component.orderSummary.amount).toBe(499.99);
       expect(component.orderSummary.currency).toBe('MXN');
@@ -31,19 +31,19 @@ describe('ShowcaseComponent', () => {
       expect(component.orderSummary.items.length).toBe(2);
     });
 
-    it('debe inicializar providerSelector con valores por defecto', () => {
+    it('should initialize providerSelector with default values', () => {
       expect(component.providerSelector.providers).toEqual(['stripe', 'paypal']);
       expect(component.providerSelector.selected).toBe('stripe');
       expect(component.providerSelector.disabled).toBe(false);
     });
 
-    it('debe inicializar methodSelector con valores por defecto', () => {
+    it('should initialize methodSelector with default values', () => {
       expect(component.methodSelector.methods).toEqual(['card', 'spei']);
       expect(component.methodSelector.selected).toBe('card');
       expect(component.methodSelector.disabled).toBe(false);
     });
 
-    it('debe inicializar paymentButton con valores por defecto', () => {
+    it('should initialize paymentButton with default values', () => {
       expect(component.paymentButton.amount).toBe(499.99);
       expect(component.paymentButton.currency).toBe('MXN');
       expect(component.paymentButton.provider).toBe('stripe');
@@ -52,13 +52,13 @@ describe('ShowcaseComponent', () => {
       expect(component.paymentButton.state).toBe('idle');
     });
 
-    it('debe inicializar paymentResult con valores por defecto', () => {
+    it('should initialize paymentResult with default values', () => {
       expect(component.paymentResult.showSuccess).toBe(true);
     });
   });
 
-  describe('Datos de ejemplo', () => {
-    it('debe tener sampleIntent configurado', () => {
+  describe('Sample data', () => {
+    it('should have sampleIntent configured', () => {
       expect(component.sampleIntent.id).toBe('pi_fake_demo123');
       expect(component.sampleIntent.provider).toBe('stripe');
       expect(component.sampleIntent.status).toBe('succeeded');
@@ -66,12 +66,12 @@ describe('ShowcaseComponent', () => {
       expect(component.sampleIntent.currency).toBe('MXN');
     });
 
-    it('debe tener sampleError configurado', () => {
+    it('should have sampleError configured', () => {
       expect(component.sampleError.code).toBe('card_declined');
       expect(component.sampleError.messageKey).toContain(I18nKeys.errors.card_declined);
     });
 
-    it('debe tener speiInstructions configurado', () => {
+    it('should have speiInstructions configured', () => {
       expect(component.speiInstructions.clabe).toBeTruthy();
       expect(component.speiInstructions.reference).toBeTruthy();
       expect(component.speiInstructions.bank).toBe('STP');
@@ -79,14 +79,14 @@ describe('ShowcaseComponent', () => {
       expect(component.speiInstructions.currency).toBe('MXN');
     });
 
-    it('debe tener intentCard configurado', () => {
+    it('should have intentCard configured', () => {
       expect(component.intentCard.intent.id).toBe('pi_fake_card_demo');
       expect(component.intentCard.intent.status).toBe('requires_confirmation');
       expect(component.intentCard.showActions).toBe(true);
       expect(component.intentCard.expanded).toBe(false);
     });
 
-    it('debe tener fallbackModal configurado', () => {
+    it('should have fallbackModal configured', () => {
       expect(component.fallbackModal.open).toBe(false);
       expect(component.fallbackModal.event.failedProvider).toBe('stripe');
       expect(component.fallbackModal.event.alternativeProviders).toEqual(['paypal']);
@@ -94,7 +94,7 @@ describe('ShowcaseComponent', () => {
   });
 
   describe('Handlers', () => {
-    it('debe manejar onPayClick', () => {
+    it('should handle onPayClick', () => {
       const consoleSpy = vi.spyOn(console, 'warn');
       component.onPayClick();
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -103,7 +103,7 @@ describe('ShowcaseComponent', () => {
       consoleSpy.mockRestore();
     });
 
-    it('debe manejar onRetry', () => {
+    it('should handle onRetry', () => {
       const consoleSpy = vi.spyOn(console, 'warn');
       component.onRetry();
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -112,7 +112,7 @@ describe('ShowcaseComponent', () => {
       consoleSpy.mockRestore();
     });
 
-    it('debe manejar onNewPayment', () => {
+    it('should handle onNewPayment', () => {
       const consoleSpy = vi.spyOn(console, 'warn');
       component.onNewPayment();
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -121,7 +121,7 @@ describe('ShowcaseComponent', () => {
       consoleSpy.mockRestore();
     });
 
-    it('debe manejar onIntentAction con parámetros', () => {
+    it('should handle onIntentAction with parameters', () => {
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       component.onIntentAction('confirm', 'pi_test_123');
@@ -134,7 +134,7 @@ describe('ShowcaseComponent', () => {
       consoleSpy.mockRestore();
     });
 
-    it('debe manejar onFallbackConfirm y cerrar modal', () => {
+    it('should manejar onFallbackConfirm y cerrar modal', () => {
       component.fallbackModal.open = true;
       const consoleSpy = vi.spyOn(console, 'warn');
       component.onFallbackConfirm('paypal');
@@ -148,15 +148,15 @@ describe('ShowcaseComponent', () => {
   });
 
   describe('Estructura de datos', () => {
-    it('debe tener items en orderSummary', () => {
+    it('should tener items en orderSummary', () => {
       expect(component.orderSummary.items.length).toBe(2);
       expect(component.orderSummary.items[0].name).toBe('Producto Premium');
       expect(component.orderSummary.items[0].price).toBe(399.99);
-      expect(component.orderSummary.items[1].name).toBe('Envío express');
+      expect(component.orderSummary.items[1].name).toBe('Express shipping');
       expect(component.orderSummary.items[1].price).toBe(100.0);
     });
 
-    it('debe tener fallbackEvent configurado correctamente', () => {
+    it('should tener fallbackEvent configurado correctamente', () => {
       const event = component.fallbackModal.event;
       expect(event.eventId).toBe('fb_demo_123');
       expect(event.failedProvider).toBe('stripe');
@@ -165,7 +165,7 @@ describe('ShowcaseComponent', () => {
       expect(event.originalRequest.orderId).toBe('order_123');
     });
 
-    it('debe tener expiresAt en speiInstructions en el futuro', () => {
+    it('should tener expiresAt en speiInstructions en el futuro', () => {
       const expiresAt = new Date(component.speiInstructions.expiresAt);
       const now = new Date();
       expect(expiresAt.getTime()).toBeGreaterThan(now.getTime());

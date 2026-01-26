@@ -11,7 +11,7 @@ import { delay, Observable, of, throwError } from 'rxjs';
 @Injectable()
 export class FakePaymentsBackendInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // ✅ Interceptamos solo lo que nos interesa
+    // ✅ Only intercept what we care about
     if (req.method === 'POST' && req.url === '/api/payments/stripe/intents') {
       return this.fakeStripeIntent(req.body);
     }
@@ -51,7 +51,7 @@ export class FakePaymentsBackendInterceptor implements HttpInterceptor {
     const method = body?.method?.type;
 
     if (method === 'card' && body?.method?.token === 'declined') {
-      // TODO : ¿Esto debería usar i18n?
+      // TODO: Should this use i18n?
       return throwError(() => ({
         error: { code: 'card_declined', message: 'Card was declined (fake)' },
         status: 402,

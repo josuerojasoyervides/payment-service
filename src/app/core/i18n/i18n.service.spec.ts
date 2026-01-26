@@ -184,7 +184,7 @@ describe('I18nService', () => {
       Object.keys(I18nKeys.errors).forEach((key) => {
         const fullKey = `errors.${key}`;
         expect(service.has(fullKey)).toBe(true);
-        expect(service.t(fullKey)).not.toBe(fullKey); // No debe devolver la clave
+        expect(service.t(fullKey)).not.toBe(fullKey); // No should devolver la clave
       });
     });
 
