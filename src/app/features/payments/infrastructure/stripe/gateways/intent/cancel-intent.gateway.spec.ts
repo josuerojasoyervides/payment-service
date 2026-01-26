@@ -67,4 +67,29 @@ describe('StripeCancelIntentGateway', () => {
       currency: 'mxn',
     });
   });
+
+  it('propagates provider error when backend fails', () => {
+    const req: CancelPaymentRequest = {
+      intentId: 'pi_error',
+      idempotencyKey: 'idem_cancel_error',
+    };
+
+    gateway.execute(req).subscribe({
+      next: () => {
+        expect.fail('Se esperaba error');
+      },
+      error: (err) => {
+        expect(err.code).toBe('provider_error');
+        expect(err.raw).toBeDefined();
+      },
+    });
+
+    const httpReq = httpMock.expectOne('/api/payments/stripe/intents/pi_error/cancel');
+    expect(httpReq.request.method).toBe('POST');
+
+    httpReq.flush(
+      { message: 'Stripe error' },
+      { status: 500, statusText: 'Internal Server Error' },
+    );
+  });
 });
