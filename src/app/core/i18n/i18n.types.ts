@@ -6,6 +6,7 @@
 export interface Translations {
   errors: {
     cancel_url_invalid: string;
+    return_url_invalid: string;
     customer_email_required: string;
     customer_email_invalid: string;
     return_url_required: string;
@@ -146,7 +147,7 @@ export interface Translations {
     action_requires_attention: string;
     view_action_details: string;
 
-    // Páginas
+    // Pages
     checkout: string;
     payment_system: string;
     view_history: string;
@@ -223,6 +224,7 @@ export interface Translations {
     spei_bank_transfer: string;
     spei_email_instructions: string;
     email_label: string;
+    email_placeholder: string;
     field_required: string;
     check_by_id: string;
     select_provider_method: string;

@@ -17,10 +17,11 @@ import {
 import { createPaymentFlowMachine } from './payment-flow.machine';
 import {
   PaymentFlowActorRef,
+  PaymentFlowCommandEvent,
   PaymentFlowEvent,
   PaymentFlowMachine,
-  PaymentFlowPublicEvent,
   PaymentFlowSnapshot,
+  PaymentFlowSystemEvent,
 } from './payment-flow.types';
 
 @Injectable()
@@ -97,7 +98,7 @@ export class PaymentFlowActorService {
     this.fallbackOrchestrator.fallbackExecute$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(({ provider, request, fromProvider }) => {
-        this.send({
+        this.sendSystem({
           type: 'FALLBACK_EXECUTE',
           providerId: provider,
           request,
@@ -110,11 +111,11 @@ export class PaymentFlowActorService {
     });
   }
 
-  send(event: PaymentFlowPublicEvent): boolean {
+  send(event: PaymentFlowCommandEvent): boolean {
     const snap = this.snapshot();
 
     const prevState = this.prevSnapshot?.value ?? null;
-    const changed = false; // No hay transición cuando el evento es ignorado
+    const changed = false; // No transition when the event is ignored
     const tags = snap.tags ? Array.from(snap.tags) : undefined;
 
     if (!snap.can(event)) {
@@ -139,6 +140,11 @@ export class PaymentFlowActorService {
     return true;
   }
 
+  /** Internal/system events (fallback orchestration). */
+  sendSystem(event: PaymentFlowSystemEvent): void {
+    this.actor.send(event);
+  }
+
   private maybeReportFallback(snapshot: PaymentFlowSnapshot): void {
     if (!snapshot.hasTag('error')) {
       this.lastReportedError = null;
@@ -157,7 +163,7 @@ export class PaymentFlowActorService {
     const handled = this.fallbackOrchestrator.reportFailure(providerId, error, request, false);
     if (!handled) return;
 
-    this.send({
+    this.sendSystem({
       type: 'FALLBACK_REQUESTED',
       failedProviderId: providerId,
       request,

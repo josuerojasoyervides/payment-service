@@ -1,179 +1,146 @@
-# Payments Module — Goals & Evolution Plan (NgRx Signals → XState)
+# Goals and North Star
 
-> **Última revisión:** 2026-01-26  
-> Documento estratégico: define **por qué** existe este módulo, cuál es el **North Star**, y cómo evolucionar el diseño sin romper lo que ya funciona.
+> **Last review:** 2026-01-26
+> Strategic document: defines **why** this module exists, the **North Star**, and how to evolve without breaking what already works.
 
-## Cómo usar este doc
+## How to use this doc
 
-- **Esto NO es “estado del sprint”.**  
-  Es una guía + historial de intención.
-- Cuando el código se aleje del North Star, este doc debe:
-  - registrar la desviación,
-  - explicar por qué se aceptó,
-  - y definir el “cierre” (cómo se vuelve a alinear).
-
----
-
-## 1) Propósito del proyecto
-
-Este repositorio existe para practicar arquitectura real aplicada a pagos (no solo “que funcione”).
-
-Buscamos que el módulo:
-
-- Sea **extensible** para agregar providers y métodos sin tocar todo el sistema.
-- Sea **estable** (tests confiables, flujos sin estados zombies, errores normalizados).
-- Sea **mantenible** (boundaries claros; refactors sin efecto dominó).
-- Sea un laboratorio para aprender **Clean-ish Architecture pragmática**.
+- This is a guide + intent history.
+- When the code drifts from the North Star, this doc should:
+  - record the deviation,
+  - explain why it was accepted,
+  - define the closure plan (how to realign).
 
 ---
 
-## 2) North Star (end‑state deseado)
+## 1) Project purpose
 
-### 2.1 Soporte real multi‑provider
+This repository exists to practice real-world payments architecture (not just "make it work").
 
-- Stripe + PayPal (mínimo)
-- Facilitar agregar:
-  - SPEI / transferencias
-  - wallets
-  - providers alternos
+We want the module to be:
 
-**North Star:** agregar un provider nuevo debería ser:
+- **extensible** (add providers/methods without touching everything),
+- **stable** (reliable tests, no zombie states, normalized errors),
+- **maintainable** (clear boundaries; refactors without ripple effects),
+- a lab to learn **pragmatic clean-ish architecture**.
 
-- implementar operaciones/gateways + mapping
-- registrarlo en config
-- agregar tests mínimos
-- sin tocar UI/store en 20 lugares
+Minimum scope:
 
----
+- Stripe + PayPal
 
-### 2.2 Contrato de errores estable (PaymentError)
+**North Star:** adding a new provider should be:
 
-**North Star:**
-
-- Infra/App retornan `PaymentError` con:
-  - `code`
-  - `messageKey`
-  - `params`
-  - `raw` (debug)
-- UI es el único lugar que traduce.
+- add minimal tests
+- avoid touching UI/store in 20 places
 
 ---
 
-### 2.3 Estado/flujo robusto (XState)
+## 2) Contract goals
 
-**Razón:**
-En pagos hay demasiados estados intermedios reales:
+### 2.1 Stable error contract (PaymentError)
 
-- 3DS / requires_action
-- redirect approval (PayPal)
-- callbacks
-- polling de status
-- retries/timeouts
-- transiciones incompletas
+Infra/App must return `PaymentError` with:
 
-**North Star con XState:**
+- `code`
+- `messageKey`
+- `params?`
+- `raw?`
 
-- flujo explícito (statechart real)
-- transiciones auditables (eventos claros)
-- side effects controlados (invokes/actors)
-- menos estados “fantasma” y loops
+UI is the only layer that translates.
 
 ---
 
-## 3) Coexistencia: NgRx Signals + XState (estado actual)
+### 2.2 Robust state/flow (XState)
 
-✅ Lo que se queda en NgRx Signals:
+**Reason:** payments have too many real intermediate states:
 
-- estado de UI/pantallas
-- data shape para components
-- API pública de lectura (selectors)
+- redirects
+- retries with TTL
+- polling
+- fallbacks
 
-✅ Lo que vive en XState:
+**North Star with XState:**
 
-- lifecycle de un pago (start → action → confirm/cancel → polling → done/fail)
-- branching por provider/método
-- recovery paths (fallback, refresh, cancel)
+- explicit flow (real statechart)
+- no impossible states
 
-📌 Estado actual:
+**Keep in NgRx Signals:**
 
-- XState es la fuente de verdad del flujo.
-- Store es proyección del snapshot (sin orquestación).
-- Fallback se modela dentro del flow y usa el orchestrator como policy/telemetría.
+- UI state/screens
+- component data shape
+- read API (selectors)
 
----
+**Live in XState:**
 
-## 4) Roadmap por fases (incremental, sin reescrituras)
+- payment lifecycle (start -> action -> confirm/cancel -> polling -> done/fail)
+- branching per provider/method
 
-### Fase A — Estabilización & consistencia (P0/P1)
+**Rules:**
 
-**Objetivo:** que el módulo sea confiable y consistente antes de meter flow complejo.
+- XState is the flow source of truth.
+- Store is snapshot projection only (no orchestration).
+- Fallback is modeled in the flow and uses the orchestrator as policy/telemetry.
 
-**Definition of Done (North Star de la fase A):**
-
-- PaymentError solo viaja como `messageKey + params (+ raw)`
-- UI-only translation (definición por “UI layer”, no por folder literal)
-- Fallback policy estable y testeado
-- Providers con el mismo patrón (facade + operations)
-- Tests mínimos en gateways críticos
-
-📌 Estado actual (as-of 2026-01-26):
-
-- ✅ Providers ya están estandarizados
-- ✅ Fallback orchestrator integrado
-- ✅ PaymentError contract existe
-- ✅ Enforcement automático agregado
-- 🟡 Tests mínimos por gateway aún incompletos
+**Current status:** retry/backoff + polling cadence implemented in the machine.
 
 ---
 
-### Fase B — Hardening (enforcement + CI) (P1)
+## 3) Roadmap by phase (incremental, no rewrites)
 
-**Objetivo:** evitar regresiones sin depender de disciplina manual.
+### Phase A — Stabilization & consistency (P0/P1)
 
-Targets:
+**Goal:** make the module reliable and consistent before adding complex flow.
 
-- test/lint que falle si hay `i18n.t(` fuera de UI layer
-- test/lint que falle si `messageKey` se usa como texto traducido
-- depcruise consolidado con reglas que representen el North Star real
+**Definition of Done (Phase A North Star):**
 
----
+- PaymentError travels only as `messageKey + params (+ raw)`
+- UI-only translation (defined by UI layer, not folder literal)
+- Providers follow the same pattern (facade + operations)
+- Minimal tests for critical gateways
 
-### Fase C — XState (P2)
+**Current status:**
 
-**Objetivo:** migrar el “pago como workflow” a máquina de estados.
+- Providers are standardized
+- Enforcement is in place
+- Minimal gateway tests are complete
 
-Targets:
+### Phase B — Guardrails & enforcement
 
-- definir flow completo en statechart
-- mantener el store como puente (sin romper UI)
-- fallback modelado como estados del flow
+**Goal:** avoid regressions without relying on manual discipline.
 
----
+- tests/lint fail if `i18n.t(` is outside UI
+- tests/lint fail if `messageKey` is used as translated text
+- depcruise consolidated with real North Star rules
 
-## 5) Métricas de éxito (lo que importa)
+### Phase C — XState migration
 
-- Agregar un provider nuevo sin tocar UI/store a lo loco ✅
-- Reducir bugs de estados zombies ✅
-- Errores consistentes y traducidos solo en UI ✅
-- Refactors sin romper tests ✅
-- La UI no necesita saber “cómo” se paga, solo “qué estado mostrar” ✅
+**Goal:** migrate "payment as workflow" into a state machine.
 
----
-
-## 6) Deuda aceptada (registrada)
-
-Esto no es “malo”, es deuda consciente (pero debe tener plan):
-
-- Legacy rendering de `PaymentError.message` (debe morir)
-- Algunos specs con `messageKey` como texto (debe corregirse)
-- Abstract ports con HttpClient en application (decidir si se migra a infra/base)
+- keep store as bridge (do not break UI)
+- model fallback inside the flow
 
 ---
 
-## 7) Próximo cierre recomendado (el siguiente “checkpoint” real)
+## 4) Success metrics
 
-Si hoy tuvieras que cerrar un ciclo completo, sería:
+- Add a new provider without touching UI/store everywhere
+- Reduce zombie-state bugs
+- Refactors do not break tests
+- UI does not need to know **how** payment happens, only **what** to render
 
-1. **Completar tests mínimos en gateways críticos**
-2. **Hardening de fallback** (attempt counters + auto fallback limits)
-3. **Reubicar base ports con HttpClient** si se decide cerrar esa deuda
+---
+
+## 5) Known debt (intentional)
+
+This is not "bad", it is **conscious debt** (must have a plan):
+
+- No active P0/P1 debt at this time (keep this section current).
+
+---
+
+## 6) Next recommended checkpoint
+
+If you had to close a full cycle today:
+
+1. **Document final state** (docs refresh)
+2. **Expand flow complexity** (provider-specific branches and edge cases)

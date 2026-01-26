@@ -1,20 +1,20 @@
 <div class="space-y-4">
   @if (requirements(); as reqs) {
-    @if (translateText(reqs.descriptionKey); as description) {
+    @if (reqs.descriptionKey | i18n; as description) {
       <p class="text-sm text-gray-600">{{ description }}</p>
     }
 
     @if (reqs.instructionsKey) {
       <div class="alert-info flex items-start gap-2">
         <span class="text-lg">💡</span>
-        @if (translateText(reqs.instructionsKey); as instructions) {
+        @if (reqs.instructionsKey | i18n; as instructions) {
           <span class="text-sm">{{ instructions }}</span>
         }
       </div>
     }
 
     <form [formGroup]="form" class="space-y-4">
-      @for (field of visibleFields(); track field.name) {
+      @for (field of visibleFields(); track field.name; let index = $index) {
         <div class="space-y-1">
           @if (field.name === 'saveForFuture') {
             <!-- Checkbox para saveForFuture -->
@@ -24,13 +24,13 @@
                 [formControlName]="field.name"
                 class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
               <span class="label cursor-pointer">
-                {{ translateText(field.labelKey) }}
+                {{ field.labelKey | i18n }}
               </span>
             </label>
           } @else {
             <!-- Input normal para otros campos -->
             <label [for]="field.name" class="label">
-              {{ translateText(field.labelKey) }}
+              {{ field.labelKey | i18n }}
               @if (field.required) {
                 <span class="text-red-500 ml-0.5">*</span>
               }
@@ -40,8 +40,9 @@
               [id]="field.name"
               [type]="field.type"
               [formControlName]="field.name"
-              [placeholder]="translateText(field.placeholderKey)"
+              [placeholder]="field.placeholderKey | i18n"
               class="input"
+              [appAutofocus]="index === 0"
               [class.input-error]="isFieldInvalid(field.name)" />
 
             @if (isFieldInvalid(field.name)) {
@@ -57,7 +58,7 @@
         <div class="text-xs text-gray-400 space-y-1">
           @for (field of hiddenFields(); track field.name) {
             <div class="flex items-center gap-2">
-              <span>{{ translateText(field.labelKey) }}:</span>
+              <span>{{ field.labelKey | i18n }}:</span>
               <code class="bg-gray-100 px-1 rounded">
                 {{ form.get(field.name)?.value || '(auto)' }}
               </code>

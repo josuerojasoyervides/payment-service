@@ -77,7 +77,7 @@ export function applyFailureState(store: PaymentsStoreContext, error: PaymentErr
     status: 'error',
     intent: null,
     error,
-    currentRequest: null, // ✅ recomiendo limpiar también aquí
+    currentRequest: null, // ✅ recommended to clear here as well
   });
 }
 

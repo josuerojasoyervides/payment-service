@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { NextActionSpei } from '@payments/domain/models/payment/payment-action.types';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
@@ -60,7 +61,7 @@ describe('SpeiStrategy', () => {
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: 'errors.invalid_request',
+          messageKey: I18nKeys.errors.invalid_request,
         }),
       );
     });
@@ -70,7 +71,7 @@ describe('SpeiStrategy', () => {
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: 'errors.min_amount',
+          messageKey: I18nKeys.errors.min_amount,
         }),
       );
     });
@@ -80,7 +81,7 @@ describe('SpeiStrategy', () => {
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: 'errors.max_amount',
+          messageKey: I18nKeys.errors.max_amount,
         }),
       );
     });
@@ -148,7 +149,7 @@ describe('SpeiStrategy', () => {
       expect(() => strategy.start(invalidReq)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: 'errors.invalid_request',
+          messageKey: I18nKeys.errors.invalid_request,
         }),
       );
 

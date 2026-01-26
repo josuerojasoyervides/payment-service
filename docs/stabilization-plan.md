@@ -1,170 +1,150 @@
-# Stabilization Plan — v3 (XState)
+# Stabilization Plan v3
 
-> **Última revisión:** 2026-01-26  
-> Branch de referencia (histórica): `origin/refactor/stabilization-plan-v3`
+> **Last review:** 2026-01-26
+> Reference branch (historical): `origin/refactor/stabilization-plan-v3`
 
-## Objetivo
+**Goal:** stabilize and close loops on what already exists so that:
 
-**Estabilizar y cerrar ciclos** en lo que ya existe para que:
+- the module is consistent,
+- it is easy to refactor,
+- it is ready to evolve complex flow in XState **without rewrites**.
 
-- el módulo sea consistente,
-- sea fácil de refactorizar,
-- quede listo para migrar flow complejo a XState **sin reescrituras**.
-
-Este plan es deliberadamente agresivo: primero consistencia y testabilidad, después features.
+This plan is deliberately aggressive: consistency and testability first, features later.
 
 ---
 
-## 0) Snapshot real (as‑of 2026-01-24)
+## 0) Baseline invariants
 
-✅ Piezas clave que NO se deben romper:
+**Key pieces that must not break:**
 
-- ✅ Arquitectura por capas (`domain/application/infrastructure/shared/ui/config`)
-- ✅ PaymentError existe como contrato (`messageKey + params + raw`)
-- ✅ FallbackOrchestratorService existe (manual/auto)
-- ✅ Fallback se decide en XState (no en UI/infra/store)
-- ✅ Fallback se dispara cuando hay request de arranque disponible
-- ✅ Stripe y PayPal ya siguen patrón **facade + operations** (ya no hay “PayPal legacy”)
+- Layered architecture (`domain/application/infrastructure/shared/ui/config`)
+- PaymentError exists as a contract (`messageKey + params + raw`)
+- Fallback triggers only when a start request is available
+- Stripe and PayPal already follow **facade + operations** (no PayPal legacy)
 
-⚠️ Deuda visible hoy:
+**Known gaps:**
 
-- UI aún soporta rendering legacy de errores (`message` crudo)
-- Hay casos donde `messageKey` se usa como texto traducido o texto literal (UI/tests)
-- Falta enforcement automático (lint/test) para evitar regresiones
+- UI still supports legacy error rendering (`message` raw)
+- Some paths use `messageKey` as translated text (UI/tests)
+- Enforcement (lint/test) was missing to prevent regressions
 
 ---
 
-## 1) Workstreams (con prioridades)
+## 1) Workstreams (prioritized)
 
-### 1.1 I18n & errores (cierre de ciclo) — **P0**
+### 1.1 I18n & errors (closure) — **P0**
 
-**Meta:** UI-only translation + PaymentError puro.
+**Definition of Done:**
 
-**DoD de este workstream:**
+- UI translates once: `i18n.t(error.messageKey, error.params)`
+- No `PaymentError.message` in any render path
 
-- UI traduce una vez: `i18n.t(error.messageKey, error.params)`
-- No existe `PaymentError.message` en ningún path de render
-- `messageKey` nunca contiene texto traducido
+**Checklist:**
 
-**Tareas**
+- [P0] Remove legacy compatibility for `message` error rendering
+- [P0] Update specs that use text as `messageKey`
+- [P1] Add enforcement (see 1.4)
 
-- [P0] Eliminar compatibilidad legacy de `message` en render de errores
-- [P0] Prohibir `messageKey = i18n.t(...)` (solo keys)
-- [P0] Actualizar specs que usan texto como `messageKey`
-- [P1] Agregar enforcement automático (ver 1.4)
+**Status:**
 
-📌 Estado actual:
-
-- ✅ UI-only translation se cumple en el feature (fuera de UI no hay `i18n.t`)
-- ✅ PaymentError ya no acepta rendering legacy de `message`
-- ✅ Enforcement automático agregado (guardrails en tests)
+- UI-only translation is enforced (no `i18n.t` outside UI in feature)
+- `PaymentError.message` is no longer rendered
+- Guardrails are in tests (covers specs outside UI and forbids literals)
 
 ---
 
-### 1.2 Providers parity (Stripe/PayPal) — **P0 ya cerrado**
+### 1.2 Provider parity — **P0**
 
-**Meta:** mismo patrón, misma API, mismos invariantes.
+**Goal:** same pattern, same API, same invariants.
 
-**DoD:**
+- Facade per provider
+- Atomic operations (create/confirm/cancel/getStatus)
+- Errors normalized to PaymentError keys
 
-- Facade por provider
-- Operaciones atómicas (create/confirm/cancel/getStatus)
-- Mappers DTO → Domain
-- Normalización de errores a PaymentError (keys)
+**Status:**
 
-📌 Estado actual:
-
-- ✅ DONE (Stripe y PayPal ya están parejos)
+- DONE (Stripe and PayPal are aligned)
 
 ---
 
-### 1.3 Fallback stability — **P0 ya cerrado + P1 hardening**
+### 1.3 Fallback stability — **P0 done + P1 hardening**
 
-**Meta:** fallback confiable y predecible, sin loops raros.
+**Goal:** reliable, predictable fallback without weird loops.
 
-**DoD P0 (ya hecho):**
+**Hardening P1:**
 
-- Orchestrator integrado al store
-- allowFallback solo en arranque
-- modo manual/auto soportado
+- tests for `maxAttempts`, `maxAutoFallbacks`, and resets
+- stable metrics/logs per attempt
 
-**Hardening P1 recomendado:**
+**Status:**
 
-- Tests de “maxAttempts”, “maxAutoFallbacks” y resets
-- Métricas/logs estables por intento
-
-📌 Estado actual:
-
-- ✅ Orchestrator funciona y está integrado
-- ✅ Fallback modelado dentro del flow (XState)
-- 🟡 Hardening de tests aún incompleto
+- Orchestrator works and is integrated
+- Hardening completed (limits + reset behavior + tests)
 
 ---
 
-### 1.4 Enforcement automático (guardrails) — **P0/P1**
+### 1.4 Enforcement (guardrails) — **P0/P1**
 
-**Meta:** que CI rompa cuando alguien mete una regresión.
+**Goal:** CI must fail when regressions are introduced.
 
-**Reglas mínimas que deben fallar en CI:**
+**Minimum rules for CI:**
 
-- `i18n.t(` fuera del UI layer (incluyendo `payments/shared`, `application`, `infrastructure`)
-- `messageKey: this.i18n.t(` en cualquier archivo
-- `messageKey: 'texto plano'` en tests (si decides reforzar shape)
+- depcruise for boundary rules
+- guardrails for i18n/messageKey in tests (includes specs outside UI and forbids literals)
 
-📌 Estado actual:
+**Status:**
 
-- ✅ depcruise existe para boundaries generales
-- ✅ Guardrails de i18n/messageKey agregados en tests
+- depcruise exists for general boundaries
+- guardrails added in tests
 
 ---
 
-### 1.5 Tests mínimos por gateway — **P1**
+### 1.5 Minimal tests per gateway — **P1**
 
-**Meta:** reducir bugs de integración por provider.
+**Goal:** reduce integration bugs per provider.
 
-**Estándar mínimo por operación crítica:**
+**Minimum per critical operation:**
 
 - happy path
-- invalid request (si aplica)
-- provider error → PaymentError normalizado
-- mapping correcto
+- invalid request (if applicable)
+- provider error -> normalized PaymentError
+- correct mapping
 
-📌 Estado actual:
+**Status:**
 
-- 🟡 Hay specs con happy path + provider error, pero el coverage aún es inconsistente.
+- ✅ Completed for Stripe + PayPal critical operations
 
 ---
 
 ## 2) Definition of Done — Stabilization v3
 
-Puedes marcar “cerrado” cuando todo esto sea cierto:
+You can mark this "closed" when all are true:
 
-- ✅ PaymentError viaja solo como `messageKey + params (+ raw)`
-- ✅ UI-only translation (definición por UI layer)
-- ✅ No existe rendering legacy de errores (`message` crudo)
-- ✅ Fallback policy estable y cubierta por tests mínimos
-- ✅ Providers parity (Stripe/PayPal) estable
-- ✅ Guardrails en CI (enforcement automático)
-- 🟡 Tests mínimos por gateway (al menos en las operaciones más usadas)
-- ✅ XState integrado como source of truth + store projection
+- PaymentError travels only as `messageKey + params (+ raw)`
+- UI-only translation (defined by UI layer)
+- No legacy error rendering (`message` raw)
+- Fallback policy stable and covered by minimal tests
+- Providers parity (Stripe/PayPal) stable
+- Guardrails in CI
+- Minimal gateway tests (at least most-used operations)
+- XState integrated as source of truth + store projection
 
 ---
 
-## 3) Checklist final (para que sea fácil cerrar)
+## 3) Final checklist (easy close)
 
-### P0 — Bloqueadores
+### P0 — Blockers
 
-- [x] Matar legacy error rendering (`message`)
-- [x] Eliminar `messageKey` traducido (y texto literal en specs)
-- [x] Agregar enforcement mínimo (scan tests / lint)
+- [x] Remove legacy error rendering (`message`)
+- [x] Remove translated `messageKey` and literal text in specs
+- [x] Add minimum enforcement (scan tests / lint)
 
-### P1 — Estabilidad
+### P1 — Stability
 
-- [ ] Completar tests mínimos por gateway crítico
-- [ ] Hardening de fallback (attempt counters + auto fallback limits)
+- [x] Complete minimal tests for critical gateways
+- [x] Fallback hardening (attempt counters + auto fallback limits)
 
-### P2 — Refinamientos
+### P2 — Refinements
 
-- [ ] Reubicar base ports con HttpClient fuera de application (si decides)
-- [ ] Tipado más fuerte para `messageKey`
-- [x] Preparación para XState (actors/events mapping)
+- [ ] Stronger typing for `messageKey`
+- [x] XState preparation (actors/events mapping)

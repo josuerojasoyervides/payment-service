@@ -24,10 +24,10 @@ import { SpeiInstructionsComponent } from '@payments/ui/components/spei-instruct
 import { OrderItem, PaymentButtonState } from '../../shared/ui.types';
 
 /**
- * Página de showcase para demostrar todos los componentes de UI.
+ * Showcase page to demonstrate all UI components.
  *
- * Permite ver cada componente en diferentes estados y configuraciones,
- * con controles interactivos para modificar sus props.
+ * Lets you view each component in different states and configurations,
+ * with interactive controls to tweak their props.
  */
 @Component({
   selector: 'app-showcase',
@@ -58,8 +58,8 @@ export class ShowcaseComponent {
     currency: 'MXN' as CurrencyCode,
     showItems: true,
     items: [
-      { name: 'Producto Premium', quantity: 1, price: 399.99 },
-      { name: 'Envío express', quantity: 1, price: 100.0 },
+      { name: 'Premium product', quantity: 1, price: 399.99 },
+      { name: 'Express shipping', quantity: 1, price: 100.0 },
     ] as OrderItem[],
   };
 

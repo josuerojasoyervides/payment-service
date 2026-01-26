@@ -10,14 +10,14 @@ import {
 } from './logging.types';
 
 /**
- * Token para inyectar configuración del logger.
+ * Token for injecting logger configuration.
  */
 export const LOGGER_CONFIG = new InjectionToken<Partial<LoggerConfig>>('LOGGER_CONFIG');
 
 /**
- * Servicio de logging estructurado.
+ * Structured logging service.
  *
- * Características:
+ * Features:
  * - Correlation IDs to trace complete flows
  * - Structured output (JSON) ready for backend
  * - Configurable log levels
@@ -26,24 +26,24 @@ export const LOGGER_CONFIG = new InjectionToken<Partial<LoggerConfig>>('LOGGER_C
  *
  * @example
  * ```typescript
- * // Ejemplo básico con context
+ * // Basic example with context
  * logger.info('Payment started', 'CheckoutComponent', { orderId: '123' });
  * logger.debug('Validating form', 'PaymentFormComponent', { fieldCount: 5 });
  * logger.warn('Low balance detected', 'BalanceService', { currentBalance: 10.50 });
  * logger.error('Payment failed', 'PaymentGateway', error, { intentId: 'pi_123' });
  *
- * // Ejemplo con correlation context
+ * // Example with correlation context
  * const ctx = logger.startCorrelation('payment-flow', { orderId: '123' });
  * logger.info('Creating intent', 'StripeGateway', { amount: 100 }, ctx.correlationId);
  * logger.info('Confirming payment', 'PayPalGateway', { orderId: 'ord_456' }, ctx.correlationId);
  * logger.endCorrelation(ctx, { success: true });
  *
- * // Ejemplo con measure para operaciones asíncronas
+ * // Example with measure for async operations
  * const result = await logger.measure('createIntent', async () => {
  *   return gateway.createIntent(req);
  * }, 'StripeGateway', { provider: 'stripe' });
  *
- * // Ejemplo con measureSync para operaciones síncronas
+ * // Example with measureSync for sync operations
  * const isValid = logger.measureSync('validateToken', () => {
  *   return tokenValidator.validate(token);
  * }, 'TokenValidator', { tokenLength: token.length });
@@ -163,7 +163,7 @@ export class LoggerService {
   }
 
   /**
-   * Finaliza un contexto de correlación y loguea la duración total.
+   * Ends a correlation context and logs the total duration.
    */
   endCorrelation(context: CorrelationContext, metadata?: Record<string, unknown>): void {
     const duration = performance.now() - context.startTime;
@@ -183,21 +183,21 @@ export class LoggerService {
   }
 
   /**
-   * Obtiene el correlation ID actual o genera uno nuevo.
+   * Gets the current correlation ID or generates a new one.
    */
   getCorrelationId(): string {
     return this.currentCorrelationId ?? this.generateCorrelationId();
   }
 
   /**
-   * Establece el correlation ID actual para el contexto.
+   * Sets the current correlation ID for the context.
    */
   setCorrelationId(correlationId: string): void {
     this.currentCorrelationId = correlationId;
   }
 
   /**
-   * Limpia el correlation ID actual.
+   * Clears the current correlation ID.
    */
   clearCorrelationId(): void {
     this.currentCorrelationId = null;

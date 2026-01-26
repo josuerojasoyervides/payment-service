@@ -1,5 +1,3 @@
-// src/app/features/payments/application/store/payment-store.machine-bridge.ts
-
 import { computed, effect, Signal } from '@angular/core';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 
@@ -16,10 +14,10 @@ import {
 import type { PaymentsStoreContext } from './payment-store.types';
 
 /**
- * Bridge: conecta la máquina de XState con el PaymentsStore.
+ * Bridge: connects the XState machine to PaymentsStore.
  *
- * - La máquina es source of truth del flow.
- * - El store solo proyecta estado para UI + fallback + history.
+ * - The machine is the source of truth for the flow.
+ * - The store only projects state for UI + fallback + history.
  */
 export function setupPaymentFlowMachineBridge(
   store: PaymentsStoreContext,
@@ -28,13 +26,13 @@ export function setupPaymentFlowMachineBridge(
   },
 ) {
   /**
-   * Snapshot actual (Signal) expuesto por el actor.
-   * Ojo: tu servicio ya lo tiene como signal.
+   * Current snapshot (Signal) exposed by the actor.
+   * Note: the service already exposes it as a signal.
    */
   const machineSnapshot: Signal<PaymentFlowSnapshot> = deps.stateMachine.snapshot;
 
   /**
-   * Derivados (computed) para evitar trabajo repetido en effect.
+   * Derived (computed) values to avoid repeated work in effects.
    */
   const machineContext = computed(() => machineSnapshot().context);
 
@@ -45,7 +43,7 @@ export function setupPaymentFlowMachineBridge(
 
   /**
    * ============================================================
-   * Effect #1: reflejar LOADING del statechart al store
+   * Effect #1: reflect LOADING states from the machine into the store
    * ============================================================
    */
   effect(() => {
@@ -68,12 +66,12 @@ export function setupPaymentFlowMachineBridge(
 
   /**
    * ============================================================
-   * Effect #2: cuando la máquina produce intent nuevo → READY + history
+   * Effect #2: when the machine produces a new intent -> READY + history
    * ============================================================
    *
-   * Importante:
-   * - solo agregamos a history si el intent cambió (por id).
-   * - evitamos duplicados cuando polling refresca el mismo intent.
+   * Notes:
+   * - Only add to history if intent changed (by id).
+   * - Avoid duplicates when polling refreshes the same intent.
    */
   let lastIntentId: string | null = null;
 
@@ -96,7 +94,7 @@ export function setupPaymentFlowMachineBridge(
 
   /**
    * ============================================================
-   * Effect #2b: fallback candidate without intent → ready (silent)
+   * Effect #2b: fallback candidate without intent -> ready (silent)
    * ============================================================
    */
   effect(() => {
@@ -109,7 +107,7 @@ export function setupPaymentFlowMachineBridge(
 
   /**
    * ============================================================
-   * Effect #3: errores de máquina → fallback orchestrator / UI error policy
+   * Effect #3: machine errors -> fallback orchestrator / UI error policy
    * ============================================================
    */
   effect(() => {
@@ -117,7 +115,7 @@ export function setupPaymentFlowMachineBridge(
     const err = machineError();
     if (!snapshot.hasTag('error') || !err) return;
 
-    // Normalmente tu máquina ya normaliza, pero por seguridad:
+    // The machine usually normalizes, but keep a safety check:
     const normalized = normalizePaymentError(err);
 
     applyFailureState(store, normalized);

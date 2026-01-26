@@ -23,7 +23,7 @@ export interface ErrorEvent<TActor extends ActorId> {
   error: unknown;
 }
 
-export type PaymentFlowEvent =
+export type PaymentFlowCommandEvent =
   | {
       type: 'START';
       providerId: PaymentProviderId;
@@ -33,7 +33,9 @@ export type PaymentFlowEvent =
   | { type: 'CONFIRM'; providerId: PaymentProviderId; intentId: string; returnUrl?: string }
   | { type: 'CANCEL'; providerId: PaymentProviderId; intentId: string }
   | { type: 'REFRESH'; providerId?: PaymentProviderId; intentId?: string }
-  | { type: 'RESET' }
+  | { type: 'RESET' };
+
+export type PaymentFlowSystemEvent =
   | {
       type: 'FALLBACK_REQUESTED';
       failedProviderId: PaymentProviderId;
@@ -46,7 +48,11 @@ export type PaymentFlowEvent =
       request: CreatePaymentRequest;
       failedProviderId?: PaymentProviderId;
     }
-  | { type: 'FALLBACK_ABORT' }
+  | { type: 'FALLBACK_ABORT' };
+
+export type PaymentFlowEvent =
+  | PaymentFlowCommandEvent
+  | PaymentFlowSystemEvent
   // ✅ Done events (invoke resolve)
   | DoneEvent<'start', PaymentIntent>
   | DoneEvent<'confirm', PaymentIntent>
@@ -58,20 +64,7 @@ export type PaymentFlowEvent =
   | ErrorEvent<'cancel'>
   | ErrorEvent<'status'>;
 
-export type PaymentFlowPublicEvent = Extract<
-  PaymentFlowEvent,
-  {
-    type:
-      | 'START'
-      | 'CONFIRM'
-      | 'CANCEL'
-      | 'REFRESH'
-      | 'RESET'
-      | 'FALLBACK_REQUESTED'
-      | 'FALLBACK_EXECUTE'
-      | 'FALLBACK_ABORT';
-  }
->;
+export type PaymentFlowPublicEvent = PaymentFlowCommandEvent;
 
 export interface PaymentFlowFallbackContext {
   eligible: boolean;
@@ -79,6 +72,14 @@ export interface PaymentFlowFallbackContext {
   failedProviderId: PaymentProviderId | null;
   request: CreatePaymentRequest | null;
   selectedProviderId: PaymentProviderId | null;
+}
+
+export interface PaymentFlowPollingState {
+  attempt: number;
+}
+
+export interface PaymentFlowStatusRetryState {
+  count: number;
 }
 
 export interface PaymentFlowMachineContext {
@@ -90,6 +91,8 @@ export interface PaymentFlowMachineContext {
   intentId: string | null;
   error: PaymentError | null;
   fallback: PaymentFlowFallbackContext;
+  polling: PaymentFlowPollingState;
+  statusRetry: PaymentFlowStatusRetryState;
 }
 
 export interface StartInput {

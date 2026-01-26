@@ -50,8 +50,8 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
   validate(req: CreatePaymentRequest): void {
     const supportedCurrencies: CurrencyCode[] = ['USD', 'MXN'];
 
-    // Currency debe existir (normalmente ya viene validado por BasePaymentGateway),
-    // pero aquí mantenemos regla específica PayPal.
+    // Currency must exist (usually validated by BasePaymentGateway),
+    // but we keep PayPal-specific rules here.
     if (!req.currency || !supportedCurrencies.includes(req.currency)) {
       throw invalidRequestError(
         I18nKeys.errors.currency_not_supported,
@@ -72,7 +72,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
 
     const minAmount = minAmounts[req.currency] ?? 1;
 
-    // amount inválido o menor al mínimo de PayPal por moneda
+    // Invalid amount or below PayPal minimum for the currency
     if (!Number.isFinite(req.amount) || req.amount < minAmount) {
       throw invalidRequestError(
         I18nKeys.errors.amount_invalid,
@@ -81,7 +81,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
       );
     }
 
-    // Token se ignora en PayPal redirect flow (no tronamos, solo warning)
+    // Token is ignored in PayPal redirect flow (warn but do not fail)
     if (req.method?.token) {
       this.logger.warn(
         '[PaypalRedirectStrategy] Token provided but PayPal uses its own checkout flow',
@@ -102,8 +102,8 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
    * - Product/service description
    */
   prepare(req: CreatePaymentRequest, context?: StrategyContext): StrategyPrepareResult {
-    // StrategyContext es la ÚNICA fuente de URLs para PayPal
-    // No inventar URLs - si falta returnUrl => error claro y temprano
+    // StrategyContext is the ONLY source of URLs for PayPal
+    // Do not invent URLs - if returnUrl is missing, fail fast
     if (!context?.returnUrl) {
       throw invalidRequestError(
         I18nKeys.errors.return_url_required,
@@ -133,7 +133,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     return {
       preparedRequest: {
         ...req,
-        // PayPal no usa token desde cliente, solo necesitamos tipo
+        // PayPal does not use client token, only needs type
         method: { type: 'card' },
         returnUrl,
         cancelUrl,
@@ -207,7 +207,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
         },
       );
 
-      // Fallback: si el intent ya trae redirectUrl, úsalo como redirect genérico
+      // Fallback: if intent already has redirectUrl, use it as a generic redirect
       if (intent.redirectUrl) {
         return {
           ...intent,

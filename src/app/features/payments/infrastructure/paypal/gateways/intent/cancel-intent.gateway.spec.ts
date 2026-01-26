@@ -43,7 +43,7 @@ describe('PaypalCancelIntentGateway', () => {
         expect(intent.status).toBe('canceled');
       },
       error: () => {
-        expect.fail('No debería emitir error');
+        expect.fail('should not emit error');
       },
     });
 
@@ -69,7 +69,7 @@ describe('PaypalCancelIntentGateway', () => {
   it('propagates provider error when backend fails', () => {
     gateway.execute({ intentId: 'ORDER_ERROR' }).subscribe({
       next: () => {
-        expect.fail('Se esperaba error');
+        expect.fail('Expected error');
       },
       error: (err) => {
         expect(err.code).toBe('provider_error');

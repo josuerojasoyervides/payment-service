@@ -23,7 +23,7 @@ describe('PaymentsStore', () => {
     TestBed.tick();
     // 1 vuelta de microtasks
     /* await Promise.resolve(); */
-    // 2 vueltas por si hay effects encadenados
+    // 2 passes in case of chained effects
     /* await Promise.resolve(); */
   };
 
@@ -209,6 +209,7 @@ describe('PaymentsStore', () => {
   const stateMachineMock: Partial<PaymentFlowActorService> = {
     snapshot: machineSnapshot as any,
     send: vi.fn(() => true),
+    sendSystem: vi.fn(),
   };
 
   beforeEach(() => {
@@ -262,7 +263,7 @@ describe('PaymentsStore', () => {
       expect(store.error()).toBeNull();
       expect(store.selectedProvider()).toBe('stripe');
 
-      // 2) la máquina produce intent
+      // 2) the machine produces an intent
       setMachineReady();
       await flush();
 
@@ -317,7 +318,7 @@ describe('PaymentsStore', () => {
         }),
       );
 
-      // y si la máquina responde ok
+      // and if the machine responds ok
       setMachineReady();
       await flush();
 
@@ -578,13 +579,13 @@ describe('PaymentsStore', () => {
       setMachineReady();
       await flush();
 
-      (stateMachineMock.send as any).mockClear();
+      (stateMachineMock.sendSystem as any).mockClear();
 
       store.executeFallback('paypal');
       await flush();
 
-      expect(stateMachineMock.send).toHaveBeenCalledTimes(1);
-      expect(stateMachineMock.send).toHaveBeenCalledWith(
+      expect(stateMachineMock.sendSystem).toHaveBeenCalledTimes(1);
+      expect(stateMachineMock.sendSystem).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'FALLBACK_EXECUTE',
           providerId: 'paypal',

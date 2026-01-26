@@ -9,11 +9,11 @@ import providePayments from '../../../config/payment.providers';
 import { CheckoutComponent } from './checkout.page';
 
 /**
- * Espera a que el flow complete el flujo:
+ * Wait for the flow to complete:
  * - success: intent existe y no loading
  * - error: hasError true y no loading
  *
- * Si se pasa del timeout, arroja error con snapshot del estado final.
+ * If it times out, throw an error with the final state snapshot.
  */
 async function waitForPaymentComplete(
   flow: PaymentFlowFacade,
@@ -32,7 +32,7 @@ async function waitForPaymentComplete(
     await new Promise((resolve) => setTimeout(resolve, pollMs));
   }
 
-  // Snapshot final para debugging
+  // Final snapshot for debugging
   const final = {
     intent: flow.intent(),
     isLoading: flow.isLoading(),
@@ -62,9 +62,9 @@ async function waitForPaymentComplete(
 }
 
 /**
- * Helper: asegura que el componente esté en estado "form valid"
- * antes de ejecutar el pago, evitando flakiness por reconstrucciones
- * del form / effects / whenStable.
+ * Helper: ensure the component is in \"form valid\" state
+ * before executing the payment, avoiding flakiness caused by
+ * form rebuilds / effects / whenStable.
  */
 function ensureValidForm(component: CheckoutComponent): void {
   if (!component.isFormValid()) component.onFormValidChange(true);
@@ -72,8 +72,8 @@ function ensureValidForm(component: CheckoutComponent): void {
 }
 
 /**
- * Helper: micro-wait para permitir que effects/render terminen.
- * Útil cuando cambias señales + detectChanges.
+ * Helper: micro-wait to allow effects/render to finish.
+ * Useful when changing signals + detectChanges.
  */
 async function settle(fixture: ComponentFixture<any>): Promise<void> {
   await fixture.whenStable();
@@ -82,12 +82,12 @@ async function settle(fixture: ComponentFixture<any>): Promise<void> {
 
 /**
  * Real integration tests for CheckoutComponent.
- * - Flow real
- * - Registry real
- * - Providers reales
- * - FakeGateway real (configurado en payment.providers.ts)
+ * - Real flow
+ * - Real registry
+ * - Real providers
+ * - Real FakeGateway (configured in payment.providers.ts)
  */
-describe('CheckoutComponent - Integración Real', () => {
+describe('CheckoutComponent - Real Integration', () => {
   let component: CheckoutComponent;
   let fixture: ComponentFixture<CheckoutComponent>;
   let registry: ProviderFactoryRegistry;
@@ -107,28 +107,28 @@ describe('CheckoutComponent - Integración Real', () => {
     logger = TestBed.inject(LoggerService);
     flow = TestBed.inject(PaymentFlowFacade);
 
-    // Estado limpio en cada test
+    // Clean state before each test
     flow.reset();
 
     fixture.detectChanges();
     await settle(fixture);
   });
 
-  describe('Inicialización', () => {
-    it('debe crear el componente con todos los servicios reales', () => {
+  describe('Initialization', () => {
+    it('should create the component with all real services', () => {
       expect(component).toBeTruthy();
       expect(registry).toBeTruthy();
       expect(logger).toBeTruthy();
       expect(flow).toBeTruthy();
     });
 
-    it('debe inicializar con valores por defecto', () => {
+    it('should initialize with default values', () => {
       expect(component.amount()).toBe(499.99);
       expect(component.currency()).toBe('MXN');
       expect(component.orderId()).toBeTruthy();
     });
 
-    it('debe auto-seleccionar el primer provider disponible', async () => {
+    it('should auto-select the first available provider', async () => {
       await settle(fixture);
 
       const providers = component.availableProviders();
@@ -140,7 +140,7 @@ describe('CheckoutComponent - Integración Real', () => {
     });
   });
 
-  describe('Flujo completo de pago exitoso - Stripe + Card', () => {
+  describe('Full successful payment flow - Stripe + Card', () => {
     beforeEach(async () => {
       component.selectedProvider.set('stripe');
       component.selectedMethod.set('card');
@@ -148,7 +148,7 @@ describe('CheckoutComponent - Integración Real', () => {
       await settle(fixture);
     });
 
-    it('debe procesar pago completo desde formulario hasta resultado exitoso', async () => {
+    it('should process full payment from form to success result', async () => {
       const requirements = component.fieldRequirements();
       expect(requirements).toBeTruthy();
       expect(requirements?.fields.length).toBeGreaterThan(0);
@@ -159,7 +159,7 @@ describe('CheckoutComponent - Integración Real', () => {
 
       component.processPayment();
 
-      // Debe entrar a loading inmediatamente
+      // Should enter loading immediately
       await settle(fixture);
       expect(flow.isLoading() || flow.isReady() || flow.hasError()).toBe(true);
       expect(component.isLoading() || component.isReady() || component.hasError()).toBe(true);
@@ -178,13 +178,13 @@ describe('CheckoutComponent - Integración Real', () => {
       expect(intent?.amount).toBe(499.99);
       expect(intent?.currency).toBe('MXN');
 
-      // Componente muestra resultado
+      // Component shows result
       expect(component.showResult()).toBe(true);
       expect(component.currentIntent()).toBeTruthy();
       expect(component.currentIntent()?.status).toBe('succeeded');
     });
 
-    it('debe validar el formato del token de desarrollo (no error en el flujo)', async () => {
+    it('should validate dev token format (no error in the flow)', async () => {
       await settle(fixture);
 
       ensureValidForm(component);
@@ -201,11 +201,11 @@ describe('CheckoutComponent - Integración Real', () => {
       expect(intent?.status).toBe('succeeded');
     });
 
-    it('debe manejar saveForFuture como checkbox (boolean) si el field existe', async () => {
+    it('should handle saveForFuture as a checkbox (boolean) if field exists', async () => {
       const requirements = component.fieldRequirements();
       const saveForFutureField = requirements?.fields.find((f) => f.name === 'saveForFuture');
 
-      // Si no existe, este test se vuelve no aplicable y no falla
+      // If it does not exist, this test is not applicable and should not fail
       if (!saveForFutureField) return;
 
       await settle(fixture);
@@ -238,7 +238,7 @@ describe('CheckoutComponent - Integración Real', () => {
       expect(component.isFormValid()).toBe(true);
     });
 
-    it('debe terminar en requires_action y mostrar NextActionCard', async () => {
+    it('should terminar en requires_action y mostrar NextActionCard', async () => {
       /**
        * IMPORTANTE:
        * Este token es “especial” para simular 3DS.
@@ -249,7 +249,7 @@ describe('CheckoutComponent - Integración Real', () => {
 
       component.processPayment();
 
-      // Esperar completion (por éxito o error)
+      // Wait for completion (success or error)
       await waitForPaymentComplete(flow);
       fixture.detectChanges();
 
@@ -261,20 +261,20 @@ describe('CheckoutComponent - Integración Real', () => {
       const intent = flow.intent();
       expect(intent).toBeTruthy();
 
-      // Debe ser requires_action
+      // Should be requires_action
       expect(intent?.provider).toBe('stripe');
       expect(intent?.status).toBe('requires_action');
 
-      // Debe venir con nextAction tipo 3DS
+      // Should include nextAction type 3DS
       expect(intent?.nextAction).toBeTruthy();
       expect(intent?.nextAction?.type).toBe('3ds');
 
-      // El componente debe reflejarlo
+      // The component should reflect it
       expect(component.currentIntent()).toBeTruthy();
       expect(component.currentIntent()?.status).toBe('requires_action');
       expect(component.showResult()).toBe(true);
 
-      // ✅ UI: debe existir el NextActionCard en el DOM
+      // ✅ UI: should existir el NextActionCard en el DOM
       const el: HTMLElement = fixture.nativeElement;
       const nextActionCard = el.querySelector('app-next-action-card');
       expect(nextActionCard).toBeTruthy();
@@ -289,7 +289,7 @@ describe('CheckoutComponent - Integración Real', () => {
       await settle(fixture);
     });
 
-    it('debe transicionar correctamente: idle -> loading -> ready', async () => {
+    it('should transicionar correctamente: idle -> loading -> ready', async () => {
       expect(flow.isLoading()).toBe(false);
       expect(flow.isReady()).toBe(false);
       expect(flow.hasError()).toBe(false);
@@ -309,7 +309,7 @@ describe('CheckoutComponent - Integración Real', () => {
       expect(flow.hasError()).toBe(false);
     });
 
-    it('debe dejar intent en estado exitoso después del flujo', async () => {
+    it('should leave intent in success state after the flow', async () => {
       ensureValidForm(component);
 
       component.processPayment();
@@ -333,7 +333,7 @@ describe('CheckoutComponent - Integración Real', () => {
       await settle(fixture);
     });
 
-    it('debe procesar pago SPEI completo con customerEmail', async () => {
+    it('should process full SPEI payment with customerEmail', async () => {
       const requirements = component.fieldRequirements();
       expect(requirements).toBeTruthy();
 
@@ -362,13 +362,13 @@ describe('CheckoutComponent - Integración Real', () => {
       expect(intent?.nextAction?.type).toBe('spei');
     });
 
-    it('NO debe procesar SPEI si falta customerEmail (form inválido)', async () => {
+    it('should not process SPEI when customerEmail is missing (invalid form)', async () => {
       const requirements = component.fieldRequirements();
       expect(requirements).toBeTruthy();
 
       await settle(fixture);
 
-      // No proporcionar customerEmail => inválido
+      // Do not provide customerEmail => invalid
       component.onFormChange({});
       component.onFormValidChange(false);
       fixture.detectChanges();
@@ -377,7 +377,7 @@ describe('CheckoutComponent - Integración Real', () => {
 
       component.processPayment();
 
-      // Debería bloquearse inmediatamente, sin loading y sin intent
+      // Should bloquearse inmediatamente, sin loading y sin intent
       await new Promise((resolve) => setTimeout(resolve, 50));
       fixture.detectChanges();
 
@@ -395,14 +395,14 @@ describe('CheckoutComponent - Integración Real', () => {
       await settle(fixture);
     });
 
-    it('debe procesar pago PayPal completo con nextAction.paypal_approve', async () => {
+    it('should process full PayPal payment with nextAction.paypal_approve', async () => {
       const requirements = component.fieldRequirements();
       expect(requirements).toBeTruthy();
 
       await settle(fixture);
 
-      // En PayPal el request suele llevar returnUrl/cancelUrl desde el StrategyContext (CheckoutComponent),
-      // no necesariamente desde el formulario. Marcamos válido para permitir el flujo.
+      // In PayPal, the request usually carries returnUrl/cancelUrl from StrategyContext (CheckoutComponent),
+      // not necessarily from the form. Mark as valid to allow the flow.
       ensureValidForm(component);
 
       component.processPayment();
@@ -421,7 +421,7 @@ describe('CheckoutComponent - Integración Real', () => {
       expect(intent?.nextAction).toBeTruthy();
       expect(intent?.nextAction?.type).toBe('paypal_approve');
 
-      // Mejora: validar que la acción trae un "link" útil (approveUrl/url)
+      // Improvement: validate that the action provides a useful link (approveUrl/url)
       // (sin amarrarte a una sola propiedad exacta)
       if (intent?.nextAction?.type === 'paypal_approve') {
         const action: any = intent.nextAction;
@@ -437,7 +437,7 @@ describe('CheckoutComponent - Integración Real', () => {
     }, 10000);
   });
 
-  describe('Manejo de errores en flujo completo', () => {
+  describe('Error handling in full flow', () => {
     beforeEach(async () => {
       component.selectedProvider.set('stripe');
       component.selectedMethod.set('card');
@@ -445,7 +445,7 @@ describe('CheckoutComponent - Integración Real', () => {
       await settle(fixture);
     });
 
-    it('debe manejar errores de validación del token (en happy path no debe fallar)', async () => {
+    it('should handle token validation errors (happy path should not fail)', async () => {
       ensureValidForm(component);
 
       component.processPayment();
@@ -457,28 +457,28 @@ describe('CheckoutComponent - Integración Real', () => {
       expect(flow.isReady()).toBe(true);
     });
 
-    it('debe FALLAR cuando el token es inválido (Stripe + Card) y reflejar estado de error', async () => {
+    it('should fail when token is invalid (Stripe + Card) and reflect error state', async () => {
       component.selectedProvider.set('stripe');
       component.selectedMethod.set('card');
       fixture.detectChanges();
       await fixture.whenStable();
       fixture.detectChanges();
 
-      // Forzar gating del formulario
+      // Force form gating
       component.onFormValidChange(true);
 
-      // Token inválido intencional
+      // Intentionally invalid token
       component.onFormChange({ token: 'bad_token' });
       fixture.detectChanges();
 
       component.processPayment();
 
       // ✅ IMPORTANTE:
-      // Con token inválido puede fallar tan rápido que jamás entra a loading.
-      // Así que no lo exigimos.
+      // With an invalid token it may fail so fast it never enters loading.
+      // So we do not require it.
       expect(component.isFormValid()).toBe(true);
 
-      // Esperar a que termine por éxito o error
+      // Wait for completion (success or error)
       await waitForPaymentComplete(flow);
       fixture.detectChanges();
 
@@ -490,7 +490,7 @@ describe('CheckoutComponent - Integración Real', () => {
       // Idealmente no hay intent
       expect(flow.intent()).toBeNull();
 
-      // El componente debe reflejar el error
+      // The component should reflect the error
       expect(component.hasError()).toBe(true);
       expect(component.currentError()).toBeTruthy();
       expect(component.showResult()).toBe(true);
@@ -502,7 +502,7 @@ describe('CheckoutComponent - Integración Real', () => {
     });
   });
 
-  describe('Integración con PaymentFormComponent', () => {
+  describe('Integration with PaymentFormComponent', () => {
     beforeEach(async () => {
       component.selectedProvider.set('stripe');
       component.selectedMethod.set('card');
@@ -510,7 +510,7 @@ describe('CheckoutComponent - Integración Real', () => {
       await settle(fixture);
     });
 
-    it('debe integrarse correctamente con el formulario dinámico', async () => {
+    it('should integrate correctly with the dynamic form', async () => {
       const requirements = component.fieldRequirements();
       expect(requirements).toBeTruthy();
 
@@ -525,7 +525,7 @@ describe('CheckoutComponent - Integración Real', () => {
       expect(component.isFormValid()).toBe(true);
     });
 
-    it('debe manejar cambios del formulario en tiempo real', async () => {
+    it('should handle real-time form changes', async () => {
       await settle(fixture);
 
       component.onFormValidChange(true);
@@ -536,7 +536,7 @@ describe('CheckoutComponent - Integración Real', () => {
     });
   });
 
-  describe('Reseteo de pago', () => {
+  describe('Payment reset', () => {
     beforeEach(async () => {
       component.selectedProvider.set('stripe');
       component.selectedMethod.set('card');
@@ -553,7 +553,7 @@ describe('CheckoutComponent - Integración Real', () => {
       expect(flow.intent()).toBeTruthy();
     });
 
-    it('debe resetear correctamente después de un pago exitoso', async () => {
+    it('should reset correctly after a successful payment', async () => {
       const oldOrderId = component.orderId();
 
       component.resetPayment();
@@ -564,7 +564,7 @@ describe('CheckoutComponent - Integración Real', () => {
       expect(flow.isReady()).toBe(false);
       expect(flow.hasError()).toBe(false);
 
-      // El orderId debe cambiar
+      // El orderId should cambiar
       const newOrderId = component.orderId();
       expect(newOrderId).toBeTruthy();
       expect(newOrderId).not.toBe(oldOrderId);

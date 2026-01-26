@@ -20,23 +20,23 @@ import { PaymentHistoryEntry } from '../store/payment-store.history.types';
 import { PaymentsState } from '../store/payment-store.state';
 
 /**
- * Adapter que implementa PaymentStatePort usando NgRx Signals.
+ * Adapter that implements PaymentStatePort using NgRx Signals.
  *
- * Este adapter permite que los componentes usen el port sin conocer
- * la implementación concreta. Si en el futuro se decide cambiar
- * de NgRx Signals a otra librería, solo hay que crear un nuevo adapter.
+ * This adapter lets components use the port without knowing
+ * the concrete implementation. If you later switch
+ * from NgRx Signals to another library, you only need a new adapter.
  *
- * Patrón: Adapter
- * - Adapta la interface de PaymentsStore al contrato PaymentStatePort
- * - Los componentes no conocen PaymentsStore directamente
- * - Facilita testing con mocks del port
+ * Pattern: Adapter
+ * - Adapts PaymentsStore interface to PaymentStatePort contract
+ * - Components do not access PaymentsStore directly
+ * - Eases testing with port mocks
  *
  * @example
  * ```typescript
- * // En payment.providers.ts
+ * // In payment.providers.ts
  * { provide: PAYMENT_STATE, useClass: NgRxSignalsStateAdapter }
  *
- * // En el componente
+ * // In a component
  * private readonly state = inject(PAYMENT_STATE);
  * readonly isLoading = this.state.isLoading; // Signal<boolean>
  * ```
@@ -46,7 +46,7 @@ export class NgRxSignalsStateAdapter implements PaymentStorePort {
   private readonly store = inject(PaymentsStore);
 
   // ============================================================
-  // ESTADO REACTIVO (delegado al store)
+  // REACTIVE STATE (delegated to store)
   // ============================================================
 
   readonly state: Signal<PaymentsState> = computed(() => ({
@@ -68,14 +68,14 @@ export class NgRxSignalsStateAdapter implements PaymentStorePort {
     this.store.selectedProvider(),
   );
 
-  // Estados más descriptivos basados en el intent
+  // More descriptive states based on intent
   readonly requiresUserAction: Signal<boolean> = this.store.requiresUserAction;
   readonly isSucceeded: Signal<boolean> = this.store.isSucceeded;
   readonly isProcessing: Signal<boolean> = this.store.isProcessing;
   readonly isFailed: Signal<boolean> = this.store.isFailed;
 
   // ============================================================
-  // ESTADO DE FALLBACK
+  // FALLBACK STATE
   // ============================================================
 
   readonly hasPendingFallback: Signal<boolean> = this.store.hasPendingFallback;
@@ -87,7 +87,7 @@ export class NgRxSignalsStateAdapter implements PaymentStorePort {
   readonly fallbackState: Signal<FallbackState> = computed(() => this.store.fallback());
 
   // ============================================================
-  // HISTORIAL
+  // HISTORY
   // ============================================================
 
   readonly historyCount: Signal<number> = this.store.historyCount;

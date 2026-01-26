@@ -8,28 +8,28 @@ import { CircuitBreakerService, CircuitOpenError } from '../circuit-breaker';
 import { RetryService } from './retry.service';
 
 /**
- * Patrones de URL a excluir del retry automático.
+ * URL patterns excluded from automatic retries.
  */
 const EXCLUDE_PATTERNS = [/\/health$/, /\/metrics$/, /\.json$/];
 
 /**
- * Interceptor HTTP que implementa retry automático con backoff exponencial.
+ * HTTP interceptor that implements automatic retries with exponential backoff.
  *
- * Características:
- * - Backoff exponencial con jitter
- * - Respeta header Retry-After
- * - No reintenta si el Circuit Breaker está abierto
- * - Logging detallado con correlation IDs
- * - Configurable vía RETRY_CONFIG token
+ * Features:
+ * - Exponential backoff with jitter
+ * - Respects Retry-After header
+ * - Does not retry if Circuit Breaker is open
+ * - Detailed logging with correlation IDs
+ * - Configurable via RETRY_CONFIG token
  *
- * Orden recomendado de interceptors:
- * 1. retryInterceptor (este)
+ * Recommended interceptor order:
+ * 1. retryInterceptor (this)
  * 2. resilienceInterceptor
  * 3. loggingInterceptor
  *
  * @example
  * ```typescript
- * // En app.config.ts
+ * // In app.config.ts
  * provideHttpClient(
  *   withInterceptors([
  *     retryInterceptor,
@@ -48,7 +48,7 @@ export const retryInterceptor: HttpInterceptorFn = (req, next) => {
   const method = req.method;
   const config = retryService.getConfig();
 
-  // Verificar si debemos excluir esta URL
+  // Check if we should exclude this URL
   if (shouldExclude(endpoint)) {
     return next(req);
   }
@@ -129,7 +129,7 @@ function handleError(
   // Calcular delay
   const delay = retryService.getDelay(context.attempt, error);
 
-  // Registrar intento
+  // Record attempt
   retryService.recordAttempt(endpoint, method, context.attempt, delay, error);
 
   logger.warn(`Retrying request`, 'RetryInterceptor', {
@@ -141,19 +141,19 @@ function handleError(
     status: error.status,
   });
 
-  // Esperar y reintentar
+  // Wait and retry
   return timer(delay).pipe(mergeMap(() => retryFn()));
 }
 
 /**
- * Verifica si la URL debe excluirse del retry.
+ * Check if the URL should be excluded from retry.
  */
 function shouldExclude(url: string): boolean {
   return EXCLUDE_PATTERNS.some((pattern) => pattern.test(url));
 }
 
 /**
- * Verifica si el circuit breaker está abierto para el endpoint.
+ * Check if the circuit breaker is open for the endpoint.
  */
 function isCircuitOpen(circuitBreaker: CircuitBreakerService, endpoint: string): boolean {
   try {

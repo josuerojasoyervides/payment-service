@@ -1,347 +1,235 @@
 # Payments Module — Architecture & Quality Rules
 
-> **Última revisión:** 2026-01-26  
-> Este repo es un laboratorio para practicar arquitectura aplicada a pagos **sin convertirlo en una telaraña**.
+> **Last review:** 2026-01-26
+> This repo is a lab to practice payments architecture **without turning it into a spider web**.
 
-## Cómo leer este documento (importante)
+## How to read this document
 
-Este doc cumple 2 roles al mismo tiempo:
+This doc has two roles:
 
-1. **North Star (guía)** — cómo _debería_ verse el módulo cuando esté “bien cerrado”.
-2. **Snapshot (historial)** — qué cosas ya están aplicadas hoy, qué está a medias y qué es deuda aceptada temporalmente.
+1. **North Star (guide)** — how the module should look when it is stable.
+2. **Snapshot (history)** — what is applied today, what is partial, and what is accepted debt.
 
-➡️ Por eso vas a ver secciones con:
+You will see sections with:
 
-- **✅ Regla (target)**
-- **📌 Estado actual (as‑of 2026-01-24)**
-- **🧾 Desviación aceptada** (si existe) + **plan de cierre**
-
----
-
-## 0) Capas del módulo (target)
-
-> **Objetivo:** acoplamiento mínimo + evolución incremental.
-
-**Capas (feature `payments/`):**
-
-- `domain/` → modelos, tipos, factories, reglas puras TS.
-- `application/` → casos de uso, puertos, servicios de orquestación (sin UI).
-- `infrastructure/` → integración con providers (Stripe/PayPal), mapping, DTOs.
-- `shared/` → utilidades compartidas del feature **que NO son UI** (helpers, mappers neutrales).
-- `ui/` → páginas, componentes, renderers, adapters a la vista.
-- `config/` → composición DI del feature (providers, tokens, wiring).
-
-✅ **Regla:** una capa solo puede depender de capas “hacia adentro” (o laterales estrictamente controladas).
-
-📌 **Estado actual:** la estructura ya existe y se respeta globalmente.
+- **Rule (target)**
+- **Current state (as of 2026-01-26)**
+- **Accepted deviation** (if any) + **closure plan**
 
 ---
 
-## 1) Boundaries no negociables
+## Language policy
 
-### 1.1 Domain es TS puro
+**Official language:** English.
 
-✅ Regla (target)
-
-- `domain/` **no** importa Angular, RxJS, HttpClient, `i18n.t`.
-- Solo tipos, factories, validators, normalización de datos **pura**.
-
-📌 Estado actual
-
-- Se cumple.
+- All code, comments, tests, docs, and logs must be written in English.
+- The only exception is i18n translation files (they can contain localized copy).
 
 ---
 
-### 1.2 UI nunca orquesta lógica de negocio
+## 0) Module layers (target)
 
-✅ Regla (target)
+> **Goal:** minimal coupling + incremental evolution.
 
-- UI solo:
-  - dispara acciones / use cases,
-  - renderiza estado,
-  - muestra errores traducidos,
-  - maneja navegación.
+**Layers (feature `payments/`):**
 
-📌 Estado actual
+- `domain/` → models, types, factories, pure TS rules.
+- `application/` → use cases, ports, orchestration services (no UI).
+- `infrastructure/` → provider integrations (Stripe/PayPal), mapping, DTOs.
+- `shared/` → shared feature utilities **that are NOT UI** (helpers, neutral mappers).
+- `ui/` → pages, components, renderers, view adapters.
+- `config/` → feature DI composition (providers, tokens, wiring).
 
-- Se cumple: flow facade + XState llevan el peso; UI no toca store directo.
+**Rule:** a layer may depend only on inner layers (or strictly controlled lateral dependencies).
 
----
-
-### 1.3 Application no depende de Infrastructure
-
-✅ Regla (target)
-
-- `application/` define contratos (“ports”) y orquestación.
-- `infrastructure/` los implementa.
-
-📌 Estado actual
-
-- Se cumple a nivel de imports.
-
-🧾 Desviación aceptada (temporal)
-
-- Hay **abstract base classes con HttpClient** dentro de `application/ports/**` para evitar duplicación de gateways.
-- Esto rompe la pureza “ideal” de application.
-
-🎯 Plan de cierre recomendado
-
-- Separar:
-  - `application/ports/**` → **solo interfaces**
-  - `infrastructure/base/**` → base classes con Angular inject/HttpClient/logger
+**Current state:** structure exists and is respected.
 
 ---
 
-## 2) Dependencias permitidas (mapa rápido)
+## 1) Non-negotiable boundaries
 
-✅ Regla (target)
+### 1.1 Domain is pure TS
 
-- `ui/` → puede importar `application/`, `domain/`, `shared/` (feature), y `src/app/shared/**` (UI global).
-- `application/` → puede importar `domain/` y `shared/` (feature).
-- `infrastructure/` → puede importar `application/` (ports), `domain/`, `shared/` (feature).
-- `shared/` (feature) → puede importar `domain/` únicamente.
-- `config/` → puede importar de todas para cablear DI (es composición).
+**Rule (target)**
 
-❌ Prohibido
+- `domain/` **must not** import Angular, RxJS, HttpClient, `i18n.t`.
+- Only types, factories, validators, and **pure** data normalization.
 
-- `domain/` importando Angular/RxJS/HttpClient.
-- `ui/` importando `infrastructure/` directamente.
-- `shared/` (feature) importando `i18n.t()` o cosas UI.
+**Current state:** satisfied.
 
 ---
 
-## 3) Providers: contratos y responsabilidades
+### 1.2 UI never orchestrates business logic
 
-### 3.1 Qué debe hacer SIEMPRE un gateway (provider)
+**Rule (target)**
 
-✅ Regla (target)
-Un provider gateway SIEMPRE debe:
+- UI only:
+  - triggers actions/use cases,
+  - renders state,
+  - shows translated errors,
+  - handles navigation.
 
-- validar request (mínimo sanity check / required fields),
-- normalizar errores a `PaymentError` (sin texto traducido),
-- mapear DTO → Domain models,
-- log/telemetry **sin filtrar datos sensibles**.
-
-Opcional según caso:
-
-- retries/backoff (si la operación lo amerita),
-- caching (si el endpoint lo permite),
-- timeout / abort.
-
-📌 Estado actual
-
-- En general se cumple.
-- Falta estandarizar tests mínimos por gateway (ver §8).
+**Current state:** satisfied (flow facade + XState carry the weight; UI does not touch store directly).
 
 ---
 
-### 3.2 Qué está prohibido para providers
+### 1.3 Application does not depend on Infrastructure
 
-❌ Prohibido
+**Rule (target)**
 
-- tocar store/UI/router,
-- traducir (no `i18n.t`),
-- decidir fallback,
-- mutar estado global del módulo.
+- `application/` defines contracts (ports) and orchestration.
+- `infrastructure/` implements them.
 
-📌 Estado actual
+**Current state:** satisfied at import level.
 
-- Se cumple.
+---
+
+## 2) Allowed dependencies (quick map)
+
+**Rule (target)**
+
+- `ui/` → can import `application/`, `domain/`, `shared/` (feature), and `src/app/shared/**` (global UI).
+- `application/` → can import `domain/` and `shared/` (feature).
+- `infrastructure/` → can import `application/` (ports), `domain/`, `shared/` (feature).
+- `shared/` (feature) → can import `domain/` only.
+- `config/` → can import all layers for DI wiring.
+
+**Forbidden**
+
+- `domain/` importing Angular/RxJS/HttpClient.
+- `ui/` importing `infrastructure/` directly.
+- `shared/` (feature) importing `i18n.t()` or UI code.
+
+---
+
+## 3) Providers: contracts and responsibilities
+
+### 3.1 What a gateway must always do
+
+**Rule (target)**
+
+A provider gateway must:
+
+- validate requests (minimum sanity check / required fields),
+- normalize errors to `PaymentError` (no translated text),
+- map DTO -> domain models,
+- log/telemetry **without leaking sensitive data**.
+
+Optional (case-by-case):
+
+- retries/backoff,
+- caching,
+- timeout/abort.
+
+**Current state:** satisfied; minimal gateway test coverage complete.
+
+---
+
+### 3.2 What providers must not do
+
+**Forbidden**
+
+- touch store/UI/router,
+- translate (no `i18n.t`),
+- decide fallback,
+- mutate module global state.
+
+**Current state:** satisfied.
 
 ---
 
 ## 4) Fallback policy
 
-✅ Regla (target)
+**Rule (target)**
 
-- El fallback se decide **en Application** (XState/orchestrator), nunca en UI o infra.
-- El fallback se aplica cuando hay request de arranque disponible.
+- Fallback decisions live **in Application** (XState/orchestrator), never in UI or infra.
+- Fallback is only applied when there is a start request available.
 
-📌 Estado actual
-
-- `FallbackOrchestratorService` existe y está integrado.
-- Fallback modelado en la máquina y proyectado por el store.
+**Current state:** `FallbackOrchestratorService` exists and is integrated; fallback is modeled in the machine and projected by the store.
 
 ---
 
-## 5) I18n & PaymentError (contrato oficial)
+## 5) I18n & PaymentError (official contract)
 
-### 5.1 UI-only translation (definición correcta)
+### 5.1 UI-only translation
 
-✅ Regla (target)
-`i18n.t(...)` solo se permite dentro del **UI Layer**, que incluye:
+**Rule (target)**
+
+`i18n.t(...)` is allowed only inside the **UI layer**, which includes:
 
 - `src/app/features/**/ui/**`
-- `src/app/shared/**` _(UI global: navbar, language selector, etc.)_
+- `src/app/shared/**` _(global UI: navbar, language selector, etc.)_
 
-❌ Prohibido en:
+**Forbidden in:**
 
 - `domain/`, `application/`, `infrastructure/`
-- `src/app/features/**/shared/**` _(shared del feature NO es UI)_
+- `src/app/features/**/shared/**` _(feature shared is NOT UI)_
 
-📌 Estado actual
+**Current state:**
 
-- En `payments/` se cumple (no hay `i18n.t` fuera de `payments/ui/**`).
-- En `src/app/shared/**` sí existe traducción (y está permitido por esta regla).
-- Guardrails automáticos evitan regresiones de i18n/messageKey.
+- In `payments/`, the rule is satisfied (no `i18n.t` outside `payments/ui/**`).
+- In `src/app/shared/**` translation exists and is allowed by this rule.
+- Guardrails prevent i18n/messageKey regressions.
 
 ---
 
-### 5.2 Contrato oficial: `PaymentError`
+### 5.2 Official `PaymentError` contract
 
-✅ Regla (target)
-Los errores viajan como datos estructurados, nunca como texto traducido.
+**Rule (target)**
+
+Errors travel as structured data, never as translated text.
 
 ```ts
 export type PaymentErrorParams = Record<string, string | number | boolean | null | undefined>;
 
 export interface PaymentError {
-  code: string; // código técnico estable (provider + normalizado)
-  messageKey: string; // SIEMPRE key i18n (ej: I18nKeys.errors.provider_error)
-  params?: PaymentErrorParams; // params serializables para i18n
-  raw?: unknown; // error original / metadata para debug
+  code: string; // stable technical code (provider + normalized)
+  messageKey: string; // ALWAYS i18n key (e.g., I18nKeys.errors.provider_error)
+  params?: PaymentErrorParams;
+  raw?: unknown; // optional raw error from provider
 }
 ```
 
-✅ Reglas fuertes
-
-- `messageKey` **NO es el mensaje** ya traducido.
-- `raw` nunca se muestra al usuario (solo debug).
-- UI traduce una vez: `i18n.t(error.messageKey, error.params)`.
-
-📌 Estado actual
-
-- Tipo/contrato ya existe y se usa.
-- Hay leaks puntuales que deben eliminarse (ver §5.4).
+**Current state:** enforced; guardrails prevent regressions.
 
 ---
 
-### 5.3 Normalización de errores (infra/app)
+## 6) XState as source of truth
 
-✅ Regla (target)
-Infra y Application deben retornar `PaymentError` con:
+**Rule (target)**
 
-- `messageKey: I18nKeys.errors.xxx`
-- `params` si aplica
+- Flow logic lives in XState.
+- Store is projection only (snapshot + fallback + history).
+- UI consumes facades only.
+- Public commands are separated from internal/system events.
 
-❌ Nunca:
-
-- `messageKey = i18n.t(...)`
-- `message = "texto en español"`
-
-📌 Estado actual
-
-- Infra/App retornan keys correctamente.
+**Current state:** integrated (flow facade + actor + bridge) with command/system event separation.
 
 ---
 
-### 5.4 Desviaciones actuales (deuda i18n)
+## 7) Guardrails (enforcement)
 
-🧾 Deuda conocida (as-of 2026-01-26)
+**Rule (target)**
 
-- ✅ Legacy rendering eliminado (UI solo traduce `messageKey`).
-- ✅ `messageKey` ya no se usa como texto traducido.
-- ✅ Specs actualizados para usar keys reales.
+CI must fail when:
 
----
+- `i18n.t(` appears outside UI,
+- `messageKey` is used as translated text,
+- boundary rules are broken.
 
-## 6) Naming (para no romper consistencia)
-
-✅ Regla (target)
-
-- **Port** = contrato (interface/abstract class) que define el shape.
-- **Gateway** = implementación que habla con un provider (Stripe/PayPal).
-- **Operation** = unidad atómica de provider (“create/confirm/cancel/getStatus”).
-- **Facade** = wrapper por provider que compone operaciones y expone API consistente.
-- **Orchestrator** = lógica de coordinación entre providers (fallback, attempts, policies).
-
-📌 Estado actual
-
-- El repo ya usa `facades/`, `gateways/intent/*`, `FallbackOrchestratorService`.
+**Current state:** guardrails are in place (tests + depcruise).
 
 ---
 
-## 7) Quality rules (prácticas mínimas)
+## 8) Gateway minimum tests (P1)
 
-✅ Regla (target)
+**Rule (target)**
 
-- No barrel files globales que escondan boundaries.
-- Imports claros por capa.
-- Logs con contexto (providerId + operation) y sin secrets.
+Per critical operation, at minimum:
 
-📌 Estado actual
+- happy path
+- invalid request (if applicable)
+- provider error -> normalized `PaymentError`
+- mapping correctness
 
-- Se removieron barrel files antiguos.
-
----
-
-## 8) Testing rules (mínimo realista)
-
-✅ Regla (target)
-Por cada gateway/operación importante debe existir mínimo:
-
-- **happy path**
-- **invalid request** (cuando aplique)
-- **provider error normalizado** (`PaymentError` correcto)
-- **mapping correcto** (DTO → Domain)
-
-📌 Estado actual
-
-- Hay specs, pero varios se quedan en happy path.
-- **Decisión:** o subimos los tests, o bajamos el estándar escrito aquí (pero hoy el doc es más estricto que la realidad).
-
----
-
-## 9) Enforcement automático (recomendado)
-
-✅ Regla (target)
-Las reglas NO deben depender de “acordarse”. Deben fallar en CI.
-
-Recomendaciones prácticas:
-
-- Test de escaneo que falle si encuentra `i18n.t(` fuera del UI layer.
-- Test de escaneo que falle si encuentra `messageKey: this.i18n.t(`.
-- depcruise rule adicional: `application/**` no debe importar `HttpClient` (si decides cerrar esa deuda).
-
-📌 Estado actual
-
-- Guardrails de i18n/messageKey ya existen en tests.
-
----
-
-## 10) Checklist de estabilización (con estado)
-
-### 10.1 Boundaries base
-
-- ✅ Carpeta por capa (`domain / application / infrastructure / shared / ui / config`)
-- ✅ Domain TS puro
-- ✅ UI no importa infraestructura
-- ✅ Application no importa infraestructura
-
-### 10.2 Providers
-
-- ✅ Stripe y PayPal ya siguen el patrón facade + operations
-- 🟡 Tests mínimos por gateway (coverage aún inconsistente)
-
-### 10.3 I18n & errores
-
-- ✅ UI-only translation (UI layer definido correctamente)
-- ✅ PaymentError = messageKey + params (+ raw)
-- ✅ Guardrails automáticos activos
-
-### 10.4 Fallback
-
-- ✅ Orchestrator integrado y estable
-- ✅ Fallback modelado dentro del flow
-- ✅ modo manual/auto configurado y aislado
-
----
-
-## 11) “No inventar” — reglas de mantenimiento del doc
-
-✅ Regla
-
-- Si una regla ya no describe la realidad, se marca como:
-  - **North Star** (target) + **deuda** (por qué aún no está),
-  - o se elimina si dejó de tener sentido.
-- Cada cierre grande deja un “changelog” corto al inicio.
+**Current state:** coverage exists but is still inconsistent.

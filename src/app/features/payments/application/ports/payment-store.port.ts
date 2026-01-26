@@ -18,12 +18,12 @@ import { PaymentHistoryEntry } from '../store/payment-store.history.types';
 import { PaymentFlowStatus, PaymentsState } from '../store/payment-store.state';
 
 /**
- * Función para cancelar suscripción.
+ * Unsubscribe function.
  */
 export type Unsubscribe = () => void;
 
 /**
- * Resumen de debug del estado.
+ * Debug summary of state.
  */
 export interface PaymentDebugSummary {
   status: PaymentFlowStatus;
@@ -35,20 +35,20 @@ export interface PaymentDebugSummary {
 }
 
 /**
- * Port para el estado de pagos.
+ * Payments state port.
  *
- * Esta interface define el contrato que cualquier implementación
- * de manejo de estado debe cumplir. Permite desacoplar los componentes
- * de la implementación concreta (NgRx Signals, Akita, NGXS, etc.).
+ * This interface defines the contract that any state implementation
+ * must satisfy. It decouples components from the concrete implementation
+ * (NgRx Signals, Akita, NGXS, etc.).
  *
- * Principios:
- * - Los componentes solo conocen este port
- * - La implementación concreta se inyecta vía token
- * - Facilita testing y cambios de tecnología
+ * Principles:
+ * - Components only know this port
+ * - Concrete implementation is injected via token
+ * - Eases testing and technology changes
  *
  * @example
  * ```typescript
- * // En el componente
+ * // In a component
  * private readonly state = inject(PAYMENT_STATE);
  *
  * readonly isLoading = this.state.isLoading;
@@ -61,16 +61,16 @@ export interface PaymentDebugSummary {
  */
 export interface PaymentStorePort {
   // ============================================================
-  // ESTADO REACTIVO (Signals)
+  // REACTIVE STATE (Signals)
   // ============================================================
 
-  /** Estado completo como signal (para casos avanzados) */
+  /** Full state as a signal (for advanced cases) */
   readonly state: Signal<PaymentsState>;
 
-  /** Si hay un pago en proceso */
+  /** Whether a payment is in progress */
   readonly isLoading: Signal<boolean>;
 
-  /** Si hay un pago completado exitosamente */
+  /** Whether a payment completed successfully */
   readonly isReady: Signal<boolean>;
 
   readonly hasError: Signal<boolean>;
@@ -102,25 +102,25 @@ export interface PaymentStorePort {
   readonly debugSummary: Signal<PaymentDebugSummary>;
 
   /**
-   * Obtiene un snapshot del estado actual.
-   * Preferir usar las signals directamente.
+   * Get a snapshot of the current state.
+   * Prefer using signals directly.
    */
   getSnapshot(): Readonly<PaymentsState>;
 
   /**
-   * Suscribe a cambios de estado (patrón observer legacy).
-   * Preferir usar signals con effect().
+   * Subscribe to state changes (legacy observer pattern).
+   * Prefer using signals with effect().
    *
-   * @returns Función para cancelar suscripción
+   * @returns Function to cancel subscription
    */
   subscribe(listener: () => void): Unsubscribe;
 
   // ============================================================
-  // ACCIONES DE PAGO
+  // PAYMENT ACTIONS
   // ============================================================
 
   /**
-   * Inicia un nuevo pago.
+   * Start a new payment.
    */
   startPayment(
     request: CreatePaymentRequest,
@@ -129,55 +129,55 @@ export interface PaymentStorePort {
   ): void;
 
   /**
-   * Confirma un pago existente.
+   * Confirm an existing payment.
    */
   confirmPayment(request: ConfirmPaymentRequest, providerId: PaymentProviderId): void;
 
   /**
-   * Cancela un pago existente.
+   * Cancel an existing payment.
    */
   cancelPayment(request: CancelPaymentRequest, providerId: PaymentProviderId): void;
 
   /**
-   * Refresca el estado de un pago.
+   * Refresh payment status.
    */
   refreshPayment(request: GetPaymentStatusRequest, providerId: PaymentProviderId): void;
 
   // ============================================================
-  // ACCIONES DE UI
+  // UI ACTIONS
   // ============================================================
 
   /**
-   * Selecciona un provider.
+   * Select a provider.
    */
   selectProvider(providerId: PaymentProviderId): void;
 
   /**
-   * Limpia el error actual.
+   * Clear current error.
    */
   clearError(): void;
 
   /**
-   * Resetea el estado a inicial.
+   * Reset to initial state.
    */
   reset(): void;
 
   /**
-   * Limpia el historial.
+   * Clear history.
    */
   clearHistory(): void;
 
   // ============================================================
-  // ACCIONES DE FALLBACK
+  // FALLBACK ACTIONS
   // ============================================================
 
   /**
-   * Ejecuta un fallback con el provider seleccionado.
+   * Execute a fallback with the selected provider.
    */
   executeFallback(providerId: PaymentProviderId): void;
 
   /**
-   * Cancela el fallback pendiente.
+   * Cancel pending fallback.
    */
   cancelFallback(): void;
 }

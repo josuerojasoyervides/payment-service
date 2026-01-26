@@ -1,133 +1,133 @@
 # PR Title
 
-<!-- Ej: "Stabilize PaymentError mapping in UI + tests" -->
+<!-- Example: "Stabilize PaymentError mapping in UI + tests" -->
 
-## 🎯 Objetivo del cambio
+## 🎯 Change objective
 
-<!-- Explica el propósito real del PR en 1–3 líneas -->
-
--
-
-## 🧠 Contexto / por qué se necesitaba
-
-<!-- Qué problema resolvemos y por qué importa -->
+<!-- Explain the real purpose of the PR in 1–3 lines -->
 
 -
 
-## ✅ Alcance (qué incluye)
+## 🧠 Context / why it was needed
 
-<!-- Lista explícita de cosas que sí cambiaste -->
+<!-- What problem are we solving and why it matters -->
+
+-
+
+## ✅ Scope (what it includes)
+
+<!-- Explicit list of what you changed -->
 
 - [ ]
 - [ ]
 
-## 🚫 Fuera de alcance (qué NO incluye)
+## 🚫 Out of scope (what it does NOT include)
 
-<!-- Para evitar scope creep -->
+<!-- Avoid scope creep -->
 
-- [ ] No se agregan features nuevas
-- [ ] No se hace refactor masivo
-- [ ] No se cambian contratos salvo que sea necesario y documentado
-
----
-
-## 🏗️ Arquitectura / reglas (checklist obligatorio)
-
-### Capas y dependencias
-
-- [ ] Domain sigue siendo TypeScript puro (sin Angular/RxJS/Http/i18n/logger)
-- [ ] Application depende solo de Domain
-- [ ] Infrastructure depende de Application + Domain
-- [ ] UI depende solo de Application
-
-### OCP y extensibilidad
-
-- [ ] No agregué `switch(providerId)` en use cases
-- [ ] No introduje `if/else` gigante por provider/method
-- [ ] Agregar un provider/method con este PR sería más fácil que antes
-
-### Errores y estabilidad
-
-- [ ] Infra normaliza errores a `PaymentError`
-- [ ] `PaymentError` mantiene shape estable: `{ code, providerId, messageKey, raw, stacks }`
-- [ ] No introduje `any` / `as any` / hacks para avanzar
-- [ ] No hay throws sync escapando el stream (use cases usan `safeDefer` o equivalente)
-- [ ] Regla de fallback respetada:
-  - [ ] fallback handled → `EMPTY`
-  - [ ] fallback not handled → error propagate
-
-### UX (anti-loading infinito)
-
-- [ ] No hay loading infinito
-- [ ] Timeouts aplican según operación:
-  - [ ] start payment → ~15s
-  - [ ] confirm/cancel → 10–15s
-  - [ ] get status → ~30s
-- [ ] Si hay timeout, el usuario puede reintentar o fallbackear
+- [ ] No new features added
+- [ ] No massive refactor
+- [ ] No contract changes unless necessary and documented
 
 ---
 
-## 🧪 Tests (checklist obligatorio)
+## 🏗️ Architecture / rules (required checklist)
+
+### Layers and dependencies
+
+- [ ] Domain remains pure TypeScript (no Angular/RxJS/Http/i18n/logger)
+- [ ] Application depends only on Domain
+- [ ] Infrastructure depends on Application + Domain
+- [ ] UI depends only on Application
+
+### OCP and extensibility
+
+- [ ] I did not add `switch(providerId)` in use cases
+- [ ] I did not introduce giant provider/method `if/else`
+- [ ] Adding a provider/method is easier after this PR
+
+### Errors and stability
+
+- [ ] Infra normalizes errors to `PaymentError`
+- [ ] `PaymentError` keeps stable shape: `{ code, providerId, messageKey, raw, stacks }`
+- [ ] I did not introduce `any` / `as any` / hacks to move forward
+- [ ] No sync throws escape the stream (use cases use `safeDefer` or equivalent)
+- [ ] Fallback rule respected:
+  - [ ] fallback handled -> `EMPTY`
+  - [ ] fallback not handled -> error propagate
+
+### UX (avoid infinite loading)
+
+- [ ] No infinite loading
+- [ ] Timeouts applied per operation:
+  - [ ] start payment -> ~15s
+  - [ ] confirm/cancel -> 10–15s
+  - [ ] get status -> ~30s
+- [ ] On timeout, the user can retry or fallback
+
+---
+
+## 🧪 Tests (required checklist)
 
 ### Unit tests
 
-- [ ] Tests unitarios relevantes agregados/actualizados
-- [ ] No intenté forzar 100% coverage: probé core y edgecases importantes
+- [ ] Relevant unit tests added/updated
+- [ ] I did not force 100% coverage: I tested core and important edge cases
 
-### Operations vs Adapter (regla Stripe)
+### Operations vs Adapter (Stripe rule)
 
-- [ ] Operations (HTTP) testeadas con `HttpTestingController` (si aplica)
-- [ ] Adapter/Facade testeado con mocks y delegación (sin HTTP) (si aplica)
+- [ ] Operations (HTTP) tested with `HttpTestingController` (if applicable)
+- [ ] Adapter/Facade tested with mocks and delegation (no HTTP) (if applicable)
 
 ### Integration specs
 
-- [ ] Happy path(s) clave cubiertos/actualizados
-- [ ] Edge case(s) relevantes cubiertos/actualizados
+- [ ] Key happy path(s) covered/updated
+- [ ] Relevant edge case(s) covered/updated
 
-### Ejecución
+### Execution
 
-- [ ] `bun run test` pasa en local
-- [ ] No hay “Unhandled errors” en Vitest
+- [ ] `bun run test` passes locally
+- [ ] No "Unhandled errors" in Vitest
 
 ---
 
-## 📦 Archivos / módulos tocados
+## 📦 Files / modules touched
 
-<!-- Lista de archivos importantes (no exhaustivo) -->
+<!-- List key files (not exhaustive) -->
 
 - `...`
 - `...`
 
 ---
 
-## 🧩 Decisiones importantes tomadas
+## 🧩 Important decisions
 
-<!-- Si tomaste una decisión arquitectónica, escríbela aquí. -->
+<!-- If you made an architectural decision, write it here. -->
 
 - ***
 
-## ⚠️ Riesgos / regresiones posibles
+## ⚠️ Risks / possible regressions
 
-<!-- Qué podría romperse con este cambio -->
+<!-- What could break with this change -->
 
 -
 
-## 🛡️ Mitigaciones
+## 🛡️ Mitigations
 
-<!-- Qué hiciste para minimizar el riesgo -->
+<!-- What you did to minimize risk -->
 
 - ***
 
-## 📝 Notas para el reviewer / IA
+## 📝 Notes for reviewer / AI
 
-<!-- Tips para revisar o continuar el trabajo después -->
+<!-- Tips to review or continue work -->
 
 - ***
 
 ## ✅ Definition of Done (DoD)
 
-- [ ] Tests verdes
-- [ ] Contratos intactos o documentados
-- [ ] Sin deuda técnica activa introducida
-- [ ] Cambio incremental y mantenible
-- [ ] Mejora real de estabilidad o extensibilidad
+- [ ] Tests green
+- [ ] Contracts intact or documented
+- [ ] No new active tech debt introduced
+- [ ] Incremental and maintainable change
+- [ ] Real improvement in stability or extensibility

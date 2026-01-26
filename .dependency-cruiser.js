@@ -29,8 +29,8 @@ module.exports = {
           '(^|/)tsconfig[.]json$', // TypeScript config
           '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$', // other configs
           '^src/app/features/payments/domain/',
-          '^src/app/features/payments/infrastructure/stripe/dto/stripe.dto.ts$', // DTO usado por gateways
-          '^src/app/features/payments/application/state/payment-state.port.ts$', // Port usado por adapters
+          '^src/app/features/payments/infrastructure/stripe/dto/stripe.dto.ts$', // DTO used by gateways
+          '^src/app/features/payments/application/state/payment-state.port.ts$', // Port used by adapters
         ],
       },
       to: {},
@@ -190,7 +190,7 @@ module.exports = {
       name: 'domain-no-angular',
       severity: 'error',
       comment:
-        'Domain debe ser puro. No puede importar Angular (@angular/*). Mueve estas dependencias a infrastructure/shared.',
+        'Domain must be pure. It cannot import Angular (@angular/*). Move these dependencies to infrastructure/shared.',
       from: { path: '^src/app/features/payments/domain' },
       to: { path: '^node_modules/@angular' },
     },
@@ -198,7 +198,7 @@ module.exports = {
       name: 'domain-no-rxjs',
       severity: 'error',
       comment:
-        'Domain debe ser puro. No puede importar rxjs. RxJS es parte del orchestration layer (application/ui).',
+        'Domain must be pure. It cannot import rxjs. RxJS belongs to the orchestration layer (application/ui).',
       from: { path: '^src/app/features/payments/domain' },
       to: { path: '^node_modules/rxjs' },
     },
@@ -206,7 +206,7 @@ module.exports = {
       name: 'domain-no-app-core-or-shared',
       severity: 'error',
       comment:
-        'Domain del feature no debe depender de @core o @shared del app. Mantén el domain aislado y transportable.',
+        'Feature domain must not depend on app @core or @shared. Keep domain isolated and portable.',
       from: { path: '^src/app/features/payments/domain' },
       to: { path: '^src/app/(core|shared)' },
     },

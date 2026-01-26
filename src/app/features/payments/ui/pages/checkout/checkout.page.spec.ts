@@ -179,12 +179,12 @@ describe('CheckoutComponent', () => {
     component = fixture.componentInstance;
   });
 
-  describe('Inicialización', () => {
-    it('debe crear el componente', () => {
+  describe('Initialization', () => {
+    it('should create the component', () => {
       expect(component).toBeTruthy();
     });
 
-    it('debe inicializar con valores por defecto', () => {
+    it('should initialize with default values', () => {
       expect(component.amount()).toBe(499.99);
       expect(component.currency()).toBe('MXN');
       expect(component.selectedProvider()).toBeNull();
@@ -192,12 +192,12 @@ describe('CheckoutComponent', () => {
       expect(component.isFormValid()).toBe(false);
     });
 
-    it('debe auto-seleccionar el primer provider disponible', () => {
+    it('should auto-select the first available provider', () => {
       fixture.detectChanges();
       expect(component.selectedProvider()).toBe('stripe');
     });
 
-    it('debe auto-seleccionar el primer método cuando hay provider', () => {
+    it('should auto-select the first method when provider is set', () => {
       fixture.detectChanges();
       component.selectedProvider.set('stripe');
       fixture.detectChanges();
@@ -205,15 +205,15 @@ describe('CheckoutComponent', () => {
     });
   });
 
-  describe('Providers y métodos disponibles', () => {
-    it('debe obtener providers disponibles del registry', () => {
+  describe('Available providers and methods', () => {
+    it('should get available providers from the registry', () => {
       fixture.detectChanges();
       const providers = component.availableProviders();
       expect(providers).toEqual(['stripe', 'paypal']);
       expect(mockRegistry.getAvailableProviders).toHaveBeenCalled();
     });
 
-    it('debe obtener métodos disponibles para el provider seleccionado', () => {
+    it('should get available methods for the selected provider', () => {
       component.selectedProvider.set('stripe');
       fixture.detectChanges();
       const methods = component.availableMethods();
@@ -222,12 +222,12 @@ describe('CheckoutComponent', () => {
       expect(mockFactory.getSupportedMethods).toHaveBeenCalled();
     });
 
-    it('debe retornar array vacío si no hay provider seleccionado', () => {
+    it('should return an empty array when no provider is selected', () => {
       const methods = component.availableMethods();
       expect(methods).toEqual([]);
     });
 
-    it('debe manejar errores al obtener métodos', () => {
+    it('should handle errors when fetching methods', () => {
       mockRegistry.get.mockImplementationOnce(() => {
         throw new Error('Provider not found');
       });
@@ -238,8 +238,8 @@ describe('CheckoutComponent', () => {
     });
   });
 
-  describe('Requisitos de campos', () => {
-    it('debe obtener field requirements para provider y método seleccionados', () => {
+  describe('Field requirements', () => {
+    it('should get field requirements for selected provider and method', () => {
       component.selectedProvider.set('stripe');
       component.selectedMethod.set('card');
       fixture.detectChanges();
@@ -249,12 +249,12 @@ describe('CheckoutComponent', () => {
       expect(mockFactory.getFieldRequirements).toHaveBeenCalledWith('card');
     });
 
-    it('debe retornar null si no hay provider o método seleccionado', () => {
+    it('should return null when no provider or method is selected', () => {
       const requirements = component.fieldRequirements();
       expect(requirements).toBeNull();
     });
 
-    it('debe retornar null si hay error al obtener requirements', () => {
+    it('should return null when field requirements throw', () => {
       mockFactory.getFieldRequirements.mockImplementationOnce(() => {
         throw new Error('Error');
       });
@@ -266,8 +266,8 @@ describe('CheckoutComponent', () => {
     });
   });
 
-  describe('Selección de provider y método', () => {
-    it('debe seleccionar provider correctamente', () => {
+  describe('Provider and method selection', () => {
+    it('should select provider correctly', () => {
       component.selectProvider('paypal');
       expect(component.selectedProvider()).toBe('paypal');
       expect(mockLogger.info).toHaveBeenCalledWith('Provider selected', 'CheckoutPage', {
@@ -275,7 +275,7 @@ describe('CheckoutComponent', () => {
       });
     });
 
-    it('debe seleccionar método correctamente', () => {
+    it('should select method correctly', () => {
       component.selectMethod('spei');
       expect(component.selectedMethod()).toBe('spei');
       expect(mockLogger.info).toHaveBeenCalledWith('Method selected', 'CheckoutPage', {
@@ -284,14 +284,14 @@ describe('CheckoutComponent', () => {
     });
   });
 
-  describe('Formulario', () => {
-    it('debe actualizar form options', () => {
+  describe('Form', () => {
+    it('should update form options', () => {
       const options: PaymentOptions = { token: 'tok_test' };
       component.onFormChange(options);
       expect(() => component.onFormChange(options)).not.toThrow();
     });
 
-    it('debe actualizar form valid state', () => {
+    it('should update form validity state', () => {
       component.onFormValidChange(true);
       expect(component.isFormValid()).toBe(true);
       component.onFormValidChange(false);
@@ -299,14 +299,14 @@ describe('CheckoutComponent', () => {
     });
   });
 
-  describe('Proceso de pago', () => {
+  describe('Payment process', () => {
     beforeEach(() => {
       component.selectedProvider.set('stripe');
       component.selectedMethod.set('card');
       component.isFormValid.set(true);
     });
 
-    it('debe procesar pago correctamente con provider y método válidos', () => {
+    it('should process payment with valid provider and method', () => {
       const orderId = component.orderId();
       component.onFormChange({ token: 'tok_test' });
       component.processPayment();
@@ -333,30 +333,30 @@ describe('CheckoutComponent', () => {
       );
     });
 
-    it('no debe procesar pago si falta provider', () => {
+    it('should not process payment when provider is missing', () => {
       component.selectedProvider.set(null);
       component.processPayment();
       expect(mockFlowFacade.start).not.toHaveBeenCalled();
     });
 
-    it('no debe procesar pago si falta método', () => {
+    it('should not process payment when method is missing', () => {
       component.selectedMethod.set(null);
       component.processPayment();
       expect(mockFlowFacade.start).not.toHaveBeenCalled();
     });
 
-    it('no debe procesar pago si el form es inválido', () => {
+    it('should not process payment when the form is invalid', () => {
       component.isFormValid.set(false);
       component.processPayment();
       expect(mockFlowFacade.start).not.toHaveBeenCalled();
     });
 
-    it('sí debe procesar pago si isFormValid es true', () => {
+    it('should process payment when isFormValid is true', () => {
       component.isFormValid.set(true);
       component.onFormChange({ token: 'tok_test' });
       component.processPayment();
 
-      // Debe procesar el pago (start debe ser llamado)
+      // Should process payment (start should be called)
       expect(mockFlowFacade.start).toHaveBeenCalledWith(
         'stripe',
         expect.any(Object), // request
@@ -366,7 +366,7 @@ describe('CheckoutComponent', () => {
           isTest: expect.any(Boolean),
           deviceData: expect.any(Object),
         }),
-      ); // NO debe haber log de "Form invalid, payment blocked"
+      ); // Should not log "Form invalid, payment blocked"
       const blockedCalls = mockLogger.info.mock.calls.filter(
         (call: any[]) => call[0] === 'Form invalid, payment blocked',
       );
@@ -374,19 +374,19 @@ describe('CheckoutComponent', () => {
       expect(blockedCalls.length).toBe(0);
     });
 
-    it('debe usar token del formulario (PaymentFormComponent maneja autofill en dev)', () => {
-      // El token debe venir del formulario, no ser inyectado por CheckoutComponent
-      // PaymentFormComponent ya maneja el autofill en modo desarrollo
+    it('should use the form token (PaymentFormComponent handles dev autofill)', () => {
+      // Token should come from the form, not be injected by CheckoutComponent
+      // PaymentFormComponent already handles autofill in development
       component.onFormChange({ token: 'tok_visa1234567890abcdef' });
       component.processPayment();
       expect(mockBuilder.withOptions).toHaveBeenCalledWith(
         expect.objectContaining({ token: 'tok_visa1234567890abcdef' }),
       );
-      // Ya no debe haber log de auto-generación en CheckoutComponent
+      // Should not log auto-generation in CheckoutComponent
       expect(mockLogger.debug).not.toHaveBeenCalledWith('Auto-generated dev token', 'CheckoutPage');
     });
 
-    it('debe manejar errores al construir request', () => {
+    it('should handle errors while building the request', () => {
       mockBuilder.build.mockImplementationOnce(() => {
         throw new Error('Build failed');
       });
@@ -398,7 +398,7 @@ describe('CheckoutComponent', () => {
       );
     });
 
-    it('debe iniciar correlación de logging', () => {
+    it('should start logging correlation', () => {
       component.processPayment();
       expect(mockLogger.startCorrelation).toHaveBeenCalledWith(
         'payment-flow',
@@ -413,7 +413,7 @@ describe('CheckoutComponent', () => {
   });
 
   describe('Fallback', () => {
-    it('debe confirmar fallback', () => {
+    it('should confirm fallback', () => {
       component.confirmFallback('paypal');
       expect(mockFallbackOrchestrator.respondToFallback).not.toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith('Fallback confirmed', 'CheckoutPage', {
@@ -421,13 +421,13 @@ describe('CheckoutComponent', () => {
       });
     });
 
-    it('debe cancelar fallback', () => {
+    it('should cancel fallback', () => {
       component.cancelFallback();
       expect(mockFallbackOrchestrator.reset).toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith('Fallback cancelled', 'CheckoutPage');
     });
 
-    it('debe detectar cuando hay fallback pendiente', () => {
+    it('should detect when fallback is pending', () => {
       mockFallbackOrchestrator.isPending.set(true);
       mockFallbackOrchestrator.pendingEvent.set(mockFallbackEvent);
       fixture.detectChanges();
@@ -436,20 +436,20 @@ describe('CheckoutComponent', () => {
     });
   });
 
-  describe('Estado del pago', () => {
-    it('debe exponer estado de carga', () => {
+  describe('Payment state', () => {
+    it('should expose loading state', () => {
       mockFlowFacade.isLoading.set(true);
       fixture.detectChanges();
       expect(component.isLoading()).toBe(true);
     });
 
-    it('debe exponer estado de listo', () => {
+    it('should expose ready state', () => {
       mockFlowFacade.isReady.set(true);
       fixture.detectChanges();
       expect(component.isReady()).toBe(true);
     });
 
-    it('debe exponer estado de error', () => {
+    it('should expose error state', () => {
       mockFlowFacade.hasError.set(true);
       mockFlowFacade.error.set(mockError);
       fixture.detectChanges();
@@ -457,13 +457,13 @@ describe('CheckoutComponent', () => {
       expect(component.currentError()).toEqual(mockError);
     });
 
-    it('debe exponer intent actual', () => {
+    it('should expose current intent', () => {
       mockFlowFacade.intent.set(mockIntent);
       fixture.detectChanges();
       expect(component.currentIntent()).toEqual(mockIntent);
     });
 
-    it('debe mostrar resultado cuando está listo o hay error', () => {
+    it('should show result when ready or when there is an error', () => {
       mockFlowFacade.isReady.set(true);
       fixture.detectChanges();
       expect(component.showResult()).toBe(true);
@@ -476,19 +476,19 @@ describe('CheckoutComponent', () => {
   });
 
   describe('Reset', () => {
-    it('debe resetear el pago', () => {
+    it('should reset the payment', () => {
       component.resetPayment();
       expect(mockFlowFacade.reset).toHaveBeenCalled();
       expect(component.isFormValid()).toBe(false);
       expect(mockLogger.info).toHaveBeenCalledWith('Payment reset', 'CheckoutPage');
-      // El orderId debe cambiar
+      // The orderId should change
       const newOrderId = component.orderId();
       expect(newOrderId).toBeTruthy();
     });
   });
 
   describe('Debug info', () => {
-    it('debe exponer debug summary del estado', () => {
+    it('should expose debug summary for the state', () => {
       const debugSummary = component.debugInfo();
       expect(debugSummary).toBeTruthy();
       expect(debugSummary.state).toBe('idle');

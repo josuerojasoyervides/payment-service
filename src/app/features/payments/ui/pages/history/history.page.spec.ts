@@ -39,7 +39,7 @@ describe('HistoryComponent', () => {
   ];
 
   beforeEach(async () => {
-    // Mock del history facade
+    // History facade mock
     mockHistoryFacade = {
       history: signal<PaymentHistoryEntry[]>([]),
       historyCount: signal(0),
@@ -62,24 +62,24 @@ describe('HistoryComponent', () => {
     component = fixture.componentInstance;
   });
 
-  describe('Inicialización', () => {
-    it('debe crear el componente', () => {
+  describe('Initialization', () => {
+    it('should create the component', () => {
       expect(component).toBeTruthy();
     });
 
-    it('debe exponer history del payment state', () => {
+    it('should expose history from payment state', () => {
       mockHistoryFacade.history.set(mockHistoryEntries);
       fixture.detectChanges();
       expect(component.history()).toEqual(mockHistoryEntries);
     });
 
-    it('debe exponer historyCount del payment state', () => {
+    it('should expose historyCount from payment state', () => {
       mockHistoryFacade.historyCount.set(3);
       fixture.detectChanges();
       expect(component.historyCount()).toBe(3);
     });
 
-    it('debe exponer isLoading del payment state', () => {
+    it('should expose isLoading from payment state', () => {
       mockHistoryFacade.isLoading.set(true);
       fixture.detectChanges();
       expect(component.isLoading()).toBe(true);
@@ -87,33 +87,33 @@ describe('HistoryComponent', () => {
   });
 
   describe('isActionRequired', () => {
-    it('debe retornar true para requires_payment_method', () => {
+    it('should return true for requires_payment_method', () => {
       expect(component.isActionRequired('requires_payment_method')).toBe(true);
     });
 
-    it('debe retornar true para requires_confirmation', () => {
+    it('should return true for requires_confirmation', () => {
       expect(component.isActionRequired('requires_confirmation')).toBe(true);
     });
 
-    it('debe retornar true para requires_action', () => {
+    it('should return true for requires_action', () => {
       expect(component.isActionRequired('requires_action')).toBe(true);
     });
 
-    it('debe retornar false para succeeded', () => {
+    it('should return false for succeeded', () => {
       expect(component.isActionRequired('succeeded')).toBe(false);
     });
 
-    it('debe retornar false para canceled', () => {
+    it('should return false for canceled', () => {
       expect(component.isActionRequired('canceled')).toBe(false);
     });
 
-    it('debe retornar false para processing', () => {
+    it('should return false for processing', () => {
       expect(component.isActionRequired('processing')).toBe(false);
     });
   });
 
   describe('entryToIntent', () => {
-    it('debe convertir entry a PaymentIntent correctamente', () => {
+    it('should convert entry to PaymentIntent correctly', () => {
       const entry = mockHistoryEntries[0];
       const intent = component.entryToIntent(entry);
 
@@ -124,50 +124,50 @@ describe('HistoryComponent', () => {
       expect(intent.currency).toBe(entry.currency);
     });
 
-    it('debe manejar diferentes estados', () => {
+    it('should handle different statuses', () => {
       const entry = mockHistoryEntries[1];
       const intent = component.entryToIntent(entry);
       expect(intent.status).toBe('requires_confirmation');
     });
 
-    it('debe manejar entradas canceladas', () => {
+    it('should handle canceled entries', () => {
       const entry = mockHistoryEntries[2];
       const intent = component.entryToIntent(entry);
       expect(intent.status).toBe('canceled');
     });
   });
 
-  describe('Acciones de pago', () => {
-    it('debe confirmar pago correctamente', () => {
+  describe('Payment actions', () => {
+    it('should confirm payment', () => {
       component.confirmPayment('pi_test_1', 'stripe');
       expect(mockHistoryFacade.confirmPayment).toHaveBeenCalledWith('pi_test_1', 'stripe');
     });
 
-    it('debe cancelar pago correctamente', () => {
+    it('should cancel payment', () => {
       component.cancelPayment('pi_test_1', 'stripe');
       expect(mockHistoryFacade.cancelPayment).toHaveBeenCalledWith('pi_test_1', 'stripe');
     });
 
-    it('debe refrescar pago correctamente', () => {
+    it('should refresh payment', () => {
       component.refreshPayment('pi_test_1', 'stripe');
       expect(mockHistoryFacade.refreshPayment).toHaveBeenCalledWith('pi_test_1', 'stripe');
     });
 
-    it('debe funcionar con diferentes providers', () => {
+    it('should work with different providers', () => {
       component.confirmPayment('pi_test_2', 'paypal');
       expect(mockHistoryFacade.confirmPayment).toHaveBeenCalledWith('pi_test_2', 'paypal');
     });
   });
 
   describe('clearHistory', () => {
-    it('debe limpiar el historial', () => {
+    it('should clear history', () => {
       component.clearHistory();
       expect(mockHistoryFacade.clearHistory).toHaveBeenCalled();
     });
   });
 
-  describe('Integración con historial', () => {
-    it('debe mostrar todas las entradas del historial', () => {
+  describe('History integration', () => {
+    it('should show all history entries', () => {
       mockHistoryFacade.history.set(mockHistoryEntries);
       fixture.detectChanges();
       const history = component.history();
@@ -177,14 +177,14 @@ describe('HistoryComponent', () => {
       expect(history[2].intentId).toBe('pi_test_3');
     });
 
-    it('debe actualizar historyCount cuando cambia el historial', () => {
+    it('should update historyCount when history changes', () => {
       mockHistoryFacade.history.set(mockHistoryEntries);
       mockHistoryFacade.historyCount.set(3);
       fixture.detectChanges();
       expect(component.historyCount()).toBe(3);
     });
 
-    it('debe manejar historial vacío', () => {
+    it('should handle empty history', () => {
       mockHistoryFacade.history.set([]);
       mockHistoryFacade.historyCount.set(0);
       fixture.detectChanges();

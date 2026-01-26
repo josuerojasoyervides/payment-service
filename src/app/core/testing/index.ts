@@ -1,8 +1,5 @@
 /**
- * Módulo de Testing
+ * Testing module.
  *
- * Provee utilidades para desarrollo y testing:
- * - Fake backend interceptor para simular APIs de pago
+ * Provides utilities for development and testing.
  */
-
-export * from './fake-backend.interceptor';

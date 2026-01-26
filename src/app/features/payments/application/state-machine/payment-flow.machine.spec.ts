@@ -2,6 +2,7 @@ import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.ty
 import { createActor } from 'xstate';
 
 import { createPaymentFlowMachine } from './payment-flow.machine';
+import { PaymentFlowConfigOverrides } from './payment-flow.policy';
 import { PaymentFlowActorRef, PaymentFlowSnapshot } from './payment-flow.types';
 
 describe('PaymentFlowMachine', () => {
@@ -45,6 +46,8 @@ describe('PaymentFlowMachine', () => {
       startIntent: PaymentIntent;
       statusIntent: PaymentIntent;
       startReject: boolean;
+      statusReject: boolean;
+      config: PaymentFlowConfigOverrides;
     }>,
   ) => {
     const deps = {
@@ -54,10 +57,13 @@ describe('PaymentFlowMachine', () => {
       }),
       confirmPayment: vi.fn(async () => baseIntent),
       cancelPayment: vi.fn(async () => ({ ...baseIntent, status: 'canceled' as const })),
-      getStatus: vi.fn(async () => overrides?.statusIntent ?? baseIntent),
+      getStatus: vi.fn(async () => {
+        if (overrides?.statusReject) throw new Error('status failed');
+        return overrides?.statusIntent ?? baseIntent;
+      }),
     };
 
-    const machine = createPaymentFlowMachine(deps);
+    const machine = createPaymentFlowMachine(deps, overrides?.config);
     const actor = createActor(machine) as PaymentFlowActorRef;
     actor.start();
 
@@ -255,5 +261,61 @@ describe('PaymentFlowMachine', () => {
     const snap = await waitForSnapshot(actor, (s) => s.value === 'fallbackCandidate');
     expect(snap.hasTag('ready')).toBe(true);
     expect(snap.context.fallback.eligible).toBe(true);
+  });
+
+  it('status errors retry with backoff before failing', async () => {
+    const { actor } = setup({
+      statusReject: true,
+      config: {
+        polling: { baseDelayMs: 1, maxDelayMs: 1, maxAttempts: 2 },
+        statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 1 },
+      },
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: 'o1',
+        amount: 100,
+        currency: 'MXN',
+        method: { type: 'card', token: 'tok_123' },
+      },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'polling');
+
+    actor.send({ type: 'REFRESH', providerId: 'stripe' } as any);
+
+    const retrySnap = await waitForSnapshot(actor, (s) => s.value === 'statusRetrying');
+    expect(retrySnap.context.statusRetry.count).toBe(1);
+  });
+
+  it('status errors fail when retry limit reached', async () => {
+    const { actor } = setup({
+      statusReject: true,
+      config: {
+        polling: { baseDelayMs: 1, maxDelayMs: 1, maxAttempts: 1 },
+        statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 0 },
+      },
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: 'o1',
+        amount: 100,
+        currency: 'MXN',
+        method: { type: 'card', token: 'tok_123' },
+      },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'polling');
+
+    actor.send({ type: 'REFRESH', providerId: 'stripe' } as any);
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
+    expect(snap.hasTag('error')).toBe(true);
   });
 });

@@ -10,7 +10,8 @@ import {
   output,
 } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
-import { I18nKeys, I18nService } from '@core/i18n';
+import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
+import { AutofocusDirective } from '@shared/directives/autofocus.directive';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 
 import {
@@ -41,7 +42,7 @@ type DynamicForm = FormRecord<DynamicControl>;
 @Component({
   selector: 'app-payment-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AutofocusDirective, I18nPipe],
   templateUrl: './payment-form.component.html',
 })
 export class PaymentFormComponent implements OnDestroy {
@@ -117,14 +118,14 @@ export class PaymentFormComponent implements OnDestroy {
     for (const field of requirements.fields) {
       let defaultValue = field.defaultValue ?? '';
 
-      // No auto-fill returnUrl/cancelUrl con currentUrl
-      // Estas URLs deben venir de StrategyContext (CheckoutComponent)
-      // El formulario se enfoca en inputs reales del usuario (token, customerEmail, saveForFuture)
+      // Do not auto-fill returnUrl/cancelUrl from currentUrl
+      // These URLs must come from StrategyContext (CheckoutComponent)
+      // The form focuses on real user inputs (token, customerEmail, saveForFuture)
       if (
         field.autoComplete === 'current-url' &&
         (field.name === 'returnUrl' || field.name === 'cancelUrl')
       ) {
-        // Dejar vacío - estas URLs vienen del context, no del formulario
+        // Keep empty - these URLs come from context, not from the form
         defaultValue = '';
       } else if (field.autoComplete === 'current-url') {
         defaultValue = typeof window !== 'undefined' ? window.location.href : '';
@@ -186,12 +187,6 @@ export class PaymentFormComponent implements OnDestroy {
 
     this.formChange.emit(options);
     this.formValidChange.emit(this.form.valid);
-  }
-
-  /** Translates the method description */
-  translateText(key?: string, params?: Record<string, string | number>): string {
-    if (!key) return '';
-    return this.i18n.t(key, params);
   }
 
   readonly fieldRequiredText = computed(() => this.i18n.t(I18nKeys.ui.field_required));

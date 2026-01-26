@@ -9,26 +9,26 @@ import {
 } from './rate-limiter.types';
 
 /**
- * Token para inyectar configuración del Rate Limiter.
+ * Token for injecting Rate Limiter configuration.
  */
 export const RATE_LIMITER_CONFIG = new InjectionToken<Partial<RateLimiterConfig>>(
   'RATE_LIMITER_CONFIG',
 );
 
 /**
- * Servicio de Rate Limiting.
+ * Rate limiting service.
  *
- * Implementa rate limiting del lado del cliente para prevenir
- * exceso de llamadas a APIs.
+ * Implements client-side rate limiting to prevent
+ * API request bursts.
  *
- * Características:
- * - Ventana deslizante por endpoint
- * - Configurable por endpoint o global
- * - Retorna tiempo de espera estimado
+ * Features:
+ * - Sliding window per endpoint
+ * - Configurable per endpoint or globally
+ * - Returns estimated wait time
  *
  * @example
  * ```typescript
- * // Verificar antes de llamar
+ * // Check before calling
  * if (rateLimiter.canRequest('/api/payments')) {
  *   rateLimiter.recordRequest('/api/payments');
  *   await makeRequest();
@@ -50,10 +50,10 @@ export class RateLimiterService {
   }
 
   /**
-   * Verifica si se puede hacer un request.
+   * Check if a request can be made.
    *
-   * @param endpoint Identificador del endpoint
-   * @returns true si el request puede proceder
+   * @param endpoint Endpoint identifier
+   * @returns true if the request can proceed
    */
   canRequest(endpoint: string): boolean {
     const key = this.getKey(endpoint);

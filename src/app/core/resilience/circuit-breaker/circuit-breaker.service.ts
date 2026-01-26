@@ -10,26 +10,26 @@ import {
 } from './circuit-breaker.types';
 
 /**
- * Token para inyectar configuración del Circuit Breaker.
+ * Token for injecting Circuit Breaker configuration.
  */
 export const CIRCUIT_BREAKER_CONFIG = new InjectionToken<Partial<CircuitBreakerConfig>>(
   'CIRCUIT_BREAKER_CONFIG',
 );
 
 /**
- * Servicio de Circuit Breaker.
+ * Circuit Breaker service.
  *
- * Implementa el patrón Circuit Breaker para prevenir llamadas a servicios
- * que están fallando repetidamente.
+ * Implements the Circuit Breaker pattern to prevent calls to services
+ * that are repeatedly failing.
  *
- * Estados:
- * - CLOSED: Operación normal, las llamadas pasan
- * - OPEN: Después de N fallos, rechaza llamadas inmediatamente
- * - HALF-OPEN: Después del timeout, permite una llamada de prueba
+ * States:
+ * - CLOSED: normal operation, calls pass
+ * - OPEN: after N failures, rejects calls immediately
+ * - HALF-OPEN: after timeout, allows a test call
  *
  * @example
  * ```typescript
- * // Verificar antes de llamar
+ * // Check before calling
  * if (circuitBreaker.canRequest('/api/payments')) {
  *   try {
  *     const result = await makeRequest();
@@ -52,11 +52,11 @@ export class CircuitBreakerService {
   }
 
   /**
-   * Verifica si se puede hacer un request a un endpoint.
+   * Check if a request can be made to an endpoint.
    *
-   * @param endpoint Identificador del endpoint
-   * @returns true si el request puede proceder
-   * @throws CircuitOpenError si el circuito está abierto
+   * @param endpoint Endpoint identifier
+   * @returns true if the request can proceed
+   * @throws CircuitOpenError if the circuit is open
    */
   canRequest(endpoint: string): boolean {
     const circuit = this.getOrCreateCircuit(endpoint);
@@ -215,13 +215,13 @@ export class CircuitBreakerService {
   }
 
   /**
-   * Normaliza el endpoint para usarlo como key.
-   * Remueve query params y normaliza el path.
+   * Normalize endpoint for use as a key.
+   * Remove query params and normalize the path.
    */
   private normalizeEndpoint(endpoint: string): string {
     try {
       const url = new URL(endpoint, window.location.origin);
-      // Usar solo el pathname, sin query params
+      // Use only pathname, without query params
       return url.pathname;
     } catch {
       return endpoint;

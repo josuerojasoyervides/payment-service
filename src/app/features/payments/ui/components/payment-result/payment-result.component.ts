@@ -5,7 +5,8 @@ import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.ty
 import { hasStringProp } from '@payments/ui/shared/has-string-prop';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
-import { getStatusText, STATUS_BADGE_MAP } from '../../shared/ui.types';
+import { PaymentStatusLabelPipe } from '../../shared/pipes/payment-status-label.pipe';
+import { STATUS_BADGE_MAP } from '../../shared/ui.types';
 
 /**
  * Component that displays payment result.
@@ -26,7 +27,7 @@ import { getStatusText, STATUS_BADGE_MAP } from '../../shared/ui.types';
 @Component({
   selector: 'app-payment-result',
   standalone: true,
-  imports: [CommonModule, CurrencyPipe, JsonPipe],
+  imports: [CommonModule, CurrencyPipe, JsonPipe, PaymentStatusLabelPipe],
   templateUrl: './payment-result.component.html',
 })
 export class PaymentResultComponent {
@@ -75,13 +76,6 @@ export class PaymentResultComponent {
     const i = this.intent();
     if (!i) return 'badge';
     return STATUS_BADGE_MAP[i.status] || 'badge';
-  });
-
-  /** Status text */
-  readonly statusText = computed(() => {
-    const i = this.intent();
-    if (!i) return '';
-    return getStatusText(this.i18n, i.status);
   });
 
   readonly paymentErrorTitle = computed(() => this.i18n.t(I18nKeys.ui.payment_error));

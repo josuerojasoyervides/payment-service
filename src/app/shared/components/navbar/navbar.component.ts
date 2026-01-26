@@ -5,9 +5,9 @@ import { I18nKeys, I18nService } from '@core/i18n';
 import { LanguageSelectorComponent } from '../language-selector/language-selector.component';
 
 /**
- * Componente navbar simple y elegante.
+ * Simple, clean navbar component.
  *
- * Muestra el nombre de la aplicación y el selector de idioma.
+ * Shows the application name and the language selector.
  *
  * @example
  * ```html

@@ -3,7 +3,8 @@ import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
-import { getStatusText, STATUS_BADGE_MAP } from '../../shared/ui.types';
+import { PaymentStatusLabelPipe } from '../../shared/pipes/payment-status-label.pipe';
+import { STATUS_BADGE_MAP } from '../../shared/ui.types';
 
 /**
  * Card component to display a PaymentIntent.
@@ -26,7 +27,7 @@ import { getStatusText, STATUS_BADGE_MAP } from '../../shared/ui.types';
 @Component({
   selector: 'app-payment-intent-card',
   standalone: true,
-  imports: [CommonModule, CurrencyPipe],
+  imports: [CommonModule, CurrencyPipe, PaymentStatusLabelPipe],
   templateUrl: './payment-intent-card.component.html',
 })
 export class PaymentIntentCardComponent {
@@ -77,11 +78,6 @@ export class PaymentIntentCardComponent {
   /** Status badge class */
   readonly statusBadgeClass = computed(() => {
     return STATUS_BADGE_MAP[this.intent().status] || 'badge';
-  });
-
-  /** Status text */
-  readonly statusText = computed(() => {
-    return getStatusText(this.i18n, this.intent().status);
   });
 
   toggleExpanded(): void {

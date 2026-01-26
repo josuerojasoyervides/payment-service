@@ -54,7 +54,7 @@ import {
 } from './fallback/fallback-orchestrator.types';
 
 /**
- * Token para inyectar configuración del fallback.
+ * Token for injecting fallback configuration.
  */
 export const FALLBACK_CONFIG = new InjectionToken<Partial<FallbackConfig>>('FALLBACK_CONFIG');
 
@@ -165,18 +165,18 @@ export class FallbackOrchestratorService {
   }: ReportFailurePayload): boolean {
     if (!isFallbackEnabledGuard(this.config)) return false;
 
+    // ✅ eligibility
+    if (!isEligibleForFallbackPolicy(this.config, error)) return false;
+
+    // ✅ record failed attempt (now exists)
+    registerFailureTransition(this._state, providerId, error, !!wasAutoFallback);
+
     if (hasReachedMaxAttemptsPolicy(this.config, this._state())) {
-      this.reset();
+      this.finish('failed');
       return false;
     }
 
-    // ✅ elegibilidad
-    if (!isEligibleForFallbackPolicy(this.config, error)) return false;
-
-    // ✅ registrar intento fallido (AHORA sí existe)
-    registerFailureTransition(this._state, providerId, error, !!wasAutoFallback);
-
-    // ✅ buscar alternativas
+    // ✅ find alternatives
     const alternatives = getAlternativeProvidersPolicy(
       this.registry,
       this.config,
@@ -185,7 +185,7 @@ export class FallbackOrchestratorService {
       request,
     );
 
-    // ✅ no hay alternativas => terminal
+    // ✅ no alternatives => terminal
     if (alternatives.length === 0) {
       this.finish('failed');
       return false;
@@ -193,7 +193,7 @@ export class FallbackOrchestratorService {
 
     const flowId = this.getOrCreateFlowId();
 
-    // ✅ decidir auto/manual
+    // ✅ decide auto/manual
     if (shouldAutoFallbackPolicy(this.config, this._state())) {
       this.startAutoFallback(alternatives[0], request, providerId, flowId);
     } else {
@@ -206,13 +206,13 @@ export class FallbackOrchestratorService {
   /**
    * Responds to fallback event (from UI).
    *
-   * Maneja eventos expirados de forma segura sin romper el flujo.
+   * Handle expired events safely without breaking the flow.
    */
   respondToFallback(response: FallbackUserResponse): void {
     const currentEvent = this._state().pendingEvent;
     const currentEventId = currentEvent?.eventId ?? null;
 
-    // 1) Evento inexistente / mismatch => ignorar
+    // 1) Missing event / mismatch => ignore
     if (!isPendingEventForResponseGuard(currentEvent, response)) {
       this.logger.warn(
         '[FallbackOrchestrator] Response for unknown or expired event',
@@ -226,7 +226,7 @@ export class FallbackOrchestratorService {
       return;
     }
 
-    // 2) TTL excedido => cancelar
+    // 2) TTL exceeded => cancel
     if (isEventExpiredGuard(currentEvent, this.config)) {
       const now = Date.now();
       const eventAge = now - currentEvent.timestamp;
@@ -245,17 +245,17 @@ export class FallbackOrchestratorService {
       return;
     }
 
-    // 3) Cancelar timers pendientes (timeout/auto)
+    // 3) Cancel pending timers (timeout/auto)
     this._cancel$.next();
 
-    // 4) Usuario declina => cancelar (evento válido)
+    // 4) User declines => cancel (valid event)
     if (!isResponseAcceptedGuard(response)) {
       this.finish('cancelled');
       this._userResponse$.next(response);
       return;
     }
 
-    // 5) Provider inválido => cancelar
+    // 5) Invalid provider => cancel
     if (!isSelectedProviderInAlternativesGuard(currentEvent, response.selectedProvider)) {
       this.logger.warn(
         '[FallbackOrchestrator] Selected provider not in alternatives',
@@ -271,7 +271,7 @@ export class FallbackOrchestratorService {
       return;
     }
 
-    // 6) Ejecutar fallback manual aceptado
+    // 6) Execute accepted manual fallback
     setExecutingTransition(this._state, response.selectedProvider);
 
     this._fallbackExecute$.next({
@@ -312,7 +312,7 @@ export class FallbackOrchestratorService {
       return;
     }
 
-    // 👇 inferencia automática si no lo pasan
+    // 👇 auto inference if not provided
     const inferredAuto = wasAutoFallback ?? this._state().isAutoFallback;
 
     this.reportFailure(providerId, error, req, inferredAuto);
@@ -343,7 +343,7 @@ export class FallbackOrchestratorService {
   }
 
   /**
-   * Ejecuta un fallback automático después de un delay.
+   * Execute automatic fallback after a delay.
    */
   private executeAutoFallback(
     provider: PaymentProviderId,
@@ -353,10 +353,10 @@ export class FallbackOrchestratorService {
   ): void {
     const delay = this.config.autoFallbackDelay;
 
-    // estado auto_executing
+    // auto_executing state
     setAutoExecutingTransition(this._state, provider, request);
 
-    // ✅ autoFallbackStarted ya tiene correlación real
+    // ✅ autoFallbackStarted now has real correlation
     this._autoFallbackStarted$.next({
       provider,
       delay,
@@ -383,7 +383,7 @@ export class FallbackOrchestratorService {
   }
 
   /**
-   * Emite evento de fallback disponible para modo manual.
+   * Emits fallback available event for manual mode.
    */
   private emitFallbackAvailable(
     failedProvider: PaymentProviderId,
@@ -409,7 +409,7 @@ export class FallbackOrchestratorService {
   }
 
   /**
-   * Configura timeout para limpiar eventos expirados.
+   * Schedules timeout to clear expired events.
    *
    * Cuando expira el TTL, limpia el pending event para evitar
    * que la UI quede colgada esperando una respuesta.

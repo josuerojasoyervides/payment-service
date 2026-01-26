@@ -1,20 +1,20 @@
 /**
- * Contexto del flujo de pago.
+ * Payment flow context.
  *
- * Contiene información adicional que se pasa durante el flujo de pago,
- * como URLs de retorno, datos del dispositivo, y metadata.
+ * Contains additional information passed during the flow,
+ * such as return URLs, device data, and metadata.
  */
 export interface PaymentFlowContext {
-  /** URL de retorno después de 3DS o redirect */
+  /** Return URL after 3DS or redirect */
   returnUrl?: string;
 
-  /** URL de cancelación (para PayPal) */
+  /** Cancel URL (for PayPal) */
   cancelUrl?: string;
 
-  /** Indica si es un entorno de prueba */
+  /** Indicates if this is a test environment */
   isTest?: boolean;
 
-  /** Información del dispositivo para prevención de fraude */
+  /** Device info for fraud prevention */
   deviceData?: {
     ipAddress?: string;
     userAgent?: string;
@@ -22,6 +22,6 @@ export interface PaymentFlowContext {
     screenHeight?: number;
   };
 
-  /** Metadata adicional personalizada */
+  /** Additional custom metadata */
   metadata?: Record<string, unknown>;
 }

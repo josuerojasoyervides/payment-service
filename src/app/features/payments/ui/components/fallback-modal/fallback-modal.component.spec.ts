@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { I18nService } from '@core/i18n';
+import { I18nKeys, I18nService } from '@core/i18n';
 import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 
@@ -12,7 +12,7 @@ describe('FallbackModalComponent', () => {
 
   const mockError: PaymentError = {
     code: 'provider_error',
-    messageKey: 'errors.provider_error',
+    messageKey: I18nKeys.errors.provider_error,
     raw: { error: 'test' },
   };
 
@@ -62,84 +62,84 @@ describe('FallbackModalComponent', () => {
     component = fixture.componentInstance;
   });
 
-  describe('Inicialización', () => {
-    it('debe crear el componente', () => {
+  describe('Initialization', () => {
+    it('should create the component', () => {
       expect(component).toBeTruthy();
     });
 
-    it('debe inicializar con selectedProvider en null', () => {
+    it('should initialize with selectedProvider null', () => {
       expect(component.selectedProvider()).toBeNull();
     });
   });
 
-  describe('Selección de provider', () => {
-    it('debe seleccionar un provider', () => {
+  describe('Provider selection', () => {
+    it('should select a provider', () => {
       component.selectProvider('paypal');
       expect(component.selectedProvider()).toBe('paypal');
     });
 
-    it('debe cambiar la selección', () => {
+    it('should change selection', () => {
       component.selectProvider('paypal');
       component.selectProvider('stripe');
       expect(component.selectedProvider()).toBe('stripe');
     });
   });
 
-  describe('Reset de selectedProvider', () => {
-    it('debe resetear selectedProvider cuando open pasa a false', () => {
-      // Abrir el modal y seleccionar un provider
+  describe('Reset selectedProvider', () => {
+    it('should reset selectedProvider when open changes to false', () => {
+      // Open modal and select a provider
       fixture.componentRef.setInput('open', true);
       fixture.detectChanges();
 
       component.selectProvider('paypal');
       expect(component.selectedProvider()).toBe('paypal');
 
-      // Simular que el modal se cierra
+      // Simulate modal closing
       fixture.componentRef.setInput('open', false);
       fixture.detectChanges();
 
-      // Debe estar reseteado
+      // Should be reset
       expect(component.selectedProvider()).toBeNull();
     });
 
-    it('debe resetear selectedProvider cuando cambia eventId', () => {
-      // Configurar primer evento
+    it('should reset selectedProvider when eventId changes', () => {
+      // Set first event
       fixture.componentRef.setInput('event', mockEvent1);
       fixture.detectChanges();
 
-      // Seleccionar un provider
+      // Select a provider
       component.selectProvider('paypal');
       expect(component.selectedProvider()).toBe('paypal');
 
-      // Cambiar a un nuevo evento con diferente eventId
+      // Switch to a new event with a different eventId
       fixture.componentRef.setInput('event', mockEvent2);
       fixture.detectChanges();
 
-      // Debe estar reseteado
+      // Should be reset
       expect(component.selectedProvider()).toBeNull();
     });
 
-    it('NO debe resetear selectedProvider si eventId es el mismo', () => {
-      // Configurar evento
+    it('should not reset selectedProvider when eventId is the same', () => {
+      // Set event
       fixture.componentRef.setInput('event', mockEvent1);
       fixture.detectChanges();
 
-      // Seleccionar un provider
+      // Select a provider
       component.selectProvider('paypal');
       expect(component.selectedProvider()).toBe('paypal');
 
-      // Cambiar el mismo evento (mismo eventId pero diferente contenido)
+      // Update the same event (same eventId, different content)
       const sameEventId = { ...mockEvent1, timestamp: Date.now() };
       fixture.componentRef.setInput('event', sameEventId);
       fixture.detectChanges();
 
-      // NO debe estar reseteado (mismo eventId)
+      // Should not be reset (same eventId)
       expect(component.selectedProvider()).toBe('paypal');
     });
   });
 
-  describe('Confirm y Cancel', () => {
-    it('debe emitir confirm con el provider seleccionado', () => {
+  describe('Confirm and Cancel', () => {
+    it('should emit confirm with selected provider', () => {
       const spy = vi.fn();
       component.confirm.subscribe(spy);
 
@@ -150,7 +150,7 @@ describe('FallbackModalComponent', () => {
       expect(component.selectedProvider()).toBeNull();
     });
 
-    it('debe emitir cancel', () => {
+    it('should emit cancel', () => {
       const spy = vi.fn();
       component.canceled.subscribe(spy);
 
@@ -161,7 +161,7 @@ describe('FallbackModalComponent', () => {
       expect(component.selectedProvider()).toBeNull();
     });
 
-    it('no debe emitir confirm si no hay provider seleccionado', () => {
+    it('should not emit confirm when no provider is selected', () => {
       const spy = vi.fn();
       component.confirm.subscribe(spy);
 
@@ -172,22 +172,22 @@ describe('FallbackModalComponent', () => {
   });
 
   describe('Computed properties', () => {
-    it('debe calcular errorMessage correctamente', () => {
+    it('should compute errorMessage correctly', () => {
       fixture.componentRef.setInput('event', mockEvent1);
       fixture.detectChanges();
 
-      expect(component.errorMessageText()).toBe('errors.provider_error');
+      expect(component.errorMessageText()).toBe(I18nKeys.errors.provider_error);
     });
 
-    it('debe retornar null si no hay error', () => {
+    it('should return null when there is no error', () => {
       const eventWithoutError = { ...mockEvent1, error: null };
       fixture.componentRef.setInput('event', eventWithoutError);
       fixture.detectChanges();
 
-      expect(component.errorMessageText()).toBe('errors.unknown_error');
+      expect(component.errorMessageText()).toBe(I18nKeys.errors.unknown_error);
     });
 
-    it('debe calcular alternativeProviders correctamente', () => {
+    it('should compute alternativeProviders correctly', () => {
       fixture.componentRef.setInput('event', mockEvent1);
       fixture.detectChanges();
 
@@ -196,13 +196,13 @@ describe('FallbackModalComponent', () => {
       expect(providers.some((p) => p.id === 'paypal')).toBe(true);
     });
 
-    it('debe calcular selectedProviderName correctamente', () => {
+    it('should compute selectedProviderName correctly', () => {
       component.selectProvider('paypal');
       const name = component.selectedProviderName();
       expect(name).toBeTruthy();
     });
 
-    it('debe retornar null si no hay provider seleccionado', () => {
+    it('should retornar null si no hay provider seleccionado', () => {
       expect(component.selectedProviderName()).toBeNull();
     });
   });

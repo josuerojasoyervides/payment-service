@@ -17,7 +17,7 @@ import {
 } from '../../application/ports/payment-strategy.port';
 
 /**
- * Strategy for payments via SPEI (Sistema de Pagos Electrónicos Interbancarios).
+ * Strategy for payments via SPEI (Interbank Electronic Payments System).
  *
  * Features:
  * - Only available for MXN
@@ -36,9 +36,9 @@ export class SpeiStrategy implements PaymentStrategy {
 
   // Common receiving banks for SPEI
   private static readonly RECEIVING_BANKS: Record<string, string> = {
-    stripe: 'STP (Sistema de Transferencias y Pagos)',
-    conekta: 'STP (Sistema de Transferencias y Pagos)',
-    openpay: 'BBVA México',
+    stripe: 'STP (Transfers and Payments System)',
+    conekta: 'STP (Transfers and Payments System)',
+    openpay: 'BBVA Mexico',
   };
 
   constructor(

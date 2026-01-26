@@ -3,7 +3,14 @@ import { assign, fromPromise, setup } from 'xstate';
 
 import { normalizePaymentError } from '../store/payment-store.errors';
 import { PaymentFlowDeps } from './payment-flow.deps';
-import { isFinalStatus, needsUserAction } from './payment-flow.policy';
+import {
+  getPollingDelayMs,
+  getStatusRetryDelayMs,
+  isFinalStatus,
+  needsUserAction,
+  type PaymentFlowConfigOverrides,
+  resolvePaymentFlowConfig,
+} from './payment-flow.policy';
 import {
   CancelInput,
   ConfirmInput,
@@ -13,11 +20,21 @@ import {
   StatusInput,
 } from './payment-flow.types';
 
-export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
-  setup({
+export const createPaymentFlowMachine = (
+  deps: PaymentFlowDeps,
+  configOverrides: PaymentFlowConfigOverrides = {},
+) => {
+  const config = resolvePaymentFlowConfig(configOverrides);
+
+  return setup({
     types: {} as {
       context: PaymentFlowMachineContext;
       events: PaymentFlowEvent;
+    },
+
+    delays: {
+      pollDelay: ({ context }) => getPollingDelayMs(config, context.polling.attempt),
+      statusRetryDelay: ({ context }) => getStatusRetryDelayMs(config, context.statusRetry.count),
     },
 
     actors: {
@@ -59,6 +76,8 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
             request: null,
             selectedProviderId: null,
           },
+          polling: { attempt: 0 },
+          statusRetry: { count: 0 },
         };
       }),
 
@@ -69,6 +88,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
           providerId: event.providerId ?? context.providerId,
           intentId: event.intentId ?? context.intentId ?? context.intent?.id ?? null,
           error: null,
+          statusRetry: { count: 0 },
         };
       }),
 
@@ -80,6 +100,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
           intentId: event.intentId,
           intent: null,
           error: null,
+          statusRetry: { count: 0 },
         };
       }),
 
@@ -91,6 +112,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
           intentId: event.intentId,
           intent: null,
           error: null,
+          statusRetry: { count: 0 },
         };
       }),
 
@@ -100,6 +122,8 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
           intent: event.output,
           intentId: event.output.id,
           error: null,
+          polling: { attempt: 0 },
+          statusRetry: { count: 0 },
         };
       }),
 
@@ -170,7 +194,23 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
           request: null,
           selectedProviderId: null,
         },
+        polling: { attempt: 0 },
+        statusRetry: { count: 0 },
       })),
+
+      incrementPollAttempt: assign(({ context }) => ({
+        polling: {
+          attempt: Math.min(context.polling.attempt + 1, config.polling.maxAttempts),
+        },
+      })),
+
+      incrementStatusRetry: assign(({ context }) => ({
+        statusRetry: {
+          count: Math.min(context.statusRetry.count + 1, config.statusRetry.maxRetries),
+        },
+      })),
+
+      clearError: assign(() => ({ error: null })),
     },
 
     guards: {
@@ -183,6 +223,8 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         context.fallback.eligible &&
         !!context.fallback.request &&
         !!context.fallback.failedProviderId,
+      canPoll: ({ context }) => context.polling.attempt < config.polling.maxAttempts,
+      canRetryStatus: ({ context }) => context.statusRetry.count < config.statusRetry.maxRetries,
     },
   }).createMachine({
     id: 'paymentFlow',
@@ -206,6 +248,8 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         request: null,
         selectedProviderId: null,
       },
+      polling: { attempt: 0 },
+      statusRetry: { count: 0 },
     }),
 
     states: {
@@ -286,6 +330,10 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
 
       polling: {
         tags: ['ready', 'polling'],
+        entry: ['incrementPollAttempt'],
+        after: {
+          pollDelay: { target: 'fetchingStatus', guard: 'canPoll' },
+        },
         on: {
           REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
           CANCEL: { target: 'cancelling' },
@@ -316,7 +364,14 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
             intentId: context.intentId ?? context.intent!.id,
           }),
           onDone: { target: 'afterStatus', actions: 'setIntent' },
-          onError: { target: 'failed', actions: 'setError' },
+          onError: [
+            {
+              guard: 'canRetryStatus',
+              target: 'statusRetrying',
+              actions: ['incrementStatusRetry', 'clearError'],
+            },
+            { target: 'failed', actions: 'setError' },
+          ],
         },
       },
 
@@ -327,6 +382,13 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
           { guard: 'isFinal', target: 'done' },
           { target: 'polling' },
         ],
+      },
+
+      statusRetrying: {
+        tags: ['loading', 'statusRetrying'],
+        after: {
+          statusRetryDelay: { target: 'fetchingStatus' },
+        },
       },
 
       cancelling: {
@@ -380,3 +442,4 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
     },
   });
+};

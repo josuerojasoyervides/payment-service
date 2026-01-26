@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import { LoggerService, TraceOperation } from '@core/logging';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
@@ -15,6 +16,8 @@ type GenerateInput =
 
 @Injectable()
 export class IdempotencyKeyFactory {
+  private readonly logger = inject(LoggerService);
+
   generateForStart(providerId: PaymentProviderId, req: CreatePaymentRequest): string {
     const parts = [
       providerId,
@@ -39,6 +42,14 @@ export class IdempotencyKeyFactory {
     return `${providerId}:get:${intentId}`;
   }
 
+  @TraceOperation({
+    name: 'generateIdempotencyKey',
+    context: 'IdempotencyKeyFactory',
+    metadata: ([providerId, input]) => ({
+      providerId,
+      operation: (input as GenerateInput | undefined)?.operation ?? 'unknown',
+    }),
+  })
   generate(providerId: PaymentProviderId, input: GenerateInput): string {
     if (input.operation === 'start') {
       return this.generateForStart(providerId, input.req);
