@@ -134,7 +134,6 @@ This is not "bad", it is **conscious debt** (must have a plan):
 
 - Legacy rendering of `PaymentError.message` (must die)
 - Some specs with `messageKey` as text (must be fixed)
-- Abstract ports with HttpClient in application (decide if it moves to infra/base)
 
 ---
 
@@ -144,4 +143,3 @@ If you had to close a full cycle today:
 
 1. **Complete minimal tests for critical gateways**
 2. **Fallback hardening** (attempt counters + auto fallback limits)
-3. **Move base ports with HttpClient** if you decide to close that debt

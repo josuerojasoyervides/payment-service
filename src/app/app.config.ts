@@ -1,9 +1,4 @@
-import {
-  HTTP_INTERCEPTORS,
-  provideHttpClient,
-  withInterceptors,
-  withInterceptorsFromDi,
-} from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
@@ -11,7 +6,6 @@ import { routes } from './app.routes';
 import { cacheInterceptor } from './core/caching';
 import { loggingInterceptor } from './core/logging';
 import { resilienceInterceptor, retryInterceptor } from './core/resilience';
-import { FakePaymentsBackendInterceptor } from './core/testing';
 /**
  * Main application configuration.
  *
@@ -41,8 +35,5 @@ export const appConfig: ApplicationConfig = {
       // Class-based interceptors (legacy)
       withInterceptorsFromDi(),
     ),
-
-    // Fake backend for development
-    { provide: HTTP_INTERCEPTORS, useClass: FakePaymentsBackendInterceptor, multi: true },
   ],
 };

@@ -5,7 +5,6 @@
  * - Resilience: Circuit Breaker, Rate Limiter, Retry
  * - Caching: HTTP cache with LRU and TTL
  * - Logging: Structured logging with correlation IDs
- * - Testing: Fake backends for development
  *
  * @example
  * ```typescript
