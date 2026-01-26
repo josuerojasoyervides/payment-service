@@ -67,16 +67,6 @@ export function setupPaymentFlowMachineBridge(
 
   /**
    * ============================================================
-   * Effect #0 (DEBUG): ver snapshot en vivo
-   * ============================================================
-   */
-  effect(() => {
-    const snap = machineSnapshot();
-    console.log('[BRIDGE] state:', snap.value, 'context:', snap.context);
-  });
-
-  /**
-   * ============================================================
    * Effect #1: reflejar LOADING del statechart al store
    * ============================================================
    */

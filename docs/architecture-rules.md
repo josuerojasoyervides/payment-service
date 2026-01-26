@@ -64,7 +64,7 @@ Este doc cumple 2 roles al mismo tiempo:
 
 📌 Estado actual
 
-- Se cumple: store/actions + orchestrator llevan el peso.
+- Se cumple: flow facade + orchestrator llevan el peso; UI no toca store directo.
 
 ---
 
@@ -161,6 +161,7 @@ Opcional según caso:
 
 - `FallbackOrchestratorService` existe y está integrado al store.
 - `allowFallback: true` solo se usa en el arranque.
+- UI consume fallback vía orquestador (no decide política).
 
 ---
 
@@ -183,6 +184,7 @@ Opcional según caso:
 
 - En `payments/` se cumple (no hay `i18n.t` fuera de `payments/ui/**`).
 - En `src/app/shared/**` sí existe traducción (y está permitido por esta regla).
+- Guardrails automáticos evitan regresiones de i18n/messageKey.
 
 ---
 

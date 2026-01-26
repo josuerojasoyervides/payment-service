@@ -90,11 +90,11 @@ En `dev`, el store típicamente era responsable de:
 
 En la rama feature aparece el módulo de XState:
 
-- `src/app/features/payments/application/flow/payment-flow.machine.ts`
-- `src/app/features/payments/application/flow/payment-flow.actor.service.ts`
-- `src/app/features/payments/application/flow/payment-store.machine-bridge.ts`
-- `src/app/features/payments/application/flow/payment-flow.types.ts`
-- `src/app/features/payments/application/flow/payment-flow.guards.ts`
+- `src/app/features/payments/application/state-machine/payment-flow.machine.ts`
+- `src/app/features/payments/application/state-machine/payment-flow.actor.service.ts`
+- `src/app/features/payments/application/store/payment-store.machine-bridge.ts`
+- `src/app/features/payments/application/state-machine/payment-flow.types.ts`
+- `src/app/features/payments/application/state-machine/payment-flow.guards.ts`
 
 Y se actualiza el store:
 
@@ -169,14 +169,9 @@ Con esto logras:
 
 En `payment-store.actions.ts` (feature) ya hay lógica de:
 
-- intentar mandar evento a la máquina (`stateMachine.send(...)`)
-- **si la máquina lo acepta**, el store se actualiza vía bridge
-- **si no lo acepta**, todavía existe un “legacy path” de respaldo
-
-Ejemplo (simplificado):
-
-- `startPayment(...)` → manda evento
-- si XState lo rechazó, entonces usa `legacyStartPayment(...)`
+- mandar eventos a la máquina (`stateMachine.send(...)`)
+- si la máquina lo acepta, el store se actualiza vía bridge
+- el path legacy de refresh fue eliminado (XState es la fuente)
 
 Esto te permitió **pasar tests** sin hacer migración big-bang.
 
@@ -209,7 +204,7 @@ El “completo a la par del store” significa:
 
 1. Todo el flujo crítico se dispara por eventos en la máquina
 2. El store ya **no orquesta** (solo refleja + expone API)
-3. Los componentes UI solo hablan con el store (o con el actor, si decides)
+3. Los componentes UI solo hablan con facades (flow/fallback/history)
 4. El fallback se modela como estados del flujo, no como lógica paralela
 
 ---
