@@ -1,6 +1,6 @@
 # Stabilization Plan — v3 (XState)
 
-> **Última revisión:** 2026-01-24  
+> **Última revisión:** 2026-01-26  
 > Branch de referencia (histórica): `origin/refactor/stabilization-plan-v3`
 
 ## Objetivo
@@ -22,8 +22,8 @@ Este plan es deliberadamente agresivo: primero consistencia y testabilidad, desp
 - ✅ Arquitectura por capas (`domain/application/infrastructure/shared/ui/config`)
 - ✅ PaymentError existe como contrato (`messageKey + params + raw`)
 - ✅ FallbackOrchestratorService existe (manual/auto)
-- ✅ Fallback se decide en Store (no en UI/infra)
-- ✅ Fallback aplicado solo a `startPayment/createIntent` (por diseño actual)
+- ✅ Fallback se decide en XState (no en UI/infra/store)
+- ✅ Fallback se dispara cuando hay request de arranque disponible
 - ✅ Stripe y PayPal ya siguen patrón **facade + operations** (ya no hay “PayPal legacy”)
 
 ⚠️ Deuda visible hoy:
@@ -96,6 +96,7 @@ Este plan es deliberadamente agresivo: primero consistencia y testabilidad, desp
 📌 Estado actual:
 
 - ✅ Orchestrator funciona y está integrado
+- ✅ Fallback modelado dentro del flow (XState)
 - 🟡 Hardening de tests aún incompleto
 
 ---
@@ -130,7 +131,7 @@ Este plan es deliberadamente agresivo: primero consistencia y testabilidad, desp
 
 📌 Estado actual:
 
-- 🟡 Hay specs, pero el coverage es inconsistente.
+- 🟡 Hay specs con happy path + provider error, pero el coverage aún es inconsistente.
 
 ---
 
@@ -145,6 +146,7 @@ Puedes marcar “cerrado” cuando todo esto sea cierto:
 - ✅ Providers parity (Stripe/PayPal) estable
 - ✅ Guardrails en CI (enforcement automático)
 - 🟡 Tests mínimos por gateway (al menos en las operaciones más usadas)
+- ✅ XState integrado como source of truth + store projection
 
 ---
 
@@ -165,4 +167,4 @@ Puedes marcar “cerrado” cuando todo esto sea cierto:
 
 - [ ] Reubicar base ports con HttpClient fuera de application (si decides)
 - [ ] Tipado más fuerte para `messageKey`
-- [ ] Preparación para XState (actors/events mapping)
+- [x] Preparación para XState (actors/events mapping)

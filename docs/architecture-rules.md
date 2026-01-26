@@ -1,6 +1,6 @@
 # Payments Module — Architecture & Quality Rules
 
-> **Última revisión:** 2026-01-24  
+> **Última revisión:** 2026-01-26  
 > Este repo es un laboratorio para practicar arquitectura aplicada a pagos **sin convertirlo en una telaraña**.
 
 ## Cómo leer este documento (importante)
@@ -64,7 +64,7 @@ Este doc cumple 2 roles al mismo tiempo:
 
 📌 Estado actual
 
-- Se cumple: flow facade + orchestrator llevan el peso; UI no toca store directo.
+- Se cumple: flow facade + XState llevan el peso; UI no toca store directo.
 
 ---
 
@@ -154,14 +154,13 @@ Opcional según caso:
 
 ✅ Regla (target)
 
-- El fallback se decide **en Application** (store/orchestrator), nunca en UI o infra.
-- El fallback se aplica **solo** a operaciones “arrancables” (ej: `startPayment/createIntent`), no a “confirm/capture” por defecto.
+- El fallback se decide **en Application** (XState/orchestrator), nunca en UI o infra.
+- El fallback se aplica cuando hay request de arranque disponible.
 
 📌 Estado actual
 
-- `FallbackOrchestratorService` existe y está integrado al store.
-- `allowFallback: true` solo se usa en el arranque.
-- UI consume fallback vía orquestador (no decide política).
+- `FallbackOrchestratorService` existe y está integrado.
+- Fallback modelado en la máquina y proyectado por el store.
 
 ---
 
@@ -238,24 +237,11 @@ Infra y Application deben retornar `PaymentError` con:
 
 ### 5.4 Desviaciones actuales (deuda i18n)
 
-🧾 Deuda conocida (as-of 2026-01-24)
+🧾 Deuda conocida (as-of 2026-01-26)
 
-1. **Legacy rendering en UI**  
-   Existe compatibilidad para un shape viejo que traía `message` (texto crudo).  
-   → Esto contradice el target: “errores siempre como datos”.
-
-2. **`messageKey` convertido a texto traducido en un caso de UI demo/showcase**  
-   → Esto rompe el significado de `messageKey`.
-
-3. **Tests usan `messageKey` como texto**  
-   → Esto debilita la disciplina del contrato.
-
-🎯 Plan de cierre (P0)
-
-- Eliminar el render legacy de `error.message` (solo traducir por `messageKey`).
-- Prohibir `messageKey = i18n.t(...)` (solo keys).
-- Arreglar specs que usan texto como key.
-- (P1) Agregar enforcement automático (ver §9).
+- ✅ Legacy rendering eliminado (UI solo traduce `messageKey`).
+- ✅ `messageKey` ya no se usa como texto traducido.
+- ✅ Specs actualizados para usar keys reales.
 
 ---
 
@@ -319,7 +305,7 @@ Recomendaciones prácticas:
 
 📌 Estado actual
 
-- depcruise ya existe, pero falta enforcement para i18n/messageKey.
+- Guardrails de i18n/messageKey ya existen en tests.
 
 ---
 
@@ -335,19 +321,18 @@ Recomendaciones prácticas:
 ### 10.2 Providers
 
 - ✅ Stripe y PayPal ya siguen el patrón facade + operations
-- 🟡 Tests mínimos por gateway (faltan casos de error/invalid request en varios)
+- 🟡 Tests mínimos por gateway (coverage aún inconsistente)
 
 ### 10.3 I18n & errores
 
 - ✅ UI-only translation (UI layer definido correctamente)
 - ✅ PaymentError = messageKey + params (+ raw)
-- 🟡 Hay deuda legacy (`error.message`) y leaks de `messageKey` con texto
-- ❌ Enforcement automático (lint/test) pendiente
+- ✅ Guardrails automáticos activos
 
 ### 10.4 Fallback
 
 - ✅ Orchestrator integrado y estable
-- ✅ allowFallback solo en “arranque”
+- ✅ Fallback modelado dentro del flow
 - ✅ modo manual/auto configurado y aislado
 
 ---

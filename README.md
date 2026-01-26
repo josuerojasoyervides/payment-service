@@ -34,7 +34,7 @@ Aquí el objetivo es lo contrario:
 
 ### Requisitos
 
-- Node 20+
+- Node 24+
 - Bun (recomendado) o npm
 
 ### Instalar dependencias
@@ -141,7 +141,7 @@ Aquí viven los “casos de uso” y la orquestación:
 - `StartPaymentUseCase`, `ConfirmPaymentUseCase`, etc.
 - `ProviderFactoryRegistry`
 - `PaymentFlowFacade` + `PaymentFlowActorService` (XState)
-- `PaymentsStore` (adapter/bridge del estado)
+- `PaymentsStore` (proyección/adapter del estado)
 - `FallbackOrchestratorService`
 
 Application **no debería conocer providers específicos** (Stripe/PayPal).
@@ -203,6 +203,16 @@ export interface PaymentError {
 ✅ `messageKey` es una **key**, no un texto final
 ✅ `params` son datos serializables para interpolación
 ❌ Infrastructure no traduce, no usa `i18n.t`
+
+---
+
+## Estado actual (2026-01-26)
+
+- XState es la fuente de verdad del flow (start/confirm/cancel/refresh/reset).
+- `PaymentsStore` solo proyecta snapshot + fallback + history (sin orquestación).
+- Fallback se modela como estados del flow (y usa el orchestrator como policy/telemetría).
+- Refresh-from-idle soporta contexto si faltan keys en el evento.
+- Hay tests unitarios para la máquina y para el bridge/store.
 
 ---
 
