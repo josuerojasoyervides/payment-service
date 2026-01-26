@@ -7,7 +7,7 @@ import {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
+import { PaymentFlowFacade } from '../../../application/state-machine/payment-flow.facade';
 import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
 function normalizeQueryParams(params: Params): Record<string, string> {
@@ -40,7 +40,7 @@ type RedirectStatus = PaymentIntent['status'] | null;
 })
 export class ReturnComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly paymentState = inject(PAYMENT_STATE);
+  private readonly flow = inject(PaymentFlowFacade);
   private readonly i18n = inject(I18nService);
 
   // Query params
@@ -55,8 +55,8 @@ export class ReturnComponent implements OnInit {
   readonly isCancelFlow = signal(false);
 
   // State
-  readonly currentIntent = this.paymentState.intent;
-  readonly isLoading = this.paymentState.isLoading;
+  readonly currentIntent = this.flow.intent;
+  readonly isLoading = this.flow.isLoading;
 
   // Computed
   readonly isCancel = computed(() => {
@@ -102,13 +102,12 @@ export class ReturnComponent implements OnInit {
   }
 
   confirmPayment(intentId: string): void {
-    const provider = this.detectProvider();
-    this.paymentState.confirmPayment({ intentId }, provider);
+    this.flow.confirm();
   }
 
   refreshPaymentByReference(referenceId: string): void {
     const provider = this.detectProvider();
-    this.paymentState.refreshPayment({ intentId: referenceId }, provider);
+    this.flow.refresh(provider, referenceId);
   }
 
   private detectProvider(): PaymentProviderId {

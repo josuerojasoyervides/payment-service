@@ -15,6 +15,7 @@ export class PaymentFlowFacade {
   private readonly flow = inject(PaymentFlowActorService);
 
   readonly snapshot = this.flow.snapshot;
+  readonly lastSentEvent = this.flow.lastSentEvent;
 
   readonly intent = computed(() => this.snapshot().context.intent);
   readonly error = computed(() => this.snapshot().context.error);

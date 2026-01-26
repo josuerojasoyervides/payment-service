@@ -5,13 +5,13 @@ import { I18nKeys, I18nService } from '@core/i18n';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
+import { PaymentFlowFacade } from '../../../application/state-machine/payment-flow.facade';
 import { StatusComponent } from './status.page';
 
 describe('StatusComponent', () => {
   let component: StatusComponent;
   let fixture: ComponentFixture<StatusComponent>;
-  let mockPaymentState: any;
+  let mockFlowFacade: any;
 
   const mockIntent: PaymentIntent = {
     id: 'pi_test_123',
@@ -29,19 +29,19 @@ describe('StatusComponent', () => {
   };
 
   beforeEach(async () => {
-    // Mock del payment state
-    mockPaymentState = {
+    // Mock del flow
+    mockFlowFacade = {
       intent: signal<PaymentIntent | null>(null),
       error: signal<PaymentError | null>(null),
       isLoading: signal(false),
-      refreshPayment: vi.fn(),
-      confirmPayment: vi.fn(),
-      cancelPayment: vi.fn(),
+      refresh: vi.fn(() => true),
+      confirm: vi.fn(() => true),
+      cancel: vi.fn(() => true),
     };
 
     await TestBed.configureTestingModule({
       imports: [StatusComponent, RouterLink],
-      providers: [{ provide: PAYMENT_STATE, useValue: mockPaymentState }, provideRouter([])],
+      providers: [{ provide: PaymentFlowFacade, useValue: mockFlowFacade }, provideRouter([])],
     }).compileComponents();
 
     const i18n = TestBed.inject(I18nService);
@@ -73,13 +73,13 @@ describe('StatusComponent', () => {
     it('no debe buscar si el intentId está vacío', () => {
       component.intentId = '';
       component.searchIntent();
-      expect(mockPaymentState.refreshPayment).not.toHaveBeenCalled();
+      expect(mockFlowFacade.refresh).not.toHaveBeenCalled();
     });
 
     it('no debe buscar si el intentId solo tiene espacios', () => {
       component.intentId = '   ';
       component.searchIntent();
-      expect(mockPaymentState.refreshPayment).not.toHaveBeenCalled();
+      expect(mockFlowFacade.refresh).not.toHaveBeenCalled();
     });
 
     it('debe buscar intent y resetear result', () => {
@@ -87,15 +87,12 @@ describe('StatusComponent', () => {
       component.searchIntent();
 
       expect(component.result()).toBeNull(); // Se resetea
-      expect(mockPaymentState.refreshPayment).toHaveBeenCalledWith(
-        { intentId: 'pi_test_123' },
-        'stripe',
-      );
+      expect(mockFlowFacade.refresh).toHaveBeenCalledWith('stripe', 'pi_test_123');
     });
 
     it('debe actualizar result automáticamente cuando el intent cambia (via effect)', () => {
       // El effect() en el constructor escucha cambios en intent()
-      mockPaymentState.intent.set(mockIntent);
+      mockFlowFacade.intent.set(mockIntent);
       fixture.detectChanges();
 
       expect(component.result()).toEqual(mockIntent);
@@ -106,55 +103,37 @@ describe('StatusComponent', () => {
       component.intentId = 'ORDER_FAKE_XYZ';
       component.searchIntent();
 
-      expect(mockPaymentState.refreshPayment).toHaveBeenCalledWith(
-        { intentId: 'ORDER_FAKE_XYZ' },
-        'paypal',
-      );
+      expect(mockFlowFacade.refresh).toHaveBeenCalledWith('paypal', 'ORDER_FAKE_XYZ');
     });
 
     it('debe recortar espacios en blanco del intentId', () => {
       component.intentId = '  pi_test_123  ';
       component.searchIntent();
 
-      expect(mockPaymentState.refreshPayment).toHaveBeenCalledWith(
-        { intentId: 'pi_test_123' },
-        'stripe',
-      );
+      expect(mockFlowFacade.refresh).toHaveBeenCalledWith('stripe', 'pi_test_123');
     });
   });
 
   describe('Acciones de pago', () => {
     it('debe confirmar pago correctamente', () => {
       component.confirmPayment('pi_test_123');
-      expect(mockPaymentState.confirmPayment).toHaveBeenCalledWith(
-        { intentId: 'pi_test_123' },
-        'stripe',
-      );
+      expect(mockFlowFacade.confirm).toHaveBeenCalled();
     });
 
     it('debe cancelar pago correctamente', () => {
       component.cancelPayment('pi_test_123');
-      expect(mockPaymentState.cancelPayment).toHaveBeenCalledWith(
-        { intentId: 'pi_test_123' },
-        'stripe',
-      );
+      expect(mockFlowFacade.cancel).toHaveBeenCalled();
     });
 
     it('debe refrescar pago correctamente', () => {
       component.refreshPayment('pi_test_123');
-      expect(mockPaymentState.refreshPayment).toHaveBeenCalledWith(
-        { intentId: 'pi_test_123' },
-        'stripe',
-      );
+      expect(mockFlowFacade.refresh).toHaveBeenCalledWith('stripe', 'pi_test_123');
     });
 
     it('debe usar el provider seleccionado para las acciones', () => {
       component.selectedProvider.set('paypal');
       component.confirmPayment('ORDER_FAKE_XYZ');
-      expect(mockPaymentState.confirmPayment).toHaveBeenCalledWith(
-        { intentId: 'ORDER_FAKE_XYZ' },
-        'paypal',
-      );
+      expect(mockFlowFacade.confirm).toHaveBeenCalled();
     });
   });
 
@@ -191,7 +170,7 @@ describe('StatusComponent', () => {
     });
 
     it('debe exponer error del payment state', () => {
-      mockPaymentState.error.set(mockError);
+      mockFlowFacade.error.set(mockError);
       fixture.detectChanges();
       expect(component.error()).toEqual(mockError);
     });
@@ -199,13 +178,13 @@ describe('StatusComponent', () => {
 
   describe('Estado del componente', () => {
     it('debe exponer isLoading del payment state', () => {
-      mockPaymentState.isLoading.set(true);
+      mockFlowFacade.isLoading.set(true);
       fixture.detectChanges();
       expect(component.isLoading()).toBe(true);
     });
 
     it('debe exponer error del payment state', () => {
-      mockPaymentState.error.set(mockError);
+      mockFlowFacade.error.set(mockError);
       fixture.detectChanges();
       expect(component.error()).toEqual(mockError);
     });
