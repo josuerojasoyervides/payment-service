@@ -82,17 +82,6 @@ You will see sections with:
 
 **Current state:** satisfied at import level.
 
-**Accepted deviation (temporary)**
-
-- There are **abstract base classes with HttpClient** inside `application/ports/**` to avoid duplication.
-- This breaks the ideal purity of application.
-
-**Recommended closure plan**
-
-- Split:
-  - `application/ports/**` → interfaces only
-  - `infrastructure/base/**` → base classes with Angular inject/HttpClient/logger
-
 ---
 
 ## 2) Allowed dependencies (quick map)

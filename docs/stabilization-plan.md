@@ -146,6 +146,5 @@ You can mark this "closed" when all are true:
 
 ### P2 — Refinements
 
-- [ ] Move base ports with HttpClient out of application (if desired)
 - [ ] Stronger typing for `messageKey`
 - [x] XState preparation (actors/events mapping)

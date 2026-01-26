@@ -1,8 +1,5 @@
 /**
  * Testing module.
  *
- * Provides utilities for development and testing:
- * - Fake backend interceptor to simulate payment APIs
+ * Provides utilities for development and testing.
  */
-
-export * from './fake-backend.interceptor';
