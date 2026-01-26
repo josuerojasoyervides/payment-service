@@ -40,11 +40,16 @@ export class PaymentFlowActorService {
       firstValueFrom(this.status.execute(request, providerId)),
   });
 
+  private prevSnapshot: PaymentFlowSnapshot | null = null;
+
   private readonly actor: PaymentFlowActorRef = createActor(this.machine, {
     inspect: (insp) => {
       if (!isSnapshotInspectionEventWithSnapshot(insp, isPaymentFlowSnapshot)) return;
 
       const snap = insp.snapshot as PaymentFlowSnapshot;
+      const prevState = this.prevSnapshot?.value ?? null;
+      const changed = this.prevSnapshot?.value !== snap.value;
+      const tags = snap.tags ? Array.from(snap.tags) : undefined;
 
       this.logger.info(
         'PaymentFlowMachine transition',
@@ -52,10 +57,15 @@ export class PaymentFlowActorService {
         {
           event: insp.event,
           state: snap.value,
+          prevState,
+          changed,
+          ...(tags && { tags }),
           context: snap.context,
         },
         this.logger.getCorrelationId(),
       );
+
+      this.prevSnapshot = snap;
     },
   }).start();
 
@@ -64,22 +74,34 @@ export class PaymentFlowActorService {
   lastSentEvent = signal<PaymentFlowEvent | null>(null);
 
   constructor() {
+    this.prevSnapshot = this.actor.getSnapshot() as PaymentFlowSnapshot;
     this.actor.subscribe((snapshot) => {
       this._snapshot.set(snapshot);
     });
     this.destroyRef.onDestroy(() => {
+      this.logger.info('Stopping payment flow actor', 'PaymentFlowActorService');
       this.actor.stop();
     });
   }
 
   send(event: PaymentFlowPublicEvent): boolean {
-    const snap = this.actor.getSnapshot();
+    const snap = this.snapshot();
+    const prevState = this.prevSnapshot?.value ?? null;
+    const changed = false; // No hay transición cuando el evento es ignorado
+    const tags = snap.tags ? Array.from(snap.tags) : undefined;
 
     if (!snap.can(event)) {
       this.logger.warn(
         'Event ignored by machine (cannot transition)',
         'PaymentFlowActorService',
-        { event, state: snap.value, context: snap.context },
+        {
+          event,
+          state: snap.value,
+          prevState,
+          changed,
+          ...(tags && { tags }),
+          context: snap.context,
+        },
         this.logger.getCorrelationId(),
       );
       return false;
