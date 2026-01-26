@@ -1,5 +1,7 @@
-import { EnvironmentProviders, inject, Provider } from '@angular/core';
+import { EnvironmentProviders, inject, Provider, ProviderToken, Type } from '@angular/core';
 import { PaymentFlowActorService } from '@payments/application/state-machine/payment-flow.actor.service';
+import { PaymentFlowFacade } from '@payments/application/state-machine/payment-flow.facade';
+import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import { FakeCancelIntentGateway } from '@payments/infrastructure/fake/gateways/intent/cancel-intent.gateway';
 import { FakeConfirmIntentGateway } from '@payments/infrastructure/fake/gateways/intent/confirm-intent.gateway';
 import { FakeCreateIntentGateway } from '@payments/infrastructure/fake/gateways/intent/create-intent.gateway';
@@ -61,17 +63,14 @@ const STRIPE_FAKE_GATEWAYS: Provider[] = [
   FakeStripeConfirmIntentGateway,
   FakeStripeCancelIntentGateway,
   FakeStripeGetIntentGateway,
-  {
-    provide: StripeIntentFacade,
-    useFactory: () =>
-      new FakePaymentGateway(
-        'stripe',
-        inject(FakeStripeCreateIntentGateway),
-        inject(FakeStripeConfirmIntentGateway),
-        inject(FakeStripeCancelIntentGateway),
-        inject(FakeStripeGetIntentGateway),
-      ),
-  },
+  fakeIntentFacadeFactory(
+    'stripe',
+    StripeIntentFacade,
+    FakeStripeCreateIntentGateway,
+    FakeStripeConfirmIntentGateway,
+    FakeStripeCancelIntentGateway,
+    FakeStripeGetIntentGateway,
+  ),
 ];
 
 const PAYPAL_REAL_GATEWAYS: Provider[] = [
@@ -86,17 +85,14 @@ const PAYPAL_FAKE_GATEWAYS: Provider[] = [
   FakePaypalConfirmIntentGateway,
   FakePaypalCancelIntentGateway,
   FakePaypalGetIntentGateway,
-  {
-    provide: PaypalIntentFacade,
-    useFactory: () =>
-      new FakePaymentGateway(
-        'paypal',
-        inject(FakePaypalCreateIntentGateway),
-        inject(FakePaypalConfirmIntentGateway),
-        inject(FakePaypalCancelIntentGateway),
-        inject(FakePaypalGetIntentGateway),
-      ),
-  },
+  fakeIntentFacadeFactory(
+    'paypal',
+    PaypalIntentFacade,
+    FakePaypalCreateIntentGateway,
+    FakePaypalConfirmIntentGateway,
+    FakePaypalCancelIntentGateway,
+    FakePaypalGetIntentGateway,
+  ),
 ];
 
 function selectGateways(mode: PaymentsProvidersMode): Provider[] {
@@ -127,6 +123,7 @@ const APPLICATION_PROVIDERS: Provider[] = [
   FallbackOrchestratorService,
   PaymentsStore,
   PaymentFlowActorService,
+  PaymentFlowFacade,
   { provide: PAYMENT_STATE, useClass: NgRxSignalsStateAdapter },
 ];
 
@@ -165,13 +162,23 @@ export function providePaymentsWithConfig(options: {
   });
 }
 
-function fakeGatewayFactory(providerId: 'stripe' | 'paypal') {
-  return () =>
-    new FakePaymentGateway(
-      providerId,
-      inject(FakeCreateIntentGateway),
-      inject(FakeConfirmIntentGateway),
-      inject(FakeCancelIntentGateway),
-      inject(FakeGetIntentGateway),
-    );
+function fakeIntentFacadeFactory<TFacade>(
+  providerId: PaymentProviderId,
+  facadeToken: ProviderToken<TFacade>,
+  createToken: Type<FakeCreateIntentGateway>,
+  confirmToken: Type<FakeConfirmIntentGateway>,
+  cancelToken: Type<FakeCancelIntentGateway>,
+  getToken: Type<FakeGetIntentGateway>,
+): Provider {
+  return {
+    provide: facadeToken,
+    useFactory: () =>
+      new FakePaymentGateway(
+        providerId,
+        inject(createToken),
+        inject(confirmToken),
+        inject(cancelToken),
+        inject(getToken),
+      ),
+  };
 }
