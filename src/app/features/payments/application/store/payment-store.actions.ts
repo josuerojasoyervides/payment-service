@@ -10,7 +10,6 @@ import {
 import { ignoreElements, pipe, tap } from 'rxjs';
 
 import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
-import { applyLoadingState } from './payment-store.transitions';
 import { PaymentsStoreContext } from './payment-store.types';
 
 export interface PaymentsStoreDeps {
@@ -33,7 +32,6 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
         });
 
         if (!accepted) return;
-        applyLoadingState(store, providerId, request);
       }),
       ignoreElements(),
     ),
@@ -53,7 +51,6 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
         });
 
         if (!accepted) return;
-        applyLoadingState(store, providerId);
       }),
       ignoreElements(),
     ),
@@ -72,7 +69,6 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
         });
 
         if (!accepted) return;
-        applyLoadingState(store, providerId);
       }),
       ignoreElements(),
     ),
@@ -91,7 +87,6 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
         });
 
         if (!accepted) return;
-        applyLoadingState(store, providerId);
       }),
       ignoreElements(),
     ),

@@ -37,18 +37,6 @@ export function setupPaymentFlowMachineBridge(
     fallback.status === 'idle' || fallback.status === 'failed';
 
   /**
-   * Helper: detectar estados "loading" de la máquina
-   */
-  const isLoadingState = (value: unknown) => {
-    return (
-      value === 'starting' ||
-      value === 'confirming' ||
-      value === 'cancelling' ||
-      value === 'fetchingStatus'
-    );
-  };
-
-  /**
    * Snapshot actual (Signal) expuesto por el actor.
    * Ojo: tu servicio ya lo tiene como signal.
    */
@@ -71,9 +59,10 @@ export function setupPaymentFlowMachineBridge(
    * ============================================================
    */
   effect(() => {
-    const state = machineState();
+    const snapshot = machineSnapshot();
+    const state = snapshot.value;
 
-    if (!isLoadingState(state)) return;
+    if (!snapshot.hasTag('loading')) return;
 
     /**
      * ✅ IMPORTANT:
