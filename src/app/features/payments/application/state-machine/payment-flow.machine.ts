@@ -52,6 +52,13 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
           intent: null,
           intentId: null,
           error: null,
+          fallback: {
+            eligible: false,
+            mode: 'manual',
+            failedProviderId: null,
+            request: null,
+            selectedProviderId: null,
+          },
         };
       }),
 
@@ -82,6 +89,39 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         };
       }),
 
+      setFallbackRequested: assign(({ event }) => {
+        if (event.type !== 'FALLBACK_REQUESTED') return {};
+
+        return {
+          fallback: {
+            eligible: true,
+            mode: event.mode ?? 'manual',
+            failedProviderId: event.failedProviderId,
+            request: event.request,
+            selectedProviderId: null,
+          },
+        };
+      }),
+
+      setFallbackStartInput: assign(({ event }) => {
+        if (event.type !== 'FALLBACK_EXECUTE') return {};
+
+        return {
+          providerId: event.providerId,
+          request: event.request,
+          intent: null,
+          intentId: null,
+          error: null,
+          fallback: {
+            eligible: true,
+            mode: 'manual',
+            failedProviderId: event.providerId,
+            request: event.request,
+            selectedProviderId: event.providerId,
+          },
+        };
+      }),
+
       clear: assign(() => ({
         providerId: null,
         request: null,
@@ -89,6 +129,13 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         intent: null,
         intentId: null,
         error: null,
+        fallback: {
+          eligible: false,
+          mode: 'manual',
+          failedProviderId: null,
+          request: null,
+          selectedProviderId: null,
+        },
       })),
     },
 
@@ -98,6 +145,10 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       isFinal: ({ context }) => isFinalStatus(context.intent?.status),
       hasRefreshKeys: ({ context }) =>
         !!context.providerId && !!(context.intentId ?? context.intent?.id),
+      canFallback: ({ context }) =>
+        context.fallback.eligible &&
+        !!context.fallback.request &&
+        !!context.fallback.failedProviderId,
     },
   }).createMachine({
     id: 'paymentFlow',
@@ -114,6 +165,13 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       intent: null,
       intentId: null,
       error: null,
+      fallback: {
+        eligible: false,
+        mode: 'manual',
+        failedProviderId: null,
+        request: null,
+        selectedProviderId: null,
+      },
     }),
 
     states: {
@@ -243,9 +301,23 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
 
       failed: {
         tags: ['error', 'failed'],
+        always: [{ guard: 'canFallback', target: 'fallbackCandidate' }],
         on: {
           RESET: { target: 'idle', actions: 'clear' },
           REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
+          FALLBACK_REQUESTED: {
+            target: 'fallbackCandidate',
+            actions: 'setFallbackRequested',
+          },
+        },
+      },
+
+      fallbackCandidate: {
+        tags: ['ready', 'fallbackCandidate', 'fallback'],
+        on: {
+          RESET: { target: 'idle', actions: 'clear' },
+          FALLBACK_EXECUTE: { target: 'starting', actions: 'setFallbackStartInput' },
+          FALLBACK_ABORT: { target: 'done', actions: 'clear' },
         },
       },
 

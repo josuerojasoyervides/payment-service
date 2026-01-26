@@ -1,3 +1,4 @@
+import { FallbackMode } from '@payments/domain/models/fallback/fallback-state.types';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import {
@@ -33,6 +34,14 @@ export type PaymentFlowEvent =
   | { type: 'CANCEL'; providerId: PaymentProviderId; intentId: string }
   | { type: 'REFRESH'; providerId: PaymentProviderId; intentId: string }
   | { type: 'RESET' }
+  | {
+      type: 'FALLBACK_REQUESTED';
+      failedProviderId: PaymentProviderId;
+      request: CreatePaymentRequest;
+      mode?: FallbackMode;
+    }
+  | { type: 'FALLBACK_EXECUTE'; providerId: PaymentProviderId; request: CreatePaymentRequest }
+  | { type: 'FALLBACK_ABORT' }
   // ✅ Done events (invoke resolve)
   | DoneEvent<'start', PaymentIntent>
   | DoneEvent<'confirm', PaymentIntent>
@@ -46,8 +55,26 @@ export type PaymentFlowEvent =
 
 export type PaymentFlowPublicEvent = Extract<
   PaymentFlowEvent,
-  { type: 'START' | 'CONFIRM' | 'CANCEL' | 'REFRESH' | 'RESET' }
+  {
+    type:
+      | 'START'
+      | 'CONFIRM'
+      | 'CANCEL'
+      | 'REFRESH'
+      | 'RESET'
+      | 'FALLBACK_REQUESTED'
+      | 'FALLBACK_EXECUTE'
+      | 'FALLBACK_ABORT';
+  }
 >;
+
+export interface PaymentFlowFallbackContext {
+  eligible: boolean;
+  mode: FallbackMode;
+  failedProviderId: PaymentProviderId | null;
+  request: CreatePaymentRequest | null;
+  selectedProviderId: PaymentProviderId | null;
+}
 
 export interface PaymentFlowMachineContext {
   providerId: PaymentProviderId | null;
@@ -57,6 +84,7 @@ export interface PaymentFlowMachineContext {
 
   intentId: string | null;
   error: PaymentError | null;
+  fallback: PaymentFlowFallbackContext;
 }
 
 export interface StartInput {
