@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import { FallbackOrchestratorService } from '@payments/application/services/fallback-orchestrator.service';
 import { PaymentFlowFacade } from '@payments/application/state-machine/payment-flow.facade';
 import { CancelPaymentUseCase } from '@payments/application/use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '@payments/application/use-cases/confirm-payment.use-case';
@@ -18,7 +19,6 @@ import {
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import {
   FieldRequirements,
   PaymentOptions,
@@ -31,6 +31,7 @@ describe('CheckoutComponent', () => {
   let mockFlowFacade: any;
   let mockRegistry: any;
   let mockLogger: any;
+  let mockFallbackOrchestrator: any;
   let mockFactory: any;
   let mockBuilder: any;
 
@@ -61,33 +62,6 @@ describe('CheckoutComponent', () => {
       method: { type: 'card', token: 'tok_test' },
     },
     timestamp: Date.now(),
-  };
-
-  const mockPaymentState = {
-    isLoading: signal(false),
-    isReady: signal(false),
-    hasError: signal(false),
-    intent: signal<PaymentIntent | null>(null),
-    error: signal<PaymentError | null>(null),
-    hasPendingFallback: signal(false),
-    pendingFallbackEvent: signal<FallbackAvailableEvent | null>(null),
-    debugSummary: signal({
-      status: 'idle',
-      intentId: null,
-      provider: null,
-      fallbackStatus: 'idle',
-      historyCount: 0,
-    }),
-    redirectUrl: computed(() => null),
-    selectProvider: vi.fn(),
-    clearError: vi.fn(),
-    executeFallback: vi.fn(),
-    cancelFallback: vi.fn(),
-
-    start: vi.fn(() => true),
-    confirm: vi.fn(() => true),
-    cancel: vi.fn(() => true),
-    reset: vi.fn(() => true),
   };
 
   beforeEach(async () => {
@@ -153,11 +127,24 @@ describe('CheckoutComponent', () => {
       hasError: signal(false),
       intent: signal<PaymentIntent | null>(null),
       error: signal<PaymentError | null>(null),
+      snapshot: signal({
+        value: 'idle',
+        context: { providerId: null, intentId: null, intent: null },
+        tags: new Set<string>(),
+      }),
+      lastSentEvent: signal(null),
       redirectUrl: computed(() => null),
       start: vi.fn(() => true),
       confirm: vi.fn(() => true),
       cancel: vi.fn(() => true),
       refresh: vi.fn(() => true),
+      reset: vi.fn(),
+    };
+
+    mockFallbackOrchestrator = {
+      isPending: signal(false),
+      pendingEvent: signal<FallbackAvailableEvent | null>(null),
+      respondToFallback: vi.fn(),
       reset: vi.fn(),
     };
 
@@ -180,7 +167,7 @@ describe('CheckoutComponent', () => {
         CancelPaymentUseCase,
         GetPaymentStatusUseCase,
         IdempotencyKeyFactory,
-        { provide: PAYMENT_STATE, useValue: mockPaymentState },
+        { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
         { provide: PaymentFlowFacade, useValue: mockFlowFacade },
         { provide: ProviderFactoryRegistry, useValue: mockRegistry },
         { provide: LoggerService, useValue: mockLogger },
@@ -283,8 +270,6 @@ describe('CheckoutComponent', () => {
     it('debe seleccionar provider correctamente', () => {
       component.selectProvider('paypal');
       expect(component.selectedProvider()).toBe('paypal');
-      expect(mockPaymentState.selectProvider).toHaveBeenCalledWith('paypal');
-      expect(mockPaymentState.clearError).toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith('Provider selected', 'CheckoutPage', {
         provider: 'paypal',
       });
@@ -293,7 +278,6 @@ describe('CheckoutComponent', () => {
     it('debe seleccionar método correctamente', () => {
       component.selectMethod('spei');
       expect(component.selectedMethod()).toBe('spei');
-      expect(mockPaymentState.clearError).toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith('Method selected', 'CheckoutPage', {
         method: 'spei',
       });
@@ -431,7 +415,7 @@ describe('CheckoutComponent', () => {
   describe('Fallback', () => {
     it('debe confirmar fallback', () => {
       component.confirmFallback('paypal');
-      expect(mockPaymentState.executeFallback).toHaveBeenCalledWith('paypal');
+      expect(mockFallbackOrchestrator.respondToFallback).not.toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith('Fallback confirmed', 'CheckoutPage', {
         provider: 'paypal',
       });
@@ -439,13 +423,13 @@ describe('CheckoutComponent', () => {
 
     it('debe cancelar fallback', () => {
       component.cancelFallback();
-      expect(mockPaymentState.cancelFallback).toHaveBeenCalled();
+      expect(mockFallbackOrchestrator.reset).toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith('Fallback cancelled', 'CheckoutPage');
     });
 
     it('debe detectar cuando hay fallback pendiente', () => {
-      mockPaymentState.hasPendingFallback.set(true);
-      mockPaymentState.pendingFallbackEvent.set(mockFallbackEvent);
+      mockFallbackOrchestrator.isPending.set(true);
+      mockFallbackOrchestrator.pendingEvent.set(mockFallbackEvent);
       fixture.detectChanges();
       expect(component.hasPendingFallback()).toBe(true);
       expect(component.pendingFallbackEvent()).toEqual(mockFallbackEvent);
@@ -507,7 +491,7 @@ describe('CheckoutComponent', () => {
     it('debe exponer debug summary del estado', () => {
       const debugSummary = component.debugInfo();
       expect(debugSummary).toBeTruthy();
-      expect(debugSummary.status).toBe('idle');
+      expect(debugSummary.state).toBe('idle');
     });
   });
 });

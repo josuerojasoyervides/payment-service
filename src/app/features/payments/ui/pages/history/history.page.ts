@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { PaymentHistoryFacade } from '@payments/application/facades/payment-history.facade';
 import { PaymentHistoryEntry } from '@payments/application/store/payment-store.history.types';
 import {
   PaymentIntent,
@@ -9,7 +10,6 @@ import {
 } from '@payments/domain/models/payment/payment-intent.types';
 import { ACTION_REQUIRED_STATUSES } from '@payments/ui/shared/ui.types';
 
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
 type IntentStatus = PaymentIntent['status'];
@@ -27,12 +27,12 @@ type IntentStatus = PaymentIntent['status'];
   templateUrl: './history.component.html',
 })
 export class HistoryComponent {
-  private readonly paymentState = inject(PAYMENT_STATE);
+  private readonly historyFacade = inject(PaymentHistoryFacade);
   private readonly i18n = inject(I18nService);
 
-  readonly history = this.paymentState.history;
-  readonly historyCount = this.paymentState.historyCount;
-  readonly isLoading = this.paymentState.isLoading;
+  readonly history = this.historyFacade.history;
+  readonly historyCount = this.historyFacade.historyCount;
+  readonly isLoading = this.historyFacade.isLoading;
 
   isActionRequired(status: PaymentIntent['status']): boolean {
     return ACTION_REQUIRED_STATUSES.has(status);
@@ -49,19 +49,19 @@ export class HistoryComponent {
   }
 
   confirmPayment(intentId: string, provider: PaymentProviderId): void {
-    this.paymentState.confirmPayment({ intentId }, provider);
+    this.historyFacade.confirmPayment(intentId, provider);
   }
 
   cancelPayment(intentId: string, provider: PaymentProviderId): void {
-    this.paymentState.cancelPayment({ intentId }, provider);
+    this.historyFacade.cancelPayment(intentId, provider);
   }
 
   refreshPayment(intentId: string, provider: PaymentProviderId): void {
-    this.paymentState.refreshPayment({ intentId }, provider);
+    this.historyFacade.refreshPayment(intentId, provider);
   }
 
   clearHistory(): void {
-    this.paymentState.clearHistory();
+    this.historyFacade.clearHistory();
   }
 
   readonly paymentHistoryLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_history));

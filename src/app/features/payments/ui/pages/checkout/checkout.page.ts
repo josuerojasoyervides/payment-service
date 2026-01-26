@@ -3,6 +3,7 @@ import { Component, computed, effect, inject, isDevMode, signal } from '@angular
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import { FallbackOrchestratorService } from '@payments/application/services/fallback-orchestrator.service';
 import { PaymentFlowFacade } from '@payments/application/state-machine/payment-flow.facade';
 import {
   CurrencyCode,
@@ -20,7 +21,6 @@ import { ProviderSelectorComponent } from '@payments/ui/components/provider-sele
 
 import { StrategyContext } from '../../../application/ports/payment-strategy.port';
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
-import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
 import {
   FieldRequirements,
   PaymentOptions,
@@ -58,10 +58,10 @@ import {
 export class CheckoutComponent {
   readonly isDevMode = isDevMode();
 
-  private readonly paymentState = inject(PAYMENT_STATE);
   private readonly registry = inject(ProviderFactoryRegistry);
   private readonly logger = inject(LoggerService);
   private readonly i18n = inject(I18nService);
+  private readonly fallback = inject(FallbackOrchestratorService);
   private readonly flow = inject(PaymentFlowFacade);
 
   readonly isLoading = this.flow.isLoading;
@@ -81,8 +81,8 @@ export class CheckoutComponent {
   private readonly formOptions = signal<PaymentOptions>({});
   readonly isFormValid = signal(false);
 
-  readonly hasPendingFallback = this.paymentState.hasPendingFallback;
-  readonly pendingFallbackEvent = this.paymentState.pendingFallbackEvent;
+  readonly hasPendingFallback = this.fallback.isPending;
+  readonly pendingFallbackEvent = this.fallback.pendingEvent;
 
   readonly availableProviders = computed<PaymentProviderId[]>(() => {
     return this.registry.getAvailableProviders();
@@ -122,7 +122,17 @@ export class CheckoutComponent {
 
   readonly showResult = computed(() => this.isReady() || this.hasError());
 
-  readonly debugInfo = this.paymentState.debugSummary;
+  readonly debugInfo = computed(() => {
+    const snap = this.flow.snapshot();
+
+    return {
+      state: snap.value,
+      providerId: snap.context.providerId,
+      intentId: snap.context.intentId ?? snap.context.intent?.id ?? null,
+      tags: snap.tags ? Array.from(snap.tags) : [],
+      lastEvent: this.flow.lastSentEvent(),
+    };
+  });
 
   constructor() {
     effect(() => {
@@ -158,14 +168,11 @@ export class CheckoutComponent {
 
   selectProvider(provider: PaymentProviderId): void {
     this.selectedProvider.set(provider);
-    this.paymentState.selectProvider(provider);
-    this.paymentState.clearError();
     this.logger.info('Provider selected', 'CheckoutPage', { provider });
   }
 
   selectMethod(method: PaymentMethodType): void {
     this.selectedMethod.set(method);
-    this.paymentState.clearError();
     this.logger.info('Method selected', 'CheckoutPage', { method });
   }
 
@@ -249,12 +256,30 @@ export class CheckoutComponent {
   // === Fallback handlers ===
   confirmFallback(provider: PaymentProviderId): void {
     this.logger.info('Fallback confirmed', 'CheckoutPage', { provider });
-    this.paymentState.executeFallback(provider);
+    const event = this.pendingFallbackEvent();
+    if (!event) return;
+
+    this.fallback.respondToFallback({
+      eventId: event.eventId,
+      accepted: true,
+      selectedProvider: provider,
+      timestamp: Date.now(),
+    });
   }
 
   cancelFallback(): void {
     this.logger.info('Fallback cancelled', 'CheckoutPage');
-    this.paymentState.cancelFallback();
+    const event = this.pendingFallbackEvent();
+    if (event) {
+      this.fallback.respondToFallback({
+        eventId: event.eventId,
+        accepted: false,
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
+    this.fallback.reset();
   }
 
   onPaypalRequested(url: string): void {
