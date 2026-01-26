@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
+import { mapReturnQueryToReference } from '../../../application/events/external/payment-flow-return.mapper';
 import { PaymentFlowFacade } from '../../../application/state-machine/payment-flow.facade';
 import { ReturnComponent } from './return.page';
 
@@ -158,16 +159,15 @@ describe('ReturnComponent', () => {
     });
   });
 
-  describe('Detect provider', () => {
+  describe('Return mapper', () => {
     it('should detect PayPal when PayPal token exists', () => {
-      component.paypalToken.set('ORDER_FAKE_XYZ');
-      const provider = (component as any).detectProvider();
-      expect(provider).toBe('paypal');
+      const reference = mapReturnQueryToReference({ token: 'ORDER_FAKE_XYZ' });
+      expect(reference.providerId).toBe('paypal');
     });
 
     it('should detect Stripe by default', () => {
-      const provider = (component as any).detectProvider();
-      expect(provider).toBe('stripe');
+      const reference = mapReturnQueryToReference({});
+      expect(reference.providerId).toBe('stripe');
     });
   });
 
