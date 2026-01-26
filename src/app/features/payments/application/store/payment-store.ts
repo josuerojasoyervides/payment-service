@@ -12,7 +12,6 @@ import { PaymentProviderId } from '@payments/domain/models/payment/payment-inten
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
 import { createPaymentsStoreActions } from './payment-store.actions';
-import { setupFallbackExecuteListener } from './payment-store.fallback';
 import { setupPaymentFlowMachineBridge } from './payment-store.machine-bridge';
 import { buildPaymentsSelectors } from './payment-store.selectors';
 import { initialPaymentsState, PaymentsState } from './payment-store.state';
@@ -28,8 +27,6 @@ export const PaymentsStore = signalStore(
     const actions = createPaymentsStoreActions(store, {
       stateMachine,
     });
-
-    setupFallbackExecuteListener(fallbackOrchestrator, actions.startPayment);
 
     // -----------------------------
     // Public API
@@ -48,7 +45,11 @@ export const PaymentsStore = signalStore(
         if (!pendingEvent) {
           const currentRequest = store.currentRequest();
           if (!currentRequest) return;
-          actions.startPayment({ request: currentRequest, providerId });
+          stateMachine.send({
+            type: 'FALLBACK_EXECUTE',
+            providerId,
+            request: currentRequest,
+          });
           return;
         }
 
@@ -71,10 +72,12 @@ export const PaymentsStore = signalStore(
             accepted: false,
             timestamp: Date.now(),
           });
+          stateMachine.send({ type: 'FALLBACK_ABORT' });
           return;
         }
 
         fallbackOrchestrator.reset();
+        stateMachine.send({ type: 'FALLBACK_ABORT' });
       },
 
       clearError() {
@@ -103,7 +106,6 @@ export const PaymentsStore = signalStore(
 
       // 2) Bridge xstate machine -> store (PR2)
       setupPaymentFlowMachineBridge(store, {
-        fallbackOrchestrator,
         stateMachine,
       });
     },

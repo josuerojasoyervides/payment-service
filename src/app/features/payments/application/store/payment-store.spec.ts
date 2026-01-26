@@ -177,6 +177,35 @@ describe('PaymentsStore', () => {
     );
   };
 
+  const setMachineFallbackCandidate = (overrides?: Partial<any>) => {
+    machineSnapshot.set(
+      buildSnapshot({
+        value: 'fallbackCandidate',
+        context: {
+          providerId: 'stripe',
+          request: req,
+          flowContext: null,
+          intent: null,
+          error: null,
+          fallback: {
+            eligible: true,
+            mode: 'manual',
+            failedProviderId: 'stripe',
+            request: req,
+            selectedProviderId: null,
+          },
+          ...overrides,
+        },
+        lastSentEvent: {
+          type: 'FALLBACK_REQUESTED',
+          failedProviderId: 'stripe',
+          request: req,
+        },
+        tags: ['ready', 'fallback'],
+      }),
+    );
+  };
+
   const stateMachineMock: Partial<PaymentFlowActorService> = {
     snapshot: machineSnapshot as any,
     send: vi.fn(() => true),
@@ -243,8 +272,6 @@ describe('PaymentsStore', () => {
     });
 
     it('machine error WITHOUT fallback => status=error + error', async () => {
-      fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(false);
-
       store.startPayment({ request: req, providerId: 'stripe' });
       setMachineLoading();
       await flush();
@@ -253,25 +280,19 @@ describe('PaymentsStore', () => {
       setMachineError();
       await flush();
 
-      expect(fallbackOrchestratorMock.reportFailure).toHaveBeenCalledTimes(1);
       expect(store.status()).toBe('error');
       expect(store.error()).toEqual(paymentError);
     });
 
-    it('machine error WITH fallback handled => silent failure (no UI error)', async () => {
-      fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(true);
-
+    it('fallback candidate from machine => silent failure (no UI error)', async () => {
       store.startPayment({ request: req, providerId: 'stripe' });
       setMachineLoading();
       await flush();
       expect(store.status()).toBe('loading');
 
-      setMachineError();
+      setMachineFallbackCandidate();
       await flush();
 
-      expect(fallbackOrchestratorMock.reportFailure).toHaveBeenCalledTimes(1);
-
-      // policy del bridge: si handled, NO surfear error a UI
       expect(store.error()).toBeNull();
       expect(store.status()).not.toBe('error');
     });
@@ -477,53 +498,6 @@ describe('PaymentsStore', () => {
   // ============================================================
   // fallbackExecute$
   // ============================================================
-  describe('fallbackExecute$', () => {
-    it('triggers startPayment ONLY when orchestrator status is executing', async () => {
-      (stateMachineMock.send as any).mockClear();
-
-      fallbackState = { ...fallbackState, status: 'executing' };
-
-      fallbackExecute$.next({ request: req, provider: 'paypal' });
-      await flush();
-
-      expect(stateMachineMock.send).toHaveBeenCalledTimes(1);
-      expect(stateMachineMock.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'START',
-          providerId: 'paypal',
-        }),
-      );
-    });
-
-    it('triggers startPayment ONLY when orchestrator status is auto_executing', async () => {
-      (stateMachineMock.send as any).mockClear();
-
-      fallbackState = { ...fallbackState, status: 'auto_executing', isAutoFallback: true };
-
-      fallbackExecute$.next({ request: req, provider: 'paypal' });
-      await flush();
-
-      expect(stateMachineMock.send).toHaveBeenCalledTimes(1);
-      expect(stateMachineMock.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'START',
-          providerId: 'paypal',
-        }),
-      );
-    });
-
-    it('does nothing when orchestrator status is idle', async () => {
-      (stateMachineMock.send as any).mockClear();
-
-      fallbackState = { ...fallbackState, status: 'idle' };
-
-      fallbackExecute$.next({ request: req, provider: 'paypal' });
-      await flush();
-
-      expect(stateMachineMock.send).not.toHaveBeenCalled();
-    });
-  });
-
   // ============================================================
   // history
   // ============================================================
@@ -612,7 +586,7 @@ describe('PaymentsStore', () => {
       expect(stateMachineMock.send).toHaveBeenCalledTimes(1);
       expect(stateMachineMock.send).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: 'START',
+          type: 'FALLBACK_EXECUTE',
           providerId: 'paypal',
         }),
       );

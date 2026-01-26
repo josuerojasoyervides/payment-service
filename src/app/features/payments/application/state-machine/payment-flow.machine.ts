@@ -93,6 +93,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         if (event.type !== 'FALLBACK_REQUESTED') return {};
 
         return {
+          error: null,
           fallback: {
             eligible: true,
             mode: event.mode ?? 'manual',
@@ -103,7 +104,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         };
       }),
 
-      setFallbackStartInput: assign(({ event }) => {
+      setFallbackStartInput: assign(({ event, context }) => {
         if (event.type !== 'FALLBACK_EXECUTE') return {};
 
         return {
@@ -113,9 +114,8 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
           intentId: null,
           error: null,
           fallback: {
+            ...context.fallback,
             eligible: true,
-            mode: 'manual',
-            failedProviderId: event.providerId,
             request: event.request,
             selectedProviderId: event.providerId,
           },
@@ -309,6 +309,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
             target: 'fallbackCandidate',
             actions: 'setFallbackRequested',
           },
+          FALLBACK_EXECUTE: { target: 'starting', actions: 'setFallbackStartInput' },
         },
       },
 

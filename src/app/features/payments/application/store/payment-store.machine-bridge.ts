@@ -1,20 +1,13 @@
 // src/app/features/payments/application/store/payment-store.machine-bridge.ts
 
 import { computed, effect, Signal } from '@angular/core';
-import { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 
-import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
 import { PaymentFlowSnapshot } from '../state-machine/payment-flow.types';
 import { normalizePaymentError } from './payment-store.errors';
 import { addToHistory } from './payment-store.history';
-import {
-  applyFailureState,
-  applyLoadingState,
-  applyReadyState,
-  applySilentFailureState,
-} from './payment-store.transitions';
+import { applyFailureState, applyLoadingState, applyReadyState } from './payment-store.transitions';
 import type { PaymentsStoreContext } from './payment-store.types';
 
 /**
@@ -27,15 +20,8 @@ export function setupPaymentFlowMachineBridge(
   store: PaymentsStoreContext,
   deps: {
     stateMachine: PaymentFlowActorService;
-    fallbackOrchestrator: FallbackOrchestratorService;
   },
 ) {
-  /**
-   * Policy: no surfear errores a UI mientras el fallback está ejecutándose.
-   */
-  const canSurfaceErrorToUI = (fallback: FallbackState) =>
-    fallback.status === 'idle' || fallback.status === 'failed';
-
   /**
    * Snapshot actual (Signal) expuesto por el actor.
    * Ojo: tu servicio ya lo tiene como signal.
@@ -45,7 +31,6 @@ export function setupPaymentFlowMachineBridge(
   /**
    * Derivados (computed) para evitar trabajo repetido en effect.
    */
-  const machineState = computed(() => machineSnapshot().value);
   const machineContext = computed(() => machineSnapshot().context);
 
   const machineIntent = computed(() => machineContext().intent);
@@ -101,12 +86,6 @@ export function setupPaymentFlowMachineBridge(
       lastIntentId = intent.id;
       addToHistory(store, intent, providerId);
     }
-
-    // Si fallback estaba activo y recuperamos
-    if (store.fallback().status !== 'idle') {
-      deps.fallbackOrchestrator.notifySuccess();
-    }
-
     return;
   });
 
@@ -116,35 +95,13 @@ export function setupPaymentFlowMachineBridge(
    * ============================================================
    */
   effect(() => {
+    const snapshot = machineSnapshot();
     const err = machineError();
-    if (!err) return;
+    if (!snapshot.hasTag('error') || !err) return;
 
     // Normalmente tu máquina ya normaliza, pero por seguridad:
     const normalized = normalizePaymentError(err);
 
-    const providerId = machineProviderId() as PaymentProviderId | null;
-    const request = machineRequest();
-
-    // Si tenemos provider + request, podemos reportar failure a fallback
-    if (providerId && request) {
-      const handled = deps.fallbackOrchestrator.reportFailure(
-        providerId,
-        normalized,
-        request,
-        false,
-      );
-
-      if (handled) {
-        applySilentFailureState(store);
-        return;
-      }
-    }
-
-    // No surfear error si fallback está ejecutándose
-    if (canSurfaceErrorToUI(store.fallback())) {
-      applyFailureState(store, normalized);
-    } else {
-      applySilentFailureState(store);
-    }
+    applyFailureState(store, normalized);
   });
 }
