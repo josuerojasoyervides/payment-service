@@ -500,7 +500,7 @@ describe('CheckoutComponent - Integración Real', () => {
       expect(store.intent()).toBeNull();
 
       // El componente debe reflejar el error
-      expect(component.hasError()).toBe(true);
+      expect(component.hasError).toBe(true);
       expect(component.currentError()).toBeTruthy();
       expect(component.showResult()).toBe(true);
 

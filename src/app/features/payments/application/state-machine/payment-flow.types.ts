@@ -53,8 +53,9 @@ export interface PaymentFlowMachineContext {
   providerId: PaymentProviderId | null;
   request: CreatePaymentRequest | null;
   flowContext: PaymentFlowContext | null;
-
   intent: PaymentIntent | null;
+
+  intentId: string | null;
   error: PaymentError | null;
 }
 

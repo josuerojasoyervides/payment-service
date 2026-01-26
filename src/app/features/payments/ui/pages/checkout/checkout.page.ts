@@ -3,7 +3,7 @@ import { Component, computed, effect, inject, isDevMode, signal } from '@angular
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-// Domain types
+import { PaymentFlowFacade } from '@payments/application/state-machine/payment-flow.facade';
 import {
   CurrencyCode,
   PaymentMethodType,
@@ -18,7 +18,6 @@ import { PaymentFormComponent } from '@payments/ui/components/payment-form/payme
 import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
 
-// Port and token (decoupled from implementation)
 import { StrategyContext } from '../../../application/ports/payment-strategy.port';
 import { ProviderFactoryRegistry } from '../../../application/registry/provider-factory.registry';
 import { PAYMENT_STATE } from '../../../application/tokens/payment-state.token';
@@ -63,6 +62,14 @@ export class CheckoutComponent {
   private readonly registry = inject(ProviderFactoryRegistry);
   private readonly logger = inject(LoggerService);
   private readonly i18n = inject(I18nService);
+  private readonly flow = inject(PaymentFlowFacade);
+
+  readonly isLoading = this.flow.isLoading;
+  readonly isReady = this.flow.isReady;
+  readonly hasError = this.flow.hasError;
+
+  readonly currentIntent = this.flow.intent;
+  readonly currentError = this.flow.error;
 
   readonly orderId = signal('order_' + Math.random().toString(36).substring(7));
   readonly amount = signal(499.99);
@@ -73,12 +80,6 @@ export class CheckoutComponent {
 
   private readonly formOptions = signal<PaymentOptions>({});
   readonly isFormValid = signal(false);
-
-  readonly isLoading = this.paymentState.isLoading;
-  readonly isReady = this.paymentState.isReady;
-  readonly hasError = this.paymentState.hasError;
-  readonly currentIntent = this.paymentState.intent;
-  readonly currentError = this.paymentState.error;
 
   readonly hasPendingFallback = this.paymentState.hasPendingFallback;
   readonly pendingFallbackEvent = this.paymentState.pendingFallbackEvent;
@@ -119,9 +120,7 @@ export class CheckoutComponent {
     }
   });
 
-  readonly showResult = computed(() => {
-    return this.isReady() || this.hasError();
-  });
+  readonly showResult = computed(() => this.isReady() || this.hasError());
 
   readonly debugInfo = this.paymentState.debugSummary;
 
@@ -149,6 +148,11 @@ export class CheckoutComponent {
           alternatives: event.alternativeProviders,
         });
       }
+    });
+
+    effect(() => {
+      const url = this.flow.redirectUrl();
+      if (url) this.onPaypalRequested(url);
     });
   }
 
@@ -227,7 +231,14 @@ export class CheckoutComponent {
         flowContext: context,
       }); */
 
-      this.paymentState.startPayment(request, provider, context);
+      const ok = this.flow.start(provider, request, context);
+
+      if (!ok) {
+        this.logger.warn('START event ignored by machine', 'CheckoutPage', {
+          provider,
+          method,
+        });
+      }
     } catch (error) {
       this.logger.error('Failed to build payment request', 'CheckoutPage', error);
     }
@@ -252,11 +263,22 @@ export class CheckoutComponent {
       window.location.href = url;
     }
   }
+  confirmPayment(): void {
+    const ok = this.flow.confirm();
+    if (!ok) this.logger.warn('CONFIRM ignored', 'CheckoutPage');
+  }
+
+  cancelPayment(): void {
+    const ok = this.flow.cancel();
+    if (!ok) this.logger.warn('CANCEL ignored', 'CheckoutPage');
+  }
 
   resetPayment(): void {
-    this.paymentState.reset();
+    this.flow.reset();
+
     this.orderId.set('order_' + Math.random().toString(36).substring(7));
     this.isFormValid.set(false);
+
     this.logger.info('Payment reset', 'CheckoutPage');
   }
 

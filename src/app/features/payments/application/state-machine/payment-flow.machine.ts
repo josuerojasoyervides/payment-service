@@ -1,5 +1,3 @@
-// src/app/features/payments/application/state-machine/payment-flow.machine.ts
-
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { assign, fromPromise, setup } from 'xstate';
 
@@ -15,12 +13,6 @@ import {
   StatusInput,
 } from './payment-flow.types';
 
-/**
- * ==========================
- * Machine Factory
- * ==========================
- */
-
 export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
   setup({
     types: {} as {
@@ -28,9 +20,6 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       events: PaymentFlowEvent;
     },
 
-    /**
-     * Actors = operaciones async (invokes)
-     */
     actors: {
       start: fromPromise<PaymentIntent, StartInput>(async ({ input }) => {
         return deps.startPayment(input.providerId, input.request, input.flowContext);
@@ -52,9 +41,6 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       }),
     },
 
-    /**
-     * Actions = mutan context (solo context, nada de side effects externos)
-     */
     actions: {
       setStartInput: assign(({ event }) => {
         if (event.type !== 'START') return {};
@@ -64,13 +50,28 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
           request: event.request,
           flowContext: event.flowContext ?? null,
           intent: null,
+          intentId: null,
+          error: null,
+        };
+      }),
+
+      setRefreshInput: assign(({ event }) => {
+        if (event.type !== 'REFRESH') return {};
+
+        return {
+          providerId: event.providerId,
+          intentId: event.intentId,
           error: null,
         };
       }),
 
       setIntent: assign(({ event }) => {
         if (!('output' in event)) return {};
-        return { intent: event.output, error: null };
+        return {
+          intent: event.output,
+          intentId: event.output.id,
+          error: null,
+        };
       }),
 
       setError: assign(({ event }) => {
@@ -86,25 +87,22 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
         request: null,
         flowContext: null,
         intent: null,
+        intentId: null,
         error: null,
       })),
     },
 
-    /**
-     * Guards = decisiones puras
-     */
     guards: {
       hasIntent: ({ context }) => !!context.intent,
-
       needsUserAction: ({ context }) => needsUserAction(context.intent),
-
       isFinal: ({ context }) => isFinalStatus(context.intent?.status),
+      hasRefreshKeys: ({ context }) =>
+        !!context.providerId && !!(context.intentId ?? context.intent?.id),
     },
   }).createMachine({
     id: 'paymentFlow',
     initial: 'idle',
 
-    // RESET from any state
     on: {
       RESET: { target: '.idle', actions: 'clear' },
     },
@@ -114,17 +112,21 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       request: null,
       flowContext: null,
       intent: null,
+      intentId: null,
       error: null,
     }),
 
     states: {
       idle: {
+        tags: ['idle'],
         on: {
           START: { target: 'starting', actions: 'setStartInput' },
+          REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
         },
       },
 
       starting: {
+        tags: ['loading', 'starting'],
         invoke: {
           src: 'start',
           input: ({ context }) => ({
@@ -138,6 +140,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       afterStart: {
+        tags: ['loading', 'afterStart'],
         always: [
           { guard: 'needsUserAction', target: 'requiresAction' },
           { guard: 'isFinal', target: 'done' },
@@ -146,16 +149,16 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       requiresAction: {
+        tags: ['ready', 'requiresAction'],
         on: {
           CONFIRM: { target: 'confirming' },
           CANCEL: { target: 'cancelling' },
-
-          // ✅ útil si hay flujos que requieren acción pero aún quieres refrescar status
-          REFRESH: { target: 'fetchingStatus' },
+          REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
         },
       },
 
       confirming: {
+        tags: ['loading', 'confirming'],
         invoke: {
           src: 'confirm',
           input: ({ context }) => ({
@@ -169,6 +172,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       afterConfirm: {
+        tags: ['loading', 'afterConfirm'],
         always: [
           { guard: 'needsUserAction', target: 'requiresAction' },
           { guard: 'isFinal', target: 'done' },
@@ -177,18 +181,38 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       polling: {
+        tags: ['ready', 'polling'],
         on: {
-          REFRESH: { target: 'fetchingStatus' },
+          REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
           CANCEL: { target: 'cancelling' },
         },
       },
 
       fetchingStatus: {
+        tags: ['loading', 'fetchingStatus'],
+        always: [
+          {
+            guard: 'hasRefreshKeys',
+            target: 'fetchingStatusInvoke',
+          },
+          {
+            // si falta providerId/intentId, es bug del caller
+            target: 'failed',
+            actions: assign({
+              error: () =>
+                normalizePaymentError(new Error('Missing providerId/intentId for REFRESH')),
+            }),
+          },
+        ],
+      },
+
+      fetchingStatusInvoke: {
+        tags: ['loading', 'fetchingStatusInvoke'],
         invoke: {
           src: 'status',
           input: ({ context }) => ({
             providerId: context.providerId!,
-            intentId: context.intent!.id,
+            intentId: context.intentId ?? context.intent!.id,
           }),
           onDone: { target: 'afterStatus', actions: 'setIntent' },
           onError: { target: 'failed', actions: 'setError' },
@@ -196,8 +220,8 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       afterStatus: {
+        tags: ['ready', 'afterStatus'],
         always: [
-          // ✅ refresh puede regresar un nuevo requires_action
           { guard: 'needsUserAction', target: 'requiresAction' },
           { guard: 'isFinal', target: 'done' },
           { target: 'polling' },
@@ -205,6 +229,7 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       cancelling: {
+        tags: ['loading', 'cancelling'],
         invoke: {
           src: 'cancel',
           input: ({ context }) => ({
@@ -217,11 +242,19 @@ export const createPaymentFlowMachine = (deps: PaymentFlowDeps) =>
       },
 
       failed: {
-        on: { RESET: { target: 'idle', actions: 'clear' } },
+        tags: ['error', 'failed'],
+        on: {
+          RESET: { target: 'idle', actions: 'clear' },
+          REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
+        },
       },
 
       done: {
-        on: { RESET: { target: 'idle', actions: 'clear' } },
+        tags: ['ready', 'done'],
+        on: {
+          RESET: { target: 'idle', actions: 'clear' },
+          REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
+        },
       },
     },
   });
