@@ -209,6 +209,7 @@ describe('PaymentsStore', () => {
   const stateMachineMock: Partial<PaymentFlowActorService> = {
     snapshot: machineSnapshot as any,
     send: vi.fn(() => true),
+    sendSystem: vi.fn(),
   };
 
   beforeEach(() => {
@@ -578,13 +579,13 @@ describe('PaymentsStore', () => {
       setMachineReady();
       await flush();
 
-      (stateMachineMock.send as any).mockClear();
+      (stateMachineMock.sendSystem as any).mockClear();
 
       store.executeFallback('paypal');
       await flush();
 
-      expect(stateMachineMock.send).toHaveBeenCalledTimes(1);
-      expect(stateMachineMock.send).toHaveBeenCalledWith(
+      expect(stateMachineMock.sendSystem).toHaveBeenCalledTimes(1);
+      expect(stateMachineMock.sendSystem).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'FALLBACK_EXECUTE',
           providerId: 'paypal',

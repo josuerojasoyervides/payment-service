@@ -44,7 +44,8 @@
 - [x] **Branch:** `feat/fallback-hardening-limits` | **Commit:** `feat(fallback): enforce limits and expand coverage`
 - [ ] **Branch:** `feat/ui-qol-utilities` | **Commit:** `feat(ui): add status label pipe, click tracking, and autofocus`
 - [ ] **Branch:** `docs/fallback-hardening` | **Commit:** `docs(fallback): document limits and reset behavior`
-- [ ] **Branch:** `feat/i18n-translate-pipe` | **Commit:** `feat(i18n): add template translation pipe` (active)
+- [x] **Branch:** `feat/i18n-translate-pipe` | **Commit:** `feat(i18n): add template translation pipe`
+- [ ] **Branch:** `refactor/flow-public-events` | **Commit:** `refactor(flow): separate command and system events` (active)
 
 ## ⏭️ Immediate Next Action
 

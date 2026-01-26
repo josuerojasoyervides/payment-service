@@ -46,7 +46,7 @@ export const PaymentsStore = signalStore(
           const currentRequest = store.currentRequest();
           if (!currentRequest) return;
           const failedProviderId = store.selectedProvider() ?? store.intent()?.provider ?? null;
-          stateMachine.send({
+          stateMachine.sendSystem({
             type: 'FALLBACK_EXECUTE',
             providerId,
             request: currentRequest,
@@ -74,12 +74,12 @@ export const PaymentsStore = signalStore(
             accepted: false,
             timestamp: Date.now(),
           });
-          stateMachine.send({ type: 'FALLBACK_ABORT' });
+          stateMachine.sendSystem({ type: 'FALLBACK_ABORT' });
           return;
         }
 
         fallbackOrchestrator.reset();
-        stateMachine.send({ type: 'FALLBACK_ABORT' });
+        stateMachine.sendSystem({ type: 'FALLBACK_ABORT' });
       },
 
       clearError() {
