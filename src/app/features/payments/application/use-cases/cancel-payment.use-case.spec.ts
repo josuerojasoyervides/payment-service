@@ -45,7 +45,7 @@ describe('CancelPaymentUseCase', () => {
   };
 
   const registryMock = {
-    get: vi.fn((providerId: PaymentProviderId) => providerFactoryMock),
+    get: vi.fn((_providerId: PaymentProviderId) => providerFactoryMock),
   } satisfies Pick<ProviderFactoryRegistry, 'get'>;
 
   beforeEach(() => {

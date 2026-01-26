@@ -1,6 +1,10 @@
-import type { PaymentFlowEvent, PaymentFlowMachineContext } from '../payment-flow.types';
+import type {
+  PaymentFlowEvent,
+  PaymentFlowMachineContext,
+  PaymentFlowStatesConfig,
+} from '../payment-flow.types';
 
-export const createConfirmStates = () => ({
+export const confirmStates = {
   confirming: {
     tags: ['loading', 'confirming'],
     invoke: {
@@ -39,4 +43,4 @@ export const createConfirmStates = () => ({
       { target: 'polling' },
     ],
   },
-});
+} as const satisfies PaymentFlowStatesConfig;

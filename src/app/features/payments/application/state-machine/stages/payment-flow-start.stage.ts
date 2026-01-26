@@ -1,6 +1,6 @@
-import type { PaymentFlowMachineContext } from '../payment-flow.types';
+import type { PaymentFlowMachineContext, PaymentFlowStatesConfig } from '../payment-flow.types';
 
-export const createStartStates = () => ({
+export const startStates = {
   starting: {
     tags: ['loading', 'starting'],
     invoke: {
@@ -32,4 +32,4 @@ export const createStartStates = () => ({
       REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
     },
   },
-});
+} as const satisfies PaymentFlowStatesConfig;

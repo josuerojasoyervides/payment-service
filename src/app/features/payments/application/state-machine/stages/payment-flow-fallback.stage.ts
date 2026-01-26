@@ -1,4 +1,6 @@
-export const createFallbackStates = () => ({
+import type { PaymentFlowStatesConfig } from '../payment-flow.types';
+
+export const fallbackStates = {
   failed: {
     tags: ['error', 'failed'],
     always: [{ guard: 'canFallback', target: 'fallbackCandidate' }],
@@ -21,4 +23,4 @@ export const createFallbackStates = () => ({
       FALLBACK_ABORT: { target: 'done', actions: 'clear' },
     },
   },
-});
+} as const satisfies PaymentFlowStatesConfig;

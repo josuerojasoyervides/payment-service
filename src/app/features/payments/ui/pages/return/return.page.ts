@@ -101,7 +101,7 @@ export class ReturnComponent implements OnInit {
     }
   }
 
-  confirmPayment(intentId: string): void {
+  confirmPayment(_intentId: string): void {
     this.flow.confirm();
   }
 

@@ -91,7 +91,7 @@ export class SpeiStrategy implements PaymentStrategy {
    * - Generates standardized payment concept
    * - Prepares metadata for tracking
    */
-  prepare(req: CreatePaymentRequest, context?: StrategyContext): StrategyPrepareResult {
+  prepare(req: CreatePaymentRequest, _context?: StrategyContext): StrategyPrepareResult {
     const expiryHours = SpeiStrategy.DEFAULT_EXPIRY_HOURS;
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + expiryHours);

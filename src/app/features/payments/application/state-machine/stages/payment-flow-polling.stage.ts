@@ -1,6 +1,6 @@
-import type { PaymentFlowMachineContext } from '../payment-flow.types';
+import type { PaymentFlowMachineContext, PaymentFlowStatesConfig } from '../payment-flow.types';
 
-export const createPollingStates = () => ({
+export const pollingStates = {
   polling: {
     tags: ['ready', 'polling'],
     entry: ['incrementPollAttempt'],
@@ -63,4 +63,4 @@ export const createPollingStates = () => ({
       statusRetryDelay: { target: 'fetchingStatus' },
     },
   },
-});
+} as const satisfies PaymentFlowStatesConfig;

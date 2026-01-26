@@ -19,13 +19,13 @@ import {
   StartInput,
   StatusInput,
 } from './payment-flow.types';
-import { createCancelStates } from './stages/payment-flow-cancel.stage';
-import { createConfirmStates } from './stages/payment-flow-confirm.stage';
-import { createDoneStates } from './stages/payment-flow-done.stage';
-import { createFallbackStates } from './stages/payment-flow-fallback.stage';
-import { createIdleStates } from './stages/payment-flow-idle.stage';
-import { createPollingStates } from './stages/payment-flow-polling.stage';
-import { createStartStates } from './stages/payment-flow-start.stage';
+import { cancelStates } from './stages/payment-flow-cancel.stage';
+import { confirmStates } from './stages/payment-flow-confirm.stage';
+import { doneStates } from './stages/payment-flow-done.stage';
+import { fallbackStates } from './stages/payment-flow-fallback.stage';
+import { idleStates } from './stages/payment-flow-idle.stage';
+import { pollingStates } from './stages/payment-flow-polling.stage';
+import { startStates } from './stages/payment-flow-start.stage';
 
 export const createPaymentFlowMachine = (
   deps: PaymentFlowDeps,
@@ -260,13 +260,13 @@ export const createPaymentFlowMachine = (
     }),
 
     states: {
-      ...createIdleStates(),
-      ...createStartStates(),
-      ...createConfirmStates(),
-      ...createPollingStates(),
-      ...createCancelStates(),
-      ...createFallbackStates(),
-      ...createDoneStates(),
+      ...idleStates,
+      ...startStates,
+      ...confirmStates,
+      ...pollingStates,
+      ...cancelStates,
+      ...fallbackStates,
+      ...doneStates,
     },
   });
 };

@@ -6,7 +6,15 @@ import {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { ActorRefFrom, SnapshotFrom } from 'xstate';
+import type {
+  ActorRefFrom,
+  EventObject,
+  MetaObject,
+  ParameterizedObject,
+  ProvidedActor,
+  SnapshotFrom,
+  StatesConfig,
+} from 'xstate';
 
 // ✅ IMPORTANT: type-only import to avoid runtime circular dependency
 import type { createPaymentFlowMachine } from './payment-flow.machine';
@@ -116,6 +124,19 @@ export interface StatusInput {
   providerId: PaymentProviderId;
   intentId: string;
 }
+
+export type PaymentFlowStatesConfig = StatesConfig<
+  PaymentFlowMachineContext,
+  PaymentFlowEvent,
+  ProvidedActor,
+  ParameterizedObject,
+  ParameterizedObject,
+  string,
+  string,
+  unknown,
+  EventObject,
+  MetaObject
+>;
 
 /**
  * Convenience exports

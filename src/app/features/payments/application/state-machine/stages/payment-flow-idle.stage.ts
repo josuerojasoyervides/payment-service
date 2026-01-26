@@ -1,4 +1,6 @@
-export const createIdleStates = () => ({
+import type { PaymentFlowStatesConfig } from '../payment-flow.types';
+
+export const idleStates = {
   idle: {
     tags: ['idle'],
     on: {
@@ -8,4 +10,4 @@ export const createIdleStates = () => ({
       CANCEL: { target: 'cancelling', actions: 'setCancelInput' },
     },
   },
-});
+} as const satisfies PaymentFlowStatesConfig;
