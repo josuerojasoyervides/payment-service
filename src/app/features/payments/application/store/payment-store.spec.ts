@@ -369,12 +369,58 @@ describe('PaymentsStore', () => {
   // refreshPayment
   // ============================================================
   describe('refreshPayment', () => {
-    const flush = async () => {
+    const powerFlush = async () => {
       TestBed.tick();
-      await Promise.resolve();
       await Promise.resolve();
       TestBed.tick();
     };
+
+    it('refreshPayment -> uses XState when accepted (no legacy usecase)', async () => {
+      // fuerza que la máquina ACEPTE REFRESH
+      (stateMachineMock.send as any).mockReturnValueOnce(true);
+
+      store.refreshPayment({
+        request: { intentId: 'pi_123' },
+        providerId: 'stripe',
+      });
+
+      // flush effects/rxMethod
+      await powerFlush();
+
+      // ✅ la máquina fue usada
+      expect(stateMachineMock.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'REFRESH',
+          providerId: 'stripe',
+          intentId: 'pi_123',
+        }),
+      );
+
+      // ✅ NO se debe usar legacy path
+      expect(getPaymentStatusUseCaseMock.execute).not.toHaveBeenCalled();
+
+      // ✅ el store se queda loading mientras XState resuelve
+      expect(store.status()).toBe('loading');
+
+      // Simulamos que la máquina ya resolvió status (snapshot listo)
+      machineSnapshot.set({
+        state: 'done',
+        context: {
+          providerId: 'stripe',
+          request: null,
+          flowContext: null,
+          intent: { ...intent, id: 'pi_123', status: 'processing' },
+          error: null,
+        },
+        lastSentEvent: { type: 'REFRESH', providerId: 'stripe', intentId: 'pi_123' },
+      });
+
+      await powerFlush();
+
+      // ✅ store actualizado por bridge
+      expect(store.status()).toBe('ready');
+      expect(store.intent()?.id).toBe('pi_123');
+    });
     it('refreshPayment -> uses legacy usecase', async () => {
       // fuerza legacy path (machine reject)
       (stateMachineMock.send as any).mockReturnValueOnce(false);
@@ -384,7 +430,7 @@ describe('PaymentsStore', () => {
         providerId: 'stripe',
       });
 
-      await flush();
+      await powerFlush();
 
       expect(getPaymentStatusUseCaseMock.execute).toHaveBeenCalledTimes(1);
 
@@ -407,7 +453,7 @@ describe('PaymentsStore', () => {
         providerId: 'stripe',
       });
 
-      await flush();
+      await powerFlush();
 
       expect(store.status()).toBe('error');
       expect(store.error()).toEqual(paymentError);

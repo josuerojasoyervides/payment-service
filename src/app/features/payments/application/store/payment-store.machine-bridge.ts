@@ -67,6 +67,16 @@ export function setupPaymentFlowMachineBridge(
 
   /**
    * ============================================================
+   * Effect #0 (DEBUG): ver snapshot en vivo
+   * ============================================================
+   */
+  effect(() => {
+    const snap = machineSnapshot();
+    console.log('[BRIDGE] state:', snap.value, 'context:', snap.context);
+  });
+
+  /**
+   * ============================================================
    * Effect #1: reflejar LOADING del statechart al store
    * ============================================================
    */
@@ -75,7 +85,15 @@ export function setupPaymentFlowMachineBridge(
 
     if (!isLoadingState(state)) return;
 
-    // El loading debe reflejar la request / provider con la que se está trabajando
+    /**
+     * ✅ IMPORTANT:
+     * If we are in fetchingStatus (refresh/polling) but we already have an intent,
+     * DO NOT set loading because you will "cover" the ready state all the time.
+     *
+     * This prevents UI/tests from getting stuck in loading.
+     */
+    if (state === 'fetchingStatus' && machineIntent()) return;
+
     applyLoadingState(store, machineProviderId() ?? undefined, machineRequest() ?? undefined);
   });
 
@@ -109,6 +127,8 @@ export function setupPaymentFlowMachineBridge(
     if (store.fallback().status !== 'idle') {
       deps.fallbackOrchestrator.notifySuccess();
     }
+
+    return;
   });
 
   /**

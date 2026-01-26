@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
 import { LoggerService } from '@core/logging';
 import { CancelPaymentUseCase } from '@payments/application/use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '@payments/application/use-cases/confirm-payment.use-case';
@@ -27,6 +27,7 @@ export class PaymentFlowActorService {
   private readonly cancel = inject(CancelPaymentUseCase);
   private readonly status = inject(GetPaymentStatusUseCase);
   private readonly logger = inject(LoggerService);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly machine: PaymentFlowMachine = createPaymentFlowMachine({
     startPayment: async (providerId, request, flowContext) =>
@@ -56,19 +57,19 @@ export class PaymentFlowActorService {
         this.logger.getCorrelationId(),
       );
     },
-  });
+  }).start();
 
-  private readonly initialSnapshot = this.actor.getSnapshot();
-
-  snapshot = signal<PaymentFlowSnapshot>(this.initialSnapshot);
+  private _snapshot = signal(this.actor.getSnapshot() as PaymentFlowSnapshot);
+  readonly snapshot: Signal<PaymentFlowSnapshot> = this._snapshot.asReadonly();
   lastSentEvent = signal<PaymentFlowEvent | null>(null);
 
   constructor() {
     this.actor.subscribe((snapshot) => {
-      this.snapshot.set(snapshot);
+      this._snapshot.set(snapshot);
     });
-
-    this.actor.start();
+    this.destroyRef.onDestroy(() => {
+      this.actor.stop();
+    });
   }
 
   send(event: PaymentFlowPublicEvent): boolean {
