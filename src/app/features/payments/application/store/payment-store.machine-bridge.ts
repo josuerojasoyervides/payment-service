@@ -1,5 +1,3 @@
-// src/app/features/payments/application/store/payment-store.machine-bridge.ts
-
 import { computed, effect, Signal } from '@angular/core';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 
@@ -45,7 +43,7 @@ export function setupPaymentFlowMachineBridge(
 
   /**
    * ============================================================
-   * Effect #1: reflejar LOADING del statechart al store
+   * Effect #1: reflect LOADING states from the machine into the store
    * ============================================================
    */
   effect(() => {
@@ -71,9 +69,9 @@ export function setupPaymentFlowMachineBridge(
    * Effect #2: when the machine produces a new intent -> READY + history
    * ============================================================
    *
-   * Importante:
-   * - only add to history if intent changed (by id).
-   * - avoid duplicates when polling refreshes the same intent.
+   * Notes:
+   * - Only add to history if intent changed (by id).
+   * - Avoid duplicates when polling refreshes the same intent.
    */
   let lastIntentId: string | null = null;
 
@@ -96,7 +94,7 @@ export function setupPaymentFlowMachineBridge(
 
   /**
    * ============================================================
-   * Effect #2b: fallback candidate without intent → ready (silent)
+   * Effect #2b: fallback candidate without intent -> ready (silent)
    * ============================================================
    */
   effect(() => {

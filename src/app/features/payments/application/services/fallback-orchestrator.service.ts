@@ -165,7 +165,7 @@ export class FallbackOrchestratorService {
   }: ReportFailurePayload): boolean {
     if (!isFallbackEnabledGuard(this.config)) return false;
 
-    // ✅ elegibilidad
+    // ✅ eligibility
     if (!isEligibleForFallbackPolicy(this.config, error)) return false;
 
     // ✅ record failed attempt (now exists)
@@ -176,7 +176,7 @@ export class FallbackOrchestratorService {
       return false;
     }
 
-    // ✅ buscar alternativas
+    // ✅ find alternatives
     const alternatives = getAlternativeProvidersPolicy(
       this.registry,
       this.config,
@@ -185,7 +185,7 @@ export class FallbackOrchestratorService {
       request,
     );
 
-    // ✅ no hay alternativas => terminal
+    // ✅ no alternatives => terminal
     if (alternatives.length === 0) {
       this.finish('failed');
       return false;
@@ -193,7 +193,7 @@ export class FallbackOrchestratorService {
 
     const flowId = this.getOrCreateFlowId();
 
-    // ✅ decidir auto/manual
+    // ✅ decide auto/manual
     if (shouldAutoFallbackPolicy(this.config, this._state())) {
       this.startAutoFallback(alternatives[0], request, providerId, flowId);
     } else {
@@ -212,7 +212,7 @@ export class FallbackOrchestratorService {
     const currentEvent = this._state().pendingEvent;
     const currentEventId = currentEvent?.eventId ?? null;
 
-    // 1) Evento inexistente / mismatch => ignorar
+    // 1) Missing event / mismatch => ignore
     if (!isPendingEventForResponseGuard(currentEvent, response)) {
       this.logger.warn(
         '[FallbackOrchestrator] Response for unknown or expired event',
@@ -226,7 +226,7 @@ export class FallbackOrchestratorService {
       return;
     }
 
-    // 2) TTL excedido => cancelar
+    // 2) TTL exceeded => cancel
     if (isEventExpiredGuard(currentEvent, this.config)) {
       const now = Date.now();
       const eventAge = now - currentEvent.timestamp;
@@ -245,7 +245,7 @@ export class FallbackOrchestratorService {
       return;
     }
 
-    // 3) Cancelar timers pendientes (timeout/auto)
+    // 3) Cancel pending timers (timeout/auto)
     this._cancel$.next();
 
     // 4) User declines => cancel (valid event)
@@ -271,7 +271,7 @@ export class FallbackOrchestratorService {
       return;
     }
 
-    // 6) Ejecutar fallback manual aceptado
+    // 6) Execute accepted manual fallback
     setExecutingTransition(this._state, response.selectedProvider);
 
     this._fallbackExecute$.next({
@@ -353,7 +353,7 @@ export class FallbackOrchestratorService {
   ): void {
     const delay = this.config.autoFallbackDelay;
 
-    // estado auto_executing
+    // auto_executing state
     setAutoExecutingTransition(this._state, provider, request);
 
     // ✅ autoFallbackStarted now has real correlation
@@ -383,7 +383,7 @@ export class FallbackOrchestratorService {
   }
 
   /**
-   * Emite evento de fallback disponible para modo manual.
+   * Emits fallback available event for manual mode.
    */
   private emitFallbackAvailable(
     failedProvider: PaymentProviderId,
@@ -409,7 +409,7 @@ export class FallbackOrchestratorService {
   }
 
   /**
-   * Configura timeout para limpiar eventos expirados.
+   * Schedules timeout to clear expired events.
    *
    * Cuando expira el TTL, limpia el pending event para evitar
    * que la UI quede colgada esperando una respuesta.
