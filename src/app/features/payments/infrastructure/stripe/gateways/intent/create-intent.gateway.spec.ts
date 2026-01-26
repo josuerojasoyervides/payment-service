@@ -115,4 +115,32 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
   });
+
+  it('propagates provider error when backend fails', () => {
+    const req: CreatePaymentRequest = {
+      orderId: 'order_error',
+      amount: 100,
+      currency: 'MXN',
+      method: { type: 'card', token: 'tok_123' },
+      idempotencyKey: 'idem_error',
+    };
+
+    gateway.execute(req).subscribe({
+      next: () => {
+        expect.fail('Se esperaba error');
+      },
+      error: (err: PaymentError) => {
+        expect(err.code).toBe('provider_error');
+        expect(err.raw).toBeDefined();
+      },
+    });
+
+    const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
+    expect(httpReq.request.method).toBe('POST');
+
+    httpReq.flush(
+      { message: 'Stripe error' },
+      { status: 500, statusText: 'Internal Server Error' },
+    );
+  });
 });

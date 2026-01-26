@@ -70,4 +70,29 @@ describe('StripeConfirmIntentGateway', () => {
       currency: 'mxn',
     });
   });
+
+  it('propagates provider error when backend fails', () => {
+    const req: ConfirmPaymentRequest = {
+      intentId: 'pi_error',
+      idempotencyKey: 'idem_confirm_error',
+    };
+
+    gateway.execute(req).subscribe({
+      next: () => {
+        expect.fail('Se esperaba error');
+      },
+      error: (err) => {
+        expect(err.code).toBe('provider_error');
+        expect(err.raw).toBeDefined();
+      },
+    });
+
+    const httpReq = httpMock.expectOne('/api/payments/stripe/intents/pi_error/confirm');
+    expect(httpReq.request.method).toBe('POST');
+
+    httpReq.flush(
+      { message: 'Stripe error' },
+      { status: 500, statusText: 'Internal Server Error' },
+    );
+  });
 });
