@@ -1,10 +1,10 @@
 import { computed, DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LoggerService } from '@core/logging';
-import { CancelPaymentUseCase } from '@payments/application/use-cases/cancel-payment.use-case';
-import { ConfirmPaymentUseCase } from '@payments/application/use-cases/confirm-payment.use-case';
-import { GetPaymentStatusUseCase } from '@payments/application/use-cases/get-payment-status.use-case';
-import { StartPaymentUseCase } from '@payments/application/use-cases/start-payment.use-case';
+import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
+import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
+import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
+import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';

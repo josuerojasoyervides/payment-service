@@ -1,7 +1,7 @@
 import {
   ProviderMethodPolicy,
   ProviderMethodPolicyPort,
-} from '@payments/application/ports/provider-method-policy.port';
+} from '@payments/application/api/ports/provider-method-policy.port';
 import {
   PaymentMethodType,
   PaymentProviderId,

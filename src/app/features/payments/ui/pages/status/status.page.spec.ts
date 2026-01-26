@@ -5,7 +5,7 @@ import { I18nKeys, I18nService } from '@core/i18n';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PaymentFlowFacade } from '../../../application/state-machine/payment-flow.facade';
+import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
 import { StatusComponent } from './status.page';
 
 describe('StatusComponent', () => {

@@ -9,7 +9,7 @@ import {
 } from '@payments/domain/models/payment/payment-request.types';
 import { ignoreElements, pipe, tap } from 'rxjs';
 
-import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
+import { PaymentFlowActorService } from '../flow/payment-flow.actor.service';
 import { PaymentsStoreContext } from './payment-store.types';
 
 export interface PaymentsStoreDeps {

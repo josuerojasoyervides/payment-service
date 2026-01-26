@@ -6,33 +6,33 @@ import {
   PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { GetPaymentStatusRequest } from '@payments/domain/models/payment/payment-request.types';
+import { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { firstValueFrom, of, throwError } from 'rxjs';
 
-import { IdempotencyKeyFactory } from '../../shared/idempotency/idempotency-key.factory';
-import { PaymentGatewayPort } from '../ports/payment-gateway.port';
-import { ProviderFactory } from '../ports/provider-factory.port';
+import { PaymentGatewayPort } from '../../api/ports/payment-gateway.port';
+import { ProviderFactory } from '../../api/ports/provider-factory.port';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { GetPaymentStatusUseCase } from './get-payment-status.use-case';
+import { CancelPaymentUseCase } from './cancel-payment.use-case';
 
-describe('GetPaymentStatusUseCase', () => {
-  let useCase: GetPaymentStatusUseCase;
+describe('CancelPaymentUseCase', () => {
+  let useCase: CancelPaymentUseCase;
 
-  const req: GetPaymentStatusRequest = {
+  const req: CancelPaymentRequest = {
     intentId: 'pi_1',
   };
 
   const gatewayMock = {
-    getIntent: vi.fn(() =>
+    cancelIntent: vi.fn(() =>
       of({
         id: 'pi_1',
         provider: 'stripe',
-        status: 'requires_action',
+        status: 'canceled',
         amount: 100,
         currency: 'MXN',
       } satisfies PaymentIntent),
     ),
-  } as Pick<PaymentGatewayPort, 'getIntent'>;
+  } as Pick<PaymentGatewayPort, 'cancelIntent'>;
 
   const providerFactoryMock: ProviderFactory = {
     providerId: 'stripe' as const,
@@ -51,25 +51,25 @@ describe('GetPaymentStatusUseCase', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        GetPaymentStatusUseCase,
+        CancelPaymentUseCase,
         { provide: ProviderFactoryRegistry, useValue: registryMock },
         IdempotencyKeyFactory,
       ],
     });
 
-    useCase = TestBed.inject(GetPaymentStatusUseCase);
+    useCase = TestBed.inject(CancelPaymentUseCase);
     vi.clearAllMocks();
   });
 
-  it('resolves provider and calls gateway.getIntent with idempotency key', async () => {
+  it('resolves provider and calls gateway.cancelIntent with idempotency key', async () => {
     const result = await firstValueFrom(useCase.execute(req, 'stripe'));
 
     expect(registryMock.get).toHaveBeenCalledWith('stripe');
     expect(providerFactoryMock.getGateway).toHaveBeenCalledTimes(1);
-    expect(gatewayMock.getIntent).toHaveBeenCalledWith(
+    expect(gatewayMock.cancelIntent).toHaveBeenCalledWith(
       expect.objectContaining({
         ...req,
-        idempotencyKey: 'stripe:get:pi_1',
+        idempotencyKey: 'stripe:cancel:pi_1',
       }),
     );
     expect(result.id).toBe('pi_1');
@@ -86,13 +86,13 @@ describe('GetPaymentStatusUseCase', () => {
       );
     });
 
-    it('propagates observable errors from gateway.getIntent()', async () => {
+    it('propagates observable errors from gateway.cancelIntent()', async () => {
       const error: PaymentError = {
         code: 'provider_error',
         messageKey: I18nKeys.errors.provider_error,
         raw: {},
       };
-      (gatewayMock.getIntent as any).mockReturnValueOnce(throwError(() => error));
+      (gatewayMock.cancelIntent as any).mockReturnValueOnce(throwError(() => error));
 
       await expect(firstValueFrom(useCase.execute(req, 'stripe'))).rejects.toMatchObject({
         code: 'provider_error',

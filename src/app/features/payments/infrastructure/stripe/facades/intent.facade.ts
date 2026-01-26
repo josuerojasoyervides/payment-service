@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { PaymentGatewayPort } from '@payments/application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import {
   CancelPaymentRequest,

@@ -21,7 +21,7 @@ import type {
   StatusConfirmedPayload,
   ValidationFailedPayload,
   WebhookReceivedPayload,
-} from '../events/payment-flow.events';
+} from '../../adapters/events/payment-flow.events';
 // ✅ IMPORTANT: type-only import to avoid runtime circular dependency
 import type { createPaymentFlowMachine } from './payment-flow.machine';
 

@@ -4,8 +4,8 @@ import {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 
-import { ProviderFactory } from '../ports/provider-factory.port';
-import { PAYMENT_PROVIDER_FACTORIES } from '../tokens/payment-provider-factories.token';
+import { ProviderFactory } from '../../api/ports/provider-factory.port';
+import { PAYMENT_PROVIDER_FACTORIES } from '../../api/tokens/payment-provider-factories.token';
 
 /**
  * Registry of payment provider factories.

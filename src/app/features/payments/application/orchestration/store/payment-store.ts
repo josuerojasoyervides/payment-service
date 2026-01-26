@@ -9,8 +9,8 @@ import {
 } from '@ngrx/signals';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 
+import { PaymentFlowActorService } from '../flow/payment-flow.actor.service';
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
-import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
 import { createFallbackHandlers } from './fallback/payment-store.fallback';
 import { createPaymentsStoreActions } from './payment-store.actions';
 import { setupPaymentFlowMachineBridge } from './projection/payment-store.machine-bridge';

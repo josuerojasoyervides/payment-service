@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
-import { ProviderFactory } from '../ports/provider-factory.port';
-import { PAYMENT_PROVIDER_FACTORIES } from '../tokens/payment-provider-factories.token';
+import { ProviderFactory } from '../../api/ports/provider-factory.port';
+import { PAYMENT_PROVIDER_FACTORIES } from '../../api/tokens/payment-provider-factories.token';
 import { ProviderFactoryRegistry } from './provider-factory.registry';
 
 describe('ProviderFactoryRegistry', () => {

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
-import { PaymentOperationPort } from '@payments/application/ports/payment-operation.port';
+import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import {
   PaymentIntent,

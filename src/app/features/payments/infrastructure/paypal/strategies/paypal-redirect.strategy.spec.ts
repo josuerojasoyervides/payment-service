@@ -3,7 +3,7 @@ import { LoggerService } from '@core/logging';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { firstValueFrom, of } from 'rxjs';
 
-import { PaymentGatewayPort } from '../../../application/ports/payment-gateway.port';
+import { PaymentGatewayPort } from '../../../application/api/ports/payment-gateway.port';
 import { PaypalRedirectStrategy } from './paypal-redirect.strategy';
 
 describe('PaypalRedirectStrategy', () => {
