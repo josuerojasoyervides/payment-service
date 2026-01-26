@@ -1,0 +1,348 @@
+import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { createActor } from 'xstate';
+
+import { createPaymentFlowMachine } from '../application/orchestration/flow/payment-flow.machine';
+import { PaymentFlowConfigOverrides } from '../application/orchestration/flow/payment-flow.policy';
+import {
+  PaymentFlowActorRef,
+  PaymentFlowSnapshot,
+} from '../application/orchestration/flow/payment-flow.types';
+
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (error: unknown) => void;
+}
+
+const createDeferred = <T>(): Deferred<T> => {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
+
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+const baseIntent: PaymentIntent = {
+  id: 'pi_1',
+  provider: 'stripe',
+  status: 'processing',
+  amount: 100,
+  currency: 'MXN',
+};
+
+const baseRequest: CreatePaymentRequest = {
+  orderId: 'o1',
+  amount: 100,
+  currency: 'MXN',
+  method: { type: 'card' as const, token: 'tok_123' },
+};
+
+const waitForSnapshot = (
+  actor: PaymentFlowActorRef,
+  predicate: (snap: PaymentFlowSnapshot) => boolean,
+) =>
+  new Promise<PaymentFlowSnapshot>((resolve, reject) => {
+    const current = actor.getSnapshot() as PaymentFlowSnapshot;
+    if (predicate(current)) {
+      resolve(current);
+      return;
+    }
+
+    let sub: { unsubscribe: () => void } | null = null;
+
+    const timeout = setTimeout(() => {
+      sub?.unsubscribe();
+      reject(new Error('Timeout waiting for snapshot'));
+    }, 200);
+
+    sub = actor.subscribe((snap) => {
+      if (predicate(snap as PaymentFlowSnapshot)) {
+        clearTimeout(timeout);
+        sub?.unsubscribe();
+        resolve(snap as PaymentFlowSnapshot);
+      }
+    });
+  });
+
+const setup = (
+  overrides?: Partial<{
+    startIntent: PaymentIntent;
+    statusIntent: PaymentIntent;
+    startReject: boolean;
+    statusReject: boolean;
+    startDeferred: Deferred<PaymentIntent>;
+    confirmDeferred: Deferred<PaymentIntent>;
+    cancelDeferred: Deferred<PaymentIntent>;
+    statusDeferred: Deferred<PaymentIntent>;
+    config: PaymentFlowConfigOverrides;
+  }>,
+) => {
+  const deps = {
+    startPayment: vi.fn(async () => {
+      if (overrides?.startReject) throw new Error('start failed');
+      if (overrides?.startDeferred) return overrides.startDeferred.promise;
+      return overrides?.startIntent ?? baseIntent;
+    }),
+    confirmPayment: vi.fn(async () => {
+      if (overrides?.confirmDeferred) return overrides.confirmDeferred.promise;
+      return baseIntent;
+    }),
+    cancelPayment: vi.fn(async () => {
+      if (overrides?.cancelDeferred) return overrides.cancelDeferred.promise;
+      return { ...baseIntent, status: 'canceled' as const };
+    }),
+    getStatus: vi.fn(async () => {
+      if (overrides?.statusReject) throw new Error('status failed');
+      if (overrides?.statusDeferred) return overrides.statusDeferred.promise;
+      return overrides?.statusIntent ?? baseIntent;
+    }),
+  };
+
+  const config: PaymentFlowConfigOverrides = overrides?.config ?? {
+    polling: { baseDelayMs: 100000, maxDelayMs: 100000, maxAttempts: 99 },
+    statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 0 },
+  };
+
+  const machine = createPaymentFlowMachine(deps, config);
+  const actor = createActor(machine) as PaymentFlowActorRef;
+  actor.start();
+
+  return { actor, deps };
+};
+
+describe('PaymentFlow contract tests', () => {
+  it('idle accepts START -> starting', async () => {
+    const startDeferred = createDeferred<PaymentIntent>();
+    const { actor } = setup({ startDeferred });
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'starting');
+    expect(snap.value).toBe('starting');
+
+    startDeferred.resolve({ ...baseIntent, status: 'processing' });
+  });
+
+  it('idle accepts CONFIRM -> confirming', async () => {
+    const confirmDeferred = createDeferred<PaymentIntent>();
+    const { actor } = setup({ confirmDeferred });
+
+    actor.send({
+      type: 'CONFIRM',
+      providerId: 'stripe',
+      intentId: 'pi_confirm',
+      returnUrl: 'https://return.test',
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'confirming');
+    expect(snap.value).toBe('confirming');
+
+    confirmDeferred.resolve(baseIntent);
+  });
+
+  it('idle accepts CANCEL -> cancelling', async () => {
+    const cancelDeferred = createDeferred<PaymentIntent>();
+    const { actor } = setup({ cancelDeferred });
+
+    actor.send({ type: 'CANCEL', providerId: 'stripe', intentId: 'pi_cancel' });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'cancelling');
+    expect(snap.value).toBe('cancelling');
+
+    cancelDeferred.resolve({ ...baseIntent, status: 'canceled' as const });
+  });
+
+  it('idle accepts REFRESH -> fetchingStatusInvoke when keys provided', async () => {
+    const statusDeferred = createDeferred<PaymentIntent>();
+    const { actor } = setup({ statusDeferred });
+
+    actor.send({ type: 'REFRESH', providerId: 'stripe', intentId: 'pi_refresh' });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'fetchingStatusInvoke');
+    expect(snap.value).toBe('fetchingStatusInvoke');
+
+    statusDeferred.resolve(baseIntent);
+  });
+
+  it('idle ignores FALLBACK_REQUESTED', async () => {
+    const { actor } = setup();
+    expect(actor.getSnapshot().value).toBe('idle');
+
+    actor.send({
+      type: 'FALLBACK_REQUESTED',
+      failedProviderId: 'stripe',
+      request: baseRequest,
+      mode: 'manual',
+    });
+
+    await flush();
+    expect(actor.getSnapshot().value).toBe('idle');
+  });
+
+  it('requiresAction accepts CONFIRM -> confirming', async () => {
+    const confirmDeferred = createDeferred<PaymentIntent>();
+    const { actor } = setup({
+      startIntent: { ...baseIntent, status: 'requires_action' },
+      confirmDeferred,
+    });
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+
+    actor.send({ type: 'CONFIRM', providerId: 'stripe', intentId: 'pi_req' });
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'confirming');
+    expect(snap.value).toBe('confirming');
+
+    confirmDeferred.resolve(baseIntent);
+  });
+
+  it('requiresAction ignores START', async () => {
+    const { actor } = setup({
+      startIntent: { ...baseIntent, status: 'requires_action' },
+    });
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await flush();
+    expect(actor.getSnapshot().value).toBe('requiresAction');
+  });
+
+  it('polling accepts REFRESH -> fetchingStatusInvoke', async () => {
+    const statusDeferred = createDeferred<PaymentIntent>();
+    const { actor } = setup({
+      startIntent: { ...baseIntent, status: 'processing' },
+      statusDeferred,
+    });
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await waitForSnapshot(actor, (s) => s.value === 'polling');
+
+    actor.send({ type: 'REFRESH', providerId: 'stripe' });
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'fetchingStatusInvoke');
+    expect(snap.value).toBe('fetchingStatusInvoke');
+
+    statusDeferred.resolve(baseIntent);
+  });
+
+  it('polling ignores START', async () => {
+    const { actor } = setup({
+      startIntent: { ...baseIntent, status: 'processing' },
+    });
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await waitForSnapshot(actor, (s) => s.value === 'polling');
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await flush();
+    expect(actor.getSnapshot().value).toBe('polling');
+  });
+
+  it('failed accepts FALLBACK_REQUESTED -> fallbackCandidate', async () => {
+    const { actor } = setup({ startReject: true });
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await waitForSnapshot(actor, (s) => s.value === 'failed');
+
+    actor.send({
+      type: 'FALLBACK_REQUESTED',
+      failedProviderId: 'stripe',
+      request: baseRequest,
+      mode: 'manual',
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'fallbackCandidate');
+    expect(snap.value).toBe('fallbackCandidate');
+  });
+
+  it('failed ignores START', async () => {
+    const { actor } = setup({ startReject: true });
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await waitForSnapshot(actor, (s) => s.value === 'failed');
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await flush();
+    expect(actor.getSnapshot().value).toBe('failed');
+  });
+
+  it('fallbackCandidate accepts FALLBACK_ABORT -> done', async () => {
+    const { actor } = setup({ startReject: true });
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await waitForSnapshot(actor, (s) => s.value === 'failed');
+
+    actor.send({
+      type: 'FALLBACK_REQUESTED',
+      failedProviderId: 'stripe',
+      request: baseRequest,
+      mode: 'manual',
+    });
+    await waitForSnapshot(actor, (s) => s.value === 'fallbackCandidate');
+
+    actor.send({ type: 'FALLBACK_ABORT' });
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'done');
+    expect(snap.value).toBe('done');
+  });
+
+  it('fallbackCandidate ignores CONFIRM', async () => {
+    const { actor } = setup({ startReject: true });
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await waitForSnapshot(actor, (s) => s.value === 'failed');
+
+    actor.send({
+      type: 'FALLBACK_REQUESTED',
+      failedProviderId: 'stripe',
+      request: baseRequest,
+      mode: 'manual',
+    });
+    await waitForSnapshot(actor, (s) => s.value === 'fallbackCandidate');
+
+    actor.send({ type: 'CONFIRM', providerId: 'stripe', intentId: 'pi_fallback' });
+    await flush();
+    expect(actor.getSnapshot().value).toBe('fallbackCandidate');
+  });
+
+  it('done accepts RESET -> idle', async () => {
+    const { actor } = setup({ startIntent: { ...baseIntent, status: 'succeeded' } });
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await waitForSnapshot(actor, (s) => s.value === 'done');
+
+    actor.send({ type: 'RESET' });
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'idle');
+    expect(snap.value).toBe('idle');
+  });
+
+  it('done ignores START', async () => {
+    const { actor } = setup({ startIntent: { ...baseIntent, status: 'succeeded' } });
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await waitForSnapshot(actor, (s) => s.value === 'done');
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await flush();
+    expect(actor.getSnapshot().value).toBe('done');
+  });
+
+  it('confirming ignores START while invoke is in flight', async () => {
+    const confirmDeferred = createDeferred<PaymentIntent>();
+    const { actor } = setup({ confirmDeferred });
+
+    actor.send({ type: 'CONFIRM', providerId: 'stripe', intentId: 'pi_confirm' });
+    await waitForSnapshot(actor, (s) => s.value === 'confirming');
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await flush();
+    expect(actor.getSnapshot().value).toBe('confirming');
+
+    confirmDeferred.resolve(baseIntent);
+  });
+});
