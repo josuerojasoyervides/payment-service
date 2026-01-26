@@ -13,8 +13,8 @@
 
 ## 📍 Mission State (New-Chat Context)
 
-- **Critical Task:** Language normalization + planning integration (English-only code/docs).
-- **Open/Relevant Files:** `docs/ai-active-context.md`, `docs/architecture-rules.md`, `docs/stabilization-plan.md`, `docs/goals.md`.
+- **Critical Task:** Flow segmentation Step 1 (1.1–1.5) completed; ready for Step 2 (stage-based event contract).
+- **Open/Relevant Files:** `docs/flow-scale-plan.md`, `docs/ai-active-context.md`, `docs/architecture-rules.md`, `docs/stabilization-plan.md`, `docs/goals.md`.
 - **Error Context:** None.
 
 ## 🛠️ Technical Snapshot (Angular)
@@ -49,9 +49,11 @@
 - [x] **Branch:** `chore/store-fallback-cleanup` | **Commit:** `chore(payments): clean store/fallback visuals`
 - [x] **Branch:** `feat/flow-retry-polling` | **Commit:** `feat(flow): add retry/backoff and polling cadence`
 - [ ] **Branch:** `docs/final-state-refresh` | **Commit:** `docs: refresh project status` (active)
+- [ ] **Branch:** `feat/external-event-mappers` | **Commit:** `feat(flow): add external event mappers`
 
 ## ⏭️ Immediate Next Action
 
+- [ ] Decide Step 2 (stage-based event contract) structure and start implementation.
 - [ ] Finish docs refresh branch (verify, commit, update backlog).
 
 ---

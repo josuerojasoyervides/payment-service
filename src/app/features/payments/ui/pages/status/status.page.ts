@@ -70,11 +70,11 @@ export class StatusComponent {
     this.flow.refresh(this.selectedProvider(), this.intentId.trim());
   }
 
-  confirmPayment(intentId: string): void {
+  confirmPayment(_intentId: string): void {
     this.flow.confirm();
   }
 
-  cancelPayment(intentId: string): void {
+  cancelPayment(_intentId: string): void {
     this.flow.cancel();
   }
 

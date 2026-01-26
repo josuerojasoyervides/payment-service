@@ -1,17 +1,17 @@
 import { computed, effect, Signal } from '@angular/core';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
-import { PaymentFlowSnapshot } from '../state-machine/payment-flow.types';
+import { PaymentFlowActorService } from '../../state-machine/payment-flow.actor.service';
+import { PaymentFlowSnapshot } from '../../state-machine/payment-flow.types';
+import { addToHistory } from '../history/payment-store.history';
+import type { PaymentsStoreContext } from '../payment-store.types';
 import { normalizePaymentError } from './payment-store.errors';
-import { addToHistory } from './payment-store.history';
 import {
   applyFailureState,
   applyLoadingState,
   applyReadyState,
   applySilentFailureState,
 } from './payment-store.transitions';
-import type { PaymentsStoreContext } from './payment-store.types';
 
 /**
  * Bridge: connects the XState machine to PaymentsStore.

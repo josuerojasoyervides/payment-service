@@ -12,9 +12,9 @@ import { Subject } from 'rxjs';
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
+import { HISTORY_MAX_ENTRIES } from './history/payment-store.history.types';
 import { PaymentsStore } from './payment-store';
-import { HISTORY_MAX_ENTRIES } from './payment-store.history.types';
-import { initialPaymentsState } from './payment-store.state';
+import { initialPaymentsState } from './projection/payment-store.state';
 
 describe('PaymentsStore', () => {
   let store: InstanceType<typeof PaymentsStore>;

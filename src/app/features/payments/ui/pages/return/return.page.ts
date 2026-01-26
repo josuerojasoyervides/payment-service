@@ -2,11 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
-import {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
+import { mapReturnQueryToReference } from '../../../application/events/external/payment-flow-return.mapper';
 import { PaymentFlowFacade } from '../../../application/state-machine/payment-flow.facade';
 import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
@@ -95,24 +93,20 @@ export class ReturnComponent implements OnInit {
     this.paypalToken.set(params['token'] || null);
     this.paypalPayerId.set(params['PayerID'] || null);
 
-    const id = this.intentId() || this.paypalToken();
-    if (id && !this.isCancelFlow()) {
-      this.refreshPaymentByReference(id);
+    const reference = mapReturnQueryToReference(params);
+    if (reference.referenceId && !this.isCancelFlow()) {
+      this.flow.refresh(reference.providerId, reference.referenceId);
     }
   }
 
-  confirmPayment(intentId: string): void {
+  confirmPayment(_intentId: string): void {
     this.flow.confirm();
   }
 
   refreshPaymentByReference(referenceId: string): void {
-    const provider = this.detectProvider();
-    this.flow.refresh(provider, referenceId);
-  }
-
-  private detectProvider(): PaymentProviderId {
-    if (this.paypalToken()) return 'paypal';
-    return 'stripe';
+    const reference = mapReturnQueryToReference(this.route.snapshot.queryParams);
+    const providerId = reference.referenceId ? reference.providerId : 'stripe';
+    this.flow.refresh(providerId, referenceId);
   }
 
   readonly newPaymentButtonText = computed(() => this.i18n.t(I18nKeys.ui.new_payment_button));

@@ -11,10 +11,11 @@ import { PaymentProviderId } from '@payments/domain/models/payment/payment-inten
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import { PaymentFlowActorService } from '../state-machine/payment-flow.actor.service';
+import { createFallbackHandlers } from './fallback/payment-store.fallback';
 import { createPaymentsStoreActions } from './payment-store.actions';
-import { setupPaymentFlowMachineBridge } from './payment-store.machine-bridge';
-import { buildPaymentsSelectors } from './payment-store.selectors';
-import { initialPaymentsState, PaymentsState } from './payment-store.state';
+import { setupPaymentFlowMachineBridge } from './projection/payment-store.machine-bridge';
+import { buildPaymentsSelectors } from './projection/payment-store.selectors';
+import { initialPaymentsState, PaymentsState } from './projection/payment-store.state';
 
 export const PaymentsStore = signalStore(
   withState<PaymentsState>(initialPaymentsState),
@@ -25,6 +26,10 @@ export const PaymentsStore = signalStore(
     const fallbackOrchestrator = inject(FallbackOrchestratorService);
     const stateMachine = inject(PaymentFlowActorService);
     const actions = createPaymentsStoreActions(store, {
+      stateMachine,
+    });
+    const fallbackHandlers = createFallbackHandlers(store, {
+      fallbackOrchestrator,
       stateMachine,
     });
 
@@ -39,48 +44,7 @@ export const PaymentsStore = signalStore(
         patchState(store, { selectedProvider: providerId });
       },
 
-      executeFallback(providerId: PaymentProviderId) {
-        const pendingEvent = store.fallback().pendingEvent;
-
-        if (!pendingEvent) {
-          const currentRequest = store.currentRequest();
-          if (!currentRequest) return;
-          const failedProviderId = store.selectedProvider() ?? store.intent()?.provider ?? null;
-          stateMachine.sendSystem({
-            type: 'FALLBACK_EXECUTE',
-            providerId,
-            request: currentRequest,
-            ...(failedProviderId && { failedProviderId }),
-          });
-          return;
-        }
-
-        if (!pendingEvent.alternativeProviders.includes(providerId)) return;
-
-        fallbackOrchestrator.respondToFallback({
-          eventId: pendingEvent.eventId,
-          accepted: true,
-          selectedProvider: providerId,
-          timestamp: Date.now(),
-        });
-      },
-
-      cancelFallback() {
-        const pendingEvent = store.fallback().pendingEvent;
-
-        if (pendingEvent) {
-          fallbackOrchestrator.respondToFallback({
-            eventId: pendingEvent.eventId,
-            accepted: false,
-            timestamp: Date.now(),
-          });
-          stateMachine.sendSystem({ type: 'FALLBACK_ABORT' });
-          return;
-        }
-
-        fallbackOrchestrator.reset();
-        stateMachine.sendSystem({ type: 'FALLBACK_ABORT' });
-      },
+      ...fallbackHandlers,
 
       clearError() {
         patchState(store, { error: null, status: 'idle' });
