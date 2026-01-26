@@ -1,5 +1,7 @@
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
+import type { PaymentFlowMachineContext } from './payment-flow.types';
+
 export interface PaymentFlowConfig {
   polling: {
     baseDelayMs: number;
@@ -53,6 +55,42 @@ export function isFinalStatus(status?: string) {
 export function needsUserAction(intent?: PaymentIntent | null) {
   if (!intent) return false;
   return intent.status === 'requires_action' || !!intent.redirectUrl || !!intent.nextAction;
+}
+
+export function hasIntentPolicy(context: PaymentFlowMachineContext): boolean {
+  return !!context.intent;
+}
+
+export function needsUserActionPolicy(context: PaymentFlowMachineContext): boolean {
+  return needsUserAction(context.intent);
+}
+
+export function isFinalIntentPolicy(context: PaymentFlowMachineContext): boolean {
+  return isFinalStatus(context.intent?.status);
+}
+
+export function hasRefreshKeysPolicy(context: PaymentFlowMachineContext): boolean {
+  return !!context.providerId && !!(context.intentId ?? context.intent?.id);
+}
+
+export function canFallbackPolicy(context: PaymentFlowMachineContext): boolean {
+  return (
+    context.fallback.eligible && !!context.fallback.request && !!context.fallback.failedProviderId
+  );
+}
+
+export function canPollPolicy(
+  config: PaymentFlowConfig,
+  context: PaymentFlowMachineContext,
+): boolean {
+  return context.polling.attempt < config.polling.maxAttempts;
+}
+
+export function canRetryStatusPolicy(
+  config: PaymentFlowConfig,
+  context: PaymentFlowMachineContext,
+): boolean {
+  return context.statusRetry.count < config.statusRetry.maxRetries;
 }
 
 export function getPollingDelayMs(config: PaymentFlowConfig, attempt: number): number {

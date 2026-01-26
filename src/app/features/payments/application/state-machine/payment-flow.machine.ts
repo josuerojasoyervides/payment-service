@@ -4,10 +4,15 @@ import { assign, fromPromise, setup } from 'xstate';
 import { normalizePaymentError } from '../store/projection/payment-store.errors';
 import { PaymentFlowDeps } from './payment-flow.deps';
 import {
+  canFallbackPolicy,
+  canPollPolicy,
+  canRetryStatusPolicy,
   getPollingDelayMs,
   getStatusRetryDelayMs,
-  isFinalStatus,
-  needsUserAction,
+  hasIntentPolicy,
+  hasRefreshKeysPolicy,
+  isFinalIntentPolicy,
+  needsUserActionPolicy,
   type PaymentFlowConfigOverrides,
   resolvePaymentFlowConfig,
 } from './payment-flow.policy';
@@ -221,17 +226,13 @@ export const createPaymentFlowMachine = (
     },
 
     guards: {
-      hasIntent: ({ context }) => !!context.intent,
-      needsUserAction: ({ context }) => needsUserAction(context.intent),
-      isFinal: ({ context }) => isFinalStatus(context.intent?.status),
-      hasRefreshKeys: ({ context }) =>
-        !!context.providerId && !!(context.intentId ?? context.intent?.id),
-      canFallback: ({ context }) =>
-        context.fallback.eligible &&
-        !!context.fallback.request &&
-        !!context.fallback.failedProviderId,
-      canPoll: ({ context }) => context.polling.attempt < config.polling.maxAttempts,
-      canRetryStatus: ({ context }) => context.statusRetry.count < config.statusRetry.maxRetries,
+      hasIntent: ({ context }) => hasIntentPolicy(context),
+      needsUserAction: ({ context }) => needsUserActionPolicy(context),
+      isFinal: ({ context }) => isFinalIntentPolicy(context),
+      hasRefreshKeys: ({ context }) => hasRefreshKeysPolicy(context),
+      canFallback: ({ context }) => canFallbackPolicy(context),
+      canPoll: ({ context }) => canPollPolicy(config, context),
+      canRetryStatus: ({ context }) => canRetryStatusPolicy(config, context),
     },
   }).createMachine({
     id: 'paymentFlow',

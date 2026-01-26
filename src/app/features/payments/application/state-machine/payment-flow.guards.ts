@@ -1,6 +1,6 @@
 import type { InspectionEvent } from 'xstate';
 
-import { isFinalStatus, needsUserAction } from './payment-flow.policy';
+import { hasIntentPolicy, isFinalIntentPolicy, needsUserActionPolicy } from './payment-flow.policy';
 import type { PaymentFlowMachineContext, PaymentFlowSnapshot } from './payment-flow.types';
 /**
  * "@xstate.snapshot" event with snapshot typed as TSnap.
@@ -39,11 +39,10 @@ export function isPaymentFlowSnapshot(s: unknown): s is PaymentFlowSnapshot {
 }
 
 export const paymentFlowGuards = {
-  hasIntent: ({ context }: { context: PaymentFlowMachineContext }) => !!context.intent,
+  hasIntent: ({ context }: { context: PaymentFlowMachineContext }) => hasIntentPolicy(context),
 
   needsUserAction: ({ context }: { context: PaymentFlowMachineContext }) =>
-    needsUserAction(context.intent),
+    needsUserActionPolicy(context),
 
-  isFinal: ({ context }: { context: PaymentFlowMachineContext }) =>
-    isFinalStatus(context.intent?.status),
+  isFinal: ({ context }: { context: PaymentFlowMachineContext }) => isFinalIntentPolicy(context),
 };
