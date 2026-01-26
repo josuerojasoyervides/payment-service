@@ -1,0 +1,54 @@
+import { inject, Injectable } from '@angular/core';
+import {
+  PaymentMethodType,
+  PaymentProviderId,
+} from '@payments/domain/models/payment/payment-intent.types';
+
+import {
+  ProviderMethodPolicy,
+  ProviderMethodPolicyPort,
+} from '../ports/provider-method-policy.port';
+import { PAYMENT_PROVIDER_METHOD_POLICIES } from '../tokens/payment-provider-method-policies.token';
+
+@Injectable()
+export class ProviderMethodPolicyRegistry {
+  private readonly policies = inject<ProviderMethodPolicyPort[]>(PAYMENT_PROVIDER_METHOD_POLICIES);
+  private readonly policyMap = new Map<string, ProviderMethodPolicy>();
+
+  constructor() {
+    this.buildPolicyMap();
+  }
+
+  getPolicy(providerId: PaymentProviderId, method: PaymentMethodType): ProviderMethodPolicy {
+    const key = `${providerId}:${method}`;
+    const policy = this.policyMap.get(key);
+    if (!policy) {
+      throw new Error(`No policy found for provider "${providerId}" and method "${method}".`);
+    }
+    return policy;
+  }
+
+  listPolicies(): ProviderMethodPolicy[] {
+    return Array.from(this.policyMap.values());
+  }
+
+  private buildPolicyMap(): void {
+    for (const policyProvider of this.policies) {
+      const providerId = policyProvider.providerId;
+      const methods: PaymentMethodType[] = ['card', 'spei'];
+
+      for (const method of methods) {
+        try {
+          const policy = policyProvider.getPolicy(method);
+          const key = `${providerId}:${policy.method}`;
+          if (this.policyMap.has(key)) {
+            throw new Error(`Duplicate policy for "${key}".`);
+          }
+          this.policyMap.set(key, policy);
+        } catch {
+          // method not supported by this provider
+        }
+      }
+    }
+  }
+}

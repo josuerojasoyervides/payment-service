@@ -22,9 +22,11 @@ import { FakeStripeGetIntentGateway } from '@payments/infrastructure/stripe/fake
 import { ExternalEventAdapter } from '../application/adapters/external-event.adapter';
 import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
 import { ProviderFactoryRegistry } from '../application/registry/provider-factory.registry';
+import { ProviderMethodPolicyRegistry } from '../application/registry/provider-method-policy.registry';
 import { FallbackOrchestratorService } from '../application/services/fallback-orchestrator.service';
 import { PaymentsStore } from '../application/store/payment-store';
 import { PAYMENT_PROVIDER_FACTORIES } from '../application/tokens/payment-provider-factories.token';
+import { PAYMENT_PROVIDER_METHOD_POLICIES } from '../application/tokens/payment-provider-method-policies.token';
 import { PAYMENT_STATE } from '../application/tokens/payment-state.token';
 import { CancelPaymentUseCase } from '../application/use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '../application/use-cases/confirm-payment.use-case';
@@ -33,12 +35,14 @@ import { StartPaymentUseCase } from '../application/use-cases/start-payment.use-
 import { FakePaymentGateway } from '../infrastructure/fake/gateways/fake-payment.gateway';
 import { PaypalIntentFacade } from '../infrastructure/paypal/facades/intent.facade';
 import { PaypalProviderFactory } from '../infrastructure/paypal/factories/paypal-provider.factory';
+import { PaypalProviderMethodPolicy } from '../infrastructure/paypal/policies/paypal-provider-method.policy';
 import { StripeIntentFacade } from '../infrastructure/stripe/facades/intent.facade';
 import { StripeProviderFactory } from '../infrastructure/stripe/factories/stripe-provider.factory';
 import { StripeCancelIntentGateway } from '../infrastructure/stripe/gateways/intent/cancel-intent.gateway';
 import { StripeConfirmIntentGateway } from '../infrastructure/stripe/gateways/intent/confirm-intent.gateway';
 import { StripeCreateIntentGateway } from '../infrastructure/stripe/gateways/intent/create-intent.gateway';
 import { StripeGetIntentGateway } from '../infrastructure/stripe/gateways/intent/get-intent.gateway';
+import { StripeProviderMethodPolicy } from '../infrastructure/stripe/policies/stripe-provider-method.policy';
 import { IdempotencyKeyFactory } from '../shared/idempotency/idempotency-key.factory';
 
 export type PaymentsProvidersMode = 'fake' | 'real';
@@ -112,6 +116,11 @@ const FACTORY_PROVIDERS: Provider[] = [
   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: PaypalProviderFactory, multi: true },
 ];
 
+const POLICY_PROVIDERS: Provider[] = [
+  { provide: PAYMENT_PROVIDER_METHOD_POLICIES, useClass: StripeProviderMethodPolicy, multi: true },
+  { provide: PAYMENT_PROVIDER_METHOD_POLICIES, useClass: PaypalProviderMethodPolicy, multi: true },
+];
+
 const USE_CASE_PROVIDERS: Provider[] = [
   StartPaymentUseCase,
   ConfirmPaymentUseCase,
@@ -121,6 +130,7 @@ const USE_CASE_PROVIDERS: Provider[] = [
 
 const APPLICATION_PROVIDERS: Provider[] = [
   ProviderFactoryRegistry,
+  ProviderMethodPolicyRegistry,
   ExternalEventAdapter,
   FallbackOrchestratorService,
   PaymentsStore,
@@ -137,6 +147,7 @@ function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provide
   return [
     ...selectGateways(mode),
     ...FACTORY_PROVIDERS,
+    ...POLICY_PROVIDERS,
     ...USE_CASE_PROVIDERS,
     ...APPLICATION_PROVIDERS,
     ...SHARED_PROVIDERS,
