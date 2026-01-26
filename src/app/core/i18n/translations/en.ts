@@ -4,6 +4,7 @@ export const en: Translations = {
   errors: {
     customer_email_invalid: 'Customer email is invalid',
     cancel_url_invalid: 'Cancel URL is invalid',
+    return_url_invalid: 'Return URL is invalid',
     customer_email_required: 'Customer email is required',
     return_url_required: 'Return URL is required',
     currency_not_supported: 'Currency not supported',
@@ -192,6 +193,7 @@ export const en: Translations = {
     spei_bank_transfer: 'SPEI bank transfer',
     spei_email_instructions: 'You will receive payment instructions in your email',
     email_label: 'Email',
+    email_placeholder: 'your@email.com',
     field_required: 'This field is required',
     check_by_id: 'Check by ID',
     select_provider_method: 'Select a provider and payment method.',

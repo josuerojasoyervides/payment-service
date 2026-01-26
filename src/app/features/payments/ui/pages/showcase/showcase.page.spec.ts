@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
+import { I18nKeys } from '@core/i18n';
 
 import { ShowcaseComponent } from './showcase.page';
 
@@ -67,7 +68,7 @@ describe('ShowcaseComponent', () => {
 
     it('debe tener sampleError configurado', () => {
       expect(component.sampleError.code).toBe('card_declined');
-      expect(component.sampleError.messageKey).toContain('errors.card_declined');
+      expect(component.sampleError.messageKey).toContain(I18nKeys.errors.card_declined);
     });
 
     it('debe tener speiInstructions configurado', () => {

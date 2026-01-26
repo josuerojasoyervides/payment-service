@@ -1,3 +1,5 @@
+import { I18nKeys } from '@core/i18n';
+
 import { PaypalRedirectRequestBuilder } from './paypal-redirect-request.builder';
 
 export function expectSyncPaymentError(fn: () => unknown, expected: any) {
@@ -100,7 +102,7 @@ describe('PaypalRedirectRequestBuilder', () => {
             .build(),
         {
           code: 'invalid_request',
-          messageKey: 'errors.order_id_required',
+          messageKey: I18nKeys.errors.order_id_required,
           params: { field: 'orderId' },
         },
       );
@@ -116,7 +118,7 @@ describe('PaypalRedirectRequestBuilder', () => {
             .build(),
         {
           code: 'invalid_request',
-          messageKey: 'errors.amount_invalid',
+          messageKey: I18nKeys.errors.amount_invalid,
           params: { field: 'amount' },
         },
       );
@@ -132,7 +134,7 @@ describe('PaypalRedirectRequestBuilder', () => {
             .build(),
         {
           code: 'invalid_request',
-          messageKey: 'errors.currency_required',
+          messageKey: I18nKeys.errors.currency_required,
           params: { field: 'currency' },
         },
       );
@@ -157,7 +159,7 @@ describe('PaypalRedirectRequestBuilder', () => {
             .build(),
         {
           code: 'invalid_request',
-          messageKey: 'errors.return_url_invalid',
+          messageKey: I18nKeys.errors.return_url_invalid,
           params: { field: 'returnUrl' },
         },
       );
@@ -176,7 +178,7 @@ describe('PaypalRedirectRequestBuilder', () => {
             .build(),
         {
           code: 'invalid_request',
-          messageKey: 'errors.cancel_url_invalid',
+          messageKey: I18nKeys.errors.cancel_url_invalid,
           params: { field: 'cancelUrl' },
         },
       );

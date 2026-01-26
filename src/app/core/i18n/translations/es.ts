@@ -4,6 +4,7 @@ export const es: Translations = {
   errors: {
     customer_email_invalid: 'El correo electrónico del cliente es inválido',
     cancel_url_invalid: 'URL de cancelación inválida',
+    return_url_invalid: 'URL de retorno inválida',
     customer_email_required: 'El correo electrónico del cliente es requerido',
     return_url_required: 'URL de retorno es requerida',
     currency_not_supported: 'La moneda no es soportada',
@@ -191,6 +192,7 @@ export const es: Translations = {
     spei_bank_transfer: 'Transferencia bancaria SPEI',
     spei_email_instructions: 'Recibirás instrucciones de pago en tu correo electrónico',
     email_label: 'Correo electrónico',
+    email_placeholder: 'tu@email.com',
     field_required: 'Este campo es requerido',
     check_by_id: 'Consultar por ID',
     select_provider_method: 'Selecciona un proveedor y método de pago.',
