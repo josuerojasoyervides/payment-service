@@ -70,75 +70,111 @@ describe('PaymentsStore', () => {
   // -------------------
   // Machine snapshot mock (source of truth)
   // -------------------
-  const machineSnapshot = signal<any>({
-    state: 'idle',
-    context: {
+  const buildSnapshot = (params: {
+    value: string;
+    context?: Partial<any>;
+    lastSentEvent?: any;
+    tags?: string[];
+  }) => {
+    const context = {
       providerId: null,
       request: null,
       flowContext: null,
       intent: null,
       error: null,
-    },
-    lastSentEvent: null,
-  });
+      ...(params.context ?? {}),
+    };
+    const derivedTags =
+      params.tags ??
+      (params.value === 'starting' ||
+      params.value === 'confirming' ||
+      params.value === 'cancelling' ||
+      params.value === 'fetchingStatus' ||
+      params.value === 'fetchingStatusInvoke'
+        ? ['loading']
+        : params.value === 'failed'
+          ? ['error']
+          : params.value === 'done' ||
+              params.value === 'requiresAction' ||
+              params.value === 'polling' ||
+              params.value === 'afterStatus'
+            ? ['ready']
+            : params.value === 'idle'
+              ? ['idle']
+              : []);
 
-  const resetMachine = () => {
-    machineSnapshot.set({
-      state: 'idle',
-      context: {
-        providerId: null,
-        request: null,
-        flowContext: null,
-        intent: null,
-        error: null,
-      },
-      lastSentEvent: null,
-    });
+    return {
+      value: params.value,
+      context,
+      lastSentEvent: params.lastSentEvent ?? null,
+      tags: new Set(derivedTags),
+      hasTag: (tag: string) => derivedTags.includes(tag),
+    };
   };
 
-  const setMachineLoading = (overrides?: Partial<any>) => {
-    machineSnapshot.set({
-      state: 'starting',
-      context: {
-        providerId: 'stripe',
-        request: req,
-        flowContext: null,
-        intent: null,
-        error: null,
-        ...overrides,
-      },
-      lastSentEvent: { type: 'START', providerId: 'stripe', request: req },
-    });
+  const machineSnapshot = signal<any>(
+    buildSnapshot({
+      value: 'idle',
+    }),
+  );
+
+  const resetMachine = () => {
+    machineSnapshot.set(
+      buildSnapshot({
+        value: 'idle',
+      }),
+    );
+  };
+
+  const setMachineLoading = (overrides?: Partial<any>, value = 'starting') => {
+    machineSnapshot.set(
+      buildSnapshot({
+        value,
+        context: {
+          providerId: 'stripe',
+          request: req,
+          flowContext: null,
+          intent: null,
+          error: null,
+          ...overrides,
+        },
+        lastSentEvent: { type: 'START', providerId: 'stripe', request: req },
+      }),
+    );
   };
 
   const setMachineReady = (overrides?: Partial<any>) => {
-    machineSnapshot.set({
-      state: 'done',
-      context: {
-        providerId: 'stripe',
-        request: req,
-        flowContext: null,
-        intent,
-        error: null,
-        ...overrides,
-      },
-      lastSentEvent: { type: 'START', providerId: 'stripe', request: req },
-    });
+    machineSnapshot.set(
+      buildSnapshot({
+        value: 'done',
+        context: {
+          providerId: 'stripe',
+          request: req,
+          flowContext: null,
+          intent,
+          error: null,
+          ...overrides,
+        },
+        lastSentEvent: { type: 'START', providerId: 'stripe', request: req },
+      }),
+    );
   };
 
   const setMachineError = (overrides?: Partial<any>) => {
-    machineSnapshot.set({
-      state: 'failed',
-      context: {
-        providerId: 'stripe',
-        request: req,
-        flowContext: null,
-        intent: null,
-        error: paymentError,
-        ...overrides,
-      },
-      lastSentEvent: { type: 'START', providerId: 'stripe', request: req },
-    });
+    machineSnapshot.set(
+      buildSnapshot({
+        value: 'failed',
+        context: {
+          providerId: 'stripe',
+          request: req,
+          flowContext: null,
+          intent: null,
+          error: paymentError,
+          ...overrides,
+        },
+        lastSentEvent: { type: 'START', providerId: 'stripe', request: req },
+      }),
+    );
   };
 
   const stateMachineMock: Partial<PaymentFlowActorService> = {
@@ -190,7 +226,9 @@ describe('PaymentsStore', () => {
     it('sets loading immediately + then ready after machine emits intent', async () => {
       store.startPayment({ request: req, providerId: 'stripe' });
 
-      // 1) inmediatamente loading
+      setMachineLoading();
+      await flush();
+
       expect(store.status()).toBe('loading');
       expect(store.error()).toBeNull();
       expect(store.selectedProvider()).toBe('stripe');
@@ -208,6 +246,8 @@ describe('PaymentsStore', () => {
       fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(false);
 
       store.startPayment({ request: req, providerId: 'stripe' });
+      setMachineLoading();
+      await flush();
       expect(store.status()).toBe('loading');
 
       setMachineError();
@@ -222,6 +262,8 @@ describe('PaymentsStore', () => {
       fallbackOrchestratorMock.reportFailure.mockReturnValueOnce(true);
 
       store.startPayment({ request: req, providerId: 'stripe' });
+      setMachineLoading();
+      await flush();
       expect(store.status()).toBe('loading');
 
       setMachineError();
@@ -369,6 +411,15 @@ describe('PaymentsStore', () => {
         providerId: 'stripe',
       });
 
+      setMachineLoading(
+        {
+          providerId: 'stripe',
+          request: null,
+          intent: null,
+          intentId: 'pi_123',
+        },
+        'fetchingStatus',
+      );
       await powerFlush();
 
       expect(stateMachineMock.send).toHaveBeenCalledWith(
@@ -381,17 +432,19 @@ describe('PaymentsStore', () => {
 
       expect(store.status()).toBe('loading');
 
-      machineSnapshot.set({
-        state: 'done',
-        context: {
-          providerId: 'stripe',
-          request: null,
-          flowContext: null,
-          intent: { ...intent, id: 'pi_123', status: 'processing' },
-          error: null,
-        },
-        lastSentEvent: { type: 'REFRESH', providerId: 'stripe', intentId: 'pi_123' },
-      });
+      machineSnapshot.set(
+        buildSnapshot({
+          value: 'done',
+          context: {
+            providerId: 'stripe',
+            request: null,
+            flowContext: null,
+            intent: { ...intent, id: 'pi_123', status: 'processing' },
+            error: null,
+          },
+          lastSentEvent: { type: 'REFRESH', providerId: 'stripe', intentId: 'pi_123' },
+        }),
+      );
 
       await powerFlush();
 
@@ -546,6 +599,8 @@ describe('PaymentsStore', () => {
     it('without pendingEvent uses currentRequest and starts payment with chosen provider', async () => {
       // “armo” currentRequest
       store.startPayment({ request: req, providerId: 'stripe' });
+      setMachineLoading();
+      await flush();
       setMachineReady();
       await flush();
 
