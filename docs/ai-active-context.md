@@ -42,14 +42,15 @@
 - [x] **Branch:** `chore/remove-fake-backend-interceptor` | **Commit:** `chore(core): remove fake backend interceptor`
 - [x] **Branch:** `docs/clean-ports-debt-notes` | **Commit:** `docs: remove port migration requirement`
 - [x] **Branch:** `feat/fallback-hardening-limits` | **Commit:** `feat(fallback): enforce limits and expand coverage`
-- [ ] **Branch:** `feat/ui-qol-utilities` | **Commit:** `feat(ui): add status label pipe, click tracking, and autofocus`
+- [x] **Branch:** `feat/ui-qol-utilities` | **Commit:** `feat(ui): add status label pipe, click tracking, and autofocus`
 - [ ] **Branch:** `docs/fallback-hardening` | **Commit:** `docs(fallback): document limits and reset behavior`
 - [x] **Branch:** `feat/i18n-translate-pipe` | **Commit:** `feat(i18n): add template translation pipe`
-- [ ] **Branch:** `refactor/flow-public-events` | **Commit:** `refactor(flow): separate command and system events` (active)
+- [x] **Branch:** `refactor/flow-public-events` | **Commit:** `refactor(flow): separate command and system events`
+- [ ] **Branch:** `chore/store-fallback-cleanup` | **Commit:** `chore(payments): clean store/fallback visuals` (active)
 
 ## ⏭️ Immediate Next Action
 
-- [ ] Finish UI QoL utilities branch (verify, commit, update backlog).
+- [ ] Finish store/fallback cleanup branch (verify, commit, update backlog).
 
 ---
 
