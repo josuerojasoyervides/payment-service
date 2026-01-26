@@ -165,16 +165,16 @@ export class FallbackOrchestratorService {
   }: ReportFailurePayload): boolean {
     if (!isFallbackEnabledGuard(this.config)) return false;
 
-    if (hasReachedMaxAttemptsPolicy(this.config, this._state())) {
-      this.reset();
-      return false;
-    }
-
     // ✅ elegibilidad
     if (!isEligibleForFallbackPolicy(this.config, error)) return false;
 
     // ✅ record failed attempt (now exists)
     registerFailureTransition(this._state, providerId, error, !!wasAutoFallback);
+
+    if (hasReachedMaxAttemptsPolicy(this.config, this._state())) {
+      this.finish('failed');
+      return false;
+    }
 
     // ✅ buscar alternativas
     const alternatives = getAlternativeProvidersPolicy(

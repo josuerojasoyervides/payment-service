@@ -142,7 +142,7 @@ describe('FallbackOrchestratorService', () => {
       expect(attempts[0].wasAutoFallback).toBe(false);
     });
 
-    it('respects maxAttempts configuration (real flow)', () => {
+    it('respects maxAttempts configuration (real flow)', async () => {
       // 1) stripe fails
       expect(service.reportFailure('stripe', providerUnavailableError, mockRequest)).toBe(true);
 
@@ -164,11 +164,13 @@ describe('FallbackOrchestratorService', () => {
       const third = service.reportFailure('stripe', providerUnavailableError, mockRequest);
       expect(third).toBe(false);
 
+      expect(service.state().status).toBe('failed');
+      await Promise.resolve();
       expect(service.state().status).toBe('idle');
       expect(service.failedAttempts()).toEqual([]);
     });
 
-    it('resets when maxAttempts reached', () => {
+    it('resets when maxAttempts reached', async () => {
       // 1) stripe fails
       expect(service.reportFailure('stripe', providerUnavailableError, mockRequest)).toBe(true);
 
@@ -179,6 +181,8 @@ describe('FallbackOrchestratorService', () => {
       const third = service.reportFailure('stripe', providerUnavailableError, mockRequest);
       expect(third).toBe(false);
 
+      expect(service.state().status).toBe('failed');
+      await Promise.resolve();
       expect(service.state().status).toBe('idle');
       expect(service.failedAttempts()).toEqual([]);
     });
@@ -693,6 +697,7 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
             mode: 'auto',
             autoFallbackDelay: 100, // 100ms for faster tests
             maxAutoFallbacks: 1,
+            maxAttempts: 3,
           },
         },
       ],

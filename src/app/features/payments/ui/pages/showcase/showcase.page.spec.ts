@@ -150,7 +150,7 @@ describe('ShowcaseComponent', () => {
   describe('Estructura de datos', () => {
     it('should tener items en orderSummary', () => {
       expect(component.orderSummary.items.length).toBe(2);
-      expect(component.orderSummary.items[0].name).toBe('Producto Premium');
+      expect(component.orderSummary.items[0].name).toBe('Premium product');
       expect(component.orderSummary.items[0].price).toBe(399.99);
       expect(component.orderSummary.items[1].name).toBe('Express shipping');
       expect(component.orderSummary.items[1].price).toBe(100.0);

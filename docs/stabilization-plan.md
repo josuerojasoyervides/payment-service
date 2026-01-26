@@ -112,7 +112,7 @@ This plan is deliberately aggressive: consistency and testability first, feature
 
 **Status:**
 
-- Specs exist for happy path + provider error, but coverage is inconsistent
+- ✅ Completed for Stripe + PayPal critical operations
 
 ---
 
@@ -141,7 +141,7 @@ You can mark this "closed" when all are true:
 
 ### P1 — Stability
 
-- [ ] Complete minimal tests for critical gateways
+- [x] Complete minimal tests for critical gateways
 - [ ] Fallback hardening (attempt counters + auto fallback limits)
 
 ### P2 — Refinements
