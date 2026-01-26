@@ -1,12 +1,15 @@
 import { computed, DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LoggerService } from '@core/logging';
 import { CancelPaymentUseCase } from '@payments/application/use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '@payments/application/use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '@payments/application/use-cases/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/use-cases/start-payment.use-case';
+import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
 
+import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
 import {
   isPaymentFlowSnapshot,
   isSnapshotInspectionEventWithSnapshot,
@@ -26,6 +29,7 @@ export class PaymentFlowActorService {
   private readonly confirm = inject(ConfirmPaymentUseCase);
   private readonly cancel = inject(CancelPaymentUseCase);
   private readonly status = inject(GetPaymentStatusUseCase);
+  private readonly fallbackOrchestrator = inject(FallbackOrchestratorService);
   private readonly logger = inject(LoggerService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -41,6 +45,8 @@ export class PaymentFlowActorService {
   });
 
   private prevSnapshot: PaymentFlowSnapshot | null = null;
+  private lastReportedError: PaymentError | null = null;
+  private lastSuccessIntentId: string | null = null;
 
   private readonly actor: PaymentFlowActorRef = createActor(this.machine, {
     inspect: (insp) => {
@@ -84,7 +90,19 @@ export class PaymentFlowActorService {
     this.prevSnapshot = this.actor.getSnapshot() as PaymentFlowSnapshot;
     this.actor.subscribe((snapshot) => {
       this._snapshot.set(snapshot);
+      this.maybeReportFallback(snapshot);
+      this.maybeNotifyFallbackSuccess(snapshot);
     });
+
+    this.fallbackOrchestrator.fallbackExecute$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ provider, request }) => {
+        this.send({
+          type: 'FALLBACK_EXECUTE',
+          providerId: provider,
+          request,
+        });
+      });
     this.destroyRef.onDestroy(() => {
       this.logger.info('Stopping payment flow actor', 'PaymentFlowActorService');
       this.actor.stop();
@@ -118,5 +136,42 @@ export class PaymentFlowActorService {
     this.lastSentEvent.set(event);
     this.actor.send(event);
     return true;
+  }
+
+  private maybeReportFallback(snapshot: PaymentFlowSnapshot): void {
+    if (!snapshot.hasTag('error')) {
+      this.lastReportedError = null;
+      return;
+    }
+
+    const error = snapshot.context.error;
+    const providerId = snapshot.context.providerId;
+    const request = snapshot.context.request;
+
+    if (!error || !providerId || !request) return;
+    if (this.lastReportedError === error) return;
+
+    this.lastReportedError = error;
+
+    const handled = this.fallbackOrchestrator.reportFailure(providerId, error, request, false);
+    if (!handled) return;
+
+    this.send({
+      type: 'FALLBACK_REQUESTED',
+      failedProviderId: providerId,
+      request,
+      mode: this.fallbackOrchestrator.getConfig().mode,
+    });
+  }
+
+  private maybeNotifyFallbackSuccess(snapshot: PaymentFlowSnapshot): void {
+    const intentId = snapshot.context.intent?.id ?? null;
+    if (!intentId || intentId === this.lastSuccessIntentId) return;
+
+    const fallbackStatus = this.fallbackOrchestrator.state().status;
+    if (fallbackStatus === 'idle') return;
+
+    this.lastSuccessIntentId = intentId;
+    this.fallbackOrchestrator.notifySuccess();
   }
 }
