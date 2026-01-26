@@ -1,6 +1,6 @@
 # Payments Module — Goals & Evolution Plan (NgRx Signals → XState)
 
-> **Última revisión:** 2026-01-24  
+> **Última revisión:** 2026-01-26  
 > Documento estratégico: define **por qué** existe este módulo, cuál es el **North Star**, y cómo evolucionar el diseño sin romper lo que ya funciona.
 
 ## Cómo usar este doc
@@ -80,24 +80,25 @@ En pagos hay demasiados estados intermedios reales:
 
 ---
 
-## 3) Coexistencia: NgRx Signals + XState (intención)
+## 3) Coexistencia: NgRx Signals + XState (estado actual)
 
 ✅ Lo que se queda en NgRx Signals:
 
 - estado de UI/pantallas
-- wiring de inputs / outputs
 - data shape para components
+- API pública de lectura (selectors)
 
-✅ Lo que migra a XState:
+✅ Lo que vive en XState:
 
-- lifecycle de un pago (create → action → confirm/capture → done/fail)
+- lifecycle de un pago (start → action → confirm/cancel → polling → done/fail)
 - branching por provider/método
-- “recovery paths” (retry/backoff, fallback, cancel)
+- recovery paths (fallback, refresh, cancel)
 
 📌 Estado actual:
 
-- Store con NgRx Signals sigue siendo la base.
-- XState aún NO está integrado (está planeado).
+- XState es la fuente de verdad del flujo.
+- Store es proyección del snapshot (sin orquestación).
+- Fallback se modela dentro del flow y usa el orchestrator como policy/telemetría.
 
 ---
 
@@ -115,13 +116,13 @@ En pagos hay demasiados estados intermedios reales:
 - Providers con el mismo patrón (facade + operations)
 - Tests mínimos en gateways críticos
 
-📌 Estado actual (as-of 2026-01-24):
+📌 Estado actual (as-of 2026-01-26):
 
 - ✅ Providers ya están estandarizados
 - ✅ Fallback orchestrator integrado
 - ✅ PaymentError contract existe
-- 🟡 Aún hay deuda legacy en renderer de errores y en algunos tests
-- ❌ Enforcement automático pendiente
+- ✅ Enforcement automático agregado
+- 🟡 Tests mínimos por gateway aún incompletos
 
 ---
 
@@ -143,9 +144,9 @@ Targets:
 
 Targets:
 
-- definir actor por provider
-- migrar el pipeline “start payment” primero
+- definir flow completo en statechart
 - mantener el store como puente (sin romper UI)
+- fallback modelado como estados del flow
 
 ---
 
@@ -173,6 +174,6 @@ Esto no es “malo”, es deuda consciente (pero debe tener plan):
 
 Si hoy tuvieras que cerrar un ciclo completo, sería:
 
-1. **Cerrar i18n de verdad** (no legacy rendering, no messageKey traducido)
-2. **Enforcement automático mínimo** (scan tests / lint)
-3. **Completar tests mínimos en gateways críticos**
+1. **Completar tests mínimos en gateways críticos**
+2. **Hardening de fallback** (attempt counters + auto fallback limits)
+3. **Reubicar base ports con HttpClient** si se decide cerrar esa deuda
