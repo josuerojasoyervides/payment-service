@@ -4,6 +4,7 @@ import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
+import { ExternalEventAdapter } from '../../../application/adapters/external-event.adapter';
 import { mapReturnQueryToReference } from '../../../application/events/external/payment-flow-return.mapper';
 import { PaymentFlowFacade } from '../../../application/state-machine/payment-flow.facade';
 import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
@@ -40,6 +41,7 @@ export class ReturnComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly flow = inject(PaymentFlowFacade);
   private readonly i18n = inject(I18nService);
+  private readonly externalEvents = inject(ExternalEventAdapter);
 
   // Query params
   readonly intentId = signal<string | null>(null);
@@ -94,8 +96,16 @@ export class ReturnComponent implements OnInit {
     this.paypalPayerId.set(params['PayerID'] || null);
 
     const reference = mapReturnQueryToReference(params);
-    if (reference.referenceId && !this.isCancelFlow()) {
-      this.flow.refresh(reference.providerId, reference.referenceId);
+    if (reference.referenceId) {
+      this.externalEvents.providerUpdate(
+        {
+          providerId: reference.providerId,
+          referenceId: reference.referenceId,
+          status: this.redirectStatus() ?? undefined,
+          raw: params,
+        },
+        { refresh: !this.isCancelFlow() },
+      );
     }
   }
 

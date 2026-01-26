@@ -19,6 +19,7 @@ import { FakeStripeConfirmIntentGateway } from '@payments/infrastructure/stripe/
 import { FakeStripeCreateIntentGateway } from '@payments/infrastructure/stripe/fake-gateways/intent/fake-stripe-create-intent.gateway';
 import { FakeStripeGetIntentGateway } from '@payments/infrastructure/stripe/fake-gateways/intent/fake-stripe-get-intent.gateway';
 
+import { ExternalEventAdapter } from '../application/adapters/external-event.adapter';
 import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
 import { ProviderFactoryRegistry } from '../application/registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '../application/services/fallback-orchestrator.service';
@@ -120,6 +121,7 @@ const USE_CASE_PROVIDERS: Provider[] = [
 
 const APPLICATION_PROVIDERS: Provider[] = [
   ProviderFactoryRegistry,
+  ExternalEventAdapter,
   FallbackOrchestratorService,
   PaymentsStore,
   PaymentFlowActorService,

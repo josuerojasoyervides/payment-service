@@ -9,6 +9,7 @@
 
 - **UI / Facade**: sends only public commands (`START`, `CONFIRM`, `CANCEL`, `REFRESH`, `RESET`).
 - **ActorService**: runs the machine and dispatches **system** events (`FALLBACK_*`).
+- **ExternalEventAdapter**: normalizes external inputs (webhooks/returns) into system events.
 - **Machine (XState)**: owns flow logic, retries, polling cadence, and state transitions.
 - **Fallback Orchestrator**: decides fallback policy and emits fallback events.
 - **Store**: projection only (snapshot + fallback + history), no orchestration.
@@ -55,6 +56,10 @@ Orchestrator (Fallback)
     - fallbackExecute$ (auto)
   → ActorService.sendSystem(FALLBACK_*)
 
+ExternalEventAdapter
+  maps returns/webhooks → system events
+  → ActorService.sendSystem(PROVIDER_UPDATE/WEBHOOK_RECEIVED/STATUS_CONFIRMED)
+
 Store (projection)
   machine snapshot → loading/ready/error/history
   fallback state → pending/auto_executing
@@ -65,6 +70,12 @@ Store (projection)
 ## State → event → origin (quick debug map)
 
 ```
+System events (external inputs)
+- PROVIDER_UPDATE (ExternalEventAdapter)
+- WEBHOOK_RECEIVED (ExternalEventAdapter)
+- VALIDATION_FAILED (ExternalEventAdapter)
+- STATUS_CONFIRMED (ExternalEventAdapter)
+
 idle
 - START (UI → PaymentFlowFacade.start)
 - CONFIRM (UI → PaymentFlowFacade.confirm)
@@ -110,6 +121,7 @@ afterStatus
 
 failed
 - FALLBACK_REQUESTED (ActorService → internal)
+- PROVIDER_UPDATE / WEBHOOK_RECEIVED (ExternalEventAdapter → internal)
 - REFRESH (UI)
 - RESET (UI)
 
@@ -165,8 +177,10 @@ done
 - Policy + config: `src/app/features/payments/application/state-machine/payment-flow.policy.ts`
 - Actor: `src/app/features/payments/application/state-machine/payment-flow.actor.service.ts`
 - Facade: `src/app/features/payments/application/state-machine/payment-flow.facade.ts`
+- External events: `src/app/features/payments/application/adapters/external-event.adapter.ts`
+- Event map: `src/app/features/payments/application/events/payment-flow.events.ts`
 - Fallback: `src/app/features/payments/application/services/fallback-orchestrator.service.ts`
-- Store bridge: `src/app/features/payments/application/store/payment-store.machine-bridge.ts`
+- Store bridge: `src/app/features/payments/application/store/projection/payment-store.machine-bridge.ts`
 
 ---
 
