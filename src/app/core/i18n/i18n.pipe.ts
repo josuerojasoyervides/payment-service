@@ -1,4 +1,4 @@
-import { inject,Pipe, PipeTransform } from '@angular/core';
+import { inject, Pipe, PipeTransform } from '@angular/core';
 
 import { I18nService } from './i18n.service';
 
