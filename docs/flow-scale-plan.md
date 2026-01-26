@@ -32,7 +32,7 @@ This document captures the temporary plan for scaling the payments flow architec
 
 - Validation, eligibility, and transition rules per provider/method.
 
-### Step 4 — Contract tests
+### Step 4 — Contract tests ✅
 
 - Transition tests per state/event, including invalid events.
 
