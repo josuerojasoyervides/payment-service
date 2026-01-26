@@ -9,7 +9,7 @@ import { PaymentError } from '@payments/domain/models/payment/payment-error.type
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
-import { FinishStatus } from './fallback-orchestrator.types';
+import { FinishStatus } from '../fallback-orchestrator.types';
 
 /**
  * ✅ Reset / Initial

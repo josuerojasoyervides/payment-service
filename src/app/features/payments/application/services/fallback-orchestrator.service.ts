@@ -15,6 +15,13 @@ import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-re
 import { Subject } from 'rxjs';
 
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import { createFallbackStateSignal } from './fallback/fallback-orchestrator.state';
+import {
+  AutoFallbackStartedPayload,
+  FallbackExecutePayload,
+  FinishStatus,
+  ReportFailurePayload,
+} from './fallback/fallback-orchestrator.types';
 import {
   hasDifferentEventId,
   isAutoExecutingGuard,
@@ -26,7 +33,7 @@ import {
   isResponseAcceptedGuard,
   isSameEventAndNotRespondedGuard,
   isSelectedProviderInAlternativesGuard,
-} from './fallback/fallback-orchestrator.guards';
+} from './fallback/policies/fallback-orchestrator.guards';
 import {
   generateEventIdPolicy,
   getAlternativeProvidersPolicy,
@@ -34,9 +41,8 @@ import {
   hasReachedMaxAttemptsPolicy,
   isEligibleForFallbackPolicy,
   shouldAutoFallbackPolicy,
-} from './fallback/fallback-orchestrator.policy';
-import { createFallbackStateSignal } from './fallback/fallback-orchestrator.state';
-import { scheduleAfterDelay, scheduleTTL } from './fallback/fallback-orchestrator.timers';
+} from './fallback/policies/fallback-orchestrator.policy';
+import { scheduleAfterDelay, scheduleTTL } from './fallback/runtime/fallback-orchestrator.timers';
 import {
   registerFailureTransition,
   resetTransition,
@@ -45,13 +51,7 @@ import {
   setFailedNoRequestTransition,
   setPendingManualTransition,
   setTerminalTransition,
-} from './fallback/fallback-orchestrator.transitions';
-import {
-  AutoFallbackStartedPayload,
-  FallbackExecutePayload,
-  FinishStatus,
-  ReportFailurePayload,
-} from './fallback/fallback-orchestrator.types';
+} from './fallback/runtime/fallback-orchestrator.transitions';
 
 /**
  * Token for injecting fallback configuration.
@@ -411,8 +411,7 @@ export class FallbackOrchestratorService {
   /**
    * Schedules timeout to clear expired events.
    *
-   * Cuando expira el TTL, limpia el pending event para evitar
-   * que la UI quede colgada esperando una respuesta.
+   * When TTL expires, clear the pending event to avoid leaving the UI waiting.
    */
   private setupTimeout(eventId: string): void {
     const ttlMs = this.config.userResponseTimeout;

@@ -20,7 +20,7 @@ export class StartPaymentUseCase {
     request: CreatePaymentRequest,
     providerId: PaymentProviderId,
     context?: PaymentFlowContext,
-    wasAutoFallback?: boolean,
+    _wasAutoFallback?: boolean,
   ): Observable<PaymentIntent> {
     return safeDefer(() => {
       const factory = this.registry.get(providerId);

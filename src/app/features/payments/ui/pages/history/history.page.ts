@@ -12,8 +12,6 @@ import { ACTION_REQUIRED_STATUSES } from '@payments/ui/shared/ui.types';
 
 import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
-type IntentStatus = PaymentIntent['status'];
-
 /**
  * Payment history page.
  *

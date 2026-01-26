@@ -1,6 +1,10 @@
-import type { PaymentFlowEvent, PaymentFlowMachineContext } from '../payment-flow.types';
+import type {
+  PaymentFlowEvent,
+  PaymentFlowMachineContext,
+  PaymentFlowStatesConfig,
+} from '../payment-flow.types';
 
-export const createCancelStates = () => ({
+export const cancelStates = {
   cancelling: {
     tags: ['loading', 'cancelling'],
     invoke: {
@@ -25,4 +29,4 @@ export const createCancelStates = () => ({
       onError: { target: 'failed', actions: 'setError' },
     },
   },
-});
+} as const satisfies PaymentFlowStatesConfig;
