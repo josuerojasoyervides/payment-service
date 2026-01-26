@@ -81,6 +81,8 @@ UI is the only layer that translates.
 - Store is snapshot projection only (no orchestration).
 - Fallback is modeled in the flow and uses the orchestrator as policy/telemetry.
 
+**Current status:** retry/backoff + polling cadence implemented in the machine.
+
 ---
 
 ## 3) Roadmap by phase (incremental, no rewrites)
@@ -100,7 +102,7 @@ UI is the only layer that translates.
 
 - Providers are standardized
 - Enforcement is in place
-- Gateway minimal tests are still incomplete
+- Minimal gateway tests are complete
 
 ### Phase B — Guardrails & enforcement
 
@@ -132,8 +134,7 @@ UI is the only layer that translates.
 
 This is not "bad", it is **conscious debt** (must have a plan):
 
-- Legacy rendering of `PaymentError.message` (must die)
-- Some specs with `messageKey` as text (must be fixed)
+- No active P0/P1 debt at this time (keep this section current).
 
 ---
 
@@ -141,5 +142,5 @@ This is not "bad", it is **conscious debt** (must have a plan):
 
 If you had to close a full cycle today:
 
-1. **Complete minimal tests for critical gateways**
-2. **Fallback hardening** (attempt counters + auto fallback limits)
+1. **Document final state** (docs refresh)
+2. **Expand flow complexity** (provider-specific branches and edge cases)

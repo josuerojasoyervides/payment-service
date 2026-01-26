@@ -237,7 +237,7 @@ State machines make it explicit:
 - valid states
 - events that drive transitions
 
-This repo is moving in that direction (see docs).
+This repo is already there: XState is the flow source of truth, with polling cadence and retry/backoff modeled in the machine (see docs).
 
 ---
 
