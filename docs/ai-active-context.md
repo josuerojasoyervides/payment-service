@@ -5,7 +5,7 @@
 > 1. **Primary Mission:** This file bridges chats. If context hits 80% or a new session starts, read this file first to get the project snapshot.
 > 2. **Mandatory Update:** Before each handover, update this file with exact state and pending logic.
 > 3. **Pruning:** Keep it under 1,500 tokens. Remove completed tasks; the code is the truth, this file is only “work in progress.”
-> 4. **Transfer:** Move technical debt to `stabilization-plan.md` and vision changes to `goals.md`.
+> 4. **Transfer:** Move technical debt and vision changes to `goals.md`.
 
 ---
 
@@ -14,7 +14,7 @@
 ## 📍 Mission State (New-Chat Context)
 
 - **Critical Task:** Flow scalability plan Steps 1–4 completed; docs refresh and cleanup in progress.
-- **Open/Relevant Files:** `docs/ai-active-context.md`, `docs/flow-brain.md`, `docs/architecture-rules.md`, `docs/stabilization-plan.md`, `docs/goals.md`.
+- **Open/Relevant Files:** `docs/ai-active-context.md`, `docs/flow-brain.md`, `docs/architecture-rules.md`, `docs/goals.md`.
 - **Error Context:** None.
 
 ## 🛠️ Technical Snapshot (Angular)
@@ -53,7 +53,7 @@
 
 ## ⏭️ Immediate Next Action
 
-- [ ] Close docs refresh (update flow brain, remove temporary plan).
+- [ ] Close docs refresh (update flow brain, cleanup docs).
 
 ---
 

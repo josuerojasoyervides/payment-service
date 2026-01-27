@@ -302,7 +302,6 @@ The rest of the system should stay the same.
 If you want the formal version (north star + snapshot):
 
 - `docs/goals.md`
-- `docs/stabilization-plan.md`
 - `docs/architecture-rules.md`
 
 ---
