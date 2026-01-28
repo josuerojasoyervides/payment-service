@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { patchState } from '@ngrx/signals';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
 import { mapReturnQueryToReference } from '../../../application/adapters/events/external/payment-flow-return.mapper';
@@ -81,12 +82,12 @@ describe('ReturnComponent', () => {
     });
 
     it('should initialize with empty values', () => {
-      expect(component.intentId()).toBeNull();
-      expect(component.paypalToken()).toBeNull();
-      expect(component.paypalPayerId()).toBeNull();
-      expect(component.redirectStatus()).toBeNull();
-      expect(component.isReturnFlow()).toBe(false);
-      expect(component.isCancelFlow()).toBe(false);
+      expect(component.returnPageState.intentId()).toBeNull();
+      expect(component.returnPageState.paypalToken()).toBeNull();
+      expect(component.returnPageState.paypalPayerId()).toBeNull();
+      expect(component.returnPageState.redirectStatus()).toBeNull();
+      expect(component.returnPageState.isReturnFlow()).toBe(false);
+      expect(component.returnPageState.isCancelFlow()).toBe(false);
     });
   });
 
@@ -94,7 +95,7 @@ describe('ReturnComponent', () => {
     it('should detect return flow from route data', () => {
       mockActivatedRoute.snapshot.data = { returnFlow: true };
       component.ngOnInit();
-      expect(component.isReturnFlow()).toBe(true);
+      expect(component.returnPageState.isReturnFlow()).toBe(true);
     });
 
     it('should read payment_intent from query params', () => {
@@ -103,8 +104,8 @@ describe('ReturnComponent', () => {
         redirect_status: 'succeeded',
       };
       component.ngOnInit();
-      expect(component.intentId()).toBe('pi_test_123');
-      expect(component.redirectStatus()).toBe('succeeded');
+      expect(component.returnPageState.intentId()).toBe('pi_test_123');
+      expect(component.returnPageState.redirectStatus()).toBe('succeeded');
     });
 
     it('should read setup_intent from query params', () => {
@@ -112,7 +113,7 @@ describe('ReturnComponent', () => {
         setup_intent: 'seti_test_123',
       };
       component.ngOnInit();
-      expect(component.intentId()).toBe('seti_test_123');
+      expect(component.returnPageState.intentId()).toBe('seti_test_123');
     });
 
     it('should refresh payment when intentId exists and not cancel flow', () => {
@@ -134,8 +135,8 @@ describe('ReturnComponent', () => {
         PayerID: 'PAYER123456',
       };
       component.ngOnInit();
-      expect(component.paypalToken()).toBe('ORDER_FAKE_XYZ');
-      expect(component.paypalPayerId()).toBe('PAYER123456');
+      expect(component.returnPageState.paypalToken()).toBe('ORDER_FAKE_XYZ');
+      expect(component.returnPageState.paypalPayerId()).toBe('PAYER123456');
     });
 
     it('should refresh payment when PayPal token exists', () => {
@@ -154,7 +155,7 @@ describe('ReturnComponent', () => {
     it('should detect cancel flow from route data', () => {
       mockActivatedRoute.snapshot.data = { cancelFlow: true };
       component.ngOnInit();
-      expect(component.isCancelFlow()).toBe(true);
+      expect(component.returnPageState.isCancelFlow()).toBe(true);
     });
 
     it('should not refresh payment when cancel flow', () => {
@@ -192,20 +193,26 @@ describe('ReturnComponent', () => {
 
   describe('Payment actions', () => {
     it('should confirm payment', () => {
-      component.intentId.set('pi_test_123');
-      component.paypalToken.set(null); // Stripe
+      patchState(component.returnPageState, {
+        intentId: 'pi_test_123',
+        paypalToken: null,
+      });
       component.confirmPayment('pi_test_123');
       expect(mockFlowFacade.confirm).toHaveBeenCalled();
     });
 
     it('should confirm PayPal payment', () => {
-      component.paypalToken.set('ORDER_FAKE_XYZ');
+      patchState(component.returnPageState, {
+        paypalToken: 'ORDER_FAKE_XYZ',
+      });
       component.confirmPayment('ORDER_FAKE_XYZ');
       expect(mockFlowFacade.confirm).toHaveBeenCalled();
     });
 
     it('should refresh payment', () => {
-      component.intentId.set('pi_test_123');
+      patchState(component.returnPageState, {
+        intentId: 'pi_test_123',
+      });
       component.refreshPaymentByReference('pi_test_123');
       expect(mockFlowFacade.refresh).toHaveBeenCalledWith('stripe', 'pi_test_123');
     });
@@ -217,13 +224,17 @@ describe('ReturnComponent', () => {
     });
 
     it('should detect cancellation from isCancelFlow', () => {
-      component.isCancelFlow.set(true);
+      patchState(component.returnPageState, {
+        isCancelFlow: true,
+      });
       // Signals computed values update immediately
       expect(component.isCancel()).toBe(true);
     });
 
     it('should detect cancellation from redirectStatus', () => {
-      component.redirectStatus.set('canceled');
+      patchState(component.returnPageState, {
+        redirectStatus: 'canceled',
+      });
       // Signals computed values update immediately
       expect(component.isCancel()).toBe(true);
     });
@@ -235,19 +246,25 @@ describe('ReturnComponent', () => {
     });
 
     it('should detect success from redirectStatus', () => {
-      component.redirectStatus.set('succeeded');
+      patchState(component.returnPageState, {
+        redirectStatus: 'succeeded',
+      });
       // Signals computed values update immediately
       expect(component.isSuccess()).toBe(true);
     });
 
     it('should detect PayPal flow type', () => {
-      component.paypalToken.set('ORDER_FAKE_XYZ');
+      patchState(component.returnPageState, {
+        paypalToken: 'ORDER_FAKE_XYZ',
+      });
       // Signals computed values update immediately
       expect(component.flowType()).toBe(I18nKeys.ui.flow_paypal_redirect);
     });
 
     it('should detect 3DS flow type', () => {
-      component.intentId.set('pi_test_123');
+      patchState(component.returnPageState, {
+        intentId: 'pi_test_123',
+      });
       // Signals computed values update immediately
       expect(component.flowType()).toBe(I18nKeys.ui.flow_3ds);
     });
@@ -261,13 +278,13 @@ describe('ReturnComponent', () => {
     it('should expose currentIntent from payment state', () => {
       mockFlowFacade.intent.set(mockIntent);
       fixture.detectChanges();
-      expect(component.currentIntent()).toEqual(mockIntent);
+      expect(component.flowState.currentIntent()).toEqual(mockIntent);
     });
 
     it('should expose isLoading from payment state', () => {
       mockFlowFacade.isLoading.set(true);
       fixture.detectChanges();
-      expect(component.isLoading()).toBe(true);
+      expect(component.flowState.isLoading()).toBe(true);
     });
   });
 });

@@ -1,4 +1,5 @@
 import { EnvironmentProviders, inject, Provider, ProviderToken, Type } from '@angular/core';
+import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
@@ -136,6 +137,7 @@ const APPLICATION_PROVIDERS: Provider[] = [
   PaymentsStore,
   PaymentFlowActorService,
   PaymentFlowFacade,
+  PaymentHistoryFacade,
   { provide: PAYMENT_STATE, useClass: NgRxSignalsStateAdapter },
 ];
 

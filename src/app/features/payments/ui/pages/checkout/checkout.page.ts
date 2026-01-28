@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, isDevMode, signal } from '@angular/core';
+import { Component, computed, effect, inject, isDevMode } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
 import {
@@ -25,6 +26,16 @@ import {
   FieldRequirements,
   PaymentOptions,
 } from '../../../domain/ports/payment/payment-request-builder.port';
+
+interface CheckoutPageState {
+  orderId: string;
+  amount: number;
+  currency: CurrencyCode;
+  selectedProvider: PaymentProviderId | null;
+  selectedMethod: PaymentMethodType | null;
+  formOptions: PaymentOptions;
+  isFormValid: boolean;
+}
 
 /**
  * Checkout page for processing payments.
@@ -64,32 +75,36 @@ export class CheckoutComponent {
   private readonly fallback = inject(FallbackOrchestratorService);
   private readonly flow = inject(PaymentFlowFacade);
 
-  readonly isLoading = this.flow.isLoading;
-  readonly isReady = this.flow.isReady;
-  readonly hasError = this.flow.hasError;
+  readonly flowState = deepComputed(() => ({
+    isLoading: this.flow.isLoading(),
+    isReady: this.flow.isReady(),
+    hasError: this.flow.hasError(),
+    currentIntent: this.flow.intent(),
+    currentError: this.flow.error(),
+  }));
 
-  readonly currentIntent = this.flow.intent;
-  readonly currentError = this.flow.error;
+  readonly checkoutPageState = signalState<CheckoutPageState>({
+    orderId: 'order_' + Math.random().toString(36).substring(7),
+    amount: 499.99,
+    currency: 'MXN',
+    selectedProvider: null,
+    selectedMethod: null,
+    formOptions: {},
+    isFormValid: false,
+  });
 
-  readonly orderId = signal('order_' + Math.random().toString(36).substring(7));
-  readonly amount = signal(499.99);
-  readonly currency = signal<CurrencyCode>('MXN');
-
-  readonly selectedProvider = signal<PaymentProviderId | null>(null);
-  readonly selectedMethod = signal<PaymentMethodType | null>(null);
-
-  private readonly formOptions = signal<PaymentOptions>({});
-  readonly isFormValid = signal(false);
-
-  readonly hasPendingFallback = this.fallback.isPending;
-  readonly pendingFallbackEvent = this.fallback.pendingEvent;
+  // TODO : Should this be a global state or should be handled by the state machine?
+  readonly fallbackState = deepComputed(() => ({
+    isPending: this.fallback.isPending(),
+    pendingEvent: this.fallback.pendingEvent(),
+  }));
 
   readonly availableProviders = computed<PaymentProviderId[]>(() => {
     return this.registry.getAvailableProviders();
   });
 
   readonly availableMethods = computed<PaymentMethodType[]>(() => {
-    const provider = this.selectedProvider();
+    const provider = this.checkoutPageState.selectedProvider();
     if (!provider) return [];
 
     try {
@@ -102,8 +117,8 @@ export class CheckoutComponent {
   });
 
   readonly fieldRequirements = computed<FieldRequirements | null>(() => {
-    const provider = this.selectedProvider();
-    const method = this.selectedMethod();
+    const provider = this.checkoutPageState.selectedProvider();
+    const method = this.checkoutPageState.selectedMethod();
     if (!provider || !method) return null;
     try {
       const factory = this.registry.get(provider);
@@ -120,7 +135,7 @@ export class CheckoutComponent {
     }
   });
 
-  readonly showResult = computed(() => this.isReady() || this.hasError());
+  readonly showResult = computed(() => this.flowState.isReady() || this.flowState.hasError());
 
   readonly debugInfo = computed(() => {
     const snap = this.flow.snapshot();
@@ -137,21 +152,30 @@ export class CheckoutComponent {
   constructor() {
     effect(() => {
       const providers = this.availableProviders();
-      if (providers.length > 0 && !this.selectedProvider()) {
-        this.selectedProvider.set(providers[0]);
+      const current = this.checkoutPageState.selectedProvider();
+
+      if (providers.length === 0) {
+        if (current !== null) patchState(this.checkoutPageState, { selectedProvider: null });
+        return;
+      }
+
+      if (!current || !providers.includes(current)) {
+        patchState(this.checkoutPageState, { selectedProvider: providers[0] });
       }
     });
 
     effect(() => {
       const methods = this.availableMethods();
-      const currentMethod = this.selectedMethod();
+      const currentMethod = this.checkoutPageState.selectedMethod();
       if (methods.length > 0 && (!currentMethod || !methods.includes(currentMethod))) {
-        this.selectedMethod.set(methods[0]);
+        patchState(this.checkoutPageState, {
+          selectedMethod: methods[0],
+        });
       }
     });
 
     effect(() => {
-      const event = this.pendingFallbackEvent();
+      const event = this.fallbackState.pendingEvent();
       if (event) {
         this.logger.info('Fallback available', 'CheckoutPage', {
           failedProvider: event.failedProvider,
@@ -167,36 +191,44 @@ export class CheckoutComponent {
   }
 
   selectProvider(provider: PaymentProviderId): void {
-    this.selectedProvider.set(provider);
+    patchState(this.checkoutPageState, {
+      selectedProvider: provider,
+    });
     this.logger.info('Provider selected', 'CheckoutPage', { provider });
   }
 
   selectMethod(method: PaymentMethodType): void {
-    this.selectedMethod.set(method);
+    patchState(this.checkoutPageState, {
+      selectedMethod: method,
+    });
     this.logger.info('Method selected', 'CheckoutPage', { method });
   }
 
   onFormChange(options: PaymentOptions): void {
-    this.formOptions.set(options);
+    patchState(this.checkoutPageState, {
+      formOptions: options,
+    });
   }
 
   onFormValidChange(valid: boolean): void {
-    this.isFormValid.set(valid);
+    patchState(this.checkoutPageState, {
+      isFormValid: valid,
+    });
   }
 
   processPayment(): void {
-    const provider = this.selectedProvider();
-    const method = this.selectedMethod();
+    const provider = this.checkoutPageState.selectedProvider();
+    const method = this.checkoutPageState.selectedMethod();
 
     if (!provider || !method) return;
 
-    if (!this.isFormValid()) {
+    if (!this.checkoutPageState.isFormValid()) {
       this.logger.info('Form invalid, payment blocked', 'CheckoutPage', { provider, method });
       return;
     }
 
     const correlationCtx = this.logger.startCorrelation('payment-flow', {
-      orderId: this.orderId(),
+      orderId: this.checkoutPageState.orderId(),
       provider,
       method,
     });
@@ -205,11 +237,11 @@ export class CheckoutComponent {
       const factory = this.registry.get(provider);
       const builder = factory.createRequestBuilder(method);
 
-      const options = this.formOptions();
+      const options = this.checkoutPageState.formOptions();
 
       const request = builder
-        .forOrder(this.orderId())
-        .withAmount(this.amount(), this.currency())
+        .forOrder(this.checkoutPageState.orderId())
+        .withAmount(this.checkoutPageState.amount(), this.checkoutPageState.currency())
         .withOptions(options)
         .build();
 
@@ -231,13 +263,6 @@ export class CheckoutComponent {
         },
       };
 
-      /*       this.flow.send({
-        type: 'START',
-        providerId: provider,
-        request,
-        flowContext: context,
-      }); */
-
       const ok = this.flow.start(provider, request, context);
 
       if (!ok) {
@@ -256,7 +281,7 @@ export class CheckoutComponent {
   // === Fallback handlers ===
   confirmFallback(provider: PaymentProviderId): void {
     this.logger.info('Fallback confirmed', 'CheckoutPage', { provider });
-    const event = this.pendingFallbackEvent();
+    const event = this.fallbackState.pendingEvent();
     if (!event) return;
 
     this.fallback.respondToFallback({
@@ -269,7 +294,7 @@ export class CheckoutComponent {
 
   cancelFallback(): void {
     this.logger.info('Fallback cancelled', 'CheckoutPage');
-    const event = this.pendingFallbackEvent();
+    const event = this.fallbackState.pendingEvent();
     if (event) {
       this.fallback.respondToFallback({
         eventId: event.eventId,
@@ -285,6 +310,7 @@ export class CheckoutComponent {
   onPaypalRequested(url: string): void {
     this.logger.info('Redirecting to PayPal', 'CheckoutPage', { url });
     if (typeof window !== 'undefined') {
+      // TODO : This is orchestration layer responsibility, not UI layer
       window.location.href = url;
     }
   }
@@ -301,38 +327,31 @@ export class CheckoutComponent {
   resetPayment(): void {
     this.flow.reset();
 
-    this.orderId.set('order_' + Math.random().toString(36).substring(7));
-    this.isFormValid.set(false);
+    patchState(this.checkoutPageState, {
+      orderId: 'order_' + Math.random().toString(36).substring(7),
+      isFormValid: false,
+    });
 
     this.logger.info('Payment reset', 'CheckoutPage');
   }
 
-  readonly checkoutTitle = computed(() => this.i18n.t(I18nKeys.ui.checkout));
+  readonly checkoutLabels = deepComputed(() => ({
+    checkoutTitle: this.i18n.t(I18nKeys.ui.checkout),
+    paymentSystemSubtitle: this.i18n.t(I18nKeys.ui.payment_system),
+    viewHistoryLabel: this.i18n.t(I18nKeys.ui.view_history),
+    checkStatusLabel: this.i18n.t(I18nKeys.ui.check_status),
+    showcaseLabel: this.i18n.t(I18nKeys.ui.showcase),
+    paymentProviderLabel: this.i18n.t(I18nKeys.ui.payment_provider),
+    paymentMethodLabel: this.i18n.t(I18nKeys.ui.payment_method),
+    paymentDataLabel: this.i18n.t(I18nKeys.ui.payment_data),
+    debugInfoLabel: this.i18n.t(I18nKeys.ui.debug_info),
+    providerDebugLabel: this.i18n.t(I18nKeys.ui.provider_debug),
+    methodDebugLabel: this.i18n.t(I18nKeys.ui.method_debug),
+    formValidLabel: this.i18n.t(I18nKeys.ui.form_valid),
+    loadingDebugLabel: this.i18n.t(I18nKeys.ui.loading_debug),
+  }));
 
-  readonly paymentSystemSubtitle = computed(() => this.i18n.t(I18nKeys.ui.payment_system));
-
-  readonly viewHistoryLabel = computed(() => this.i18n.t(I18nKeys.ui.view_history));
-
-  readonly checkStatusLabel = computed(() => this.i18n.t(I18nKeys.ui.check_status));
-
-  readonly showcaseLabel = computed(() => this.i18n.t(I18nKeys.ui.showcase));
-
-  readonly paymentProviderLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_provider));
-
-  readonly paymentMethodLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_method));
-
-  readonly paymentDataLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_data));
-
-  readonly debugInfoLabel = computed(() => this.i18n.t(I18nKeys.ui.debug_info));
-
-  readonly providerDebugLabel = computed(() => this.i18n.t(I18nKeys.ui.provider_debug));
-
-  readonly methodDebugLabel = computed(() => this.i18n.t(I18nKeys.ui.method_debug));
-
-  readonly formValidLabel = computed(() => this.i18n.t(I18nKeys.ui.form_valid));
-
-  readonly loadingDebugLabel = computed(() => this.i18n.t(I18nKeys.ui.loading_debug));
-
+  // TODO : This is orchestration layer responsibility, not UI layer
   private buildReturnUrl(): string {
     if (typeof window === 'undefined') return '';
     const baseUrl = window.location.origin;

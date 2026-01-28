@@ -2,6 +2,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LoggerService } from '@core/logging';
+import { patchState } from '@ngrx/signals';
 
 import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
 import { ProviderFactoryRegistry } from '../../../application/orchestration/registry/provider-factory.registry';
@@ -67,8 +68,8 @@ async function waitForPaymentComplete(
  * form rebuilds / effects / whenStable.
  */
 function ensureValidForm(component: CheckoutComponent): void {
-  if (!component.isFormValid()) component.onFormValidChange(true);
-  expect(component.isFormValid()).toBe(true);
+  if (!component.checkoutPageState.isFormValid()) component.onFormValidChange(true);
+  expect(component.checkoutPageState.isFormValid()).toBe(true);
 }
 
 /**
@@ -123,9 +124,9 @@ describe('CheckoutComponent - Real Integration', () => {
     });
 
     it('should initialize with default values', () => {
-      expect(component.amount()).toBe(499.99);
-      expect(component.currency()).toBe('MXN');
-      expect(component.orderId()).toBeTruthy();
+      expect(component.checkoutPageState.amount()).toBe(499.99);
+      expect(component.checkoutPageState.currency()).toBe('MXN');
+      expect(component.checkoutPageState.orderId()).toBeTruthy();
     });
 
     it('should auto-select the first available provider', async () => {
@@ -134,7 +135,7 @@ describe('CheckoutComponent - Real Integration', () => {
       const providers = component.availableProviders();
       expect(providers.length).toBeGreaterThan(0);
 
-      const selected = component.selectedProvider();
+      const selected = component.checkoutPageState.selectedProvider();
       expect(selected).toBeTruthy();
       expect(providers).toContain(selected);
     });
@@ -142,8 +143,12 @@ describe('CheckoutComponent - Real Integration', () => {
 
   describe('Full successful payment flow - Stripe + Card', () => {
     beforeEach(async () => {
-      component.selectedProvider.set('stripe');
-      component.selectedMethod.set('card');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
       fixture.detectChanges();
       await settle(fixture);
     });
@@ -162,7 +167,11 @@ describe('CheckoutComponent - Real Integration', () => {
       // Should enter loading immediately
       await settle(fixture);
       expect(flow.isLoading() || flow.isReady() || flow.hasError()).toBe(true);
-      expect(component.isLoading() || component.isReady() || component.hasError()).toBe(true);
+      expect(
+        component.flowState.isLoading() ||
+          component.flowState.isReady() ||
+          component.flowState.hasError(),
+      ).toBe(true);
 
       await waitForPaymentComplete(flow);
       fixture.detectChanges();
@@ -180,8 +189,8 @@ describe('CheckoutComponent - Real Integration', () => {
 
       // Component shows result
       expect(component.showResult()).toBe(true);
-      expect(component.currentIntent()).toBeTruthy();
-      expect(component.currentIntent()?.status).toBe('succeeded');
+      expect(component.flowState.currentIntent()).toBeTruthy();
+      expect(component.flowState.currentIntent()?.status).toBe('succeeded');
     });
 
     it('should validate dev token format (no error in the flow)', async () => {
@@ -224,18 +233,22 @@ describe('CheckoutComponent - Real Integration', () => {
 
   describe('Flujo completo - Stripe + Card con 3DS (requires_action)', () => {
     beforeEach(async () => {
-      component.selectedProvider.set('stripe');
-      component.selectedMethod.set('card');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
 
       fixture.detectChanges();
       await fixture.whenStable();
       fixture.detectChanges();
 
       // Asegurar gating del form
-      if (!component.isFormValid()) {
+      if (!component.checkoutPageState.isFormValid()) {
         component.onFormValidChange(true);
       }
-      expect(component.isFormValid()).toBe(true);
+      expect(component.checkoutPageState.isFormValid()).toBe(true);
     });
 
     it('should terminar en requires_action y mostrar NextActionCard', async () => {
@@ -270,8 +283,8 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intent?.nextAction?.type).toBe('3ds');
 
       // The component should reflect it
-      expect(component.currentIntent()).toBeTruthy();
-      expect(component.currentIntent()?.status).toBe('requires_action');
+      expect(component.flowState.currentIntent()).toBeTruthy();
+      expect(component.flowState.currentIntent()?.status).toBe('requires_action');
       expect(component.showResult()).toBe(true);
 
       // ✅ UI: should existir el NextActionCard en el DOM
@@ -283,8 +296,12 @@ describe('CheckoutComponent - Real Integration', () => {
 
   describe('Flujo completo con estados intermedios', () => {
     beforeEach(async () => {
-      component.selectedProvider.set('stripe');
-      component.selectedMethod.set('card');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
       fixture.detectChanges();
       await settle(fixture);
     });
@@ -327,8 +344,12 @@ describe('CheckoutComponent - Real Integration', () => {
 
   describe('Flujo completo con SPEI', () => {
     beforeEach(async () => {
-      component.selectedProvider.set('stripe');
-      component.selectedMethod.set('spei');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'spei',
+      });
       fixture.detectChanges();
       await settle(fixture);
     });
@@ -344,7 +365,7 @@ describe('CheckoutComponent - Real Integration', () => {
       component.onFormValidChange(true);
       fixture.detectChanges();
 
-      expect(component.isFormValid()).toBe(true);
+      expect(component.checkoutPageState.isFormValid()).toBe(true);
 
       component.processPayment();
 
@@ -373,7 +394,7 @@ describe('CheckoutComponent - Real Integration', () => {
       component.onFormValidChange(false);
       fixture.detectChanges();
 
-      expect(component.isFormValid()).toBe(false);
+      expect(component.checkoutPageState.isFormValid()).toBe(false);
 
       component.processPayment();
 
@@ -389,8 +410,12 @@ describe('CheckoutComponent - Real Integration', () => {
 
   describe('Flujo completo con PayPal', () => {
     beforeEach(async () => {
-      component.selectedProvider.set('paypal');
-      component.selectedMethod.set('card');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'paypal',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
       fixture.detectChanges();
       await settle(fixture);
     });
@@ -439,8 +464,12 @@ describe('CheckoutComponent - Real Integration', () => {
 
   describe('Error handling in full flow', () => {
     beforeEach(async () => {
-      component.selectedProvider.set('stripe');
-      component.selectedMethod.set('card');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
       fixture.detectChanges();
       await settle(fixture);
     });
@@ -458,8 +487,15 @@ describe('CheckoutComponent - Real Integration', () => {
     });
 
     it('should fail when token is invalid (Stripe + Card) and reflect error state', async () => {
-      component.selectedProvider.set('stripe');
-      component.selectedMethod.set('card');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
       fixture.detectChanges();
       await fixture.whenStable();
       fixture.detectChanges();
@@ -476,7 +512,7 @@ describe('CheckoutComponent - Real Integration', () => {
       // ✅ IMPORTANTE:
       // With an invalid token it may fail so fast it never enters loading.
       // So we do not require it.
-      expect(component.isFormValid()).toBe(true);
+      expect(component.checkoutPageState.isFormValid()).toBe(true);
 
       // Wait for completion (success or error)
       await waitForPaymentComplete(flow);
@@ -491,8 +527,8 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(flow.intent()).toBeNull();
 
       // The component should reflect the error
-      expect(component.hasError()).toBe(true);
-      expect(component.currentError()).toBeTruthy();
+      expect(component.flowState.hasError()).toBe(true);
+      expect(component.flowState.currentError()).toBeTruthy();
       expect(component.showResult()).toBe(true);
 
       const err = flow.error();
@@ -504,8 +540,12 @@ describe('CheckoutComponent - Real Integration', () => {
 
   describe('Integration with PaymentFormComponent', () => {
     beforeEach(async () => {
-      component.selectedProvider.set('stripe');
-      component.selectedMethod.set('card');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
       fixture.detectChanges();
       await settle(fixture);
     });
@@ -522,24 +562,31 @@ describe('CheckoutComponent - Real Integration', () => {
       const formOptions = { token: 'tok_visa1234567890abcdef', saveForFuture: false };
       component.onFormChange(formOptions);
 
-      expect(component.isFormValid()).toBe(true);
+      expect(component.checkoutPageState.isFormValid()).toBe(true);
     });
 
     it('should handle real-time form changes', async () => {
       await settle(fixture);
 
       component.onFormValidChange(true);
-      expect(component.isFormValid()).toBe(true);
+      expect(component.checkoutPageState.isFormValid()).toBe(true);
 
       component.onFormValidChange(false);
-      expect(component.isFormValid()).toBe(false);
+      expect(component.checkoutPageState.isFormValid()).toBe(false);
     });
   });
 
   describe('Payment reset', () => {
     beforeEach(async () => {
-      component.selectedProvider.set('stripe');
-      component.selectedMethod.set('card');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
       fixture.detectChanges();
       await settle(fixture);
 
@@ -554,7 +601,7 @@ describe('CheckoutComponent - Real Integration', () => {
     });
 
     it('should reset correctly after a successful payment', async () => {
-      const oldOrderId = component.orderId();
+      const oldOrderId = component.checkoutPageState.orderId();
 
       component.resetPayment();
       await settle(fixture);
@@ -565,7 +612,7 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(flow.hasError()).toBe(false);
 
       // El orderId should cambiar
-      const newOrderId = component.orderId();
+      const newOrderId = component.checkoutPageState.orderId();
       expect(newOrderId).toBeTruthy();
       expect(newOrderId).not.toBe(oldOrderId);
     });

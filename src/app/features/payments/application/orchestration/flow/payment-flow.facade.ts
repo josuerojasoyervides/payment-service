@@ -8,6 +8,7 @@ import { PaymentFlowPublicEvent } from './payment-flow.types';
 
 // If you already have a formal flowContext type in your project, use it here.
 // Otherwise, this is a minimal version to avoid `any`.
+// TODO : Check if this is still needed
 export type PaymentFlowContext = StrategyContext;
 
 @Injectable()

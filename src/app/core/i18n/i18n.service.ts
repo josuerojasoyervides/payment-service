@@ -1,7 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { LoggerService } from '@core/logging';
 
-import { Translations } from './i18n.types';
+import { Language, Translations } from './i18n.types';
 import { en } from './translations/en';
 import { es } from './translations/es';
 
@@ -30,7 +30,7 @@ import { es } from './translations/es';
 export class I18nService {
   private readonly logger = inject(LoggerService);
 
-  private readonly _currentLang = signal<string>('es');
+  private readonly _currentLang = signal<Language>('es');
   private readonly translationsMap: Record<string, Translations> = { es, en };
 
   private get translations(): Translations {
@@ -66,7 +66,7 @@ export class I18nService {
    *
    * @param lang Language code (e.g., 'es', 'en')
    */
-  setLanguage(lang: string): void {
+  setLanguage(lang: Language): void {
     if (this.translationsMap[lang]) {
       this._currentLang.set(lang);
     } else {

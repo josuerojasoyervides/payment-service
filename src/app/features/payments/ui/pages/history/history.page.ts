@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { deepComputed } from '@ngrx/signals';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
 import { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import {
@@ -62,21 +63,15 @@ export class HistoryComponent {
     this.historyFacade.clearHistory();
   }
 
-  readonly paymentHistoryLabel = computed(() => this.i18n.t(I18nKeys.ui.payment_history));
-
-  readonly paymentsInSessionText = computed(() => this.i18n.t(I18nKeys.ui.payments_in_session));
-
-  readonly clearHistoryText = computed(() => this.i18n.t(I18nKeys.ui.clear_history));
-
-  readonly newPaymentButtonText = computed(() => this.i18n.t(I18nKeys.ui.new_payment_button));
-
-  readonly noPaymentsHistoryText = computed(() => this.i18n.t(I18nKeys.ui.no_payments_history));
-
-  readonly paymentsWillAppearText = computed(() => this.i18n.t(I18nKeys.ui.payments_will_appear));
-
-  readonly makePaymentText = computed(() => this.i18n.t(I18nKeys.ui.make_payment));
-
-  readonly checkByIdText = computed(() => this.i18n.t(I18nKeys.ui.check_by_id));
-
-  readonly checkoutLabel = computed(() => this.i18n.t(I18nKeys.ui.checkout));
+  historyLabels = deepComputed(() => ({
+    paymentHistoryLabel: this.i18n.t(I18nKeys.ui.payment_history),
+    paymentsInSessionText: this.i18n.t(I18nKeys.ui.payments_in_session),
+    clearHistoryText: this.i18n.t(I18nKeys.ui.clear_history),
+    newPaymentButtonText: this.i18n.t(I18nKeys.ui.new_payment_button),
+    noPaymentsHistoryText: this.i18n.t(I18nKeys.ui.no_payments_history),
+    paymentsWillAppearText: this.i18n.t(I18nKeys.ui.payments_will_appear),
+    makePaymentText: this.i18n.t(I18nKeys.ui.make_payment),
+    checkByIdText: this.i18n.t(I18nKeys.ui.check_by_id),
+    checkoutLabel: this.i18n.t(I18nKeys.ui.checkout),
+  }));
 }

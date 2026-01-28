@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import { patchState } from '@ngrx/signals';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
 import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
@@ -185,23 +186,25 @@ describe('CheckoutComponent', () => {
     });
 
     it('should initialize with default values', () => {
-      expect(component.amount()).toBe(499.99);
-      expect(component.currency()).toBe('MXN');
-      expect(component.selectedProvider()).toBeNull();
-      expect(component.selectedMethod()).toBeNull();
-      expect(component.isFormValid()).toBe(false);
+      expect(component.checkoutPageState.amount()).toBe(499.99);
+      expect(component.checkoutPageState.currency()).toBe('MXN');
+      expect(component.checkoutPageState.selectedProvider()).toBeNull();
+      expect(component.checkoutPageState.selectedMethod()).toBeNull();
+      expect(component.checkoutPageState.isFormValid()).toBe(false);
     });
 
     it('should auto-select the first available provider', () => {
       fixture.detectChanges();
-      expect(component.selectedProvider()).toBe('stripe');
+      expect(component.checkoutPageState.selectedProvider()).toBe('stripe');
     });
 
     it('should auto-select the first method when provider is set', () => {
       fixture.detectChanges();
-      component.selectedProvider.set('stripe');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
       fixture.detectChanges();
-      expect(component.selectedMethod()).toBe('card');
+      expect(component.checkoutPageState.selectedMethod()).toBe('card');
     });
   });
 
@@ -214,7 +217,9 @@ describe('CheckoutComponent', () => {
     });
 
     it('should get available methods for the selected provider', () => {
-      component.selectedProvider.set('stripe');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
       fixture.detectChanges();
       const methods = component.availableMethods();
       expect(methods).toEqual(['card', 'spei']);
@@ -231,7 +236,9 @@ describe('CheckoutComponent', () => {
       mockRegistry.get.mockImplementationOnce(() => {
         throw new Error('Provider not found');
       });
-      component.selectedProvider.set('stripe' as PaymentProviderId);
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe' as PaymentProviderId,
+      });
       fixture.detectChanges();
       const methods = component.availableMethods();
       expect(methods).toEqual([]);
@@ -240,8 +247,15 @@ describe('CheckoutComponent', () => {
 
   describe('Field requirements', () => {
     it('should get field requirements for selected provider and method', () => {
-      component.selectedProvider.set('stripe');
-      component.selectedMethod.set('card');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
       fixture.detectChanges();
       const requirements = component.fieldRequirements();
       expect(requirements).toBeTruthy();
@@ -258,8 +272,15 @@ describe('CheckoutComponent', () => {
       mockFactory.getFieldRequirements.mockImplementationOnce(() => {
         throw new Error('Error');
       });
-      component.selectedProvider.set('stripe');
-      component.selectedMethod.set('card');
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
       fixture.detectChanges();
       const requirements = component.fieldRequirements();
       expect(requirements).toBeNull();
@@ -269,7 +290,7 @@ describe('CheckoutComponent', () => {
   describe('Provider and method selection', () => {
     it('should select provider correctly', () => {
       component.selectProvider('paypal');
-      expect(component.selectedProvider()).toBe('paypal');
+      expect(component.checkoutPageState.selectedProvider()).toBe('paypal');
       expect(mockLogger.info).toHaveBeenCalledWith('Provider selected', 'CheckoutPage', {
         provider: 'paypal',
       });
@@ -277,7 +298,7 @@ describe('CheckoutComponent', () => {
 
     it('should select method correctly', () => {
       component.selectMethod('spei');
-      expect(component.selectedMethod()).toBe('spei');
+      expect(component.checkoutPageState.selectedMethod()).toBe('spei');
       expect(mockLogger.info).toHaveBeenCalledWith('Method selected', 'CheckoutPage', {
         method: 'spei',
       });
@@ -293,21 +314,27 @@ describe('CheckoutComponent', () => {
 
     it('should update form validity state', () => {
       component.onFormValidChange(true);
-      expect(component.isFormValid()).toBe(true);
+      expect(component.checkoutPageState.isFormValid()).toBe(true);
       component.onFormValidChange(false);
-      expect(component.isFormValid()).toBe(false);
+      expect(component.checkoutPageState.isFormValid()).toBe(false);
     });
   });
 
   describe('Payment process', () => {
     beforeEach(() => {
-      component.selectedProvider.set('stripe');
-      component.selectedMethod.set('card');
-      component.isFormValid.set(true);
+      patchState(component.checkoutPageState, {
+        selectedProvider: 'stripe',
+      });
+      patchState(component.checkoutPageState, {
+        selectedMethod: 'card',
+      });
+      patchState(component.checkoutPageState, {
+        isFormValid: true,
+      });
     });
 
     it('should process payment with valid provider and method', () => {
-      const orderId = component.orderId();
+      const orderId = component.checkoutPageState.orderId();
       component.onFormChange({ token: 'tok_test' });
       component.processPayment();
 
@@ -334,25 +361,33 @@ describe('CheckoutComponent', () => {
     });
 
     it('should not process payment when provider is missing', () => {
-      component.selectedProvider.set(null);
+      patchState(component.checkoutPageState, {
+        selectedProvider: null,
+      });
       component.processPayment();
       expect(mockFlowFacade.start).not.toHaveBeenCalled();
     });
 
     it('should not process payment when method is missing', () => {
-      component.selectedMethod.set(null);
+      patchState(component.checkoutPageState, {
+        selectedMethod: null,
+      });
       component.processPayment();
       expect(mockFlowFacade.start).not.toHaveBeenCalled();
     });
 
     it('should not process payment when the form is invalid', () => {
-      component.isFormValid.set(false);
+      patchState(component.checkoutPageState, {
+        isFormValid: false,
+      });
       component.processPayment();
       expect(mockFlowFacade.start).not.toHaveBeenCalled();
     });
 
     it('should process payment when isFormValid is true', () => {
-      component.isFormValid.set(true);
+      patchState(component.checkoutPageState, {
+        isFormValid: true,
+      });
       component.onFormChange({ token: 'tok_test' });
       component.processPayment();
 
@@ -431,8 +466,8 @@ describe('CheckoutComponent', () => {
       mockFallbackOrchestrator.isPending.set(true);
       mockFallbackOrchestrator.pendingEvent.set(mockFallbackEvent);
       fixture.detectChanges();
-      expect(component.hasPendingFallback()).toBe(true);
-      expect(component.pendingFallbackEvent()).toEqual(mockFallbackEvent);
+      expect(component.fallbackState.isPending()).toBe(true);
+      expect(component.fallbackState.pendingEvent()).toEqual(mockFallbackEvent);
     });
   });
 
@@ -440,27 +475,27 @@ describe('CheckoutComponent', () => {
     it('should expose loading state', () => {
       mockFlowFacade.isLoading.set(true);
       fixture.detectChanges();
-      expect(component.isLoading()).toBe(true);
+      expect(component.flowState.isLoading()).toBe(true);
     });
 
     it('should expose ready state', () => {
       mockFlowFacade.isReady.set(true);
       fixture.detectChanges();
-      expect(component.isReady()).toBe(true);
+      expect(component.flowState.isReady()).toBe(true);
     });
 
     it('should expose error state', () => {
       mockFlowFacade.hasError.set(true);
       mockFlowFacade.error.set(mockError);
       fixture.detectChanges();
-      expect(component.hasError()).toBe(true);
-      expect(component.currentError()).toEqual(mockError);
+      expect(component.flowState.hasError()).toBe(true);
+      expect(component.flowState.currentError()).toEqual(mockError);
     });
 
     it('should expose current intent', () => {
       mockFlowFacade.intent.set(mockIntent);
       fixture.detectChanges();
-      expect(component.currentIntent()).toEqual(mockIntent);
+      expect(component.flowState.currentIntent()).toEqual(mockIntent);
     });
 
     it('should show result when ready or when there is an error', () => {
@@ -479,10 +514,10 @@ describe('CheckoutComponent', () => {
     it('should reset the payment', () => {
       component.resetPayment();
       expect(mockFlowFacade.reset).toHaveBeenCalled();
-      expect(component.isFormValid()).toBe(false);
+      expect(component.checkoutPageState.isFormValid()).toBe(false);
       expect(mockLogger.info).toHaveBeenCalledWith('Payment reset', 'CheckoutPage');
       // The orderId should change
-      const newOrderId = component.orderId();
+      const newOrderId = component.checkoutPageState.orderId();
       expect(newOrderId).toBeTruthy();
     });
   });

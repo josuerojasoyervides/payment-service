@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { patchState } from '@ngrx/signals';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
@@ -57,8 +58,8 @@ describe('StatusComponent', () => {
     });
 
     it('should initialize with default values', () => {
-      expect(component.intentId).toBe('');
-      expect(component.selectedProvider()).toBe('stripe');
+      expect(component.intentIdModel).toBe('');
+      expect(component.statusPageState.selectedProvider()).toBe('stripe');
       expect(component.result()).toBeNull();
     });
 
@@ -71,26 +72,26 @@ describe('StatusComponent', () => {
 
   describe('Intent search', () => {
     it('should not search when intentId is empty', () => {
-      component.intentId = '';
+      patchState(component.statusPageState, { intentId: '' });
       component.searchIntent();
       expect(mockFlowFacade.refresh).not.toHaveBeenCalled();
     });
 
     it('should not search when intentId is only whitespace', () => {
-      component.intentId = '   ';
+      patchState(component.statusPageState, { intentId: '   ' });
       component.searchIntent();
       expect(mockFlowFacade.refresh).not.toHaveBeenCalled();
     });
 
     it('should search intent and reset result', () => {
-      component.intentId = 'pi_test_123';
+      patchState(component.statusPageState, { intentId: 'pi_test_123' });
       component.searchIntent();
 
       expect(component.result()).toBeNull(); // Reset
       expect(mockFlowFacade.refresh).toHaveBeenCalledWith('stripe', 'pi_test_123');
     });
 
-    it('should update result automatically when intent changes (via effect)', () => {
+    it('should prefill lastQuery and show result when flow already has an intent', () => {
       // effect() in the constructor listens to intent() changes
       mockFlowFacade.intent.set(mockIntent);
       fixture.detectChanges();
@@ -98,16 +99,29 @@ describe('StatusComponent', () => {
       expect(component.result()).toEqual(mockIntent);
     });
 
+    it('should not show result when intent does not match lastQuery', () => {
+      patchState(component.statusPageState, {
+        intentId: 'pi_other',
+        selectedProvider: 'stripe',
+        lastQuery: { provider: 'stripe', id: 'pi_other' },
+      });
+
+      mockFlowFacade.intent.set(mockIntent); // pi_test_123
+      fixture.detectChanges();
+
+      expect(component.result()).toBeNull();
+    });
+
     it('should use the selected provider', () => {
-      component.selectedProvider.set('paypal');
-      component.intentId = 'ORDER_FAKE_XYZ';
+      patchState(component.statusPageState, { selectedProvider: 'paypal' });
+      patchState(component.statusPageState, { intentId: 'ORDER_FAKE_XYZ' });
       component.searchIntent();
 
       expect(mockFlowFacade.refresh).toHaveBeenCalledWith('paypal', 'ORDER_FAKE_XYZ');
     });
 
     it('should trim whitespace from intentId', () => {
-      component.intentId = '  pi_test_123  ';
+      patchState(component.statusPageState, { intentId: '  pi_test_123  ' });
       component.searchIntent();
 
       expect(mockFlowFacade.refresh).toHaveBeenCalledWith('stripe', 'pi_test_123');
@@ -131,7 +145,7 @@ describe('StatusComponent', () => {
     });
 
     it('should use the selected provider for actions', () => {
-      component.selectedProvider.set('paypal');
+      patchState(component.statusPageState, { selectedProvider: 'paypal' });
       component.confirmPayment('ORDER_FAKE_XYZ');
       expect(mockFlowFacade.confirm).toHaveBeenCalled();
     });
@@ -141,15 +155,15 @@ describe('StatusComponent', () => {
     it('should use an example and update intentId and provider', () => {
       const example = component.examples()[0];
       component.useExample(example);
-      expect(component.intentId).toBe(example.id);
-      expect(component.selectedProvider()).toBe(example.provider);
+      expect(component.statusPageState.intentId()).toBe(example.id);
+      expect(component.statusPageState.selectedProvider()).toBe(example.provider);
     });
 
     it('should work with PayPal examples', () => {
       const example = component.examples()[1];
       component.useExample(example);
-      expect(component.intentId).toBe(example.id);
-      expect(component.selectedProvider()).toBe('paypal');
+      expect(component.statusPageState.intentId()).toBe(example.id);
+      expect(component.statusPageState.selectedProvider()).toBe('paypal');
     });
   });
 
@@ -172,7 +186,7 @@ describe('StatusComponent', () => {
     it('should expose error from payment state', () => {
       mockFlowFacade.error.set(mockError);
       fixture.detectChanges();
-      expect(component.error()).toEqual(mockError);
+      expect(component.flowState.error()).toEqual(mockError);
     });
   });
 
@@ -180,13 +194,13 @@ describe('StatusComponent', () => {
     it('should expose isLoading from payment state', () => {
       mockFlowFacade.isLoading.set(true);
       fixture.detectChanges();
-      expect(component.isLoading()).toBe(true);
+      expect(component.flowState.isLoading()).toBe(true);
     });
 
     it('should expose error from payment state', () => {
       mockFlowFacade.error.set(mockError);
       fixture.detectChanges();
-      expect(component.error()).toEqual(mockError);
+      expect(component.flowState.error()).toEqual(mockError);
     });
   });
 });
