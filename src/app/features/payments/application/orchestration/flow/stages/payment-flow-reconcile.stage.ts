@@ -1,3 +1,4 @@
+import { resolveStatusReference } from '../payment-flow.context';
 import type { PaymentFlowMachineContext, PaymentFlowStatesConfig } from '../payment-flow.types';
 
 export const reconcileStates = {
@@ -21,7 +22,10 @@ export const reconcileStates = {
       src: 'status',
       input: ({ context }: { context: PaymentFlowMachineContext }) => ({
         providerId: context.providerId!,
-        intentId: context.intentId ?? context.intent!.id,
+        intentId:
+          resolveStatusReference(context.flowContext, context.providerId) ??
+          context.intentId ??
+          context.intent!.id,
       }),
       onDone: { target: 'afterStatus', actions: 'setIntent' },
       onError: [

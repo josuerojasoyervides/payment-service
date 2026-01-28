@@ -1,4 +1,5 @@
 import { NextAction } from './payment-action.types';
+import { ProviderRefs } from './payment-flow-context.types';
 
 export const PAYMENT_PROVIDER_IDS = ['stripe', 'paypal'] as const;
 export type PaymentProviderId = (typeof PAYMENT_PROVIDER_IDS)[number];
@@ -25,5 +26,6 @@ export interface PaymentIntent {
   clientSecret?: string;
   redirectUrl?: string;
   nextAction?: NextAction;
+  providerRefs?: ProviderRefs;
   raw?: unknown;
 }

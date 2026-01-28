@@ -2,6 +2,12 @@ import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.ty
 import { assign, fromPromise, setup } from 'xstate';
 
 import { normalizePaymentError } from '../store/projection/payment-store.errors';
+import {
+  createFlowContext,
+  mergeExternalReference,
+  resolveStatusReference,
+  updateFlowContextProviderRefs,
+} from './payment-flow.context';
 import { PaymentFlowDeps } from './payment-flow.deps';
 import {
   canFallbackPolicy,
@@ -36,6 +42,7 @@ import { startStates } from './stages/payment-flow-start.stage';
 export const createPaymentFlowMachine = (
   deps: PaymentFlowDeps,
   configOverrides: PaymentFlowConfigOverrides = {},
+  initialContext?: Partial<PaymentFlowMachineContext>,
 ) => {
   const config = resolvePaymentFlowConfig(configOverrides);
 
@@ -76,10 +83,16 @@ export const createPaymentFlowMachine = (
       setStartInput: assign(({ event }) => {
         if (event.type !== 'START') return {};
 
+        const flowContext = createFlowContext({
+          providerId: event.providerId,
+          request: event.request,
+          existing: event.flowContext ?? null,
+        });
+
         return {
           providerId: event.providerId,
           request: event.request,
-          flowContext: event.flowContext ?? null,
+          flowContext,
           intent: null,
           intentId: null,
           error: null,
@@ -98,9 +111,13 @@ export const createPaymentFlowMachine = (
       setRefreshInput: assign(({ event, context }) => {
         if (event.type !== 'REFRESH') return {};
 
+        const providerId = event.providerId ?? context.providerId;
+        const resolvedReference = resolveStatusReference(context.flowContext, providerId ?? null);
+
         return {
-          providerId: event.providerId ?? context.providerId,
-          intentId: event.intentId ?? context.intentId ?? context.intent?.id ?? null,
+          providerId,
+          intentId:
+            event.intentId ?? resolvedReference ?? context.intentId ?? context.intent?.id ?? null,
           error: null,
           statusRetry: { count: 0 },
         };
@@ -114,9 +131,26 @@ export const createPaymentFlowMachine = (
         )
           return {};
 
+        const referenceId = event.payload.referenceId ?? '';
+        const flowContext = referenceId
+          ? mergeExternalReference({
+              context: context.flowContext,
+              providerId: event.payload.providerId,
+              referenceId,
+            })
+          : context.flowContext;
+
+        const resolvedReference = resolveStatusReference(flowContext, event.payload.providerId);
+
         return {
           providerId: event.payload.providerId,
-          intentId: event.payload.referenceId ?? context.intentId ?? context.intent?.id ?? null,
+          intentId:
+            event.payload.referenceId ??
+            resolvedReference ??
+            context.intentId ??
+            context.intent?.id ??
+            null,
+          flowContext,
           error: null,
           statusRetry: { count: 0 },
         };
@@ -146,11 +180,23 @@ export const createPaymentFlowMachine = (
         };
       }),
 
-      setIntent: assign(({ event }) => {
+      setIntent: assign(({ event, context }) => {
         if (!('output' in event)) return {};
+
+        const providerRefs = event.output.providerRefs;
+        const flowContext = providerRefs
+          ? updateFlowContextProviderRefs({
+              context: context.flowContext,
+              providerId: event.output.provider,
+              refs: providerRefs,
+            })
+          : context.flowContext;
+
+        const resolvedIntentId = providerRefs?.intentId ?? event.output.id;
         return {
           intent: event.output,
-          intentId: event.output.id,
+          intentId: resolvedIntentId,
+          flowContext,
           error: null,
           polling: { attempt: 0 },
           statusRetry: { count: 0 },
@@ -276,23 +322,27 @@ export const createPaymentFlowMachine = (
       WEBHOOK_RECEIVED: { target: '.reconciling', actions: 'setExternalEventInput' },
     },
 
-    context: () => ({
-      providerId: null,
-      request: null,
-      flowContext: null,
-      intent: null,
-      intentId: null,
-      error: null,
-      fallback: {
-        eligible: false,
-        mode: 'manual',
-        failedProviderId: null,
+    context: () => {
+      const base: PaymentFlowMachineContext = {
+        providerId: null,
         request: null,
-        selectedProviderId: null,
-      },
-      polling: { attempt: 0 },
-      statusRetry: { count: 0 },
-    }),
+        flowContext: null,
+        intent: null,
+        intentId: null,
+        error: null,
+        fallback: {
+          eligible: false,
+          mode: 'manual',
+          failedProviderId: null,
+          request: null,
+          selectedProviderId: null,
+        },
+        polling: { attempt: 0 },
+        statusRetry: { count: 0 },
+      };
+
+      return { ...base, ...(initialContext ?? {}) };
+    },
 
     states: {
       ...idleStates,
