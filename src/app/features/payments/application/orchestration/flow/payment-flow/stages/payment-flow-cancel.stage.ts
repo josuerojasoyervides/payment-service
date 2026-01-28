@@ -2,7 +2,7 @@ import type {
   PaymentFlowEvent,
   PaymentFlowMachineContext,
   PaymentFlowStatesConfig,
-} from '@payments/application/orchestration/flow/payment-flow.types';
+} from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 
 export const cancelStates = {
   cancelling: {

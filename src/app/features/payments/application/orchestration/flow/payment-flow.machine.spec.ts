@@ -1,9 +1,9 @@
 import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
-import type { KeyValueStorage } from '@payments/application/orchestration/flow/payment-flow.persistence';
 import type {
   PaymentFlowActorRef,
   PaymentFlowSnapshot,
-} from '@payments/application/orchestration/flow/payment-flow.types';
+} from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
+import type { KeyValueStorage } from '@payments/application/orchestration/flow/payment-flow/persistence/payment-flow.persistence';
 import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
 import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';

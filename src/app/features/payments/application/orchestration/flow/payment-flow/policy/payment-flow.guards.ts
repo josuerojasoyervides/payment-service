@@ -1,12 +1,12 @@
+import type {
+  PaymentFlowMachineContext,
+  PaymentFlowSnapshot,
+} from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import {
   hasIntentPolicy,
   isFinalIntentPolicy,
   needsUserActionPolicy,
-} from '@payments/application/orchestration/flow/payment-flow.policy';
-import type {
-  PaymentFlowMachineContext,
-  PaymentFlowSnapshot,
-} from '@payments/application/orchestration/flow/payment-flow.types';
+} from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.policy';
 import type { InspectionEvent } from 'xstate';
 /**
  * "@xstate.snapshot" event with snapshot typed as TSnap.

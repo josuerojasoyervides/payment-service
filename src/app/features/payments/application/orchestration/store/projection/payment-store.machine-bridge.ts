@@ -1,7 +1,7 @@
 import type { Signal } from '@angular/core';
 import { computed, effect } from '@angular/core';
 import type { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
-import type { PaymentFlowSnapshot } from '@payments/application/orchestration/flow/payment-flow.types';
+import type { PaymentFlowSnapshot } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import { addToHistory } from '@payments/application/orchestration/store/history/payment-store.history';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/payment-store.types';
 import { normalizePaymentError } from '@payments/application/orchestration/store/projection/payment-store.errors';
