@@ -2,12 +2,12 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { Subject } from 'rxjs';
 
 import { PaymentFlowActorService } from '../flow/payment-flow.actor.service';

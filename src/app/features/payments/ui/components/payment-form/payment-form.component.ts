@@ -1,20 +1,12 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  isDevMode,
-  OnDestroy,
-  output,
-} from '@angular/core';
+import type { OnDestroy } from '@angular/core';
+import { Component, computed, effect, inject, input, isDevMode, output } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
 import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
 import { AutofocusDirective } from '@shared/directives/autofocus.directive';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 
-import {
+import type {
   FieldRequirement,
   FieldRequirements,
   PaymentOptions,

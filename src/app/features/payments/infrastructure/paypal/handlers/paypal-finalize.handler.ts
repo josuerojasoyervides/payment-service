@@ -1,11 +1,11 @@
 import { inject, Injectable } from '@angular/core';
-import { FinalizePort, FinalizeRequest } from '@payments/application/api/ports/finalize.port';
+import type { FinalizePort, FinalizeRequest } from '@payments/application/api/ports/finalize.port';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import {
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 
 import { PaypalIntentFacade } from '../facades/intent.facade';
 

@@ -1,4 +1,4 @@
-import { PaymentError, PaymentErrorCode, PaymentErrorParams } from './payment-error.types';
+import type { PaymentError, PaymentErrorCode, PaymentErrorParams } from './payment-error.types';
 
 export function createPaymentError(
   code: PaymentErrorCode,

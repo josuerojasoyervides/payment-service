@@ -1,14 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import {
+import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
-import { Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 
 import { safeDefer } from '../../../../../shared/rxjs/safe-defer';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';

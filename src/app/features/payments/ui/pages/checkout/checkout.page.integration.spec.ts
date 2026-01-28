@@ -1,5 +1,6 @@
 //file: checkout.page.integration.spec.ts
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';

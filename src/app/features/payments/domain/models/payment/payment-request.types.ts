@@ -1,4 +1,4 @@
-import { CurrencyCode, PaymentMethodType } from './payment-intent.types';
+import type { CurrencyCode, PaymentMethodType } from './payment-intent.types';
 
 /**
  * Generic request to create a payment.

@@ -1,19 +1,18 @@
 import { I18nKeys } from '@core/i18n';
-import { LoggerService } from '@core/logging';
+import type { LoggerService } from '@core/logging';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import {
+import type {
   PaymentIntent,
   PaymentMethodType,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import {
-  NullTokenValidator,
-  TokenValidator,
-} from '@payments/domain/ports/provider/token-validator.port';
-import { map, Observable, tap } from 'rxjs';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { TokenValidator } from '@payments/domain/ports/provider/token-validator.port';
+import { NullTokenValidator } from '@payments/domain/ports/provider/token-validator.port';
+import type { Observable } from 'rxjs';
+import { map, tap } from 'rxjs';
 
-import { PaymentGatewayPort } from '../../application/api/ports/payment-gateway.port';
-import {
+import type { PaymentGatewayPort } from '../../application/api/ports/payment-gateway.port';
+import type {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,

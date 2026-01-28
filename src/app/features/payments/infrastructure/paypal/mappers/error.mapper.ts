@@ -1,4 +1,4 @@
-import { PaymentErrorCode } from '@payments/domain/models/payment/payment-error.types';
+import type { PaymentErrorCode } from '@payments/domain/models/payment/payment-error.types';
 
 export const ERROR_MAP: Record<string, PaymentErrorCode> = {
   INVALID_REQUEST: 'invalid_request',

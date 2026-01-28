@@ -1,13 +1,8 @@
 import { inject, Injectable, InjectionToken } from '@angular/core';
 
 import { LoggerService } from '../../logging/logger.service';
-import {
-  CircuitBreakerConfig,
-  CircuitInfo,
-  CircuitOpenError,
-  CircuitState,
-  DEFAULT_CIRCUIT_BREAKER_CONFIG,
-} from './circuit-breaker.types';
+import type { CircuitBreakerConfig, CircuitInfo, CircuitState } from './circuit-breaker.types';
+import { CircuitOpenError, DEFAULT_CIRCUIT_BREAKER_CONFIG } from './circuit-breaker.types';
 
 /**
  * Token for injecting Circuit Breaker configuration.

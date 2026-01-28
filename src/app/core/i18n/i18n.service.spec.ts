@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { I18nKeys } from './i18n.keys';
 import { I18nService } from './i18n.service';
-import { Language } from './i18n.types';
+import type { Language } from './i18n.types';
 import { en } from './translations/en';
 import { es } from './translations/es';
 

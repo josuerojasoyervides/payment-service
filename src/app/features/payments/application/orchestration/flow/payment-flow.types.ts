@@ -1,12 +1,12 @@
-import { FallbackMode } from '@payments/domain/models/fallback/fallback-state.types';
-import { NextActionClientConfirm } from '@payments/domain/models/payment/payment-action.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import {
+import type { FallbackMode } from '@payments/domain/models/fallback/fallback-state.types';
+import type { NextActionClientConfirm } from '@payments/domain/models/payment/payment-action.types';
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import type {
   ActorRefFrom,
   EventObject,

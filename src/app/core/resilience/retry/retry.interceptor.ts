@@ -1,6 +1,7 @@
-import { HttpErrorResponse, HttpEvent, HttpInterceptorFn } from '@angular/common/http';
+import type { HttpErrorResponse, HttpEvent, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable, throwError, timer } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { throwError, timer } from 'rxjs';
 import { catchError, mergeMap, tap } from 'rxjs/operators';
 
 import { LoggerService } from '../../logging/logger.service';

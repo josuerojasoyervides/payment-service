@@ -1,14 +1,15 @@
 import { inject, Injectable } from '@angular/core';
-import { NextAction } from '@payments/domain/models/payment/payment-action.types';
+import type { NextAction } from '@payments/domain/models/payment/payment-action.types';
 import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
-import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import {
+import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { Observable, throwError } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { throwError } from 'rxjs';
 
-import { FinalizePort } from '../../api/ports/finalize.port';
+import type { FinalizePort } from '../../api/ports/finalize.port';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 
 /** Stable i18n key for unsupported client confirm (application must not import i18n.t). */

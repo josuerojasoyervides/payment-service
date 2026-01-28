@@ -1,10 +1,10 @@
-import {
+import type {
   PaymentFlowContext,
   ProviderReferences,
   ProviderReferenceSet,
 } from '@payments/domain/models/payment/payment-flow-context.types';
-import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
 export const FLOW_CONTEXT_TTL_MS = 30 * 60 * 1000;
 

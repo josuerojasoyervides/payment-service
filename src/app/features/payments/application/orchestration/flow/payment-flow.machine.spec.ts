@@ -1,12 +1,13 @@
 import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
-import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
+import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { firstValueFrom, of } from 'rxjs';
-import { AnyActorRef, createActor } from 'xstate';
+import type { AnyActorRef } from 'xstate';
+import { createActor } from 'xstate';
 
 import { createPaymentFlowMachine } from './payment-flow.machine';
-import { KeyValueStorage } from './payment-flow.persistence';
-import { PaymentFlowActorRef, PaymentFlowSnapshot } from './payment-flow.types';
+import type { KeyValueStorage } from './payment-flow.persistence';
+import type { PaymentFlowActorRef, PaymentFlowSnapshot } from './payment-flow.types';
 
 let activeActors: AnyActorRef[] = [];
 

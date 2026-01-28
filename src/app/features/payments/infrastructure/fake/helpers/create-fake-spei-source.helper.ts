@@ -1,5 +1,5 @@
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { StripeSpeiSourceDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { StripeSpeiSourceDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 import { generateId } from './get-id.helper';
 import { hashString } from './hash-string.helper';

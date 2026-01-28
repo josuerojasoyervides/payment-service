@@ -1,7 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { LoggerService } from '@core/logging';
 
-import { Language, Translations } from './i18n.types';
+import type { Language, Translations } from './i18n.types';
 import { en } from './translations/en';
 import { es } from './translations/es';
 

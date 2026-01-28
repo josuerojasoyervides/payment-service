@@ -1,4 +1,5 @@
-import { HttpInterceptorFn, HttpRequest, HttpResponse } from '@angular/common/http';
+import type { HttpInterceptorFn, HttpRequest } from '@angular/common/http';
+import { HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';

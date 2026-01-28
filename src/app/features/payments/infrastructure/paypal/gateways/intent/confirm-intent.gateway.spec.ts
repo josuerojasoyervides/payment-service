@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 import { PaypalConfirmIntentGateway } from './confirm-intent.gateway';

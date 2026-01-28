@@ -1,4 +1,5 @@
-import { I18nKeys, I18nService } from '@core/i18n';
+import type { I18nService } from '@core/i18n';
+import { I18nKeys } from '@core/i18n';
 
 import { renderPaymentError } from './render-payment-errors';
 

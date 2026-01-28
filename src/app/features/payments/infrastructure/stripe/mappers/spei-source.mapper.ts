@@ -1,10 +1,10 @@
-import { NextActionManualStep } from '@payments/domain/models/payment/payment-action.types';
-import {
+import type { NextActionManualStep } from '@payments/domain/models/payment/payment-action.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 
-import { StripeSpeiSourceDto } from '../dto/stripe.dto';
+import type { StripeSpeiSourceDto } from '../dto/stripe.dto';
 import { SpeiStatusMapper } from './spei-status.mapper';
 
 export class SpeiSourceMapper {

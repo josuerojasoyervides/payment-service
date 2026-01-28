@@ -1,7 +1,7 @@
 // ============ FAKE STRIPE RESPONSES ============
 
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 import { SPECIAL_TOKENS } from '../constants/special-tokens';
 import { generateId } from './get-id.helper';

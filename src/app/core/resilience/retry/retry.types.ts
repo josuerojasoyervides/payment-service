@@ -1,4 +1,4 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import type { HttpErrorResponse } from '@angular/common/http';
 
 /**
  * Retry system configuration with exponential backoff.

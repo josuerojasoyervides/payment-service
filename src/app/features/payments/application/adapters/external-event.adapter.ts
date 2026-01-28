@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 
 import { PaymentFlowActorService } from '../orchestration/flow/payment-flow.actor.service';
-import {
+import type {
   ExternalStatusUpdatedPayload,
   RedirectReturnedPayload,
   WebhookReceivedPayload,

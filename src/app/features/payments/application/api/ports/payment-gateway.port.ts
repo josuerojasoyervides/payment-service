@@ -3,18 +3,19 @@ import { inject } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import {
+import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
-import { catchError, map, Observable, tap, throwError } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { catchError, map, tap, throwError } from 'rxjs';
 
 export interface PaymentGatewayPort {
   readonly providerId: PaymentProviderId;

@@ -1,4 +1,5 @@
-import { filter, Subject, takeUntil, timer } from 'rxjs';
+import type { Subject } from 'rxjs';
+import { filter, takeUntil, timer } from 'rxjs';
 
 export function scheduleAfterDelay(
   delayMs: number,

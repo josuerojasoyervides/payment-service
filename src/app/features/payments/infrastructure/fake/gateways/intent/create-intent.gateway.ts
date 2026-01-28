@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
-import {
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
-import { Observable, throwError } from 'rxjs';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
+import type { Observable } from 'rxjs';
+import { throwError } from 'rxjs';
 
 import { FAKE_ERRORS } from '../../constants/fake-errors';
 import { createFakePaypalOrder } from '../../helpers/create-fake-paypal-order.helper';

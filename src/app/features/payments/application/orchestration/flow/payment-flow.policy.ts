@@ -1,4 +1,4 @@
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
 import type { PaymentFlowMachineContext } from './payment-flow.types';
 

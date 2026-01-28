@@ -1,7 +1,7 @@
-import { PaymentError } from '../payment/payment-error.types';
-import { PaymentProviderId } from '../payment/payment-intent.types';
-import { CreatePaymentRequest } from '../payment/payment-request.types';
-import { FallbackAvailableEvent } from './fallback-event.types';
+import type { PaymentError } from '../payment/payment-error.types';
+import type { PaymentProviderId } from '../payment/payment-intent.types';
+import type { CreatePaymentRequest } from '../payment/payment-request.types';
+import type { FallbackAvailableEvent } from './fallback-event.types';
 
 /**
  * Fallback process status.

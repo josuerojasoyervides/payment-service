@@ -1,6 +1,6 @@
 import { I18nKeys } from '@core/i18n';
 
-import { StripeErrorResponse } from '../dto/stripe.dto';
+import type { StripeErrorResponse } from '../dto/stripe.dto';
 
 export class ErrorKeyMapper {
   mapErrorKey(error: StripeErrorResponse['error']): string {

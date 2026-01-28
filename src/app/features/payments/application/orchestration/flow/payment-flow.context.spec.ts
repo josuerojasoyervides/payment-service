@@ -1,5 +1,5 @@
-import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
 import {
   createFlowContext,

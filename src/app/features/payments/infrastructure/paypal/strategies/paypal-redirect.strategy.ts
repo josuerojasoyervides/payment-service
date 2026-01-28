@@ -1,21 +1,23 @@
 import { I18nKeys } from '@core/i18n';
-import { LoggerService } from '@core/logging';
+import type { LoggerService } from '@core/logging';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import {
+import type {
   CurrencyCode,
   PaymentIntent,
   PaymentMethodType,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { map, Observable, tap } from 'rxjs';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { Observable } from 'rxjs';
+import { map, tap } from 'rxjs';
 
-import { PaymentGatewayPort } from '../../../application/api/ports/payment-gateway.port';
-import {
+import type { PaymentGatewayPort } from '../../../application/api/ports/payment-gateway.port';
+import type {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
 } from '../../../application/api/ports/payment-strategy.port';
-import { findPaypalLink, PaypalOrderDto } from '../dto/paypal.dto';
+import type { PaypalOrderDto } from '../dto/paypal.dto';
+import { findPaypalLink } from '../dto/paypal.dto';
 
 /**
  * Redirect strategy for PayPal.

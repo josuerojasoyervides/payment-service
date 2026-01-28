@@ -1,7 +1,7 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
 import { PaymentStatusLabelPipe } from '../../shared/pipes/payment-status-label.pipe';
 import { STATUS_BADGE_MAP } from '../../shared/ui.types';

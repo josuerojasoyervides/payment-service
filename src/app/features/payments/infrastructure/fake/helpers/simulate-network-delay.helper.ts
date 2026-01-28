@@ -1,4 +1,5 @@
-import { delay, Observable, of } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { delay, of } from 'rxjs';
 
 /**
  * Simulates realistic network delay.

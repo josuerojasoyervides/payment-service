@@ -1,11 +1,11 @@
 import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { createActor } from 'xstate';
 
 import { createPaymentFlowMachine } from '../application/orchestration/flow/payment-flow.machine';
-import { PaymentFlowConfigOverrides } from '../application/orchestration/flow/payment-flow.policy';
-import {
+import type { PaymentFlowConfigOverrides } from '../application/orchestration/flow/payment-flow.policy';
+import type {
   PaymentFlowActorRef,
   PaymentFlowMachineContext,
   PaymentFlowSnapshot,

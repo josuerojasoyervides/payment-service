@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
-import {
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { GetPaymentStatusRequest } from '@payments/domain/models/payment/payment-request.types';
-import { Observable } from 'rxjs';
+import type { GetPaymentStatusRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { Observable } from 'rxjs';
 
 import { PAYPAL_API_BASE } from '../../constants/base-api.constant';
-import { PaypalOrderDto } from '../../dto/paypal.dto';
+import type { PaypalOrderDto } from '../../dto/paypal.dto';
 import { mapOrder } from '../../mappers/map-order.mapper';
 
 @Injectable()

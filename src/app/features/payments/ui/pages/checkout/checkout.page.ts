@@ -6,8 +6,8 @@ import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
-import { NextAction } from '@payments/domain/models/payment/payment-action.types';
-import {
+import type { NextAction } from '@payments/domain/models/payment/payment-action.types';
+import type {
   CurrencyCode,
   PaymentMethodType,
   PaymentProviderId,
@@ -21,9 +21,9 @@ import { PaymentFormComponent } from '@payments/ui/components/payment-form/payme
 import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
 
-import { StrategyContext } from '../../../application/api/ports/payment-strategy.port';
+import type { StrategyContext } from '../../../application/api/ports/payment-strategy.port';
 import { ProviderFactoryRegistry } from '../../../application/orchestration/registry/provider-factory.registry';
-import {
+import type {
   FieldRequirements,
   PaymentOptions,
 } from '../../../domain/ports/payment/payment-request-builder.port';

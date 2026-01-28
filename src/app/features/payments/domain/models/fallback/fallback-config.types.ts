@@ -1,6 +1,6 @@
-import { PaymentErrorCode } from '../payment/payment-error.types';
-import { PaymentProviderId } from '../payment/payment-intent.types';
-import { FallbackMode } from './fallback-state.types';
+import type { PaymentErrorCode } from '../payment/payment-error.types';
+import type { PaymentProviderId } from '../payment/payment-intent.types';
+import type { FallbackMode } from './fallback-state.types';
 
 /**
  * Fallback system configuration.

@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 
-import { ClientConfirmPort } from '../../api/ports/client-confirm.port';
-import { FinalizePort } from '../../api/ports/finalize.port';
+import type { ClientConfirmPort } from '../../api/ports/client-confirm.port';
+import type { FinalizePort } from '../../api/ports/finalize.port';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { NextActionOrchestratorService } from './next-action-orchestrator.service';
 

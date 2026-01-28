@@ -1,4 +1,4 @@
-import { PaymentMethodType } from './payment-intent.types';
+import type { PaymentMethodType } from './payment-intent.types';
 
 export interface PaymentMethod {
   id: string;

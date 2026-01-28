@@ -1,9 +1,9 @@
-import {
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
-import {
+import type { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
+import type {
   StripePaymentIntentDto,
   StripeSpeiSourceDto,
 } from '@payments/infrastructure/stripe/dto/stripe.dto';

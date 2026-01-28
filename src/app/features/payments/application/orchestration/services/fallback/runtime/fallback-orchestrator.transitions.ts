@@ -1,15 +1,15 @@
-import { WritableSignal } from '@angular/core';
-import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
-import {
+import type { WritableSignal } from '@angular/core';
+import type { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
+import type {
   FailedAttempt,
   FallbackState,
-  INITIAL_FALLBACK_STATE,
 } from '@payments/domain/models/fallback/fallback-state.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { INITIAL_FALLBACK_STATE } from '@payments/domain/models/fallback/fallback-state.types';
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
-import { FinishStatus } from '../fallback-orchestrator.types';
+import type { FinishStatus } from '../fallback-orchestrator.types';
 
 /**
  * ✅ Reset / Initial

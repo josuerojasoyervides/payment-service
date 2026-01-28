@@ -1,11 +1,11 @@
 import { computed, inject, Injectable } from '@angular/core';
-import { NextAction } from '@payments/domain/models/payment/payment-action.types';
-import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { NextAction } from '@payments/domain/models/payment/payment-action.types';
+import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
-import { StrategyContext } from '../../api/ports/payment-strategy.port';
+import type { StrategyContext } from '../../api/ports/payment-strategy.port';
 import { PaymentFlowActorService } from './payment-flow.actor.service';
-import { PaymentFlowPublicEvent } from './payment-flow.types';
+import type { PaymentFlowPublicEvent } from './payment-flow.types';
 
 // If you already have a formal flowContext type in your project, use it here.
 // Otherwise, this is a minimal version to avoid `any`.

@@ -1,4 +1,4 @@
-import { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
+import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 import { hashString } from './hash-string.helper';
 

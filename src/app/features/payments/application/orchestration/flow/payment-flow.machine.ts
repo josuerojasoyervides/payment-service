@@ -1,5 +1,5 @@
 import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { assign, fromPromise, setup } from 'xstate';
 
 import { isPaymentError, normalizePaymentError } from '../store/projection/payment-store.errors';
@@ -9,7 +9,7 @@ import {
   resolveStatusReference,
   updateFlowContextProviderRefs,
 } from './payment-flow.context';
-import { PaymentFlowDeps } from './payment-flow.deps';
+import type { PaymentFlowDeps } from './payment-flow.deps';
 import {
   canFallbackPolicy,
   canPollPolicy,
@@ -25,7 +25,7 @@ import {
   type PaymentFlowConfigOverrides,
   resolvePaymentFlowConfig,
 } from './payment-flow.policy';
-import {
+import type {
   CancelInput,
   ClientConfirmInput,
   ConfirmInput,

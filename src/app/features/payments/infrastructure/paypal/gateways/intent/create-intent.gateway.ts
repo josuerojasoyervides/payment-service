@@ -2,16 +2,16 @@ import { inject, Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import {
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
-import { Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 
 import { PAYPAL_API_BASE } from '../../constants/base-api.constant';
-import { PaypalCreateOrderRequest, PaypalOrderDto } from '../../dto/paypal.dto';
+import type { PaypalCreateOrderRequest, PaypalOrderDto } from '../../dto/paypal.dto';
 import { mapOrder } from '../../mappers/map-order.mapper';
 
 @Injectable()

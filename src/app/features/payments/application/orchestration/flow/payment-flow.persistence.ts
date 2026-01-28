@@ -1,8 +1,8 @@
-import {
+import type {
   PaymentFlowContext,
   ProviderReferences,
 } from '@payments/domain/models/payment/payment-flow-context.types';
-import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 
 import { FLOW_CONTEXT_TTL_MS } from './payment-flow.context';
 

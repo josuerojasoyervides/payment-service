@@ -1,9 +1,10 @@
-import {
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 
-import { findPaypalLink, PaypalOrderDto } from '../dto/paypal.dto';
+import type { PaypalOrderDto } from '../dto/paypal.dto';
+import { findPaypalLink } from '../dto/paypal.dto';
 import { STATUS_MAP } from './status.mapper';
 
 export function mapOrder(dto: PaypalOrderDto, providerId: PaymentProviderId): PaymentIntent {

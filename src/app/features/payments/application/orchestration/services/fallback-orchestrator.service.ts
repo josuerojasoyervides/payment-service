@@ -1,22 +1,20 @@
 import { computed, inject, Injectable, InjectionToken } from '@angular/core';
 import { LoggerService } from '@core/logging/logger.service';
-import {
-  DEFAULT_FALLBACK_CONFIG,
-  FallbackConfig,
-} from '@payments/domain/models/fallback/fallback-config.types';
-import {
+import type { FallbackConfig } from '@payments/domain/models/fallback/fallback-config.types';
+import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/models/fallback/fallback-config.types';
+import type {
   FallbackAvailableEvent,
   FallbackUserResponse,
 } from '@payments/domain/models/fallback/fallback-event.types';
-import { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { Subject } from 'rxjs';
 
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { createFallbackStateSignal } from './fallback/fallback-orchestrator.state';
-import {
+import type {
   AutoFallbackStartedPayload,
   FallbackExecutePayload,
   FinishStatus,

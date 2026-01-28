@@ -1,14 +1,14 @@
-import { WritableStateSource } from '@ngrx/signals';
-import { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
+import type { WritableStateSource } from '@ngrx/signals';
+import type { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
-import { PaymentHistoryEntry } from './history/payment-store.history.types';
-import { PaymentFlowStatus, PaymentsState } from './projection/payment-store.state';
+import type { PaymentHistoryEntry } from './history/payment-store.history.types';
+import type { PaymentFlowStatus, PaymentsState } from './projection/payment-store.state';
 
 /**
  * Minimal store shape used by internal helpers.

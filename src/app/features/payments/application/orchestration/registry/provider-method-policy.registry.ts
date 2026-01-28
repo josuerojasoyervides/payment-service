@@ -1,10 +1,10 @@
 import { inject, Injectable } from '@angular/core';
-import {
+import type {
   PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 
-import {
+import type {
   ProviderMethodPolicy,
   ProviderMethodPolicyPort,
 } from '../../api/ports/provider-method-policy.port';

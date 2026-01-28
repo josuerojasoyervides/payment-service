@@ -1,7 +1,8 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { I18nKeys, I18nService } from '@core/i18n';
-import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 
 import { FallbackModalComponent } from './fallback-modal.component';
 

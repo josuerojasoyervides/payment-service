@@ -1,13 +1,14 @@
-import { computed, DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
+import type { Signal } from '@angular/core';
+import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LoggerService } from '@core/logging';
 import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
-import { NextAction } from '@payments/domain/models/payment/payment-action.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
+import type { NextAction } from '@payments/domain/models/payment/payment-action.types';
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
 
@@ -19,7 +20,7 @@ import {
 } from './payment-flow.guards';
 import { createPaymentFlowMachine } from './payment-flow.machine';
 import { FlowContextStore, toFlowContext } from './payment-flow.persistence';
-import {
+import type {
   PaymentFlowActorRef,
   PaymentFlowCommandEvent,
   PaymentFlowEvent,

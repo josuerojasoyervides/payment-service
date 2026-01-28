@@ -1,13 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, timer } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { throwError, timer } from 'rxjs';
 import { mergeMap, retryWhen, scan } from 'rxjs/operators';
 
+import type { RetryConfig } from './retry.types';
 import {
   calculateBackoffDelay,
   DEFAULT_RETRY_CONFIG,
   isRetryableError,
   parseRetryAfterHeader,
-  RetryConfig,
   RetryExhaustedError,
 } from './retry.types';
 

@@ -1,11 +1,11 @@
-import { ClientConfirmRequest } from '@payments/application/api/ports/client-confirm.port';
-import { FinalizeRequest } from '@payments/application/api/ports/finalize.port';
-import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import {
+import type { ClientConfirmRequest } from '@payments/application/api/ports/client-confirm.port';
+import type { FinalizeRequest } from '@payments/application/api/ports/finalize.port';
+import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import {
+import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,

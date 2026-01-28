@@ -1,7 +1,7 @@
-import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PaymentFlowActorService } from '../../flow/payment-flow.actor.service';
-import { FallbackOrchestratorService } from '../../services/fallback-orchestrator.service';
+import type { PaymentFlowActorService } from '../../flow/payment-flow.actor.service';
+import type { FallbackOrchestratorService } from '../../services/fallback-orchestrator.service';
 import type { PaymentsStoreContext } from '../payment-store.types';
 
 interface PaymentsStoreFallbackDeps {

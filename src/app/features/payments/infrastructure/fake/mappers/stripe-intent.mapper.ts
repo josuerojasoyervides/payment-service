@@ -1,8 +1,8 @@
-import {
+import type {
   PaymentIntent,
   PaymentIntentStatus,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
+import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 export function mapStripeIntent(dto: StripePaymentIntentDto): PaymentIntent {
   const statusMap: Record<StripePaymentIntentDto['status'], PaymentIntentStatus> = {

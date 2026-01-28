@@ -1,12 +1,13 @@
 import { patchState } from '@ngrx/signals';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 
-import { PaymentsStoreContext } from '../payment-store.types';
-import { HISTORY_MAX_ENTRIES, PaymentHistoryEntry } from './payment-store.history.types';
+import type { PaymentsStoreContext } from '../payment-store.types';
+import type { PaymentHistoryEntry } from './payment-store.history.types';
+import { HISTORY_MAX_ENTRIES } from './payment-store.history.types';
 
 export function addToHistory(
   store: PaymentsStoreContext,

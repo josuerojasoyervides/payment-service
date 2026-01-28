@@ -2,8 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import type { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
 import { StripeConfirmIntentGateway } from './confirm-intent.gateway';
 

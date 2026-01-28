@@ -1,5 +1,5 @@
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { StripeSpeiSourceDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
+import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import type { StripeSpeiSourceDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 export function mapStripeSpeiSource(dto: StripeSpeiSourceDto): PaymentIntent {
   return {

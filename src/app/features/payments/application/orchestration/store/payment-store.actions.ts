@@ -1,7 +1,7 @@
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
-import {
+import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
+import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
@@ -9,8 +9,8 @@ import {
 } from '@payments/domain/models/payment/payment-request.types';
 import { ignoreElements, pipe, tap } from 'rxjs';
 
-import { PaymentFlowActorService } from '../flow/payment-flow.actor.service';
-import { PaymentsStoreContext } from './payment-store.types';
+import type { PaymentFlowActorService } from '../flow/payment-flow.actor.service';
+import type { PaymentsStoreContext } from './payment-store.types';
 
 export interface PaymentsStoreDeps {
   stateMachine: PaymentFlowActorService;

@@ -1,13 +1,13 @@
 import { I18nKeys } from '@core/i18n';
-import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
+import type { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type {
   CurrencyCode,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import {
+import type {
   FieldRequirements,
   FieldType,
   PaymentOptions,

@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
-import {
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { Observable } from 'rxjs';
+import type { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { Observable } from 'rxjs';
 
 import { createCanceledStripeIntent } from '../../helpers/create-canceled-stripe-intent.helper';
 import { createVoidedPaypalOrder } from '../../helpers/create-voided-paypal-order.helper';

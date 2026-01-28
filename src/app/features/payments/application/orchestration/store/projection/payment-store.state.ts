@@ -1,15 +1,13 @@
-import {
-  FallbackState,
-  INITIAL_FALLBACK_STATE,
-} from '@payments/domain/models/fallback/fallback-state.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
+import type { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
+import { INITIAL_FALLBACK_STATE } from '@payments/domain/models/fallback/fallback-state.types';
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
-import { PaymentHistoryEntry } from '../history/payment-store.history.types';
+import type { PaymentHistoryEntry } from '../history/payment-store.history.types';
 
 /**
  * Possible payment flow states in the UI.

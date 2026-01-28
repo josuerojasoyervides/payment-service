@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit } from '@angular/core';
-import { ActivatedRoute, Params, RouterLink } from '@angular/router';
+import type { OnInit } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+import type { Params } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
 import { mapReturnQueryToReference } from '../../../application/adapters/events/external/payment-flow-return.mapper';
 import { ExternalEventAdapter } from '../../../application/adapters/external-event.adapter';
