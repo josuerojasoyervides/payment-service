@@ -1,4 +1,5 @@
 import { FallbackMode } from '@payments/domain/models/fallback/fallback-state.types';
+import { NextActionClientConfirm } from '@payments/domain/models/payment/payment-action.types';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import {
@@ -24,7 +25,7 @@ import type {
 // ✅ IMPORTANT: type-only import to avoid runtime circular dependency
 import type { createPaymentFlowMachine } from './payment-flow.machine';
 
-export type ActorId = 'start' | 'confirm' | 'cancel' | 'status';
+export type ActorId = 'start' | 'confirm' | 'cancel' | 'status' | 'clientConfirm' | 'finalize';
 
 export interface DoneEvent<TActor extends ActorId, TOutput> {
   type: `xstate.done.actor.${TActor}`;
@@ -62,6 +63,12 @@ export type PaymentFlowSystemEvent =
       failedProviderId?: PaymentProviderId;
     }
   | { type: 'FALLBACK_ABORT' }
+  | { type: 'CLIENT_CONFIRM_REQUESTED' }
+  | { type: 'CLIENT_CONFIRM_SUCCEEDED' }
+  | { type: 'CLIENT_CONFIRM_FAILED' }
+  | { type: 'FINALIZE_REQUESTED' }
+  | { type: 'FINALIZE_SUCCEEDED' }
+  | { type: 'FINALIZE_FAILED' }
   | { type: 'REDIRECT_RETURNED'; payload: RedirectReturnedPayload }
   | { type: 'EXTERNAL_STATUS_UPDATED'; payload: ExternalStatusUpdatedPayload }
   | { type: 'WEBHOOK_RECEIVED'; payload: WebhookReceivedPayload };
@@ -74,11 +81,15 @@ export type PaymentFlowEvent =
   | DoneEvent<'confirm', PaymentIntent>
   | DoneEvent<'cancel', PaymentIntent>
   | DoneEvent<'status', PaymentIntent>
+  | DoneEvent<'clientConfirm', PaymentIntent>
+  | DoneEvent<'finalize', PaymentIntent>
   // ✅ Error events (invoke reject)
   | ErrorEvent<'start'>
   | ErrorEvent<'confirm'>
   | ErrorEvent<'cancel'>
-  | ErrorEvent<'status'>;
+  | ErrorEvent<'status'>
+  | ErrorEvent<'clientConfirm'>
+  | ErrorEvent<'finalize'>;
 
 export type PaymentFlowPublicEvent = PaymentFlowCommandEvent;
 
@@ -131,6 +142,17 @@ export interface CancelInput {
 export interface StatusInput {
   providerId: PaymentProviderId;
   intentId: string;
+}
+
+export interface ClientConfirmInput {
+  providerId: PaymentProviderId;
+  flowContext: PaymentFlowContext;
+  action: NextActionClientConfirm;
+}
+
+export interface FinalizeInput {
+  providerId: PaymentProviderId;
+  flowContext: PaymentFlowContext;
 }
 
 export type PaymentFlowStatesConfig = StatesConfig<

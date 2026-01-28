@@ -26,6 +26,7 @@ export interface PaymentIntent {
   clientSecret?: string;
   redirectUrl?: string;
   nextAction?: NextAction;
+  finalizeRequired?: boolean;
   providerRefs?: ProviderRefs;
   raw?: unknown;
 }

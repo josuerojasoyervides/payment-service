@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { NextAction } from '@payments/domain/models/payment/payment-action.types';
 import {
   PAYMENT_PROVIDER_IDS,
   PaymentProviderId,
@@ -125,6 +126,10 @@ export class StatusComponent {
 
   confirmPayment(_intentId: string): void {
     this.flow.confirm();
+  }
+
+  onNextActionRequested(action: NextAction): void {
+    this.flow.performNextAction(action);
   }
 
   cancelPayment(_intentId: string): void {

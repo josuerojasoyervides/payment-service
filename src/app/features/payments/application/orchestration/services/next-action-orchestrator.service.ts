@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { NextAction } from '@payments/domain/models/payment/payment-action.types';
+import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import {
   PaymentIntent,
@@ -7,12 +8,15 @@ import {
 } from '@payments/domain/models/payment/payment-intent.types';
 import { Observable, throwError } from 'rxjs';
 
-import { CLIENT_CONFIRM_PORTS } from '../../api/tokens/client-confirm.token';
 import { FINALIZE_PORTS } from '../../api/tokens/finalize.token';
+import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+
+/** Stable i18n key for unsupported client confirm (application must not import i18n.t). */
+const UNSUPPORTED_CLIENT_CONFIRM_MESSAGE_KEY = 'errors.unsupported_client_confirm';
 
 @Injectable()
 export class NextActionOrchestratorService {
-  private readonly clientConfirmPorts = inject(CLIENT_CONFIRM_PORTS);
+  private readonly registry = inject(ProviderFactoryRegistry);
   private readonly finalizePorts = inject(FINALIZE_PORTS);
 
   requestClientConfirm(action: NextAction, context: PaymentFlowContext): Observable<PaymentIntent> {
@@ -25,12 +29,26 @@ export class NextActionOrchestratorService {
       return throwError(() => new Error('Missing providerId for client confirmation'));
     }
 
-    const port = this.selectPort(this.clientConfirmPorts, providerId);
-    if (!port) {
-      return throwError(() => new Error(`No client confirmation port for ${providerId}`));
+    const handler = this.getClientConfirmHandler(providerId);
+    if (!handler) {
+      return throwError(() =>
+        createPaymentError(
+          'unsupported_client_confirm',
+          UNSUPPORTED_CLIENT_CONFIRM_MESSAGE_KEY,
+          undefined,
+          null,
+        ),
+      );
     }
 
-    return port.execute({ providerId, action, context });
+    return handler.execute({ providerId, action, context });
+  }
+
+  /** Resolves client-confirm handler via provider factory capability; no provider-name branching. */
+  private getClientConfirmHandler(providerId: PaymentProviderId) {
+    if (!this.registry.has(providerId)) return null;
+    const factory = this.registry.get(providerId);
+    return factory.getClientConfirmHandler?.() ?? null;
   }
 
   requestFinalize(context: PaymentFlowContext): Observable<PaymentIntent> {
@@ -51,6 +69,6 @@ export class NextActionOrchestratorService {
     ports: T[],
     providerId: PaymentProviderId,
   ): T | null {
-    return ports.find((port) => port.providerId === providerId) ?? null;
+    return ports.find((p) => p.providerId === providerId) ?? null;
   }
 }

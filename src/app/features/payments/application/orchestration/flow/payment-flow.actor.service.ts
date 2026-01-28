@@ -12,6 +12,7 @@ import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
 
 import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
+import { NextActionOrchestratorService } from '../services/next-action-orchestrator.service';
 import {
   isPaymentFlowSnapshot,
   isSnapshotInspectionEventWithSnapshot,
@@ -84,6 +85,7 @@ export class PaymentFlowActorService {
   private readonly cancel = inject(CancelPaymentUseCase);
   private readonly status = inject(GetPaymentStatusUseCase);
   private readonly fallbackOrchestrator = inject(FallbackOrchestratorService);
+  private readonly nextActionOrchestrator = inject(NextActionOrchestratorService);
   private readonly logger = inject(LoggerService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -100,6 +102,12 @@ export class PaymentFlowActorService {
         firstValueFrom(this.cancel.execute(request, providerId)),
       getStatus: async (providerId, request) =>
         firstValueFrom(this.status.execute(request, providerId)),
+      clientConfirm: async (request) =>
+        firstValueFrom(
+          this.nextActionOrchestrator.requestClientConfirm(request.action, request.context),
+        ),
+      finalize: async (request) =>
+        firstValueFrom(this.nextActionOrchestrator.requestFinalize(request.context)),
     },
     {},
     this.initialContext,

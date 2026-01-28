@@ -13,20 +13,15 @@
 
 ## 📍 Mission State (New-Chat Context)
 
-- **Critical Task:** PR4 (Client confirm + finalization pipeline) in progress.
-- **Recent Changes (PR4 - 4.1):**
-  - Added application ports for client confirmation and finalization.
-  - Added NextActionOrchestratorService to route NextAction.kind to ports (provider-agnostic).
-  - Wired DI tokens for new ports in payments config.
-  - Added unit tests for orchestrator routing logic.
-- **Open/Relevant Files:** `docs/ai-active-context.md`, `docs/provider-integration-plan.md`, `docs/flow-brain.md`, `docs/architecture-rules.md`, `docs/goals.md`.
-- **Error Context:** Not run in this step.
+- **Critical Task:** PR4.3 — Move Stripe client confirmation out of UI into application orchestration (provider-agnostic).
+- **Last completed (4.3.2):** Provider-agnostic client-confirm routing via ProviderFactoryRegistry. Optional capability `getClientConfirmHandler?(): ClientConfirmPort | null` on ProviderFactory; orchestrator uses registry.get(providerId).getClientConfirmHandler?.() ?? null. No handler → PaymentError(code: 'unsupported_client_confirm', messageKey: 'errors.unsupported_client_confirm'). StripeJsAdapter not present in repo; Stripe/PayPal factories omit capability (return null).
+- **Next step:** 4.3.3 — Wire machine invoke (clientConfirming stage) to orchestration; on success CLIENT_CONFIRM_SUCCEEDED → reconciling; on failure CLIENT_CONFIRM_FAILED with PaymentError.
+- **Key files:** `provider-factory.port.ts`, `next-action-orchestrator.service.ts`, `payment-flow-client-confirm.stage.ts`, `payment-flow.actor.service.ts`.
 
-## 🛠️ Technical Snapshot (Angular)
+## 🛠️ Technical Snapshot
 
-- **Signal/Observable State:** XState is source of truth; store is projection + fallback + history.
-- **Application layout:** `application/{api,orchestration,adapters}` with flow, store, and services under orchestration.
-- **Dependency Injection:** `app.config.ts` wires HttpClient interceptors; fake backend interceptor removed.
+- **Client-confirm routing:** NextActionOrchestratorService injects ProviderFactoryRegistry; requestClientConfirm resolves handler via factory.getClientConfirmHandler?.() ?? null; no providerId switch in application.
+- **Application:** ClientConfirmPort optional on factory; machine clientConfirming invokes deps.clientConfirm (already wired to orchestrator in actor).
 
 ## 🚀 Git Planning & Workflow
 
@@ -61,7 +56,7 @@
 
 ## ⏭️ Immediate Next Action
 
-- [ ] Continue PR4 (4.2: machine clientConfirming + finalizing states).
+- [ ] PR4.3.3: Wire machine invoke (clientConfirming stage) to orchestration; CLIENT_CONFIRM_SUCCEEDED/FAILED transitions.
 
 ---
 

@@ -38,6 +38,7 @@ describe('StatusComponent', () => {
       refresh: vi.fn(() => true),
       confirm: vi.fn(() => true),
       cancel: vi.fn(() => true),
+      performNextAction: vi.fn(() => true),
     };
 
     await TestBed.configureTestingModule({
@@ -148,6 +149,12 @@ describe('StatusComponent', () => {
       patchState(component.statusPageState, { selectedProvider: 'paypal' });
       component.confirmPayment('ORDER_FAKE_XYZ');
       expect(mockFlowFacade.confirm).toHaveBeenCalled();
+    });
+
+    it('should call performNextAction when next-action is requested', () => {
+      const action = { kind: 'client_confirm' as const, token: 'tok_runtime' };
+      component.onNextActionRequested(action);
+      expect(mockFlowFacade.performNextAction).toHaveBeenCalledWith(action);
     });
   });
 

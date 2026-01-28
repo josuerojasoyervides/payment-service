@@ -101,6 +101,8 @@ const setup = (
       if (overrides?.statusDeferred) return overrides.statusDeferred.promise;
       return overrides?.statusIntent ?? baseIntent;
     }),
+    clientConfirm: vi.fn(async () => baseIntent),
+    finalize: vi.fn(async () => baseIntent),
   };
 
   const config: PaymentFlowConfigOverrides = overrides?.config ?? {

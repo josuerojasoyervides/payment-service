@@ -187,7 +187,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
    */
   private enrichIntentWithPaypalApproval(
     intent: PaymentIntent,
-    metadata: Record<string, unknown>,
+    _metadata: Record<string, unknown>,
   ): PaymentIntent {
     const approveUrl = this.extractApproveUrl(intent);
 

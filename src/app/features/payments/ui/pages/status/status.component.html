@@ -91,7 +91,9 @@
           (refresh)="refreshPayment($event)" />
 
         @if (intent.nextAction) {
-          <app-next-action-card [nextAction]="intent.nextAction" />
+          <app-next-action-card
+            [nextAction]="intent.nextAction"
+            (actionRequested)="onNextActionRequested($event)" />
         }
       </div>
     }

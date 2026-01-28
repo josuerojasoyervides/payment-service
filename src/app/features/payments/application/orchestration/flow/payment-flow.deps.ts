@@ -1,3 +1,5 @@
+import { ClientConfirmRequest } from '@payments/application/api/ports/client-confirm.port';
+import { FinalizeRequest } from '@payments/application/api/ports/finalize.port';
 import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import {
   PaymentIntent,
@@ -31,6 +33,10 @@ export type GetStatus = (
   request: GetPaymentStatusRequest,
 ) => Promise<PaymentIntent>;
 
+export type ClientConfirm = (request: ClientConfirmRequest) => Promise<PaymentIntent>;
+
+export type Finalize = (request: FinalizeRequest) => Promise<PaymentIntent>;
+
 /**
  * Dependencies = \"what the outside world does\".
  * The machine knows nothing about Angular; it only calls async functions.
@@ -40,4 +46,6 @@ export interface PaymentFlowDeps {
   confirmPayment: ConfirmPayment;
   cancelPayment: CancelPayment;
   getStatus: GetStatus;
+  clientConfirm: ClientConfirm;
+  finalize: Finalize;
 }
