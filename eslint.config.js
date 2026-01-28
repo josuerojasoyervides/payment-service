@@ -45,6 +45,7 @@ module.exports = defineConfig([
       // ✅ deja que unused-imports controle todo lo unused (y borre imports con --fix)
       '@typescript-eslint/no-unused-vars': 'off',
       "@typescript-eslint/consistent-type-imports": "error",
+      "@typescript-eslint/consistent-type-assertions": "error",
 
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
