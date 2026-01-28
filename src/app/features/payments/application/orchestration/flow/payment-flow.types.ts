@@ -17,9 +17,8 @@ import type {
 } from 'xstate';
 
 import type {
-  ProviderUpdatePayload,
-  StatusConfirmedPayload,
-  ValidationFailedPayload,
+  ExternalStatusUpdatedPayload,
+  RedirectReturnedPayload,
   WebhookReceivedPayload,
 } from '../../adapters/events/payment-flow.events';
 // ✅ IMPORTANT: type-only import to avoid runtime circular dependency
@@ -63,10 +62,9 @@ export type PaymentFlowSystemEvent =
       failedProviderId?: PaymentProviderId;
     }
   | { type: 'FALLBACK_ABORT' }
-  | { type: 'PROVIDER_UPDATE'; payload: ProviderUpdatePayload }
-  | { type: 'WEBHOOK_RECEIVED'; payload: WebhookReceivedPayload }
-  | { type: 'VALIDATION_FAILED'; payload: ValidationFailedPayload }
-  | { type: 'STATUS_CONFIRMED'; payload: StatusConfirmedPayload };
+  | { type: 'REDIRECT_RETURNED'; payload: RedirectReturnedPayload }
+  | { type: 'EXTERNAL_STATUS_UPDATED'; payload: ExternalStatusUpdatedPayload }
+  | { type: 'WEBHOOK_RECEIVED'; payload: WebhookReceivedPayload };
 
 export type PaymentFlowEvent =
   | PaymentFlowCommandEvent

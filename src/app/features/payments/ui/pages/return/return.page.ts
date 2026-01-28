@@ -117,15 +117,10 @@ export class ReturnComponent implements OnInit {
 
     const reference = mapReturnQueryToReference(params);
     if (reference.referenceId) {
-      this.externalEvents.providerUpdate(
-        {
-          providerId: reference.providerId,
-          referenceId: reference.referenceId,
-          status: this.returnPageState.redirectStatus() ?? undefined,
-          raw: params,
-        },
-        { refresh: !this.returnPageState.isCancelFlow() },
-      );
+      this.externalEvents.redirectReturned({
+        providerId: reference.providerId,
+        referenceId: reference.referenceId,
+      });
     }
   }
 

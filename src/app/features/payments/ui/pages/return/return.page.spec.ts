@@ -44,10 +44,9 @@ describe('ReturnComponent', () => {
     };
 
     mockExternalEvents = {
-      providerUpdate: vi.fn(),
+      redirectReturned: vi.fn(),
+      externalStatusUpdated: vi.fn(),
       webhookReceived: vi.fn(),
-      validationFailed: vi.fn(),
-      statusConfirmed: vi.fn(),
     };
 
     // I18nService mock
@@ -116,14 +115,13 @@ describe('ReturnComponent', () => {
       expect(component.returnPageState.intentId()).toBe('seti_test_123');
     });
 
-    it('should refresh payment when intentId exists and not cancel flow', () => {
+    it('should emit redirect return when intentId exists', () => {
       mockActivatedRoute.snapshot.queryParams = {
         payment_intent: 'pi_test_123',
       };
       component.ngOnInit();
-      expect(mockExternalEvents.providerUpdate).toHaveBeenCalledWith(
+      expect(mockExternalEvents.redirectReturned).toHaveBeenCalledWith(
         expect.objectContaining({ providerId: 'stripe', referenceId: 'pi_test_123' }),
-        { refresh: true },
       );
     });
   });
@@ -139,14 +137,13 @@ describe('ReturnComponent', () => {
       expect(component.returnPageState.paypalPayerId()).toBe('PAYER123456');
     });
 
-    it('should refresh payment when PayPal token exists', () => {
+    it('should emit redirect return when PayPal token exists', () => {
       mockActivatedRoute.snapshot.queryParams = {
         token: 'ORDER_FAKE_XYZ',
       };
       component.ngOnInit();
-      expect(mockExternalEvents.providerUpdate).toHaveBeenCalledWith(
+      expect(mockExternalEvents.redirectReturned).toHaveBeenCalledWith(
         expect.objectContaining({ providerId: 'paypal', referenceId: 'ORDER_FAKE_XYZ' }),
-        { refresh: true },
       );
     });
   });
@@ -158,15 +155,14 @@ describe('ReturnComponent', () => {
       expect(component.returnPageState.isCancelFlow()).toBe(true);
     });
 
-    it('should not refresh payment when cancel flow', () => {
+    it('should still emit redirect return when cancel flow', () => {
       mockActivatedRoute.snapshot.data = { cancelFlow: true };
       mockActivatedRoute.snapshot.queryParams = {
         payment_intent: 'pi_test_123',
       };
       component.ngOnInit();
-      expect(mockExternalEvents.providerUpdate).toHaveBeenCalledWith(
+      expect(mockExternalEvents.redirectReturned).toHaveBeenCalledWith(
         expect.objectContaining({ providerId: 'stripe', referenceId: 'pi_test_123' }),
-        { refresh: false },
       );
     });
 
