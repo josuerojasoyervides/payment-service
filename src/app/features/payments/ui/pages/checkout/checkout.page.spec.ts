@@ -135,6 +135,7 @@ describe('CheckoutComponent', () => {
       }),
       lastSentEvent: signal(null),
       redirectUrl: computed(() => null),
+      performNextAction: vi.fn(() => true),
       start: vi.fn(() => true),
       confirm: vi.fn(() => true),
       cancel: vi.fn(() => true),

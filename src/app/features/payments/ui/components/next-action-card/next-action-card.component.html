@@ -1,7 +1,7 @@
 @if (nextAction(); as action) {
   <div class="mt-4">
-    @switch (action.type) {
-      @case ('3ds') {
+    @switch (action.kind) {
+      @case ('client_confirm') {
         <div class="bg-amber-50 border border-amber-200 rounded-xl p-6">
           <div class="flex items-start gap-4">
             <div class="flex-shrink-0">
@@ -21,23 +21,17 @@
             </div>
             <div class="flex-1">
               <h3 class="text-lg font-semibold text-amber-900">
-                {{ threeDsTitle() }}
+                {{ actionRequiredLabel() }}
               </h3>
               <p class="mt-1 text-amber-700">
-                {{ bankRequiresVerificationText() }}
+                {{ actionRequiresAttentionText() }}
               </p>
 
-              @if ($any(action).threeDsVersion) {
-                <p class="mt-2 text-sm text-amber-600">
-                  {{ threeDsVersionLabel() }}: {{ $any(action).threeDsVersion }}
-                </p>
-              }
-
               <div class="mt-4">
-                <a
-                  [href]="$any(action).returnUrl || '#'"
-                  target="_blank"
-                  class="btn-primary inline-flex items-center gap-2">
+                <button
+                  type="button"
+                  class="btn-primary inline-flex items-center gap-2"
+                  (click)="onActionRequested()">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"
@@ -45,67 +39,106 @@
                       stroke-width="2"
                       d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
-                  {{ completeVerificationLabel() }}
-                </a>
+                  {{ confirmLabel() }}
+                </button>
               </div>
             </div>
           </div>
         </div>
       }
 
-      @case ('spei') {
-        <app-spei-instructions
-          [clabe]="$any(action).clabe"
-          [reference]="$any(action).reference"
-          [bank]="$any(action).bank"
-          [beneficiary]="$any(action).beneficiary"
-          [amount]="$any(action).amount"
-          [currency]="$any(action).currency"
-          [expiresAt]="$any(action).expiresAt" />
-      }
-
-      @case ('paypal_approve') {
+      @case ('redirect') {
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
           <div class="flex items-start gap-4">
             <div class="flex-shrink-0">
-              <div
-                class="w-12 h-12 bg-paypal-primary rounded-full flex items-center justify-center">
-                <span class="text-white text-xl font-bold">P</span>
+              <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg
+                  class="w-6 h-6 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M14 3h7m0 0v7m0-7L10 14m-4 7h11a2 2 0 002-2V9a2 2 0 00-2-2h-3" />
+                </svg>
               </div>
             </div>
             <div class="flex-1">
               <h3 class="text-lg font-semibold text-blue-900">
-                {{ paypalApprovalTitle() }}
+                {{ actionRequiredLabel() }}
               </h3>
               <p class="mt-1 text-blue-700">
-                {{ redirectedToPaypalText() }}
+                {{ actionRequiresAttentionText() }}
               </p>
-
-              @if ($any(action).paypalOrderId) {
-                <p class="mt-2 text-sm text-blue-600 font-mono">
-                  {{ orderIdLabel() }}: {{ $any(action).paypalOrderId }}
-                </p>
-              }
 
               <div class="mt-4 flex flex-wrap gap-3">
                 <button
                   type="button"
-                  class="btn-paypal inline-flex items-center gap-2"
-                  (click)="onPayPalClick()">
-                  <span class="text-lg">🅿️</span>
-                  {{ goToPaypalLabel() }}
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
+                  class="btn-primary inline-flex items-center gap-2"
+                  (click)="onActionRequested()">
+                  {{ continueLabel() }}
                 </button>
+                <span class="text-xs text-blue-600 break-all">{{ $any(action).url }}</span>
               </div>
+            </div>
+          </div>
+        </div>
+      }
 
-              <p class="mt-4 text-xs text-blue-500">
-                {{ afterApproveVerifyText() }}
+      @case ('manual_step') {
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-6">
+          <h3 class="text-lg font-semibold text-amber-900">
+            {{ actionRequiredLabel() }}
+          </h3>
+          <p class="mt-1 text-amber-700">
+            {{ actionRequiresAttentionText() }}
+          </p>
+
+          @if ($any(action).details?.length) {
+            <dl class="mt-4 grid grid-cols-1 gap-2 text-sm">
+              @for (detail of $any(action).details; track detail.label) {
+                <div class="flex items-center justify-between gap-2">
+                  <dt class="text-gray-600">{{ detail.label }}</dt>
+                  <dd class="font-mono text-gray-900 break-all text-right">
+                    {{ detail.value }}
+                  </dd>
+                </div>
+              }
+            </dl>
+          }
+
+          @if ($any(action).instructions?.length) {
+            <ul class="mt-4 list-disc list-inside text-sm text-amber-800 space-y-1">
+              @for (instruction of $any(action).instructions; track instruction) {
+                <li>{{ instruction }}</li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      @case ('external_wait') {
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-6">
+          <div class="flex items-center gap-3">
+            <svg
+              class="w-6 h-6 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h3 class="font-semibold text-gray-900">
+                {{ processingLabel() }}
+              </h3>
+              <p class="text-sm text-gray-600 mt-1">
+                {{ $any(action).hint || actionRequiresAttentionText() }}
               </p>
             </div>
           </div>
@@ -128,7 +161,7 @@
             </svg>
             <div>
               <h3 class="font-semibold text-gray-900">
-                {{ actionRequiredLabel() }}: {{ action.type }}
+                {{ actionRequiredLabel() }}: {{ $any(action).kind || 'unknown' }}
               </h3>
               <p class="text-sm text-gray-600 mt-1">
                 {{ actionRequiresAttentionText() }}

@@ -32,7 +32,7 @@
         @if (flowState.currentIntent()?.nextAction) {
           <app-next-action-card
             [nextAction]="flowState.currentIntent()!.nextAction!"
-            (paypalRequested)="onPaypalRequested($event)" />
+            (actionRequested)="onNextActionRequested($event)" />
         }
       </div>
     } @else {

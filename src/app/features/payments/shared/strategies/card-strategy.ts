@@ -142,18 +142,18 @@ export class CardStrategy implements PaymentStrategy {
    * Determines if the intent requires user action (3DS).
    */
   requiresUserAction(intent: PaymentIntent): boolean {
-    return intent.status === 'requires_action' && intent.nextAction?.type === '3ds';
+    return intent.status === 'requires_action' && intent.nextAction?.kind === 'client_confirm';
   }
 
   /**
    * Generates instructions for the user if 3DS is pending.
    */
-  getUserInstructions(intent: PaymentIntent): string | null {
+  getUserInstructions(intent: PaymentIntent): string[] | null {
     if (!this.requiresUserAction(intent)) {
       return null;
     }
 
-    return I18nKeys.messages.bank_verification_required;
+    return [I18nKeys.messages.bank_verification_required];
   }
 
   /**
@@ -167,10 +167,9 @@ export class CardStrategy implements PaymentStrategy {
     return {
       ...intent,
       nextAction: {
-        type: '3ds',
-        clientSecret: intent.clientSecret,
+        kind: 'client_confirm',
+        token: intent.clientSecret,
         returnUrl: context?.returnUrl ?? window.location.href,
-        threeDsVersion: '2.0',
       },
     };
   }

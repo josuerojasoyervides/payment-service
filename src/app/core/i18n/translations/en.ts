@@ -121,6 +121,7 @@ export const en: Translations = {
     after_approve_verify:
       'After approving in PayPal, click "Verify status" to confirm the payment.',
     action_required: 'Action required',
+    continue_action: 'Continue',
     action_requires_attention: 'This type of action requires additional attention.',
     view_action_details: 'View action details',
     checkout: 'Checkout',

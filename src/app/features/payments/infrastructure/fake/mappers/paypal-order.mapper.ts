@@ -26,11 +26,8 @@ export function mapPaypalOrder(dto: PaypalOrderDto): PaymentIntent {
     redirectUrl: approveLink,
     nextAction: approveLink
       ? {
-          type: 'paypal_approve',
-          approveUrl: approveLink,
-          returnUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}/payments/return`,
-          cancelUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}/payments/cancel`,
-          paypalOrderId: dto.id,
+          kind: 'redirect',
+          url: approveLink,
         }
       : undefined,
     raw: dto,

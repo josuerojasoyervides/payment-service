@@ -6,6 +6,7 @@ import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
+import { NextAction } from '@payments/domain/models/payment/payment-action.types';
 import {
   CurrencyCode,
   PaymentMethodType,
@@ -183,11 +184,6 @@ export class CheckoutComponent {
         });
       }
     });
-
-    effect(() => {
-      const url = this.flow.redirectUrl();
-      if (url) this.onPaypalRequested(url);
-    });
   }
 
   selectProvider(provider: PaymentProviderId): void {
@@ -307,11 +303,10 @@ export class CheckoutComponent {
     this.fallback.reset();
   }
 
-  onPaypalRequested(url: string): void {
-    this.logger.info('Redirecting to PayPal', 'CheckoutPage', { url });
-    if (typeof window !== 'undefined') {
-      // TODO : This is orchestration layer responsibility, not UI layer
-      window.location.href = url;
+  onNextActionRequested(action: NextAction): void {
+    const ok = this.flow.performNextAction(action);
+    if (!ok) {
+      this.logger.warn('NEXT_ACTION ignored', 'CheckoutPage', { kind: action.kind });
     }
   }
   confirmPayment(): void {

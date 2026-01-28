@@ -59,5 +59,5 @@ export interface PaymentStrategy {
   /**
    * Gets specific instructions for the user based on the intent.
    */
-  getUserInstructions(intent: PaymentIntent): string | null;
+  getUserInstructions(intent: PaymentIntent): string[] | null;
 }

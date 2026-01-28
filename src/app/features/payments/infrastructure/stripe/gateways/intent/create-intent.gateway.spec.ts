@@ -92,7 +92,7 @@ describe('StripeCreateIntentGateway', () => {
 
     gateway.execute(req).subscribe({
       next: (intent: PaymentIntent) => {
-        expect(intent.nextAction?.type).toBe('spei');
+        expect(intent.nextAction?.kind).toBe('manual_step');
       },
       error: (error: PaymentError) => {
         throw error;
