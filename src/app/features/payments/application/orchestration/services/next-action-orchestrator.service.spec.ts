@@ -3,7 +3,6 @@ import { firstValueFrom, of } from 'rxjs';
 
 import { ClientConfirmPort } from '../../api/ports/client-confirm.port';
 import { FinalizePort } from '../../api/ports/finalize.port';
-import { FINALIZE_PORTS } from '../../api/tokens/finalize.token';
 import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
 import { NextActionOrchestratorService } from './next-action-orchestrator.service';
 
@@ -26,6 +25,14 @@ describe('NextActionOrchestratorService', () => {
     } as unknown as ProviderFactoryRegistry;
   }
 
+  function registryWithFinalizeHandler(handler: FinalizePort | null): ProviderFactoryRegistry {
+    const factory = { getFinalizeHandler: () => handler };
+    return {
+      has: vi.fn(() => true),
+      get: vi.fn(() => factory),
+    } as unknown as ProviderFactoryRegistry;
+  }
+
   it('routes client_confirm to handler when factory exposes capability', async () => {
     const confirmPort: ClientConfirmPort = {
       providerId: 'stripe',
@@ -37,7 +44,6 @@ describe('NextActionOrchestratorService', () => {
       providers: [
         NextActionOrchestratorService,
         { provide: ProviderFactoryRegistry, useValue: registry },
-        { provide: FINALIZE_PORTS, useValue: [] },
       ],
     });
 
@@ -65,7 +71,6 @@ describe('NextActionOrchestratorService', () => {
       providers: [
         NextActionOrchestratorService,
         { provide: ProviderFactoryRegistry, useValue: registry },
-        { provide: FINALIZE_PORTS, useValue: [] },
       ],
     });
 
@@ -84,18 +89,17 @@ describe('NextActionOrchestratorService', () => {
     });
   });
 
-  it('routes finalization requests to the matching port', async () => {
+  it('routes finalize to handler when factory exposes capability', async () => {
     const finalizePort: FinalizePort = {
       providerId: 'paypal',
       execute: vi.fn(() => of({ ...intent, provider: 'paypal' as const })),
     };
-    const registry = registryWithClientConfirmHandler(null);
+    const registry = registryWithFinalizeHandler(finalizePort);
 
     TestBed.configureTestingModule({
       providers: [
         NextActionOrchestratorService,
         { provide: ProviderFactoryRegistry, useValue: registry },
-        { provide: FINALIZE_PORTS, useValue: [finalizePort] },
       ],
     });
 
@@ -104,13 +108,39 @@ describe('NextActionOrchestratorService', () => {
 
     expect(result.provider).toBe('paypal');
     expect(finalizePort.execute).toHaveBeenCalledTimes(1);
+    expect(finalizePort.execute).toHaveBeenCalledWith({
+      providerId: 'paypal',
+      context: { providerId: 'paypal' },
+    });
   });
 
-  it('provider coupling audit: no providerId switch in routing', () => {
-    // Routing uses registry.getClientConfirmHandler only; no if(providerId==='stripe') in application.
-    // Grep check: rg "providerId === ['\"]stripe|providerId === ['\"]paypal" src/app/features/payments/application --glob "*.ts"
-    // should not match next-action-orchestrator.service.ts (only selectPort for finalize uses port.providerId===id).
-    const registry = registryWithClientConfirmHandler(null);
+  it('returns PaymentError with stable code/messageKey when no finalize handler', async () => {
+    const registry = registryWithFinalizeHandler(null);
+
+    TestBed.configureTestingModule({
+      providers: [
+        NextActionOrchestratorService,
+        { provide: ProviderFactoryRegistry, useValue: registry },
+      ],
+    });
+
+    const orchestrator = TestBed.inject(NextActionOrchestratorService);
+
+    await expect(
+      firstValueFrom(orchestrator.requestFinalize({ providerId: 'paypal' })),
+    ).rejects.toMatchObject({
+      code: 'unsupported_finalize',
+      messageKey: 'errors.unsupported_finalize',
+    });
+  });
+
+  it('provider coupling audit: no providerId switch in finalize routing', () => {
+    // Routing uses registry -> factory.getFinalizeHandler?.(); no provider-name branching like:
+    // if (providerId === 'stripe'|'paypal') ...
+    //
+    // Grep check (manual):
+    // rg "providerId === ['\"]stripe|providerId === ['\"]paypal" src/app/features/payments/application/orchestration --glob "*.ts"
+    const registry = registryWithFinalizeHandler(null);
     expect(registry.has).toBeDefined();
     expect(registry.get).toBeDefined();
   });
@@ -122,7 +152,6 @@ describe('NextActionOrchestratorService', () => {
       providers: [
         NextActionOrchestratorService,
         { provide: ProviderFactoryRegistry, useValue: registry },
-        { provide: FINALIZE_PORTS, useValue: [] },
       ],
     });
 

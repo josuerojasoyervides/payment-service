@@ -28,6 +28,7 @@ import {
 } from '@payments/domain/ports/payment/payment-request-builder.port';
 
 import { ClientConfirmPort } from './client-confirm.port';
+import { FinalizePort } from './finalize.port';
 import { PaymentGatewayPort } from './payment-gateway.port';
 import { PaymentStrategy } from './payment-strategy.port';
 
@@ -109,4 +110,11 @@ export interface ProviderFactory {
    * Application routing uses this capability; no provider-name branching.
    */
   getClientConfirmHandler?(): ClientConfirmPort | null;
+
+  /**
+   * Optional: returns a handler for finalization (e.g. PayPal capture/complete order).
+   * Not all providers support a finalize step; those providers return null.
+   * Application routing uses this capability; no provider-name branching.
+   */
+  getFinalizeHandler?(): FinalizePort | null;
 }

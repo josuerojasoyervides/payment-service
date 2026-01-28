@@ -15,6 +15,7 @@ import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/gatew
 import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/confirm-intent.gateway';
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/create-intent.gateway';
 import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/get-intent.gateway';
+import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/handlers/paypal-finalize.handler';
 import { FakeStripeCancelIntentGateway } from '@payments/infrastructure/stripe/fake-gateways/intent/fake-stripe-cancel-intent.gateway';
 import { FakeStripeConfirmIntentGateway } from '@payments/infrastructure/stripe/fake-gateways/intent/fake-stripe-confirm-intent.gateway';
 import { FakeStripeCreateIntentGateway } from '@payments/infrastructure/stripe/fake-gateways/intent/fake-stripe-create-intent.gateway';
@@ -88,12 +89,14 @@ const PAYPAL_REAL_GATEWAYS: Provider[] = [
   PaypalConfirmIntentGateway,
   PaypalCancelIntentGateway,
   PaypalGetIntentGateway,
+  PaypalFinalizeHandler,
 ];
 const PAYPAL_FAKE_GATEWAYS: Provider[] = [
   FakePaypalCreateIntentGateway,
   FakePaypalConfirmIntentGateway,
   FakePaypalCancelIntentGateway,
   FakePaypalGetIntentGateway,
+  PaypalFinalizeHandler,
   fakeIntentFacadeFactory(
     'paypal',
     PaypalIntentFacade,

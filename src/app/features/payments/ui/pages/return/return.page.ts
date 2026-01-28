@@ -130,7 +130,7 @@ export class ReturnComponent implements OnInit {
 
   refreshPaymentByReference(referenceId: string): void {
     const reference = mapReturnQueryToReference(this.route.snapshot.queryParams);
-    const providerId = reference.referenceId ? reference.providerId : 'stripe';
+    const providerId = reference.providerId;
     this.flow.refresh(providerId, referenceId);
   }
 

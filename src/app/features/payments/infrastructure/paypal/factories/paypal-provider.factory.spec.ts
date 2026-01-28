@@ -3,6 +3,7 @@ import { I18nKeys } from '@core/i18n';
 import { firstValueFrom, of } from 'rxjs';
 
 import { PaypalIntentFacade } from '../facades/intent.facade';
+import { PaypalFinalizeHandler } from '../handlers/paypal-finalize.handler';
 import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
 import { PaypalProviderFactory } from './paypal-provider.factory';
 
@@ -15,7 +16,12 @@ describe('PaypalProviderFactory', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [PaypalProviderFactory, { provide: PaypalIntentFacade, useValue: gatewayStub }],
+      providers: [
+        PaypalProviderFactory,
+        { provide: PaypalIntentFacade, useValue: gatewayStub },
+        // Factory now exposes finalize capability via DI; stub is enough for these unit tests.
+        { provide: PaypalFinalizeHandler, useValue: { providerId: 'paypal', execute: vi.fn() } },
+      ],
     });
 
     factory = TestBed.inject(PaypalProviderFactory);

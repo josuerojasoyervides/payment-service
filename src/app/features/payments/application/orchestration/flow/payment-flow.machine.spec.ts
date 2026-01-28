@@ -93,13 +93,18 @@ describe('PaymentFlowMachine', () => {
         }
         return overrides?.clientConfirmIntent ?? baseIntent;
       }),
-      finalize: vi.fn(async () =>
-        overrides?.finalizeReject
-          ? (() => {
-              throw new Error();
-            })()
-          : (overrides?.finalizeIntent ?? baseIntent),
-      ),
+      finalize: vi.fn(async () => {
+        if (overrides?.finalizeReject) throw new Error();
+        if (overrides?.finalizeUnsupportedFinalize) {
+          throw createPaymentError(
+            'unsupported_finalize',
+            'errors.unsupported_finalize',
+            undefined,
+            null,
+          );
+        }
+        return overrides?.finalizeIntent ?? baseIntent;
+      }),
     };
 
     const machine = createPaymentFlowMachine(deps, overrides?.config, overrides?.initialContext);
@@ -401,6 +406,79 @@ describe('PaymentFlowMachine', () => {
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
     expect(snap.hasTag('error')).toBe(true);
+  });
+
+  it('finalizing unsupported_finalize transitions to reconciling not failed', async () => {
+    const { actor, deps } = setup({
+      finalizeUnsupportedFinalize: true,
+      statusIntent: { ...baseIntent, id: 'pi_return', status: 'succeeded' },
+    });
+
+    actor.send({
+      type: 'REDIRECT_RETURNED',
+      payload: { providerId: 'stripe', referenceId: 'pi_return' },
+    });
+
+    const snap = await waitForSnapshot(
+      actor,
+      (s) => s.value === 'reconciling' || s.value === 'reconcilingInvoke',
+      500,
+    );
+    expect(snap.hasTag('error')).toBe(false);
+    expect(deps.finalize).toHaveBeenCalledTimes(1);
+
+    await waitForSnapshot(actor, (s) => s.value === 'done');
+  });
+
+  it('REDIRECT_RETURNED duplicate: same referenceId twice skips finalize (dedupe)', async () => {
+    const { actor, deps } = setup({
+      initialContext: {
+        providerId: 'stripe',
+        intentId: 'pi_return',
+        flowContext: {
+          providerId: 'stripe',
+          lastReturnReferenceId: 'pi_return',
+          lastReturnAt: Date.now(),
+        },
+      },
+      statusIntent: { ...baseIntent, id: 'pi_return', status: 'succeeded' },
+    });
+
+    actor.send({
+      type: 'REDIRECT_RETURNED',
+      payload: { providerId: 'stripe', referenceId: 'pi_return' },
+    });
+
+    const snap = await waitForSnapshot(
+      actor,
+      (s) => s.value === 'reconciling' || s.value === 'reconcilingInvoke',
+      500,
+    );
+    expect(snap.value).not.toBe('finalizing');
+    expect(deps.finalize).toHaveBeenCalledTimes(0);
+  });
+
+  it('REDIRECT_RETURNED correlation mismatch: stored ref differs from event -> failed, no finalize', async () => {
+    const { actor, deps } = setup({
+      initialContext: {
+        providerId: 'stripe',
+        intentId: 'pi_A',
+        flowContext: {
+          providerId: 'stripe',
+          providerRefs: { stripe: { paymentId: 'pi_A' } },
+        },
+      },
+    });
+
+    actor.send({
+      type: 'REDIRECT_RETURNED',
+      payload: { providerId: 'stripe', referenceId: 'pi_B' },
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'failed', 500);
+    expect(snap.context.error?.code).toBe('return_correlation_mismatch');
+    expect(snap.context.error?.messageKey).toBe('errors.return_correlation_mismatch');
+    expect(deps.finalize).toHaveBeenCalledTimes(0);
   });
 
   it('REFRESH uses context intentId when event is missing it', async () => {

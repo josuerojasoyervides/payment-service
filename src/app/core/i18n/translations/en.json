@@ -26,7 +26,8 @@
     "paypal_instrument_declined": "The payment method was declined by PayPal.",
     "paypal_order_not_approved": "You must approve the payment in PayPal before continuing.",
     "paypal_internal_error": "PayPal is experiencing problems. Please try again later.",
-    "paypal_auth_error": "PayPal authentication error. Contact support."
+    "paypal_auth_error": "PayPal authentication error. Contact support.",
+    "unsupported_finalize": "This provider does not support finalization from this flow."
   },
   "messages": {
     "payment_created": "Payment created successfully",

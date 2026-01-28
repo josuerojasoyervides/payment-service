@@ -37,6 +37,12 @@ export interface PaymentFlowContext {
   /** Last return nonce (for return re-entry validation) */
   lastReturnNonce?: string;
 
+  /** Last processed return referenceId (dedupe: skip finalize if same) */
+  lastReturnReferenceId?: string;
+
+  /** Timestamp when last return was accepted (ms) */
+  lastReturnAt?: number;
+
   /** Sanitized return parameters (safe allowlist only) */
   returnParamsSanitized?: Record<string, string>;
 
