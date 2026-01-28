@@ -79,6 +79,29 @@ export function updateFlowContextProviderRefs(params: {
   };
 }
 
+export function resolveStatusReference(
+  context: PaymentFlowContext | null,
+  providerId: PaymentProviderId | null,
+): string | null {
+  if (!context || !providerId) return null;
+  const refs = context.providerRefs?.[providerId];
+  return refs?.paymentId ?? refs?.orderId ?? refs?.intentId ?? refs?.preferenceId ?? null;
+}
+
+export function mergeExternalReference(params: {
+  context: PaymentFlowContext | null;
+  providerId: PaymentProviderId;
+  referenceId: string;
+}): PaymentFlowContext | null {
+  if (!params.context) return params.context;
+
+  return updateFlowContextProviderRefs({
+    context: params.context,
+    providerId: params.providerId,
+    refs: { paymentId: params.referenceId },
+  });
+}
+
 function mergeReferenceSet(
   base: ProviderReferenceSet,
   update: ProviderReferenceSet,

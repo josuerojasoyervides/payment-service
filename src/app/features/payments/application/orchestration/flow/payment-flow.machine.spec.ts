@@ -384,4 +384,42 @@ describe('PaymentFlowMachine', () => {
     expect(snap.context.flowContext?.flowId).toBe('flow_reentry');
     expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_reentry' });
   });
+
+  it('preserves provider refs across id swap and resolves canonical status reference', async () => {
+    const initialContext = {
+      flowContext: {
+        flowId: 'flow_swap',
+        providerId: 'stripe' as const,
+        providerRefs: { stripe: { preferenceId: 'pref_1' } },
+      },
+      providerId: 'stripe' as const,
+      intentId: null,
+    };
+
+    const deps = {
+      startPayment: vi.fn(async () => baseIntent),
+      confirmPayment: vi.fn(async () => baseIntent),
+      cancelPayment: vi.fn(async () => ({ ...baseIntent, status: 'canceled' as const })),
+      getStatus: vi.fn(async () => ({
+        ...baseIntent,
+        id: 'pi_swap',
+        status: 'succeeded' as const,
+        providerRefs: { preferenceId: 'pref_1', paymentId: 'pay_1' },
+      })),
+    };
+
+    const machine = createPaymentFlowMachine(deps, {}, initialContext);
+    const actor = createActor(machine) as PaymentFlowActorRef;
+    actor.start();
+
+    actor.send({
+      type: 'EXTERNAL_STATUS_UPDATED',
+      payload: { providerId: 'stripe', referenceId: 'pay_1' },
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'done');
+    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pay_1' });
+    expect(snap.context.flowContext?.providerRefs?.stripe?.preferenceId).toBe('pref_1');
+    expect(snap.context.flowContext?.providerRefs?.stripe?.paymentId).toBe('pay_1');
+  });
 });
