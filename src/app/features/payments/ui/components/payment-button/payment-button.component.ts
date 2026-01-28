@@ -1,8 +1,8 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
-import type { PaymentProviderUiMeta } from '@payments/application/api/tokens/payment-provider-ui-meta.token';
-import { PAYMENT_PROVIDER_UI_META } from '@payments/application/api/tokens/payment-provider-ui-meta.token';
+import type { PaymentProviderUiMeta } from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
+import { PAYMENT_PROVIDER_UI_META } from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
 import type {
   CurrencyCode,
   PaymentProviderId,
