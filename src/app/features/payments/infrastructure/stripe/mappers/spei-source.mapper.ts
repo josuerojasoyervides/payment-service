@@ -1,5 +1,4 @@
-import { I18nKeys } from '@core/i18n';
-import { NextActionSpei } from '@payments/domain/models/payment/payment-action.types';
+import { NextActionManualStep } from '@payments/domain/models/payment/payment-action.types';
 import {
   PaymentIntent,
   PaymentProviderId,
@@ -12,17 +11,17 @@ export class SpeiSourceMapper {
   constructor(private readonly providerId: PaymentProviderId) {}
 
   mapSpeiSource(dto: StripeSpeiSourceDto): PaymentIntent {
-    const speiAction: NextActionSpei = {
-      type: 'spei',
-      clabe: dto.spei.clabe,
-      reference: dto.spei.reference,
-      bank: dto.spei.bank,
-      amount: dto.amount / 100,
-      currency: dto.currency.toUpperCase(),
-      expiresAt: new Date(dto.expires_at * 1000).toISOString(),
-
-      instructions: I18nKeys.messages.spei_instructions,
-      beneficiary: I18nKeys.ui.stripe_beneficiary,
+    const speiAction: NextActionManualStep = {
+      kind: 'manual_step',
+      instructions: ['Make a bank transfer using the details below.'],
+      details: [
+        { label: 'CLABE', value: dto.spei.clabe },
+        { label: 'Reference', value: dto.spei.reference },
+        { label: 'Bank', value: dto.spei.bank },
+        { label: 'Beneficiary', value: 'Stripe Payments Mexico' },
+        { label: 'Amount', value: `${dto.amount / 100} ${dto.currency.toUpperCase()}` },
+        { label: 'Expires At', value: new Date(dto.expires_at * 1000).toISOString() },
+      ],
     };
 
     const status = new SpeiStatusMapper().mapSpeiStatus(dto.status);

@@ -78,6 +78,7 @@ export interface Translations {
     retry: string;
     back: string;
     next: string;
+    continue_action: string;
 
     // Formularios
     select_provider: string;

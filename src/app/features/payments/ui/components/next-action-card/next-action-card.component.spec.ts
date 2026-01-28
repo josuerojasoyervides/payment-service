@@ -1,0 +1,80 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { I18nService } from '@core/i18n';
+
+import { NextActionCardComponent } from './next-action-card.component';
+
+describe('NextActionCardComponent', () => {
+  let fixture: ComponentFixture<NextActionCardComponent>;
+  let component: NextActionCardComponent;
+
+  const mockI18n: I18nService = {
+    t: vi.fn((key: string) => key),
+    setLanguage: vi.fn(),
+    getLanguage: vi.fn(() => 'en'),
+    has: vi.fn(() => true),
+  } as any;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [NextActionCardComponent],
+      providers: [{ provide: I18nService, useValue: mockI18n }],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(NextActionCardComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('renders redirect action', () => {
+    fixture.componentRef.setInput('nextAction', {
+      kind: 'redirect',
+      url: 'https://example.com/redirect',
+    });
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const button = el.querySelector('button');
+    expect(button?.textContent).toContain('ui.continue_action');
+    expect(el.textContent).toContain('https://example.com/redirect');
+  });
+
+  it('renders client confirmation action', () => {
+    fixture.componentRef.setInput('nextAction', {
+      kind: 'client_confirm',
+      token: 'token_123',
+    });
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const button = el.querySelector('button');
+    expect(button?.textContent).toContain('ui.confirm_button');
+  });
+
+  it('renders manual step details and instructions', () => {
+    fixture.componentRef.setInput('nextAction', {
+      kind: 'manual_step',
+      instructions: ['Step one', 'Step two'],
+      details: [
+        { label: 'Reference', value: 'REF123' },
+        { label: 'Amount', value: '100 MXN' },
+      ],
+    });
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain('Reference');
+    expect(el.textContent).toContain('REF123');
+    expect(el.textContent).toContain('Step one');
+    expect(el.textContent).toContain('Step two');
+  });
+
+  it('renders external wait hint', () => {
+    fixture.componentRef.setInput('nextAction', {
+      kind: 'external_wait',
+      hint: 'Waiting for confirmation',
+    });
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain('Waiting for confirmation');
+  });
+});

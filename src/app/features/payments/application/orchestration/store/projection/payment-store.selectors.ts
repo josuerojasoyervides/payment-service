@@ -22,7 +22,9 @@ export function buildPaymentsSelectors(state: PaymentsSelectorsSource) {
     // Intent-specific states
     requiresUserAction: computed(() => {
       const intent = state.intent();
-      return intent?.status === 'requires_action' || !!intent?.nextAction;
+      const action = intent?.nextAction;
+      const actionable = action ? action.kind !== 'external_wait' : false;
+      return intent?.status === 'requires_action' || actionable;
     }),
     isSucceeded: computed(() => state.intent()?.status === 'succeeded'),
     isProcessing: computed(() => state.intent()?.status === 'processing'),

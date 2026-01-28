@@ -92,7 +92,7 @@
       @if (intent().nextAction) {
         <div class="mt-4 p-3 bg-amber-50 rounded-lg">
           <p class="text-sm font-medium text-amber-800">
-            {{ actionRequiredLabel() }} {{ intent().nextAction!.type }}
+            {{ actionRequiredLabel() }} {{ intent().nextAction!.kind }}
           </p>
         </div>
       }

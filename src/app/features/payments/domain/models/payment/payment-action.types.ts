@@ -1,65 +1,44 @@
 export type NextAction =
   | NextActionRedirect
-  | NextActionSpei
-  | NextActionThreeDs
-  | NextActionPaypalApprove;
+  | NextActionClientConfirm
+  | NextActionManualStep
+  | NextActionExternalWait;
 
 /**
  * Generic redirect to an external URL.
  */
 export interface NextActionRedirect {
-  type: 'redirect';
+  kind: 'redirect';
   url: string;
+}
+
+/**
+ * Manual, user-driven step (e.g., offline transfer).
+ */
+export interface NextActionManualStepDetail {
+  label: string;
+  value: string;
+}
+
+export interface NextActionManualStep {
+  kind: 'manual_step';
+  instructions: string[];
+  details?: NextActionManualStepDetail[];
+}
+
+/**
+ * Client-side confirmation step (e.g., SDK confirmation).
+ */
+export interface NextActionClientConfirm {
+  kind: 'client_confirm';
+  token: string;
   returnUrl?: string;
 }
 
 /**
- * SPEI transfer - requires user to perform transfer manually.
+ * External system is processing; user waits.
  */
-export interface NextActionSpei {
-  type: 'spei';
-  /** Readable instructions for the user */
-  instructions: string;
-  /** 18-digit CLABE */
-  clabe: string;
-  /** Numeric reference for the concept */
-  reference: string;
-  /** Receiving bank */
-  bank: string;
-  /** Beneficiary */
-  beneficiary: string;
-  /** Exact amount to transfer */
-  amount: number;
-  /** Currency */
-  currency: string;
-  /** Deadline date/time to make payment (ISO 8601) */
-  expiresAt: string;
-}
-
-/**
- * 3D Secure - additional cardholder authentication.
- */
-export interface NextActionThreeDs {
-  type: '3ds';
-  /** Client secret for Stripe.js */
-  clientSecret: string;
-  /** Return URL after 3DS */
-  returnUrl: string;
-  /** 3DS version (1.0, 2.0, 2.1, 2.2) */
-  threeDsVersion?: string;
-}
-
-/**
- * PayPal - requires user approval in PayPal.
- */
-export interface NextActionPaypalApprove {
-  type: 'paypal_approve';
-  /** URL to redirect user to PayPal */
-  approveUrl: string;
-  /** Return URL after approval */
-  returnUrl: string;
-  /** URL if user cancels in PayPal */
-  cancelUrl: string;
-  /** Order ID in PayPal */
-  paypalOrderId: string;
+export interface NextActionExternalWait {
+  kind: 'external_wait';
+  hint?: string;
 }

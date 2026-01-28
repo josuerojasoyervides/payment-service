@@ -1,6 +1,5 @@
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { NextActionPaypalApprove } from '@payments/domain/models/payment/payment-action.types';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import {
   CurrencyCode,
@@ -172,21 +171,15 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
   }
 
   requiresUserAction(intent: PaymentIntent): boolean {
-    return (
-      intent.status === 'requires_action' ||
-      intent.nextAction?.type === 'paypal_approve' ||
-      intent.nextAction?.type === 'redirect'
-    );
+    return intent.status === 'requires_action' || intent.nextAction?.kind === 'redirect';
   }
 
-  getUserInstructions(intent: PaymentIntent): string | null {
+  getUserInstructions(intent: PaymentIntent): string[] | null {
     if (intent.status === 'succeeded') {
       return null;
     }
 
-    return [I18nKeys.ui.paypal_redirect_secure_message, '', I18nKeys.ui.redirected_to_paypal].join(
-      '\n',
-    );
+    return [I18nKeys.ui.paypal_redirect_secure_message, I18nKeys.ui.redirected_to_paypal];
   }
 
   /**
@@ -213,9 +206,8 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
           ...intent,
           status: 'requires_action',
           nextAction: {
-            type: 'redirect',
+            kind: 'redirect',
             url: intent.redirectUrl,
-            returnUrl: metadata['return_url'] as string,
           },
         };
       }
@@ -223,18 +215,13 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
       return intent;
     }
 
-    const paypalAction: NextActionPaypalApprove = {
-      type: 'paypal_approve',
-      approveUrl,
-      returnUrl: metadata['return_url'] as string,
-      cancelUrl: metadata['cancel_url'] as string,
-      paypalOrderId: intent.id,
-    };
-
     return {
       ...intent,
       status: 'requires_action',
-      nextAction: paypalAction,
+      nextAction: {
+        kind: 'redirect',
+        url: approveUrl,
+      },
       redirectUrl: approveUrl,
     };
   }

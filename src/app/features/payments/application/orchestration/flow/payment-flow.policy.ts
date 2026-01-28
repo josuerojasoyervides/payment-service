@@ -54,7 +54,9 @@ export function isFinalStatus(status?: string) {
 
 export function needsUserAction(intent?: PaymentIntent | null) {
   if (!intent) return false;
-  return intent.status === 'requires_action' || !!intent.redirectUrl || !!intent.nextAction;
+  const action = intent.nextAction;
+  const actionable = action ? action.kind !== 'external_wait' : false;
+  return intent.status === 'requires_action' || !!intent.redirectUrl || actionable;
 }
 
 export function hasIntentPolicy(context: PaymentFlowMachineContext): boolean {

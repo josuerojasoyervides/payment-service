@@ -1,4 +1,5 @@
 import { computed, inject, Injectable } from '@angular/core';
+import { NextAction } from '@payments/domain/models/payment/payment-action.types';
 import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
@@ -82,7 +83,28 @@ export class PaymentFlowFacade {
     } satisfies PaymentFlowPublicEvent);
   }
 
+  performNextAction(action: NextAction | null): boolean {
+    if (!action) return false;
+
+    if (action.kind === 'redirect') {
+      if (!action.url) return false;
+      this.navigateToExternal(action.url);
+      return true;
+    }
+
+    if (action.kind === 'client_confirm') {
+      return this.confirm();
+    }
+
+    return false;
+  }
+
   reset(): boolean {
     return this.flow.send({ type: 'RESET' } satisfies PaymentFlowPublicEvent);
+  }
+
+  private navigateToExternal(url: string): void {
+    if (typeof window === 'undefined') return;
+    window.location.href = url;
   }
 }

@@ -187,8 +187,8 @@ describe('CardStrategy', () => {
         strategy.start(validReq, { returnUrl: 'https://return.com' }),
       );
 
-      expect(result.nextAction?.type).toBe('3ds');
-      expect((result.nextAction as any)?.clientSecret).toBe('pi_secret_123');
+      expect(result.nextAction?.kind).toBe('client_confirm');
+      expect((result.nextAction as any)?.token).toBe('pi_secret_123');
       expect((result.nextAction as any)?.returnUrl).toBe('https://return.com');
     });
   });
@@ -198,7 +198,7 @@ describe('CardStrategy', () => {
       const intent: PaymentIntent = {
         ...intentResponse,
         status: 'requires_action',
-        nextAction: { type: '3ds', clientSecret: 'secret', returnUrl: '' },
+        nextAction: { kind: 'client_confirm', token: 'secret', returnUrl: '' },
       };
       expect(strategy.requiresUserAction(intent)).toBe(true);
     });
@@ -214,10 +214,10 @@ describe('CardStrategy', () => {
       const intent: PaymentIntent = {
         ...intentResponse,
         status: 'requires_action',
-        nextAction: { type: '3ds', clientSecret: 'secret', returnUrl: '' },
+        nextAction: { kind: 'client_confirm', token: 'secret', returnUrl: '' },
       };
       const instructions = strategy.getUserInstructions(intent);
-      expect(instructions).toBe('messages.bank_verification_required');
+      expect(instructions).toEqual(['messages.bank_verification_required']);
     });
 
     it('returns null when no action required', () => {
