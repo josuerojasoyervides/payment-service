@@ -3,7 +3,7 @@ import type {
   ProviderMethodPolicy,
   ProviderMethodPolicyPort,
 } from '@payments/application/api/ports/provider-method-policy.port';
-import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/payment-provider-method-policies.token';
+import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
 import type {
   PaymentMethodType,
   PaymentProviderId,

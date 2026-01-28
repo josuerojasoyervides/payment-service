@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
-import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/payment-provider-factories.token';
+import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import type {
   PaymentMethodType,
   PaymentProviderId,

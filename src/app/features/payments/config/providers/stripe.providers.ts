@@ -1,11 +1,11 @@
 import type { Provider } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
-import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/payment-provider-factories.token';
-import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/payment-provider-method-policies.token';
+import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
+import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
 import {
   PAYMENT_PROVIDER_UI_META,
   type PaymentProviderUiMeta,
-} from '@payments/application/api/tokens/payment-provider-ui-meta.token';
+} from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
 import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
 import { fakeIntentFacadeFactory } from '@payments/config/providers/fake-intent-facade.factory';
 import { StripeIntentFacade } from '@payments/infrastructure/stripe/facades/intent.facade';
