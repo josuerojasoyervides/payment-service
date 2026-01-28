@@ -1,13 +1,18 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
+import type {
+  PaymentProviderUiMeta} from '@payments/application/api/tokens/payment-provider-ui-meta.token';
 import {
+  PAYMENT_PROVIDER_UI_META
+} from '@payments/application/api/tokens/payment-provider-ui-meta.token';
+import type {
   CurrencyCode,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import { TrackClickDirective } from '@shared/directives/track-click.directive';
 
-import { PaymentButtonState } from '../../shared/ui.types';
+import type { PaymentButtonState } from '../../shared/ui.types';
 
 /**
  * Payment button component with visual states.
@@ -20,7 +25,7 @@ import { PaymentButtonState } from '../../shared/ui.types';
  * <app-payment-button
  *   [amount]="499.99"
  *   [currency]="'MXN'"
- *   [provider]="'stripe'"
+ *   [provider]="providerId"
  *   [loading]="isLoading()"
  *   [disabled]="!isFormValid()"
  *   (pay)="processPayment()"
@@ -35,6 +40,20 @@ import { PaymentButtonState } from '../../shared/ui.types';
 })
 export class PaymentButtonComponent {
   private readonly i18n = inject(I18nService);
+  private readonly providerUiMetaList = inject(PAYMENT_PROVIDER_UI_META, { optional: true });
+
+  private readonly providerUiMetaById = computed<Map<PaymentProviderId, PaymentProviderUiMeta>>(
+    () => {
+      const map = new Map<PaymentProviderId, PaymentProviderUiMeta>();
+      const list = this.providerUiMetaList ?? [];
+
+      for (const meta of list) {
+        map.set(meta.providerId, meta);
+      }
+
+      return map;
+    },
+  );
 
   /** Amount to pay */
   readonly amount = input.required<number>();
@@ -67,8 +86,12 @@ export class PaymentButtonComponent {
   readonly providerName = computed(() => {
     const p = this.provider();
     if (!p) return '';
-    if (p === 'stripe') return this.i18n.t(I18nKeys.ui.provider_stripe);
-    if (p === 'paypal') return this.i18n.t(I18nKeys.ui.provider_paypal);
+
+    const meta = this.providerUiMetaById().get(p);
+    if (meta?.displayNameKey) {
+      return this.i18n.t(meta.displayNameKey);
+    }
+
     const providerStr = String(p);
     return providerStr.charAt(0).toUpperCase() + providerStr.slice(1);
   });
@@ -103,11 +126,10 @@ export class PaymentButtonComponent {
     }
 
     const provider = this.provider();
-    if (provider === 'stripe') {
-      return `${base} bg-stripe-primary hover:opacity-90 text-white focus:ring-stripe-primary`;
-    }
-    if (provider === 'paypal') {
-      return `${base} bg-paypal-primary hover:opacity-90 text-white focus:ring-paypal-primary`;
+    const meta = provider ? (this.providerUiMetaById().get(provider) ?? null) : null;
+
+    if (meta?.buttonClasses) {
+      return `${base} ${meta.buttonClasses}`;
     }
 
     return `${base} bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500`;
