@@ -1,9 +1,9 @@
-import { FLOW_CONTEXT_TTL_MS } from '@payments/application/orchestration/flow/payment-flow.context';
-import type { KeyValueStorage } from '@payments/application/orchestration/flow/payment-flow.persistence';
+import { FLOW_CONTEXT_TTL_MS } from '@payments/application/orchestration/flow/payment-flow/context/payment-flow.context';
+import type { KeyValueStorage } from '@payments/application/orchestration/flow/payment-flow/persistence/payment-flow.persistence';
 import {
   FLOW_CONTEXT_SCHEMA_VERSION,
   FlowContextStore,
-} from '@payments/application/orchestration/flow/payment-flow.persistence';
+} from '@payments/application/orchestration/flow/payment-flow/persistence/payment-flow.persistence';
 import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 
 class MemoryStorage implements KeyValueStorage {

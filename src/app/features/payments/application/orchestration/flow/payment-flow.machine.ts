@@ -3,8 +3,18 @@ import {
   mergeExternalReference,
   resolveStatusReference,
   updateFlowContextProviderRefs,
-} from '@payments/application/orchestration/flow/payment-flow.context';
-import type { PaymentFlowDeps } from '@payments/application/orchestration/flow/payment-flow.deps';
+} from '@payments/application/orchestration/flow/payment-flow/context/payment-flow.context';
+import type { PaymentFlowDeps } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.deps';
+import type {
+  CancelInput,
+  ClientConfirmInput,
+  ConfirmInput,
+  FinalizeInput,
+  PaymentFlowEvent,
+  PaymentFlowMachineContext,
+  StartInput,
+  StatusInput,
+} from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import {
   canFallbackPolicy,
   canPollPolicy,
@@ -19,27 +29,17 @@ import {
   needsUserActionPolicy,
   type PaymentFlowConfigOverrides,
   resolvePaymentFlowConfig,
-} from '@payments/application/orchestration/flow/payment-flow.policy';
-import type {
-  CancelInput,
-  ClientConfirmInput,
-  ConfirmInput,
-  FinalizeInput,
-  PaymentFlowEvent,
-  PaymentFlowMachineContext,
-  StartInput,
-  StatusInput,
-} from '@payments/application/orchestration/flow/payment-flow.types';
-import { cancelStates } from '@payments/application/orchestration/flow/stages/payment-flow-cancel.stage';
-import { clientConfirmStates } from '@payments/application/orchestration/flow/stages/payment-flow-client-confirm.stage';
-import { confirmStates } from '@payments/application/orchestration/flow/stages/payment-flow-confirm.stage';
-import { doneStates } from '@payments/application/orchestration/flow/stages/payment-flow-done.stage';
-import { fallbackStates } from '@payments/application/orchestration/flow/stages/payment-flow-fallback.stage';
-import { finalizeStates } from '@payments/application/orchestration/flow/stages/payment-flow-finalize.stage';
-import { idleStates } from '@payments/application/orchestration/flow/stages/payment-flow-idle.stage';
-import { pollingStates } from '@payments/application/orchestration/flow/stages/payment-flow-polling.stage';
-import { reconcileStates } from '@payments/application/orchestration/flow/stages/payment-flow-reconcile.stage';
-import { startStates } from '@payments/application/orchestration/flow/stages/payment-flow-start.stage';
+} from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.policy';
+import { cancelStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-cancel.stage';
+import { clientConfirmStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-client-confirm.stage';
+import { confirmStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-confirm.stage';
+import { doneStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-done.stage';
+import { fallbackStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-fallback.stage';
+import { finalizeStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-finalize.stage';
+import { idleStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-idle.stage';
+import { pollingStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-polling.stage';
+import { reconcileStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-reconcile.stage';
+import { startStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-start.stage';
 import {
   isPaymentError,
   normalizePaymentError,

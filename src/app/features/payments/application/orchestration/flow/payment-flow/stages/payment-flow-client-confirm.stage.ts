@@ -1,7 +1,7 @@
 import type {
   PaymentFlowMachineContext,
   PaymentFlowStatesConfig,
-} from '@payments/application/orchestration/flow/payment-flow.types';
+} from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import type { NextActionClientConfirm } from '@payments/domain/models/payment/payment-action.types';
 
 /**

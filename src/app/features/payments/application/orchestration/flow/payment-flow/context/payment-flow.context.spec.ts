@@ -3,7 +3,7 @@ import {
   FLOW_CONTEXT_TTL_MS,
   mergeProviderRefs,
   updateFlowContextProviderRefs,
-} from '@payments/application/orchestration/flow/payment-flow.context';
+} from '@payments/application/orchestration/flow/payment-flow/context/payment-flow.context';
 import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 

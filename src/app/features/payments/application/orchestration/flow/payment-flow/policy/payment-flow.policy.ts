@@ -1,4 +1,4 @@
-import type { PaymentFlowMachineContext } from '@payments/application/orchestration/flow/payment-flow.types';
+import type { PaymentFlowMachineContext } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
 export interface PaymentFlowConfig {

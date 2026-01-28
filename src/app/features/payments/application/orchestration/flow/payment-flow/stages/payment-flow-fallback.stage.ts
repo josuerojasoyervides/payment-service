@@ -1,4 +1,4 @@
-import type { PaymentFlowStatesConfig } from '@payments/application/orchestration/flow/payment-flow.types';
+import type { PaymentFlowStatesConfig } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 
 export const fallbackStates = {
   failed: {

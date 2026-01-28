@@ -1,4 +1,4 @@
-import { FLOW_CONTEXT_TTL_MS } from '@payments/application/orchestration/flow/payment-flow.context';
+import { FLOW_CONTEXT_TTL_MS } from '@payments/application/orchestration/flow/payment-flow/context/payment-flow.context';
 import type {
   PaymentFlowContext,
   ProviderReferences,
