@@ -17,7 +17,8 @@
 - **Last completed (4.3.3):** clientConfirming stage invokes deps.clientConfirm (orchestration); onDone → reconciling + setIntent, onError → failed + setError. Machine tests: success path (CONFIRM → clientConfirming → reconciling), failure path (clientConfirmReject with PaymentError unsupported_client_confirm → failed, error.code/messageKey asserted). No REFRESH fallback; no provider branching.
 - **Last completed (4.3.4.2):** UI provider-coupling guardrail extended: (a) “no infrastructure import” runs on status, return, payment-intent-card + checkout + next-action-card; (b) “no provider identifiers” stays on orchestration entry points only (checkout, next-action-card). Status/Return use provider literals only as static demo (examples, PayPal URL param names), not for orchestration.
 - **Last completed (PR4.4.1):** FINALIZE routing made provider-agnostic via ProviderFactoryRegistry capability (mirror of client_confirm). NextActionOrchestratorService resolves handler with factory.getFinalizeHandler?.() ?? null; if missing, throws PaymentError unsupported_finalize with messageKey errors.unsupported_finalize. Added i18n keys (en/es) and tests.
-- **Next step:** PR4.4.2 — add PayPal finalize handler capability + fake capture gateway wiring.
+- **Last completed (PR4.4.2):** PayPal finalize/capture capability added behind ProviderFactory (PaypalFinalizeHandler implements FinalizePort and delegates to PayPal confirm/capture via PaypalIntentFacade.confirmIntent). Factory exposes getFinalizeHandler(). Added wiring test proving registry → PayPal factory → handler.execute.
+- **Next step:** PR4.4.3 — connect finalize trigger to PayPal return flow (external return adapter emits FINALIZE_REQUESTED with orderId/providerRefs).
 - **Key files:** `ui-provider-coupling.spec.ts`, `payment-flow.persistence.spec.ts`.
 
 ## 🛠️ Technical Snapshot
@@ -58,7 +59,7 @@
 
 ## ⏭️ Immediate Next Action
 
-- [ ] PR4.4.2: Add PayPal finalize handler capability + fake capture gateway wiring.
+- [ ] PR4.4.3: Connect PayPal return → finalize trigger (providerRefs/orderId).
 
 ---
 

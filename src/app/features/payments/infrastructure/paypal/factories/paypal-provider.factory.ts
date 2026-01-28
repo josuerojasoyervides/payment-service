@@ -6,6 +6,7 @@ import { ProviderFactory } from '@payments/application/api/ports/provider-factor
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
 
+import { FinalizePort } from '../../../application/api/ports/finalize.port';
 import { PaymentStrategy } from '../../../application/api/ports/payment-strategy.port';
 import {
   FieldRequirements,
@@ -13,6 +14,7 @@ import {
 } from '../../../domain/ports/payment/payment-request-builder.port';
 import { PaypalRedirectRequestBuilder } from '../builders/paypal-redirect-request.builder';
 import { PaypalIntentFacade } from '../facades/intent.facade';
+import { PaypalFinalizeHandler } from '../handlers/paypal-finalize.handler';
 import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
 
 /**
@@ -33,6 +35,7 @@ export class PaypalProviderFactory implements ProviderFactory {
 
   private readonly gateway = inject(PaypalIntentFacade);
   private readonly logger = inject(LoggerService);
+  private readonly finalizeHandler = inject(PaypalFinalizeHandler);
   /**
    * Strategy cache.
    */
@@ -113,6 +116,13 @@ export class PaypalProviderFactory implements ProviderFactory {
         },
       ],
     };
+  }
+
+  /**
+   * Optional capability: PayPal supports finalize (capture) in redirect flow.
+   */
+  getFinalizeHandler(): FinalizePort | null {
+    return this.finalizeHandler;
   }
 
   // ============================================================
