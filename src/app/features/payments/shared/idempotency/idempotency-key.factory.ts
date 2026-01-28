@@ -42,6 +42,20 @@ export class IdempotencyKeyFactory {
     return `${providerId}:get:${intentId}`;
   }
 
+  /**
+   * @param providerId - The payment provider ID
+   * @param input - The input for the idempotency key generation. Can be a start request or an intent operation request.
+   * @returns The idempotency key
+   * @example
+   * const idempotencyKey = this.idempotencyKeyFactory.generate('stripe', {
+   *   operation: 'start',
+   *   req: {
+   *     orderId: '1234567890',
+   *     amount: 100,
+   *     currency: 'USD',
+   *   },
+   * });
+   */
   @TraceOperation({
     name: 'generateIdempotencyKey',
     context: 'IdempotencyKeyFactory',
