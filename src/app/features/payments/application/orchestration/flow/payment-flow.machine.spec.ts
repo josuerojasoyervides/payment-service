@@ -1,9 +1,27 @@
+import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { createActor } from 'xstate';
 
 import { createPaymentFlowMachine } from './payment-flow.machine';
+import { FlowContextStore, KeyValueStorage, toFlowContext } from './payment-flow.persistence';
 import { PaymentFlowConfigOverrides } from './payment-flow.policy';
 import { PaymentFlowActorRef, PaymentFlowSnapshot } from './payment-flow.types';
+
+class MemoryStorage implements KeyValueStorage {
+  private readonly store = new Map<string, string>();
+
+  getItem(key: string): string | null {
+    return this.store.get(key) ?? null;
+  }
+
+  setItem(key: string, value: string): void {
+    this.store.set(key, value);
+  }
+
+  removeItem(key: string): void {
+    this.store.delete(key);
+  }
+}
 
 describe('PaymentFlowMachine', () => {
   const baseIntent: PaymentIntent = {
@@ -317,5 +335,53 @@ describe('PaymentFlowMachine', () => {
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
     expect(snap.hasTag('error')).toBe(true);
+  });
+
+  it('rehydrates context and reconciles external events on re-entry', async () => {
+    const storage = new MemoryStorage();
+    const store = new FlowContextStore(storage, { now: () => 1000 });
+    const flowContext: PaymentFlowContext = {
+      flowId: 'flow_reentry',
+      providerId: 'stripe',
+      providerRefs: { stripe: { intentId: 'pi_reentry' } },
+      createdAt: 1000,
+      expiresAt: 2000,
+    };
+
+    store.save(flowContext);
+    const persisted = store.load();
+    expect(persisted).toBeTruthy();
+
+    const initialContext = persisted
+      ? {
+          flowContext: toFlowContext(persisted),
+          providerId: flowContext.providerId ?? null,
+          intentId: flowContext.providerRefs?.stripe?.intentId ?? null,
+        }
+      : undefined;
+
+    const deps = {
+      startPayment: vi.fn(async () => baseIntent),
+      confirmPayment: vi.fn(async () => baseIntent),
+      cancelPayment: vi.fn(async () => ({ ...baseIntent, status: 'canceled' as const })),
+      getStatus: vi.fn(async () => ({
+        ...baseIntent,
+        id: 'pi_reentry',
+        status: 'succeeded' as const,
+      })),
+    };
+
+    const machine = createPaymentFlowMachine(deps, {}, initialContext);
+    const actor = createActor(machine) as PaymentFlowActorRef;
+    actor.start();
+
+    actor.send({
+      type: 'WEBHOOK_RECEIVED',
+      payload: { providerId: 'stripe', referenceId: 'pi_reentry' },
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'done');
+    expect(snap.context.flowContext?.flowId).toBe('flow_reentry');
+    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_reentry' });
   });
 });

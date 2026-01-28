@@ -1,7 +1,11 @@
 import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 
 import { FLOW_CONTEXT_TTL_MS } from './payment-flow.context';
-import { FlowContextStore, KeyValueStorage } from './payment-flow.persistence';
+import {
+  FLOW_CONTEXT_SCHEMA_VERSION,
+  FlowContextStore,
+  KeyValueStorage,
+} from './payment-flow.persistence';
 
 class MemoryStorage implements KeyValueStorage {
   private readonly store = new Map<string, string>();
@@ -48,6 +52,7 @@ describe('FlowContextStore', () => {
     expect(raw).toBeTruthy();
 
     const parsed = JSON.parse(raw ?? '{}');
+    expect(parsed.schemaVersion).toBe(FLOW_CONTEXT_SCHEMA_VERSION);
     expect(parsed.deviceData).toBeUndefined();
     expect(parsed.metadata).toBeUndefined();
     expect(parsed.flowId).toBe('flow_1');
@@ -65,6 +70,24 @@ describe('FlowContextStore', () => {
       now: () => now + FLOW_CONTEXT_TTL_MS + 1,
     });
     const loaded = expiredStore.load();
+
+    expect(loaded).toBeNull();
+    expect(storage.getItem('payment_flow_context_v1')).toBeNull();
+  });
+
+  it('clears persisted context on schema version mismatch', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      'payment_flow_context_v1',
+      JSON.stringify({
+        schemaVersion: FLOW_CONTEXT_SCHEMA_VERSION + 1,
+        flowId: 'flow_1',
+        persistedAt: 1000,
+      }),
+    );
+
+    const store = new FlowContextStore(storage, { now: () => 1000 });
+    const loaded = store.load();
 
     expect(loaded).toBeNull();
     expect(storage.getItem('payment_flow_context_v1')).toBeNull();

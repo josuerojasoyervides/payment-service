@@ -5,7 +5,9 @@ import { CancelPaymentUseCase } from '@payments/application/orchestration/use-ca
 import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
+import { NextAction } from '@payments/domain/models/payment/payment-action.types';
 import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
 
@@ -15,14 +17,65 @@ import {
   isSnapshotInspectionEventWithSnapshot,
 } from './payment-flow.guards';
 import { createPaymentFlowMachine } from './payment-flow.machine';
+import { FlowContextStore, toFlowContext } from './payment-flow.persistence';
 import {
   PaymentFlowActorRef,
   PaymentFlowCommandEvent,
   PaymentFlowEvent,
   PaymentFlowMachine,
+  PaymentFlowMachineContext,
   PaymentFlowSnapshot,
   PaymentFlowSystemEvent,
 } from './payment-flow.types';
+
+function createFlowContextStore(): FlowContextStore | null {
+  try {
+    if (typeof globalThis === 'undefined') return null;
+    if (!('localStorage' in globalThis)) return null;
+    return new FlowContextStore(globalThis.localStorage);
+  } catch {
+    return null;
+  }
+}
+
+function buildInitialMachineContext(
+  store: FlowContextStore | null,
+): Partial<PaymentFlowMachineContext> | undefined {
+  const persisted = store?.load();
+  if (!persisted) return undefined;
+
+  const flowContext = toFlowContext(persisted);
+  const providerId = flowContext.providerId ?? null;
+  const intentId = providerId ? (flowContext.providerRefs?.[providerId]?.intentId ?? null) : null;
+
+  return {
+    flowContext,
+    providerId,
+    intentId,
+  };
+}
+
+function redactNextAction(action?: NextAction): NextAction | undefined {
+  if (!action) return action;
+  if (action.kind !== 'client_confirm') return action;
+  return { ...action, token: '[redacted]' };
+}
+
+function redactFlowContext(context: PaymentFlowContext | null): PaymentFlowContext | null {
+  return context ?? null;
+}
+
+function redactIntent(
+  intent: PaymentFlowSnapshot['context']['intent'],
+): PaymentFlowSnapshot['context']['intent'] {
+  if (!intent) return intent;
+  return {
+    ...intent,
+    clientSecret: intent.clientSecret ? '[redacted]' : intent.clientSecret,
+    nextAction: redactNextAction(intent.nextAction),
+    raw: undefined,
+  };
+}
 
 @Injectable()
 export class PaymentFlowActorService {
@@ -34,16 +87,23 @@ export class PaymentFlowActorService {
   private readonly logger = inject(LoggerService);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly machine: PaymentFlowMachine = createPaymentFlowMachine({
-    startPayment: async (providerId, request, flowContext) =>
-      firstValueFrom(this.start.execute(request, providerId, flowContext)),
-    confirmPayment: async (providerId, request) =>
-      firstValueFrom(this.confirm.execute(request, providerId)),
-    cancelPayment: async (providerId, request) =>
-      firstValueFrom(this.cancel.execute(request, providerId)),
-    getStatus: async (providerId, request) =>
-      firstValueFrom(this.status.execute(request, providerId)),
-  });
+  private readonly flowContextStore = createFlowContextStore();
+  private readonly initialContext = buildInitialMachineContext(this.flowContextStore);
+
+  private readonly machine: PaymentFlowMachine = createPaymentFlowMachine(
+    {
+      startPayment: async (providerId, request, flowContext) =>
+        firstValueFrom(this.start.execute(request, providerId, flowContext)),
+      confirmPayment: async (providerId, request) =>
+        firstValueFrom(this.confirm.execute(request, providerId)),
+      cancelPayment: async (providerId, request) =>
+        firstValueFrom(this.cancel.execute(request, providerId)),
+      getStatus: async (providerId, request) =>
+        firstValueFrom(this.status.execute(request, providerId)),
+    },
+    {},
+    this.initialContext,
+  );
 
   private prevSnapshot: PaymentFlowSnapshot | null = null;
   private lastReportedError: PaymentError | null = null;
@@ -67,7 +127,11 @@ export class PaymentFlowActorService {
           prevState,
           changed,
           ...(tags && { tags }),
-          context: snap.context,
+          context: {
+            ...snap.context,
+            flowContext: redactFlowContext(snap.context.flowContext),
+            intent: redactIntent(snap.context.intent),
+          },
         },
         this.logger.getCorrelationId(),
       );
@@ -91,6 +155,7 @@ export class PaymentFlowActorService {
     this.prevSnapshot = this.actor.getSnapshot() as PaymentFlowSnapshot;
     this.actor.subscribe((snapshot) => {
       this._snapshot.set(snapshot);
+      this.persistFlowContext(snapshot);
       this.maybeReportFallback(snapshot);
       this.maybeNotifyFallbackSuccess(snapshot);
     });
@@ -135,6 +200,10 @@ export class PaymentFlowActorService {
       return false;
     }
 
+    if (event.type === 'RESET') {
+      this.flowContextStore?.clear();
+    }
+
     this.lastSentEvent.set(event);
     this.actor.send(event);
     return true;
@@ -143,6 +212,19 @@ export class PaymentFlowActorService {
   /** Internal/system events (fallback orchestration). */
   sendSystem(event: PaymentFlowSystemEvent): void {
     this.actor.send(event);
+  }
+
+  private persistFlowContext(snapshot: PaymentFlowSnapshot): void {
+    if (!this.flowContextStore) return;
+    if (snapshot.hasTag('done') || snapshot.hasTag('failed')) {
+      this.flowContextStore.clear();
+      return;
+    }
+
+    const flowContext = snapshot.context.flowContext;
+    if (!flowContext) return;
+
+    this.flowContextStore.save(flowContext);
   }
 
   private maybeReportFallback(snapshot: PaymentFlowSnapshot): void {

@@ -14,13 +14,14 @@
 ## 📍 Mission State (New-Chat Context)
 
 - **Critical Task:** PR3 (FlowContext + providerRefs + safe persistence + re-entry) in progress.
-- **Recent Changes (PR3 - 3.1 / 3.2):**
+- **Recent Changes (PR3 - 3.1 / 3.2 / 3.3):**
   - Expanded `PaymentFlowContext` with flowId, providerRefs, correlation refs, timestamps, and return tracking fields.
   - Added flow context utilities (flowId generation, context creation, providerRefs merge/update).
   - Machine now creates a normalized FlowContext on START and merges providerRefs when provided by intents.
   - FlowId generator now uses crypto-based randomness and is injectable for tests.
-  - Added allowlist-based FlowContext persistence store with TTL and no secret persistence.
-  - Added unit tests for FlowContext creation, providerRefs merge behavior, and persistence allowlist/TTL.
+  - Added allowlist-based FlowContext persistence store with TTL, schemaVersion, and no secret persistence.
+  - Actor hydrates flow context before external events, persists during flow, and clears on terminal/RESET.
+  - Added tests for FlowContext creation/merge, persistence allowlist/TTL/schema, and re-entry reconciliation.
 - **Open/Relevant Files:** `docs/ai-active-context.md`, `docs/provider-integration-plan.md`, `docs/flow-brain.md`, `docs/architecture-rules.md`, `docs/goals.md`.
 - **Error Context:** Not run in this step.
 
@@ -62,7 +63,7 @@
 
 ## ⏭️ Immediate Next Action
 
-- [ ] Finish PR3.2 and confirm to proceed to 3.3.
+- [ ] Finish PR3.3 and confirm to proceed to 3.4.
 - [ ] Close docs refresh (update flow brain, cleanup docs).
 
 ---

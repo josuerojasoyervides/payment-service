@@ -37,6 +37,7 @@ import { startStates } from './stages/payment-flow-start.stage';
 export const createPaymentFlowMachine = (
   deps: PaymentFlowDeps,
   configOverrides: PaymentFlowConfigOverrides = {},
+  initialContext?: Partial<PaymentFlowMachineContext>,
 ) => {
   const config = resolvePaymentFlowConfig(configOverrides);
 
@@ -295,23 +296,27 @@ export const createPaymentFlowMachine = (
       WEBHOOK_RECEIVED: { target: '.reconciling', actions: 'setExternalEventInput' },
     },
 
-    context: () => ({
-      providerId: null,
-      request: null,
-      flowContext: null,
-      intent: null,
-      intentId: null,
-      error: null,
-      fallback: {
-        eligible: false,
-        mode: 'manual',
-        failedProviderId: null,
+    context: () => {
+      const base: PaymentFlowMachineContext = {
+        providerId: null,
         request: null,
-        selectedProviderId: null,
-      },
-      polling: { attempt: 0 },
-      statusRetry: { count: 0 },
-    }),
+        flowContext: null,
+        intent: null,
+        intentId: null,
+        error: null,
+        fallback: {
+          eligible: false,
+          mode: 'manual',
+          failedProviderId: null,
+          request: null,
+          selectedProviderId: null,
+        },
+        polling: { attempt: 0 },
+        statusRetry: { count: 0 },
+      };
+
+      return { ...base, ...(initialContext ?? {}) };
+    },
 
     states: {
       ...idleStates,

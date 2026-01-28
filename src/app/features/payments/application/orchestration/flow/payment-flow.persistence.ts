@@ -6,7 +6,10 @@ import { PaymentProviderId } from '@payments/domain/models/payment/payment-inten
 
 import { FLOW_CONTEXT_TTL_MS } from './payment-flow.context';
 
+export const FLOW_CONTEXT_SCHEMA_VERSION = 1;
+
 export interface PersistedFlowContext {
+  schemaVersion: number;
   flowId: string;
   providerId?: PaymentProviderId;
   externalReference?: string;
@@ -51,6 +54,7 @@ export class FlowContextStore {
 
     // Allowlist only: secrets (clientSecret, nextAction tokens, raw payloads, PII) are never persisted.
     const persisted: PersistedFlowContext = {
+      schemaVersion: FLOW_CONTEXT_SCHEMA_VERSION,
       flowId: context.flowId,
       providerId: context.providerId,
       externalReference: context.externalReference,
@@ -76,7 +80,7 @@ export class FlowContextStore {
 
     try {
       const parsed = JSON.parse(raw) as PersistedFlowContext;
-      if (!parsed?.flowId) {
+      if (!parsed?.flowId || parsed.schemaVersion !== FLOW_CONTEXT_SCHEMA_VERSION) {
         this.storage.removeItem(this.storageKey);
         return null;
       }
@@ -102,4 +106,21 @@ export class FlowContextStore {
     const expiresAt = context.expiresAt ?? context.persistedAt + FLOW_CONTEXT_TTL_MS;
     return expiresAt <= now;
   }
+}
+
+export function toFlowContext(persisted: PersistedFlowContext): PaymentFlowContext {
+  return {
+    flowId: persisted.flowId,
+    providerId: persisted.providerId,
+    externalReference: persisted.externalReference,
+    providerRefs: persisted.providerRefs,
+    createdAt: persisted.createdAt,
+    expiresAt: persisted.expiresAt,
+    lastExternalEventId: persisted.lastExternalEventId,
+    lastReturnNonce: persisted.lastReturnNonce,
+    returnParamsSanitized: persisted.returnParamsSanitized,
+    returnUrl: persisted.returnUrl,
+    cancelUrl: persisted.cancelUrl,
+    isTest: persisted.isTest,
+  };
 }
