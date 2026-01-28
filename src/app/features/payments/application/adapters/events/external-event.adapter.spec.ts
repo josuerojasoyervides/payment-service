@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ExternalEventAdapter } from '@payments/application/adapters/external-event.adapter';
+import { ExternalEventAdapter } from '@payments/application/adapters/events/external-event.adapter';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 
 describe('ExternalEventAdapter', () => {

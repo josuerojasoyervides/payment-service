@@ -1,7 +1,7 @@
 import type { EnvironmentProviders } from '@angular/core';
 import { type Provider } from '@angular/core';
-import { ExternalEventAdapter } from '@payments/application/adapters/external-event.adapter';
-import { NgRxSignalsStateAdapter } from '@payments/application/adapters/ngrx-signals-state.adapter';
+import { ExternalEventAdapter } from '@payments/application/adapters/events/external-event.adapter';
+import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
 import { PAYMENT_STATE } from '@payments/application/api/tokens/flow/payment-state.token';
 import { CLIENT_CONFIRM_PORTS } from '@payments/application/api/tokens/operations/client-confirm.token';

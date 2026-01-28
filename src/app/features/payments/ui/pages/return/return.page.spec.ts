@@ -5,7 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
 import { mapReturnQueryToReference } from '@payments/application/adapters/events/external/payment-flow-return.mapper';
-import { ExternalEventAdapter } from '@payments/application/adapters/external-event.adapter';
+import { ExternalEventAdapter } from '@payments/application/adapters/events/external-event.adapter';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { ReturnComponent } from '@payments/ui/pages/return/return.page';
