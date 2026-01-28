@@ -1,5 +1,5 @@
 import { patchState } from '@ngrx/signals';
-import type { PaymentsStoreContext } from '@payments/application/orchestration/store/payment-store.types';
+import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
 import { INITIAL_FALLBACK_STATE } from '@payments/domain/models/fallback/fallback-state.types';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type {

@@ -3,7 +3,7 @@ import type { PaymentHistoryEntry } from '@payments/application/orchestration/st
 import type {
   PaymentFlowStatus,
   PaymentsState,
-} from '@payments/application/orchestration/store/projection/payment-store.state';
+} from '@payments/application/orchestration/store/payment-store.state';
 import type { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type {
