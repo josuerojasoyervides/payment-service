@@ -12,6 +12,10 @@
  * 1. Know which methods the provider supports (getSupportedMethods)
  * 2. Know which fields each method needs (getFieldRequirements)
  * 3. Get the correct builder (createRequestBuilder)
+ *
+ * Optional capability: getClientConfirmHandler — providers that support
+ * client-side confirmation (e.g. Stripe 3DS) expose a ClientConfirmPort;
+ * others return null.
  */
 
 import {
@@ -23,6 +27,7 @@ import {
   PaymentRequestBuilder,
 } from '@payments/domain/ports/payment/payment-request-builder.port';
 
+import { ClientConfirmPort } from './client-confirm.port';
 import { PaymentGatewayPort } from './payment-gateway.port';
 import { PaymentStrategy } from './payment-strategy.port';
 
@@ -97,4 +102,11 @@ export interface ProviderFactory {
    * // ]
    */
   getFieldRequirements(type: PaymentMethodType): FieldRequirements;
+
+  /**
+   * Optional: returns a handler for client-side confirmation (e.g. Stripe 3DS).
+   * Providers that do not support client confirm return null.
+   * Application routing uses this capability; no provider-name branching.
+   */
+  getClientConfirmHandler?(): ClientConfirmPort | null;
 }

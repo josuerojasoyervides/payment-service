@@ -40,6 +40,8 @@ export const es: Translations = {
     paypal_order_not_approved: 'Debes aprobar el pago en PayPal antes de continuar.',
     paypal_internal_error: 'PayPal está experimentando problemas. Intenta más tarde.',
     paypal_auth_error: 'Error de autenticación con PayPal. Contacta soporte.',
+    unsupported_client_confirm:
+      'Este proveedor no soporta confirmación en el cliente desde este flujo.',
   },
   messages: {
     payment_created: 'Pago creado exitosamente',

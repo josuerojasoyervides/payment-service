@@ -18,22 +18,28 @@ import {
   hasIntentPolicy,
   hasRefreshKeysPolicy,
   isFinalIntentPolicy,
+  needsClientConfirmPolicy,
+  needsFinalizePolicy,
   needsUserActionPolicy,
   type PaymentFlowConfigOverrides,
   resolvePaymentFlowConfig,
 } from './payment-flow.policy';
 import {
   CancelInput,
+  ClientConfirmInput,
   ConfirmInput,
+  FinalizeInput,
   PaymentFlowEvent,
   PaymentFlowMachineContext,
   StartInput,
   StatusInput,
 } from './payment-flow.types';
 import { cancelStates } from './stages/payment-flow-cancel.stage';
+import { clientConfirmStates } from './stages/payment-flow-client-confirm.stage';
 import { confirmStates } from './stages/payment-flow-confirm.stage';
 import { doneStates } from './stages/payment-flow-done.stage';
 import { fallbackStates } from './stages/payment-flow-fallback.stage';
+import { finalizeStates } from './stages/payment-flow-finalize.stage';
 import { idleStates } from './stages/payment-flow-idle.stage';
 import { pollingStates } from './stages/payment-flow-polling.stage';
 import { reconcileStates } from './stages/payment-flow-reconcile.stage';
@@ -75,6 +81,21 @@ export const createPaymentFlowMachine = (
 
       status: fromPromise<PaymentIntent, StatusInput>(async ({ input }) => {
         return deps.getStatus(input.providerId, { intentId: input.intentId });
+      }),
+
+      clientConfirm: fromPromise<PaymentIntent, ClientConfirmInput>(async ({ input }) => {
+        return deps.clientConfirm({
+          providerId: input.providerId,
+          action: input.action,
+          context: input.flowContext,
+        });
+      }),
+
+      finalize: fromPromise<PaymentIntent, FinalizeInput>(async ({ input }) => {
+        return deps.finalize({
+          providerId: input.providerId,
+          context: input.flowContext,
+        });
       }),
     },
 
@@ -305,6 +326,8 @@ export const createPaymentFlowMachine = (
     guards: {
       hasIntent: ({ context }) => hasIntentPolicy(context),
       needsUserAction: ({ context }) => needsUserActionPolicy(context),
+      needsClientConfirm: ({ context }) => needsClientConfirmPolicy(context),
+      needsFinalize: ({ context }) => needsFinalizePolicy(context),
       isFinal: ({ context }) => isFinalIntentPolicy(context),
       hasRefreshKeys: ({ context }) => hasRefreshKeysPolicy(context),
       canFallback: ({ context }) => canFallbackPolicy(context),
@@ -348,6 +371,8 @@ export const createPaymentFlowMachine = (
       ...idleStates,
       ...startStates,
       ...confirmStates,
+      ...clientConfirmStates,
+      ...finalizeStates,
       ...pollingStates,
       ...reconcileStates,
       ...cancelStates,

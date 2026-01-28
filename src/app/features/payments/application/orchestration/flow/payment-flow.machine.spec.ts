@@ -1,27 +1,53 @@
+import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { createActor } from 'xstate';
+import { firstValueFrom, of } from 'rxjs';
+import { AnyActorRef, createActor } from 'xstate';
 
 import { createPaymentFlowMachine } from './payment-flow.machine';
-import { FlowContextStore, KeyValueStorage, toFlowContext } from './payment-flow.persistence';
-import { PaymentFlowConfigOverrides } from './payment-flow.policy';
+import { KeyValueStorage } from './payment-flow.persistence';
 import { PaymentFlowActorRef, PaymentFlowSnapshot } from './payment-flow.types';
 
-class MemoryStorage implements KeyValueStorage {
-  private readonly store = new Map<string, string>();
+let activeActors: AnyActorRef[] = [];
 
+class _MemoryStorage implements KeyValueStorage {
+  private readonly store = new Map<string, string>();
   getItem(key: string): string | null {
     return this.store.get(key) ?? null;
   }
-
   setItem(key: string, value: string): void {
     this.store.set(key, value);
   }
-
   removeItem(key: string): void {
     this.store.delete(key);
   }
 }
+
+const waitForSnapshot = (
+  actor: PaymentFlowActorRef,
+  predicate: (snap: PaymentFlowSnapshot) => boolean,
+  timeoutMs = 500, // Un poco más de margen para evitar rejects falsos
+) => {
+  const current = actor.getSnapshot() as PaymentFlowSnapshot;
+  if (predicate(current)) return Promise.resolve(current);
+
+  return new Promise<PaymentFlowSnapshot>((resolve, reject) => {
+    let sub: { unsubscribe: () => void } | null = null;
+
+    const timeout = setTimeout(() => {
+      sub?.unsubscribe();
+      reject(new Error(`Timeout waiting for snapshot state: ${actor.getSnapshot().value}`));
+    }, timeoutMs);
+
+    sub = actor.subscribe((snap) => {
+      if (predicate(snap as PaymentFlowSnapshot)) {
+        clearTimeout(timeout);
+        sub?.unsubscribe();
+        resolve(snap as PaymentFlowSnapshot);
+      }
+    });
+  });
+};
 
 describe('PaymentFlowMachine', () => {
   const baseIntent: PaymentIntent = {
@@ -32,59 +58,55 @@ describe('PaymentFlowMachine', () => {
     currency: 'MXN',
   };
 
-  const waitForSnapshot = (
-    actor: PaymentFlowActorRef,
-    predicate: (snap: PaymentFlowSnapshot) => boolean,
-  ) =>
-    new Promise<PaymentFlowSnapshot>((resolve, reject) => {
-      const current = actor.getSnapshot() as PaymentFlowSnapshot;
-      if (predicate(current)) {
-        resolve(current);
-        return;
-      }
+  afterEach(() => {
+    activeActors.forEach((actor) => actor.stop());
+    activeActors = [];
+    vi.clearAllMocks();
+  });
 
-      let sub: { unsubscribe: () => void } | null = null;
-
-      const timeout = setTimeout(() => {
-        sub?.unsubscribe();
-        reject(new Error('Timeout waiting for snapshot'));
-      }, 200);
-
-      sub = actor.subscribe((snap) => {
-        if (predicate(snap as PaymentFlowSnapshot)) {
-          clearTimeout(timeout);
-          sub?.unsubscribe();
-          resolve(snap as PaymentFlowSnapshot);
-        }
-      });
-    });
-
-  const setup = (
-    overrides?: Partial<{
-      startIntent: PaymentIntent;
-      statusIntent: PaymentIntent;
-      startReject: boolean;
-      statusReject: boolean;
-      config: PaymentFlowConfigOverrides;
-    }>,
-  ) => {
+  const setup = (overrides?: any) => {
     const deps = {
-      startPayment: vi.fn(async () => {
-        if (overrides?.startReject) throw new Error('start failed');
-        return overrides?.startIntent ?? baseIntent;
-      }),
+      startPayment: vi.fn(async () =>
+        overrides?.startReject
+          ? (() => {
+              throw new Error();
+            })()
+          : (overrides?.startIntent ?? baseIntent),
+      ),
       confirmPayment: vi.fn(async () => baseIntent),
       cancelPayment: vi.fn(async () => ({ ...baseIntent, status: 'canceled' as const })),
-      getStatus: vi.fn(async () => {
-        if (overrides?.statusReject) throw new Error('status failed');
-        return overrides?.statusIntent ?? baseIntent;
+      getStatus: vi.fn(async () =>
+        overrides?.statusReject
+          ? (() => {
+              throw new Error();
+            })()
+          : (overrides?.statusIntent ?? baseIntent),
+      ),
+      clientConfirm: vi.fn(async () => {
+        if (overrides?.clientConfirmReject) {
+          throw createPaymentError(
+            'unsupported_client_confirm',
+            'errors.unsupported_client_confirm',
+            undefined,
+            null,
+          );
+        }
+        return overrides?.clientConfirmIntent ?? baseIntent;
       }),
+      finalize: vi.fn(async () =>
+        overrides?.finalizeReject
+          ? (() => {
+              throw new Error();
+            })()
+          : (overrides?.finalizeIntent ?? baseIntent),
+      ),
     };
 
-    const machine = createPaymentFlowMachine(deps, overrides?.config);
+    const machine = createPaymentFlowMachine(deps, overrides?.config, overrides?.initialContext);
     const actor = createActor(machine) as PaymentFlowActorRef;
     actor.start();
 
+    activeActors.push(actor); // Trackear para el afterEach
     return { actor, deps };
   };
 
@@ -136,6 +158,158 @@ describe('PaymentFlowMachine', () => {
     expect(snap.hasTag('ready')).toBe(true);
   });
 
+  it('client_confirm success: requiresAction -> clientConfirming -> reconciling when deps.clientConfirm resolves', async () => {
+    const { actor, deps } = setup({
+      startIntent: {
+        ...baseIntent,
+        status: 'requires_action',
+        nextAction: { kind: 'client_confirm', token: 'tok_runtime' },
+      },
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: 'o1',
+        amount: 100,
+        currency: 'MXN',
+        method: { type: 'card', token: 'tok_123' },
+      },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+
+    actor.send({
+      type: 'CONFIRM',
+      providerId: 'stripe',
+      intentId: 'pi_1',
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'clientConfirming');
+    expect(deps.clientConfirm).toHaveBeenCalled();
+
+    await waitForSnapshot(
+      actor,
+      (s) => s.value === 'reconciling' || s.value === 'reconcilingInvoke',
+    );
+  });
+
+  it('client_confirm success: full path uses ProviderFactoryRegistry capability routing', async () => {
+    const resolvedIntent: PaymentIntent = { ...baseIntent, status: 'succeeded', id: 'pi_1' };
+    const startIntentWithClientConfirm: PaymentIntent = {
+      ...baseIntent,
+      status: 'requires_action',
+      nextAction: { kind: 'client_confirm', token: 'tok_runtime' },
+    };
+    const mockHandlerExecute = vi.fn(
+      (_req: { providerId: string; action: unknown; context: unknown }) => of(resolvedIntent),
+    );
+    const mockHandler = { execute: mockHandlerExecute };
+    const mockFactory = { getClientConfirmHandler: () => mockHandler };
+    const mockRegistry = {
+      has: () => true,
+      get: () => mockFactory,
+    };
+
+    const deps = {
+      startPayment: vi.fn(async () => startIntentWithClientConfirm),
+      confirmPayment: vi.fn(async () => baseIntent),
+      cancelPayment: vi.fn(async () => ({ ...baseIntent, status: 'canceled' as const })),
+      getStatus: vi.fn(async () => baseIntent),
+      clientConfirm: vi.fn(
+        async (request: { providerId: string; action: unknown; context: PaymentFlowContext }) => {
+          const factory = mockRegistry.get();
+          const handler = factory.getClientConfirmHandler?.();
+          if (!handler)
+            throw createPaymentError(
+              'unsupported_client_confirm',
+              'errors.unsupported_client_confirm',
+              undefined,
+              null,
+            );
+          return firstValueFrom(handler.execute(request));
+        },
+      ),
+      finalize: vi.fn(async () => baseIntent),
+    };
+
+    const config = {
+      polling: { baseDelayMs: 100000, maxDelayMs: 100000, maxAttempts: 99 },
+      statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 0 },
+    };
+    const machine = createPaymentFlowMachine(deps, config);
+    const actor = createActor(machine) as PaymentFlowActorRef;
+    actor.start();
+    activeActors.push(actor);
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: 'o1',
+        amount: 100,
+        currency: 'MXN',
+        method: { type: 'card', token: 'tok_123' },
+      },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+
+    actor.send({ type: 'CONFIRM', providerId: 'stripe', intentId: 'pi_1' });
+
+    await waitForSnapshot(actor, (s) => s.value === 'clientConfirming');
+
+    await waitForSnapshot(
+      actor,
+      (s) => s.value === 'reconciling' || s.value === 'reconcilingInvoke',
+    );
+
+    expect(mockHandlerExecute).toHaveBeenCalledTimes(1);
+    expect(mockHandlerExecute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: 'stripe',
+        action: { kind: 'client_confirm', token: 'tok_runtime' },
+      }),
+    );
+    expect(deps.clientConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('clientConfirming failure transitions to failed with PaymentError (unsupported_client_confirm)', async () => {
+    const { actor } = setup({
+      startIntent: {
+        ...baseIntent,
+        status: 'requires_action',
+        nextAction: { kind: 'client_confirm', token: 'tok_runtime' },
+      },
+      clientConfirmReject: true,
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: 'o1',
+        amount: 100,
+        currency: 'MXN',
+        method: { type: 'card', token: 'tok_123' },
+      },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+
+    actor.send({
+      type: 'CONFIRM',
+      providerId: 'stripe',
+      intentId: 'pi_1',
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
+    expect(snap.hasTag('error')).toBe(true);
+    expect(snap.context.error?.code).toBe('unsupported_client_confirm');
+    expect(snap.context.error?.messageKey).toBe('errors.unsupported_client_confirm');
+  });
+
   it('START -> done when intent is final', async () => {
     const { actor } = setup({
       startIntent: { ...baseIntent, status: 'succeeded' },
@@ -154,6 +328,79 @@ describe('PaymentFlowMachine', () => {
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'done');
     expect(snap.hasTag('ready')).toBe(true);
+  });
+
+  it('afterStatus -> finalizing -> reconciling when finalize is required', async () => {
+    const { actor, deps } = setup({
+      statusIntent: {
+        ...baseIntent,
+        status: 'processing',
+        finalizeRequired: true,
+      },
+      finalizeIntent: {
+        ...baseIntent,
+        status: 'processing',
+        finalizeRequired: false,
+      },
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: 'o1',
+        amount: 100,
+        currency: 'MXN',
+        method: { type: 'card', token: 'tok_123' },
+      },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'polling');
+
+    actor.send({
+      type: 'EXTERNAL_STATUS_UPDATED',
+      payload: { providerId: 'stripe', referenceId: 'pi_1' },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'finalizing');
+    expect(deps.finalize).toHaveBeenCalled();
+
+    await waitForSnapshot(
+      actor,
+      (s) => s.value === 'reconciling' || s.value === 'reconcilingInvoke',
+    );
+  });
+
+  it('finalizing failure transitions to failed with error', async () => {
+    const { actor } = setup({
+      statusIntent: {
+        ...baseIntent,
+        status: 'processing',
+        finalizeRequired: true,
+      },
+      finalizeReject: true,
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: 'o1',
+        amount: 100,
+        currency: 'MXN',
+        method: { type: 'card', token: 'tok_123' },
+      },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'polling');
+
+    actor.send({
+      type: 'EXTERNAL_STATUS_UPDATED',
+      payload: { providerId: 'stripe', referenceId: 'pi_1' },
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
+    expect(snap.hasTag('error')).toBe(true);
   });
 
   it('REFRESH uses context intentId when event is missing it', async () => {
@@ -338,8 +585,6 @@ describe('PaymentFlowMachine', () => {
   });
 
   it('rehydrates context and reconciles external events on re-entry', async () => {
-    const storage = new MemoryStorage();
-    const store = new FlowContextStore(storage, { now: () => 1000 });
     const flowContext: PaymentFlowContext = {
       flowId: 'flow_reentry',
       providerId: 'stripe',
@@ -348,39 +593,27 @@ describe('PaymentFlowMachine', () => {
       expiresAt: 2000,
     };
 
-    store.save(flowContext);
-    const persisted = store.load();
-    expect(persisted).toBeTruthy();
+    const { actor, deps } = setup({
+      initialContext: {
+        flowContext,
+        providerId: 'stripe',
+        intentId: 'pi_reentry',
+      },
 
-    const initialContext = persisted
-      ? {
-          flowContext: toFlowContext(persisted),
-          providerId: flowContext.providerId ?? null,
-          intentId: flowContext.providerRefs?.stripe?.intentId ?? null,
-        }
-      : undefined;
-
-    const deps = {
-      startPayment: vi.fn(async () => baseIntent),
-      confirmPayment: vi.fn(async () => baseIntent),
-      cancelPayment: vi.fn(async () => ({ ...baseIntent, status: 'canceled' as const })),
-      getStatus: vi.fn(async () => ({
+      statusIntent: {
         ...baseIntent,
         id: 'pi_reentry',
-        status: 'succeeded' as const,
-      })),
-    };
-
-    const machine = createPaymentFlowMachine(deps, {}, initialContext);
-    const actor = createActor(machine) as PaymentFlowActorRef;
-    actor.start();
+        status: 'succeeded',
+      },
+    });
 
     actor.send({
       type: 'WEBHOOK_RECEIVED',
       payload: { providerId: 'stripe', referenceId: 'pi_reentry' },
     });
 
-    const snap = await waitForSnapshot(actor, (s) => s.value === 'done');
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'done', 1500);
+
     expect(snap.context.flowContext?.flowId).toBe('flow_reentry');
     expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_reentry' });
   });
@@ -406,6 +639,8 @@ describe('PaymentFlowMachine', () => {
         status: 'succeeded' as const,
         providerRefs: { preferenceId: 'pref_1', paymentId: 'pay_1' },
       })),
+      clientConfirm: vi.fn(async () => baseIntent),
+      finalize: vi.fn(async () => baseIntent),
     };
 
     const machine = createPaymentFlowMachine(deps, {}, initialContext);

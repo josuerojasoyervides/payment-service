@@ -27,7 +27,10 @@ export const startStates = {
   requiresAction: {
     tags: ['ready', 'requiresAction'],
     on: {
-      CONFIRM: { target: 'confirming', actions: 'setConfirmInput' },
+      CONFIRM: [
+        { guard: 'needsClientConfirm', target: 'clientConfirming' },
+        { target: 'confirming', actions: 'setConfirmInput' },
+      ],
       CANCEL: { target: 'cancelling', actions: 'setCancelInput' },
       REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
     },

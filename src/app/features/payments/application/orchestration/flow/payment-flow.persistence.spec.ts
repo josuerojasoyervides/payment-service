@@ -59,6 +59,34 @@ describe('FlowContextStore', () => {
     expect(parsed.providerRefs?.stripe?.intentId).toBe('pi_1');
   });
 
+  it('allowlist never stores clientSecret or client_confirm token in persisted payload', () => {
+    const storage = new MemoryStorage();
+    const store = new FlowContextStore(storage, { now: () => 1000 });
+
+    const clientSecretValue = 'pi_abc_secret_xyz';
+    const clientConfirmTokenValue = 'tok_runtime_123';
+    const context: PaymentFlowContext = {
+      flowId: 'flow_1',
+      metadata: {
+        clientSecret: clientSecretValue,
+        clientConfirmToken: clientConfirmTokenValue,
+      },
+    };
+
+    store.save(context);
+
+    const raw = storage.getItem('payment_flow_context_v1');
+    expect(raw).toBeTruthy();
+
+    const parsed = JSON.parse(raw ?? '{}');
+    expect(parsed.metadata).toBeUndefined();
+    expect(parsed).not.toHaveProperty('clientSecret');
+    expect(parsed).not.toHaveProperty('nextAction');
+
+    expect(raw).not.toContain(clientSecretValue);
+    expect(raw).not.toContain(clientConfirmTokenValue);
+  });
+
   it('expires persisted context by TTL', () => {
     const storage = new MemoryStorage();
     const now = 10_000;

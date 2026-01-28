@@ -5,7 +5,7 @@ import { NextActionCardComponent } from './next-action-card.component';
 
 describe('NextActionCardComponent', () => {
   let fixture: ComponentFixture<NextActionCardComponent>;
-  let component: NextActionCardComponent;
+  let _component: NextActionCardComponent;
 
   const mockI18n: I18nService = {
     t: vi.fn((key: string) => key),
@@ -21,7 +21,7 @@ describe('NextActionCardComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(NextActionCardComponent);
-    component = fixture.componentInstance;
+    _component = fixture.componentInstance;
   });
 
   it('renders redirect action', () => {

@@ -13,24 +13,16 @@
 
 ## 📍 Mission State (New-Chat Context)
 
-- **Critical Task:** PR3 (FlowContext + providerRefs + safe persistence + re-entry) in progress.
-- **Recent Changes (PR3 - 3.1 / 3.2 / 3.3 / 3.4):**
-  - Expanded `PaymentFlowContext` with flowId, providerRefs, correlation refs, timestamps, and return tracking fields.
-  - Added flow context utilities (flowId generation, context creation, providerRefs merge/update).
-  - Machine now creates a normalized FlowContext on START and merges providerRefs when provided by intents.
-  - FlowId generator now uses crypto-based randomness and is injectable for tests.
-  - Added allowlist-based FlowContext persistence store with TTL, schemaVersion, and no secret persistence.
-  - Actor hydrates flow context before external events, persists during flow, and clears on terminal/RESET.
-  - Added tests for FlowContext creation/merge, persistence allowlist/TTL/schema, and re-entry reconciliation.
-  - Added provider-agnostic status reference resolver for ID swaps and test coverage for preference → payment ref flow.
-- **Open/Relevant Files:** `docs/ai-active-context.md`, `docs/provider-integration-plan.md`, `docs/flow-brain.md`, `docs/architecture-rules.md`, `docs/goals.md`.
-- **Error Context:** Not run in this step.
+- **Critical Task:** PR4.3 — Move Stripe client confirmation out of UI into application orchestration (provider-agnostic).
+- **Last completed (4.3.3):** clientConfirming stage invokes deps.clientConfirm (orchestration); onDone → reconciling + setIntent, onError → failed + setError. Machine tests: success path (CONFIRM → clientConfirming → reconciling), failure path (clientConfirmReject with PaymentError unsupported_client_confirm → failed, error.code/messageKey asserted). No REFRESH fallback; no provider branching.
+- **Last completed (4.3.4.2):** UI provider-coupling guardrail extended: (a) “no infrastructure import” runs on status, return, payment-intent-card + checkout + next-action-card; (b) “no provider identifiers” stays on orchestration entry points only (checkout, next-action-card). Status/Return use provider literals only as static demo (examples, PayPal URL param names), not for orchestration.
+- **Next step:** PR4.3 done; next is PR4.4 (PayPal capture / finalize) per provider-integration-plan.
+- **Key files:** `ui-provider-coupling.spec.ts`, `payment-flow.persistence.spec.ts`.
 
-## 🛠️ Technical Snapshot (Angular)
+## 🛠️ Technical Snapshot
 
-- **Signal/Observable State:** XState is source of truth; store is projection + fallback + history.
-- **Application layout:** `application/{api,orchestration,adapters}` with flow, store, and services under orchestration.
-- **Dependency Injection:** `app.config.ts` wires HttpClient interceptors; fake backend interceptor removed.
+- **clientConfirming:** invoke clientConfirm → onDone (CLIENT_CONFIRM_SUCCEEDED semantics) → reconciling; onError (CLIENT_CONFIRM_FAILED semantics) → failed + setError(PaymentError).
+- **Actor:** deps.clientConfirm = firstValueFrom(nextActionOrchestrator.requestClientConfirm(...)); orchestrator uses registry capability.
 
 ## 🚀 Git Planning & Workflow
 
@@ -60,11 +52,12 @@
 - [x] **Branch:** `feat/flow-retry-polling` | **Commit:** `feat(flow): add retry/backoff and polling cadence`
 - [x] **Branch:** `feat/external-event-mappers` | **Commit:** `feat(flow): add external event mappers`
 - [x] **Branch:** `task/next-action-generic` | **Commit:** `refactor(flow): normalize nextAction kind`
-- [ ] **Branch:** `task/flow-context-reentry` | **Commit:** `feat(flow): add providerRefs and safe context store`
+- [x] **Branch:** `task/flow-context-reentry` | **Commit:** `feat(flow): add providerRefs and safe context store`
+- [ ] **Branch:** `task/flow-finalization` | **Commit:** `feat(flow): add client confirm and finalize pipeline`
 
 ## ⏭️ Immediate Next Action
 
-- [ ] Close docs refresh (update flow brain, cleanup docs).
+- [ ] PR4.4: PayPal capture / finalize pipeline (per provider-integration-plan).
 
 ---
 

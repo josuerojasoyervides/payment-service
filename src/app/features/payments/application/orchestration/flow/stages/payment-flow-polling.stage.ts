@@ -52,6 +52,7 @@ export const pollingStates = {
     tags: ['ready', 'afterStatus'],
     always: [
       { guard: 'needsUserAction', target: 'requiresAction' },
+      { guard: 'needsFinalize', target: 'finalizing' },
       { guard: 'isFinal', target: 'done' },
       { target: 'polling' },
     ],

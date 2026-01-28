@@ -59,12 +59,28 @@ export function needsUserAction(intent?: PaymentIntent | null) {
   return intent.status === 'requires_action' || !!intent.redirectUrl || actionable;
 }
 
+export function needsClientConfirm(intent?: PaymentIntent | null): boolean {
+  return intent?.nextAction?.kind === 'client_confirm';
+}
+
+export function needsFinalize(intent?: PaymentIntent | null): boolean {
+  return intent?.finalizeRequired === true;
+}
+
 export function hasIntentPolicy(context: PaymentFlowMachineContext): boolean {
   return !!context.intent;
 }
 
 export function needsUserActionPolicy(context: PaymentFlowMachineContext): boolean {
   return needsUserAction(context.intent);
+}
+
+export function needsClientConfirmPolicy(context: PaymentFlowMachineContext): boolean {
+  return needsClientConfirm(context.intent);
+}
+
+export function needsFinalizePolicy(context: PaymentFlowMachineContext): boolean {
+  return needsFinalize(context.intent);
 }
 
 export function isFinalIntentPolicy(context: PaymentFlowMachineContext): boolean {

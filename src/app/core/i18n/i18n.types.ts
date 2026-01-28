@@ -47,6 +47,7 @@ export interface Translations {
     paypal_order_not_approved: string;
     paypal_internal_error: string;
     paypal_auth_error: string;
+    unsupported_client_confirm: string;
   };
 
   messages: {
