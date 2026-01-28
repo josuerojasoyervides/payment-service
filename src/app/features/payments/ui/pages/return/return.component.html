@@ -13,8 +13,8 @@
               d="M6 18L18 6M6 6l12 12" />
           </svg>
         </div>
-        <h1 class="text-2xl font-bold text-gray-900">{{ paymentCanceledText() }}</h1>
-        <p class="text-gray-600 mt-2">{{ paymentCanceledMessageText() }}</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ i18nLabels.paymentCanceled() }}</h1>
+        <p class="text-gray-600 mt-2">{{ i18nLabels.paymentCanceledMessage() }}</p>
       } @else if (isSuccess()) {
         <div
           class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -26,8 +26,8 @@
               d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h1 class="text-2xl font-bold text-gray-900">{{ paymentCompletedText() }}</h1>
-        <p class="text-gray-600 mt-2">{{ paymentCompletedMessageText() }}</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ i18nLabels.paymentCompleted() }}</h1>
+        <p class="text-gray-600 mt-2">{{ i18nLabels.paymentCompletedMessage() }}</p>
       } @else {
         <div
           class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -43,51 +43,51 @@
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
         </div>
-        <h1 class="text-2xl font-bold text-gray-900">{{ verifyingPaymentText() }}</h1>
-        <p class="text-gray-600 mt-2">{{ verifyingPaymentMessageText() }}</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ i18nLabels.verifyingPayment() }}</h1>
+        <p class="text-gray-600 mt-2">{{ i18nLabels.verifyingPaymentMessage() }}</p>
       }
     </div>
 
     <!-- Query Params Info -->
     <div class="card mb-6">
-      <h2 class="text-lg font-semibold mb-4">{{ returnInformationText() }}</h2>
+      <h2 class="text-lg font-semibold mb-4">{{ i18nLabels.returnInformation() }}</h2>
 
       <dl class="space-y-3 text-sm">
-        @if (intentId()) {
+        @if (returnPageState.intentId()) {
           <div class="flex justify-between">
-            <dt class="text-gray-500">{{ intentIdLabel() }}</dt>
-            <dd class="font-mono text-gray-900">{{ intentId() }}</dd>
+            <dt class="text-gray-500">{{ i18nLabels.intentIdLabel() }}</dt>
+            <dd class="font-mono text-gray-900">{{ returnPageState.intentId() }}</dd>
           </div>
         }
 
-        @if (paypalToken()) {
+        @if (returnPageState.paypalToken()) {
           <div class="flex justify-between">
-            <dt class="text-gray-500">{{ paypalTokenLabel() }}</dt>
-            <dd class="font-mono text-gray-900">{{ paypalToken() }}</dd>
+            <dt class="text-gray-500">{{ i18nLabels.paypalTokenLabel() }}</dt>
+            <dd class="font-mono text-gray-900">{{ returnPageState.paypalToken() }}</dd>
           </div>
         }
 
-        @if (paypalPayerId()) {
+        @if (returnPageState.paypalPayerId()) {
           <div class="flex justify-between">
-            <dt class="text-gray-500">{{ paypalPayerIdLabel() }}</dt>
-            <dd class="font-mono text-gray-900">{{ paypalPayerId() }}</dd>
+            <dt class="text-gray-500">{{ i18nLabels.paypalPayerIdLabel() }}</dt>
+            <dd class="font-mono text-gray-900">{{ returnPageState.paypalPayerId() }}</dd>
           </div>
         }
 
         <div class="flex justify-between">
-          <dt class="text-gray-500">{{ flowTypeText() }}</dt>
+          <dt class="text-gray-500">{{ i18nLabels.flowTypeLabel() }}</dt>
           <dd class="text-gray-900">{{ flowType() }}</dd>
         </div>
 
         <div class="flex justify-between">
-          <dt class="text-gray-500">{{ statusLabelText() }}</dt>
+          <dt class="text-gray-500">{{ i18nLabels.statusLabel() }}</dt>
           <dd>
             @if (isCancel()) {
-              <span class="badge-error">{{ canceledText() }}</span>
+              <span class="badge-error">{{ i18nLabels.canceled() }}</span>
             } @else if (isSuccess()) {
-              <span class="badge-success">{{ completedText() }}</span>
+              <span class="badge-success">{{ i18nLabels.completed() }}</span>
             } @else {
-              <span class="badge-processing">{{ processingText() }}</span>
+              <span class="badge-processing">{{ i18nLabels.processing() }}</span>
             }
           </dd>
         </div>
@@ -95,9 +95,9 @@
     </div>
 
     <!-- Current Intent from State -->
-    @if (currentIntent(); as intent) {
+    @if (flowState.currentIntent(); as intent) {
       <div class="mb-6">
-        <h2 class="text-lg font-semibold mb-4">{{ paymentStatusText() }}</h2>
+        <h2 class="text-lg font-semibold mb-4">{{ i18nLabels.paymentStatus() }}</h2>
         <app-payment-intent-card
           [intent]="intent"
           [showActions]="true"
@@ -110,24 +110,24 @@
     <div class="flex flex-col sm:flex-row gap-3">
       <a routerLink="/payments/checkout" class="btn-primary flex-1 text-center">
         @if (isCancel()) {
-          {{ retryPaymentText() }}
+          {{ i18nLabels.retryPayment() }}
         } @else {
-          {{ newPaymentButtonText() }}
+          {{ i18nLabels.newPaymentButton() }}
         }
       </a>
 
       <a routerLink="/payments/history" class="btn-secondary flex-1 text-center">
-        {{ viewHistoryText() }}
+        {{ i18nLabels.viewHistory() }}
       </a>
     </div>
 
     <!-- Debug -->
     <details class="mt-8">
       <summary class="text-sm text-gray-500 cursor-pointer">
-        {{ viewAllParamsText() }}
+        {{ i18nLabels.viewAllParams() }}
       </summary>
       <pre class="mt-2 p-4 bg-gray-100 rounded-lg text-xs overflow-auto">{{
-        allParams() | json
+        returnPageState.allParams() | json
       }}</pre>
     </details>
   </div>

@@ -1,17 +1,26 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import {
-  PaymentIntent,
+  PAYMENT_PROVIDER_IDS,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
 import { NextActionCardComponent } from '../../components/next-action-card/next-action-card.component';
 import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
+import { ProviderSelectorComponent } from '../../components/provider-selector/provider-selector.component';
+
+interface StatusPageState {
+  intentId: string;
+  providerIds: PaymentProviderId[];
+  selectedProvider: PaymentProviderId;
+  lastQuery: { provider: PaymentProviderId; id: string } | null;
+}
 
 /**
  * Page to query payment status by ID.
@@ -29,6 +38,7 @@ import { PaymentIntentCardComponent } from '../../components/payment-intent-card
     RouterLink,
     PaymentIntentCardComponent,
     NextActionCardComponent,
+    ProviderSelectorComponent,
   ],
   templateUrl: './status.component.html',
 })
@@ -36,11 +46,18 @@ export class StatusComponent {
   private readonly flow = inject(PaymentFlowFacade);
   private readonly i18n = inject(I18nService);
 
-  intentId = '';
-  readonly selectedProvider = signal<PaymentProviderId>('stripe');
-  readonly result = signal<PaymentIntent | null>(null);
-  readonly error = this.flow.error;
-  readonly isLoading = this.flow.isLoading;
+  readonly statusPageState = signalState<StatusPageState>({
+    intentId: '',
+    providerIds: [...PAYMENT_PROVIDER_IDS],
+    selectedProvider: PAYMENT_PROVIDER_IDS[0],
+    lastQuery: null,
+  });
+
+  readonly flowState = deepComputed(() => ({
+    intent: this.flow.intent(),
+    error: this.flow.error(),
+    isLoading: this.flow.isLoading(),
+  }));
 
   readonly examples = computed(() => [
     {
@@ -55,19 +72,55 @@ export class StatusComponent {
     },
   ]);
 
+  readonly result = computed(() => {
+    const q = this.statusPageState.lastQuery();
+    const intent = this.flowState.intent();
+    if (!q) return null;
+    if (!intent) return null;
+
+    const sameId = intent.id === q.id;
+    const sameProvider = intent.provider === q.provider;
+    return sameId && sameProvider ? intent : null;
+  });
+
+  private didPrefill = false;
+
   constructor() {
     effect(() => {
-      const intent = this.flow.intent();
-      if (intent) this.result.set(intent);
+      if (this.didPrefill) return;
+
+      const intent = this.flowState.intent();
+      if (!intent) return;
+
+      // ✅ No pises si el usuario ya escribió algo o ya buscó algo
+      const userTypedSomething = this.statusPageState.intentId().trim().length > 0;
+      const alreadyHasQuery = this.statusPageState.lastQuery() !== null;
+
+      if (userTypedSomething || alreadyHasQuery) {
+        this.didPrefill = true; // "ya no vuelvas a intentar"
+        return;
+      }
+
+      this.didPrefill = true;
+
+      patchState(this.statusPageState, {
+        intentId: intent.id,
+        selectedProvider: intent.provider,
+        lastQuery: { provider: intent.provider, id: intent.id },
+      });
     });
   }
 
   searchIntent(): void {
-    if (!this.intentId.trim()) return;
+    const id = this.statusPageState.intentId().trim();
+    if (!id) return;
 
-    this.result.set(null);
+    patchState(this.statusPageState, {
+      intentId: id, // opcional: normalizas el input
+      lastQuery: { provider: this.statusPageState.selectedProvider(), id },
+    });
 
-    this.flow.refresh(this.selectedProvider(), this.intentId.trim());
+    this.flow.refresh(this.statusPageState.selectedProvider(), id);
   }
 
   confirmPayment(_intentId: string): void {
@@ -79,33 +132,55 @@ export class StatusComponent {
   }
 
   refreshPayment(intentId: string): void {
-    this.flow.refresh(this.selectedProvider(), intentId);
+    patchState(this.statusPageState, {
+      lastQuery: { provider: this.statusPageState.selectedProvider(), id: intentId },
+    });
+
+    this.flow.refresh(this.statusPageState.selectedProvider(), intentId);
   }
 
   useExample(example: { id: string; provider: PaymentProviderId }): void {
-    this.intentId = example.id;
-    this.selectedProvider.set(example.provider);
+    patchState(this.statusPageState, {
+      intentId: example.id,
+      selectedProvider: example.provider,
+    });
+
+    this.searchIntent();
+  }
+
+  selectProvider(provider: PaymentProviderId): void {
+    patchState(this.statusPageState, { selectedProvider: provider });
   }
 
   getErrorMessage(error: unknown): string {
     return renderPaymentError(this.i18n, error);
   }
 
-  readonly labels = {
-    consultStatusTitle: computed(() => this.i18n.t(I18nKeys.ui.consult_status)),
-    enterPaymentIdText: computed(() => this.i18n.t(I18nKeys.ui.enter_payment_id)),
-    intentIdLabel: computed(() => this.i18n.t(I18nKeys.ui.intent_id)),
-    intentIdPlaceholder: computed(() => this.i18n.t(I18nKeys.ui.intent_id_placeholder)),
-    exampleStripeText: computed(() => this.i18n.t(I18nKeys.ui.example_stripe)),
-    providerLabel: computed(() => this.i18n.t(I18nKeys.ui.provider)),
-    stripeProviderLabel: computed(() => this.i18n.t(I18nKeys.ui.provider_stripe)),
-    paypalProviderLabel: computed(() => this.i18n.t(I18nKeys.ui.provider_paypal)),
-    consultingLabel: computed(() => this.i18n.t(I18nKeys.ui.consulting)),
-    checkStatusLabel: computed(() => this.i18n.t(I18nKeys.ui.check_status)),
-    errorConsultingLabel: computed(() => this.i18n.t(I18nKeys.ui.error_consulting)),
-    resultLabel: computed(() => this.i18n.t(I18nKeys.ui.result)),
-    quickExamplesLabel: computed(() => this.i18n.t(I18nKeys.ui.quick_examples)),
-    checkoutLabel: computed(() => this.i18n.t(I18nKeys.ui.checkout)),
-    historyLabel: computed(() => this.i18n.t(I18nKeys.ui.view_history)),
-  };
+  get intentIdModel(): string {
+    return this.statusPageState.intentId();
+  }
+  set intentIdModel(value: string) {
+    patchState(this.statusPageState, { intentId: value });
+  }
+
+  // Guards
+  //Suggest a name for this guard
+  readonly canSearch = computed(
+    () => !this.statusPageState.intentId() || this.flowState.isLoading(),
+  );
+
+  readonly labels = deepComputed(() => ({
+    consultStatusTitle: this.i18n.t(I18nKeys.ui.consult_status),
+    enterPaymentIdText: this.i18n.t(I18nKeys.ui.enter_payment_id),
+    intentIdLabel: this.i18n.t(I18nKeys.ui.intent_id),
+    intentIdPlaceholder: this.i18n.t(I18nKeys.ui.intent_id_placeholder),
+    exampleStripeText: this.i18n.t(I18nKeys.ui.example_stripe),
+    consultingLabel: this.i18n.t(I18nKeys.ui.consulting),
+    checkStatusLabel: this.i18n.t(I18nKeys.ui.check_status),
+    errorConsultingLabel: this.i18n.t(I18nKeys.ui.error_consulting),
+    resultLabel: this.i18n.t(I18nKeys.ui.result),
+    quickExamplesLabel: this.i18n.t(I18nKeys.ui.quick_examples),
+    checkoutLabel: this.i18n.t(I18nKeys.ui.checkout),
+    historyLabel: this.i18n.t(I18nKeys.ui.view_history),
+  }));
 }

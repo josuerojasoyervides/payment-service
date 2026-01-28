@@ -1,6 +1,7 @@
 import { NextAction } from './payment-action.types';
 
-export type PaymentProviderId = 'stripe' | 'paypal';
+export const PAYMENT_PROVIDER_IDS = ['stripe', 'paypal'] as const;
+export type PaymentProviderId = (typeof PAYMENT_PROVIDER_IDS)[number];
 export type PaymentMethodType = 'card' | 'spei';
 
 export type PaymentIntentStatus =

@@ -6,6 +6,7 @@ const angular = require('angular-eslint');
 const unusedImports = require('eslint-plugin-unused-imports');
 const eslintConfigPrettier = require('eslint-config-prettier');
 const simpleImportSort = require('eslint-plugin-simple-import-sort');
+const ngrx = require('@ngrx/eslint-plugin/v9');
 
 module.exports = defineConfig([
   // ✅ ignora basura
@@ -21,6 +22,7 @@ module.exports = defineConfig([
       ...tseslint.configs.recommended,
       ...tseslint.configs.stylistic,
       ...angular.configs.tsRecommended,
+      ...ngrx.configs.all,
     ],
     processor: angular.processInlineTemplates,
 

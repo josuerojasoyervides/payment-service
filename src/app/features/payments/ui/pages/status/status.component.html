@@ -21,44 +21,23 @@
             type="text"
             class="input font-mono"
             [placeholder]="labels.intentIdPlaceholder()"
-            [(ngModel)]="intentId"
+            [(ngModel)]="intentIdModel"
             (keyup.enter)="searchIntent()" />
           <p class="text-xs text-gray-500 mt-1">
             {{ labels.exampleStripeText() }}
           </p>
         </div>
 
-        <!-- Provider Selection -->
-        <div>
-          <label class="label" for="provider">{{ labels.providerLabel() }}</label>
-          <div class="flex gap-3">
-            <button
-              type="button"
-              class="flex-1 py-2 px-4 rounded-lg border-2 transition-all"
-              [class.border-stripe-primary]="selectedProvider() === 'stripe'"
-              [class.bg-purple-50]="selectedProvider() === 'stripe'"
-              [class.border-gray-200]="selectedProvider() !== 'stripe'"
-              (click)="selectedProvider.set('stripe')">
-              <span class="font-medium">{{ labels.stripeProviderLabel() }}</span>
-            </button>
-            <button
-              type="button"
-              class="flex-1 py-2 px-4 rounded-lg border-2 transition-all"
-              [class.border-paypal-primary]="selectedProvider() === 'paypal'"
-              [class.bg-blue-50]="selectedProvider() === 'paypal'"
-              [class.border-gray-200]="selectedProvider() !== 'paypal'"
-              (click)="selectedProvider.set('paypal')">
-              <span class="font-medium">{{ labels.paypalProviderLabel() }}</span>
-            </button>
-          </div>
-        </div>
+        <!-- Provider Selection (genérico: lista desde PAYMENT_PROVIDER_IDS) -->
+        <app-provider-selector
+          [providers]="statusPageState.providerIds()"
+          [selected]="statusPageState.selectedProvider()"
+          [disabled]="flowState.isLoading()"
+          (providerChange)="selectProvider($event)" />
 
         <!-- Search Button -->
-        <button
-          class="btn-primary w-full"
-          [disabled]="!intentId || isLoading()"
-          (click)="searchIntent()">
-          @if (isLoading()) {
+        <button class="btn-primary w-full" [disabled]="canSearch()" (click)="searchIntent()">
+          @if (flowState.isLoading()) {
             <div class="spinner mr-2"></div>
             {{ labels.consultingLabel() }}
           } @else {
@@ -76,7 +55,7 @@
     </div>
 
     <!-- Error -->
-    @if (error(); as err) {
+    @if (flowState.error(); as err) {
       <div class="alert-error mb-6">
         <div class="flex items-start gap-3">
           <svg

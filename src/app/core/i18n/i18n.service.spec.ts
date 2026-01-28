@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { I18nKeys } from './i18n.keys';
 import { I18nService } from './i18n.service';
+import { Language } from './i18n.types';
 import { en } from './translations/en';
 import { es } from './translations/es';
 
@@ -106,7 +107,7 @@ describe('I18nService', () => {
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const currentLang = service.getLanguage();
 
-      service.setLanguage('fr');
+      service.setLanguage('fr' as Language);
 
       expect(service.getLanguage()).toBe(currentLang);
       expect(consoleSpy).toHaveBeenCalledWith(

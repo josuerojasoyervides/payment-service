@@ -2,19 +2,19 @@
   <div class="max-w-2xl mx-auto px-4">
     <!-- Header -->
     <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">{{ checkoutTitle() }}</h1>
-      <p class="text-gray-600 mt-2">{{ paymentSystemSubtitle() }}</p>
+      <h1 class="text-3xl font-bold text-gray-900">{{ checkoutLabels.checkoutTitle() }}</h1>
+      <p class="text-gray-600 mt-2">{{ checkoutLabels.paymentSystemSubtitle() }}</p>
 
       <!-- Navigation -->
       <div class="flex justify-center gap-4 mt-4 text-sm">
         <a routerLink="/payments/history" class="text-blue-600 hover:underline">
-          {{ viewHistoryLabel() }}
+          {{ checkoutLabels.viewHistoryLabel() }}
         </a>
         <a routerLink="/payments/status" class="text-blue-600 hover:underline">
-          {{ checkStatusLabel() }}
+          {{ checkoutLabels.checkStatusLabel() }}
         </a>
         <a routerLink="/payments/showcase" class="text-blue-600 hover:underline">
-          {{ showcaseLabel() }}
+          {{ checkoutLabels.showcaseLabel() }}
         </a>
       </div>
     </div>
@@ -23,15 +23,15 @@
     @if (showResult()) {
       <div class="mb-6">
         <app-payment-result
-          [intent]="currentIntent()"
-          [error]="currentError()"
+          [intent]="flowState.currentIntent()"
+          [error]="flowState.currentError()"
           (retry)="resetPayment()"
           (newPayment)="resetPayment()" />
 
         <!-- Next Action si existe -->
-        @if (currentIntent()?.nextAction) {
+        @if (flowState.currentIntent()?.nextAction) {
           <app-next-action-card
-            [nextAction]="currentIntent()!.nextAction!"
+            [nextAction]="flowState.currentIntent()!.nextAction!"
             (paypalRequested)="onPaypalRequested($event)" />
         }
       </div>
@@ -39,57 +39,65 @@
       <!-- Flujo de checkout -->
       <div class="space-y-6">
         <!-- Order Summary -->
-        <app-order-summary [orderId]="orderId()" [amount]="amount()" [currency]="currency()" />
+        <app-order-summary
+          [orderId]="checkoutPageState.orderId()"
+          [amount]="checkoutPageState.amount()"
+          [currency]="checkoutPageState.currency()" />
 
         <!-- Step 1: Provider Selection -->
         <div class="card">
           <div class="flex items-center gap-3 mb-4">
             <span class="step-number">1</span>
-            <h2 class="text-lg font-semibold">{{ paymentProviderLabel() }}</h2>
+            <h2 class="text-lg font-semibold">{{ checkoutLabels.paymentProviderLabel() }}</h2>
           </div>
           <app-provider-selector
             [providers]="availableProviders()"
-            [selected]="selectedProvider()"
-            [disabled]="isLoading()"
+            [selected]="checkoutPageState.selectedProvider()"
+            [disabled]="flowState.isLoading()"
             (providerChange)="selectProvider($event)" />
         </div>
 
         <!-- Step 2: Method Selection -->
         <div class="card">
           <div class="flex items-center gap-3 mb-4">
-            <span [class]="selectedProvider() ? 'step-number' : 'step-number-inactive'">2</span>
-            <h2 class="text-lg font-semibold">{{ paymentMethodLabel() }}</h2>
+            <span
+              [class]="
+                checkoutPageState.selectedProvider() ? 'step-number' : 'step-number-inactive'
+              "
+              >2</span
+            >
+            <h2 class="text-lg font-semibold">{{ checkoutLabels.paymentMethodLabel() }}</h2>
           </div>
           <app-method-selector
             [methods]="availableMethods()"
-            [selected]="selectedMethod()"
-            [disabled]="isLoading() || !selectedProvider()"
+            [selected]="checkoutPageState.selectedMethod()"
+            [disabled]="flowState.isLoading() || !checkoutPageState.selectedProvider()"
             (methodChange)="selectMethod($event)" />
         </div>
 
         <!-- Step 3: Payment Form -->
-        @if (selectedMethod()) {
+        @if (checkoutPageState.selectedMethod()) {
           <div class="card">
             <div class="flex items-center gap-3 mb-4">
               <span class="step-number">3</span>
-              <h2 class="text-lg font-semibold">{{ paymentDataLabel() }}</h2>
+              <h2 class="text-lg font-semibold">{{ checkoutLabels.paymentDataLabel() }}</h2>
             </div>
             <app-payment-form
               [requirements]="fieldRequirements()"
-              [disabled]="isLoading()"
+              [disabled]="flowState.isLoading()"
               (formChange)="onFormChange($event)"
               (formValidChange)="onFormValidChange($event)" />
           </div>
         }
 
         <!-- Payment Button -->
-        @if (selectedProvider() && selectedMethod()) {
+        @if (checkoutPageState.selectedProvider() && checkoutPageState.selectedMethod()) {
           <app-payment-button
-            [amount]="amount()"
-            [currency]="currency()"
-            [provider]="selectedProvider()"
-            [loading]="isLoading()"
-            [disabled]="!isFormValid()"
+            [amount]="checkoutPageState.amount()"
+            [currency]="checkoutPageState.currency()"
+            [provider]="checkoutPageState.selectedProvider()"
+            [loading]="flowState.isLoading()"
+            [disabled]="!checkoutPageState.isFormValid()"
             (pay)="processPayment()" />
         }
       </div>
@@ -100,20 +108,23 @@
       <div class="mt-8 p-4 bg-gray-100 rounded-lg">
         <details>
           <summary class="cursor-pointer text-sm text-gray-600 font-medium">
-            {{ debugInfoLabel() }}
+            {{ checkoutLabels.debugInfoLabel() }}
           </summary>
           <div class="mt-4 space-y-2 text-xs font-mono">
             <p>
-              <strong>{{ providerDebugLabel() }}:</strong> {{ selectedProvider() }}
+              <strong>{{ checkoutLabels.providerDebugLabel() }}:</strong>
+              {{ checkoutPageState.selectedProvider() }}
             </p>
             <p>
-              <strong>{{ methodDebugLabel() }}:</strong> {{ selectedMethod() }}
+              <strong>{{ checkoutLabels.methodDebugLabel() }}:</strong>
+              {{ checkoutPageState.selectedMethod() }}
             </p>
             <p>
-              <strong>{{ formValidLabel() }}:</strong> {{ isFormValid() }}
+              <strong>{{ checkoutLabels.formValidLabel() }}:</strong>
+              {{ checkoutPageState.isFormValid() }}
             </p>
             <p>
-              <strong>{{ loadingDebugLabel() }}:</strong> {{ isLoading() }}
+              <strong>{{ checkoutLabels.loadingDebugLabel() }}:</strong> {{ flowState.isLoading() }}
             </p>
             <pre class="bg-white p-2 rounded mt-2 overflow-auto">{{ debugInfo() | json }}</pre>
           </div>
@@ -123,8 +134,8 @@
 
     <!-- Fallback Modal -->
     <app-fallback-modal
-      [event]="pendingFallbackEvent()"
-      [open]="hasPendingFallback()"
+      [event]="fallbackState.pendingEvent()"
+      [open]="fallbackState.isPending()"
       (confirm)="confirmFallback($event)"
       (canceled)="cancelFallback()" />
   </div>

@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, HostListener, inject } from '@angular/core';
-import { I18nKeys, I18nService } from '@core/i18n';
+import { I18nKeys, I18nService, Language } from '@core/i18n';
 
 export interface LanguageOption {
-  code: string;
+  code: Language;
   name: string;
   flag: string;
 }
@@ -47,7 +47,7 @@ export class LanguageSelectorComponent {
   /**
    * Change the application language.
    */
-  selectLanguage(langCode: string): void {
+  selectLanguage(langCode: Language): void {
     this.i18n.setLanguage(langCode);
     this.isOpen = false;
   }

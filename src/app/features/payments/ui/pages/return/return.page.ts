@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Params, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
+import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 
 import { mapReturnQueryToReference } from '../../../application/adapters/events/external/payment-flow-return.mapper';
@@ -9,6 +10,7 @@ import { ExternalEventAdapter } from '../../../application/adapters/external-eve
 import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
 import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
+// TODO : This is a utility function, not a component responsibility
 function normalizeQueryParams(params: Params): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(params)) {
@@ -19,7 +21,20 @@ function normalizeQueryParams(params: Params): Record<string, string> {
   return out;
 }
 
+// TODO : This is a utility type, not a component responsibility
 type RedirectStatus = PaymentIntent['status'] | null;
+
+interface ReturnPageState {
+  // Query params
+  intentId: string | null;
+  paypalToken: string | null;
+  paypalPayerId: string | null;
+  redirectStatus: RedirectStatus;
+  allParams: Record<string, string>;
+  // Route data
+  isReturnFlow: boolean;
+  isCancelFlow: boolean;
+}
 
 /**
  * Return page for 3DS and PayPal callbacks.
@@ -43,57 +58,62 @@ export class ReturnComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly externalEvents = inject(ExternalEventAdapter);
 
-  // Query params
-  readonly intentId = signal<string | null>(null);
-  readonly paypalToken = signal<string | null>(null);
-  readonly paypalPayerId = signal<string | null>(null);
-  readonly redirectStatus = signal<RedirectStatus>(null);
-  readonly allParams = signal<Record<string, string>>({});
+  // Page State
+  readonly returnPageState = signalState<ReturnPageState>({
+    // Query params
+    intentId: null,
+    paypalToken: null,
+    paypalPayerId: null,
+    redirectStatus: null,
+    allParams: {},
 
-  // Route data
-  readonly isReturnFlow = signal(false);
-  readonly isCancelFlow = signal(false);
+    // Route data
+    isReturnFlow: false,
+    isCancelFlow: false,
+  });
 
-  // State
-  readonly currentIntent = this.flow.intent;
-  readonly isLoading = this.flow.isLoading;
+  // Global State
+  readonly flowState = deepComputed(() => ({
+    currentIntent: this.flow.intent(),
+    isLoading: this.flow.isLoading(),
+  }));
 
   // Computed
   readonly isCancel = computed(() => {
-    if (this.isCancelFlow()) return true;
-    return this.redirectStatus() === 'canceled';
+    if (this.returnPageState.isCancelFlow()) return true;
+    if (this.returnPageState.redirectStatus() === 'canceled') return true;
+    return false;
   });
 
   readonly isSuccess = computed(() => {
-    const intent = this.currentIntent();
+    const intent = this.flowState.currentIntent();
     if (intent) return intent.status === 'succeeded';
-    return this.redirectStatus() === 'succeeded';
+    if (this.returnPageState.redirectStatus() === 'succeeded') return true;
+    return false;
   });
 
   readonly flowType = computed(() => {
-    if (this.paypalToken()) return this.i18n.t(I18nKeys.ui.flow_paypal_redirect);
-    if (this.intentId()) return this.i18n.t(I18nKeys.ui.flow_3ds);
+    if (this.returnPageState.paypalToken()) return this.i18n.t(I18nKeys.ui.flow_paypal_redirect);
+    if (this.returnPageState.intentId()) return this.i18n.t(I18nKeys.ui.flow_3ds);
     return this.i18n.t(I18nKeys.ui.flow_unknown);
   });
 
   ngOnInit(): void {
     const data = this.route.snapshot.data;
-    this.isReturnFlow.set(!!data['returnFlow']);
-    this.isCancelFlow.set(!!data['cancelFlow']);
-
     const params = this.route.snapshot.queryParams;
-    this.allParams.set(normalizeQueryParams(params));
 
-    this.intentId.set(params['payment_intent'] || params['setup_intent'] || null);
     const rs = params['redirect_status'];
-    if (rs === 'succeeded' || rs === 'canceled' || rs === 'failed') {
-      this.redirectStatus.set(rs);
-    } else {
-      this.redirectStatus.set(null);
-    }
+    const redirectStatus = rs === 'succeeded' || rs === 'canceled' || rs === 'failed' ? rs : null;
+    patchState(this.returnPageState, {
+      intentId: params['payment_intent'] || params['setup_intent'] || null,
+      paypalToken: params['token'] || null,
+      paypalPayerId: params['PayerID'] || null,
+      redirectStatus: redirectStatus,
+      allParams: normalizeQueryParams(params),
 
-    this.paypalToken.set(params['token'] || null);
-    this.paypalPayerId.set(params['PayerID'] || null);
+      isReturnFlow: !!data['returnFlow'],
+      isCancelFlow: !!data['cancelFlow'],
+    });
 
     const reference = mapReturnQueryToReference(params);
     if (reference.referenceId) {
@@ -101,10 +121,10 @@ export class ReturnComponent implements OnInit {
         {
           providerId: reference.providerId,
           referenceId: reference.referenceId,
-          status: this.redirectStatus() ?? undefined,
+          status: this.returnPageState.redirectStatus() ?? undefined,
           raw: params,
         },
-        { refresh: !this.isCancelFlow() },
+        { refresh: !this.returnPageState.isCancelFlow() },
       );
     }
   }
@@ -119,49 +139,32 @@ export class ReturnComponent implements OnInit {
     this.flow.refresh(providerId, referenceId);
   }
 
-  readonly newPaymentButtonText = computed(() => this.i18n.t(I18nKeys.ui.new_payment_button));
+  readonly i18nLabels = deepComputed(() => ({
+    newPaymentButton: this.i18n.t(I18nKeys.ui.new_payment_button),
+    retryPayment: this.i18n.t(I18nKeys.ui.retry_payment),
+    viewHistory: this.i18n.t(I18nKeys.ui.view_history),
 
-  readonly retryPaymentText = computed(() => this.i18n.t(I18nKeys.ui.retry_payment));
+    paymentCanceled: this.i18n.t(I18nKeys.ui.payment_canceled),
+    paymentCanceledMessage: this.i18n.t(I18nKeys.ui.payment_canceled_message),
 
-  readonly viewHistoryText = computed(() => this.i18n.t(I18nKeys.ui.view_history));
+    paymentCompleted: this.i18n.t(I18nKeys.ui.payment_completed),
+    paymentCompletedMessage: this.i18n.t(I18nKeys.ui.payment_completed_message),
 
-  readonly paymentCanceledText = computed(() => this.i18n.t(I18nKeys.ui.payment_canceled));
+    verifyingPayment: this.i18n.t(I18nKeys.ui.verifying_payment),
+    verifyingPaymentMessage: this.i18n.t(I18nKeys.ui.verifying_payment_message),
 
-  readonly paymentCanceledMessageText = computed(() =>
-    this.i18n.t(I18nKeys.ui.payment_canceled_message),
-  );
+    returnInformation: this.i18n.t(I18nKeys.ui.return_information),
+    paymentStatus: this.i18n.t(I18nKeys.ui.payment_status),
+    viewAllParams: this.i18n.t(I18nKeys.ui.view_all_params),
+    flowTypeLabel: this.i18n.t(I18nKeys.ui.flow_type),
+    statusLabel: this.i18n.t(I18nKeys.ui.status_label),
 
-  readonly paymentCompletedText = computed(() => this.i18n.t(I18nKeys.ui.payment_completed));
+    canceled: this.i18n.t(I18nKeys.ui.canceled),
+    completed: this.i18n.t(I18nKeys.ui.completed),
+    processing: this.i18n.t(I18nKeys.ui.processing),
 
-  readonly paymentCompletedMessageText = computed(() =>
-    this.i18n.t(I18nKeys.ui.payment_completed_message),
-  );
-
-  readonly verifyingPaymentText = computed(() => this.i18n.t(I18nKeys.ui.verifying_payment));
-
-  readonly verifyingPaymentMessageText = computed(() =>
-    this.i18n.t(I18nKeys.ui.verifying_payment_message),
-  );
-
-  readonly returnInformationText = computed(() => this.i18n.t(I18nKeys.ui.return_information));
-
-  readonly paymentStatusText = computed(() => this.i18n.t(I18nKeys.ui.payment_status));
-
-  readonly viewAllParamsText = computed(() => this.i18n.t(I18nKeys.ui.view_all_params));
-
-  readonly flowTypeText = computed(() => this.i18n.t(I18nKeys.ui.flow_type));
-
-  readonly statusLabelText = computed(() => this.i18n.t(I18nKeys.ui.status_label));
-
-  readonly canceledText = computed(() => this.i18n.t(I18nKeys.ui.canceled));
-
-  readonly completedText = computed(() => this.i18n.t(I18nKeys.ui.completed));
-
-  readonly processingText = computed(() => this.i18n.t(I18nKeys.ui.processing));
-
-  readonly intentIdLabel = computed(() => this.i18n.t(I18nKeys.ui.intent_id));
-
-  readonly paypalTokenLabel = computed(() => this.i18n.t(I18nKeys.ui.paypal_token));
-
-  readonly paypalPayerIdLabel = computed(() => this.i18n.t(I18nKeys.ui.paypal_payer_id));
+    intentIdLabel: this.i18n.t(I18nKeys.ui.intent_id),
+    paypalTokenLabel: this.i18n.t(I18nKeys.ui.paypal_token),
+    paypalPayerIdLabel: this.i18n.t(I18nKeys.ui.paypal_payer_id),
+  }));
 }
