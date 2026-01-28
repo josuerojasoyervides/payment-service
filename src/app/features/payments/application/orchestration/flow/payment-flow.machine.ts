@@ -1,3 +1,4 @@
+import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { assign, fromPromise, setup } from 'xstate';
 
@@ -331,6 +332,33 @@ export const createPaymentFlowMachine = (
       })),
 
       clearError: assign(() => ({ error: null })),
+
+      setReturnCorrelationError: assign(({ event, context }) => {
+        if (event.type !== 'REDIRECT_RETURNED') return {};
+        const storedRef = resolveStatusReference(context.flowContext, event.payload.providerId);
+        const receivedId = event.payload.referenceId ?? '';
+        return {
+          error: createPaymentError(
+            'return_correlation_mismatch',
+            'errors.return_correlation_mismatch',
+            { expectedId: storedRef ?? '', receivedId },
+            null,
+          ),
+        };
+      }),
+
+      markReturnProcessed: assign(({ event, context }) => {
+        if (event.type !== 'REDIRECT_RETURNED') return {};
+        const refId = event.payload.referenceId ?? '';
+        const flowContext = context.flowContext
+          ? {
+              ...context.flowContext,
+              lastReturnReferenceId: refId,
+              lastReturnAt: Date.now(),
+            }
+          : null;
+        return { flowContext };
+      }),
     },
 
     guards: {
@@ -347,6 +375,17 @@ export const createPaymentFlowMachine = (
         const e = (event as { error?: unknown }).error;
         return isPaymentError(e) && e.code === 'unsupported_finalize';
       },
+      isReturnCorrelationMismatch: ({ event, context }) => {
+        if (event.type !== 'REDIRECT_RETURNED') return false;
+        const storedRef = resolveStatusReference(context.flowContext, event.payload.providerId);
+        const receivedId = event.payload.referenceId ?? '';
+        return storedRef != null && storedRef !== '' && storedRef !== receivedId;
+      },
+      isDuplicateReturn: ({ event, context }) => {
+        if (event.type !== 'REDIRECT_RETURNED') return false;
+        const refId = event.payload.referenceId ?? '';
+        return context.flowContext?.lastReturnReferenceId === refId;
+      },
     },
   }).createMachine({
     id: 'paymentFlow',
@@ -354,7 +393,22 @@ export const createPaymentFlowMachine = (
 
     on: {
       RESET: { target: '.idle', actions: 'clear' },
-      REDIRECT_RETURNED: { target: '.finalizing', actions: 'setExternalEventInput' },
+      REDIRECT_RETURNED: [
+        {
+          guard: 'isReturnCorrelationMismatch',
+          target: '.failed',
+          actions: 'setReturnCorrelationError',
+        },
+        {
+          guard: 'isDuplicateReturn',
+          target: '.reconciling',
+          actions: 'setExternalEventInput',
+        },
+        {
+          target: '.finalizing',
+          actions: ['setExternalEventInput', 'markReturnProcessed'],
+        },
+      ],
       EXTERNAL_STATUS_UPDATED: { target: '.reconciling', actions: 'setExternalEventInput' },
       WEBHOOK_RECEIVED: { target: '.reconciling', actions: 'setExternalEventInput' },
     },

@@ -49,6 +49,7 @@ export interface Translations {
     paypal_auth_error: string;
     unsupported_client_confirm: string;
     unsupported_finalize: string;
+    return_correlation_mismatch: string;
   };
 
   messages: {

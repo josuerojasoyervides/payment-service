@@ -44,6 +44,8 @@ export const en: Translations = {
     unsupported_client_confirm:
       'This provider does not support client-side confirmation from this flow.',
     unsupported_finalize: 'This provider does not support finalization from this flow.',
+    return_correlation_mismatch:
+      'Return reference does not match. Expected {{expectedId}}, received {{receivedId}}.',
   },
   messages: {
     payment_created: 'Payment created successfully',

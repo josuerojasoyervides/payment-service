@@ -19,8 +19,9 @@
 - **Last completed (PR4.4.1):** FINALIZE routing made provider-agnostic via ProviderFactoryRegistry capability (mirror of client_confirm). NextActionOrchestratorService resolves handler with factory.getFinalizeHandler?.() ?? null; if missing, throws PaymentError unsupported_finalize with messageKey errors.unsupported_finalize. Added i18n keys (en/es) and tests.
 - **Last completed (PR4.4.2):** PayPal finalize/capture capability added behind ProviderFactory (PaypalFinalizeHandler implements FinalizePort and delegates to PayPal confirm/capture via PaypalIntentFacade.confirmIntent). Factory exposes getFinalizeHandler(). Added wiring test proving registry → PayPal factory → handler.execute.
 - **Last completed (PR4.4.3):** REDIRECT_RETURNED now routes to finalizing (setExternalEventInput → invoke finalize). Success → reconciling; unsupported_finalize → reconciling (clearError, non-fatal); other errors → failed. Return page no longer uses hardcoded 'stripe' in refreshPaymentByReference. PayPal handler resolves orderId from providerRefs.paymentId (redirect-return merge).
-- **Next step:** PR4.4.4 — polish / E2E or next item per provider-integration-plan.
-- **Key files:** `ui-provider-coupling.spec.ts`, `payment-flow.persistence.spec.ts`.
+- **Last completed (PR4.4.4):** REDIRECT_RETURNED hardened: (1) Dedupe via FlowContext lastReturnReferenceId/lastReturnAt — same referenceId processed once only (duplicate → reconciling, no finalize). (2) Return trust: if stored ref (resolveStatusReference) conflicts with event referenceId → failed with PaymentError return_correlation_mismatch, no finalize. Machine-level guards only; no UI changes.
+- **Next step:** PR4.4.5 — webhook normalization / processing resolution per provider-integration-plan.
+- **Key files:** `payment-flow.machine.ts` (guards isReturnCorrelationMismatch, isDuplicateReturn; actions setReturnCorrelationError, markReturnProcessed), `payment-flow.machine.spec.ts`, `payment-flow.contract.spec.ts`.
 
 ## 🛠️ Technical Snapshot
 
@@ -60,7 +61,7 @@
 
 ## ⏭️ Immediate Next Action
 
-- [ ] PR4.4.4: Polish / E2E or next item per provider-integration-plan.
+- [ ] PR4.4.5: Webhook normalization / processing resolution.
 
 ---
 

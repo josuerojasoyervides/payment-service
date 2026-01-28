@@ -43,6 +43,8 @@ export const es: Translations = {
     unsupported_client_confirm:
       'Este proveedor no soporta confirmación en el cliente desde este flujo.',
     unsupported_finalize: 'Este proveedor no soporta finalización desde este flujo.',
+    return_correlation_mismatch:
+      'La referencia de retorno no coincide. Esperado {{expectedId}}, recibido {{receivedId}}.',
   },
   messages: {
     payment_created: 'Pago creado exitosamente',

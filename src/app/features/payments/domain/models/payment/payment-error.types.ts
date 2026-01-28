@@ -11,7 +11,8 @@ export type PaymentErrorCode =
   | 'insufficient_funds'
   | 'expired_card'
   | 'unsupported_client_confirm'
-  | 'unsupported_finalize';
+  | 'unsupported_finalize'
+  | 'return_correlation_mismatch';
 
 export type PaymentErrorParams = Record<string, string | number | boolean | null | undefined>;
 
