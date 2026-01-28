@@ -1,7 +1,7 @@
 import { patchState } from '@ngrx/signals';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { HISTORY_MAX_ENTRIES } from '@payments/application/orchestration/store/history/payment-store.history.types';
-import type { PaymentsStoreContext } from '@payments/application/orchestration/store/payment-store.types';
+import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type {
   PaymentIntent,

@@ -9,12 +9,12 @@ import {
 } from '@ngrx/signals';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
+import { createPaymentsStoreActions } from '@payments/application/orchestration/store/actions/payment-store.actions';
 import { createFallbackHandlers } from '@payments/application/orchestration/store/fallback/payment-store.fallback';
-import { createPaymentsStoreActions } from '@payments/application/orchestration/store/payment-store.actions';
+import type { PaymentsState } from '@payments/application/orchestration/store/payment-store.state';
+import { initialPaymentsState } from '@payments/application/orchestration/store/payment-store.state';
 import { setupPaymentFlowMachineBridge } from '@payments/application/orchestration/store/projection/payment-store.machine-bridge';
 import { buildPaymentsSelectors } from '@payments/application/orchestration/store/projection/payment-store.selectors';
-import type { PaymentsState } from '@payments/application/orchestration/store/projection/payment-store.state';
-import { initialPaymentsState } from '@payments/application/orchestration/store/projection/payment-store.state';
 import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 
 export const PaymentsStore = signalStore(

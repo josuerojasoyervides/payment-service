@@ -8,7 +8,7 @@ import type {
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
-import type { PaymentsState } from '@payments/application/orchestration/store/projection/payment-store.state';
+import type { PaymentsState } from '@payments/application/orchestration/store/payment-store.state';
 import type { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
 import type { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
