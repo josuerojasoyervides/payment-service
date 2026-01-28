@@ -48,6 +48,7 @@ export interface Translations {
     paypal_internal_error: string;
     paypal_auth_error: string;
     unsupported_client_confirm: string;
+    unsupported_finalize: string;
   };
 
   messages: {

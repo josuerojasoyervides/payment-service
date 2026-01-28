@@ -26,7 +26,8 @@
     "paypal_instrument_declined": "El método de pago fue rechazado por PayPal.",
     "paypal_order_not_approved": "Debes aprobar el pago en PayPal antes de continuar.",
     "paypal_internal_error": "PayPal está experimentando problemas. Intenta más tarde.",
-    "paypal_auth_error": "Error de autenticación con PayPal. Contacta soporte."
+    "paypal_auth_error": "Error de autenticación con PayPal. Contacta soporte.",
+    "unsupported_finalize": "Este proveedor no soporta finalización desde este flujo."
   },
   "messages": {
     "payment_created": "Pago creado exitosamente",

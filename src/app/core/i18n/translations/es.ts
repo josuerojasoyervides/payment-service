@@ -42,6 +42,7 @@ export const es: Translations = {
     paypal_auth_error: 'Error de autenticación con PayPal. Contacta soporte.',
     unsupported_client_confirm:
       'Este proveedor no soporta confirmación en el cliente desde este flujo.',
+    unsupported_finalize: 'Este proveedor no soporta finalización desde este flujo.',
   },
   messages: {
     payment_created: 'Pago creado exitosamente',

@@ -13,10 +13,11 @@
 
 ## 📍 Mission State (New-Chat Context)
 
-- **Critical Task:** PR4.3 — Move Stripe client confirmation out of UI into application orchestration (provider-agnostic).
+- **Critical Task:** PR4.4 — PayPal capture / finalize pipeline (per provider-integration-plan).
 - **Last completed (4.3.3):** clientConfirming stage invokes deps.clientConfirm (orchestration); onDone → reconciling + setIntent, onError → failed + setError. Machine tests: success path (CONFIRM → clientConfirming → reconciling), failure path (clientConfirmReject with PaymentError unsupported_client_confirm → failed, error.code/messageKey asserted). No REFRESH fallback; no provider branching.
 - **Last completed (4.3.4.2):** UI provider-coupling guardrail extended: (a) “no infrastructure import” runs on status, return, payment-intent-card + checkout + next-action-card; (b) “no provider identifiers” stays on orchestration entry points only (checkout, next-action-card). Status/Return use provider literals only as static demo (examples, PayPal URL param names), not for orchestration.
-- **Next step:** PR4.3 done; next is PR4.4 (PayPal capture / finalize) per provider-integration-plan.
+- **Last completed (PR4.4.1):** FINALIZE routing made provider-agnostic via ProviderFactoryRegistry capability (mirror of client_confirm). NextActionOrchestratorService resolves handler with factory.getFinalizeHandler?.() ?? null; if missing, throws PaymentError unsupported_finalize with messageKey errors.unsupported_finalize. Added i18n keys (en/es) and tests.
+- **Next step:** PR4.4.2 — add PayPal finalize handler capability + fake capture gateway wiring.
 - **Key files:** `ui-provider-coupling.spec.ts`, `payment-flow.persistence.spec.ts`.
 
 ## 🛠️ Technical Snapshot
@@ -57,7 +58,7 @@
 
 ## ⏭️ Immediate Next Action
 
-- [ ] PR4.4: PayPal capture / finalize pipeline (per provider-integration-plan).
+- [ ] PR4.4.2: Add PayPal finalize handler capability + fake capture gateway wiring.
 
 ---
 

@@ -10,7 +10,8 @@ export type PaymentErrorCode =
   | 'fallback_handled'
   | 'insufficient_funds'
   | 'expired_card'
-  | 'unsupported_client_confirm';
+  | 'unsupported_client_confirm'
+  | 'unsupported_finalize';
 
 export type PaymentErrorParams = Record<string, string | number | boolean | null | undefined>;
 

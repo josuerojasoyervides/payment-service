@@ -43,6 +43,7 @@ export const en: Translations = {
     paypal_auth_error: 'PayPal authentication error. Contact support.',
     unsupported_client_confirm:
       'This provider does not support client-side confirmation from this flow.',
+    unsupported_finalize: 'This provider does not support finalization from this flow.',
   },
   messages: {
     payment_created: 'Payment created successfully',
