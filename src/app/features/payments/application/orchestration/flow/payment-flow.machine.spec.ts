@@ -1,5 +1,7 @@
+import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import { firstValueFrom, of } from 'rxjs';
 import { AnyActorRef, createActor } from 'xstate';
 
 import { createPaymentFlowMachine } from './payment-flow.machine';
@@ -80,13 +82,17 @@ describe('PaymentFlowMachine', () => {
             })()
           : (overrides?.statusIntent ?? baseIntent),
       ),
-      clientConfirm: vi.fn(async () =>
-        overrides?.clientConfirmReject
-          ? (() => {
-              throw new Error();
-            })()
-          : (overrides?.clientConfirmIntent ?? baseIntent),
-      ),
+      clientConfirm: vi.fn(async () => {
+        if (overrides?.clientConfirmReject) {
+          throw createPaymentError(
+            'unsupported_client_confirm',
+            'errors.unsupported_client_confirm',
+            undefined,
+            null,
+          );
+        }
+        return overrides?.clientConfirmIntent ?? baseIntent;
+      }),
       finalize: vi.fn(async () =>
         overrides?.finalizeReject
           ? (() => {
@@ -152,7 +158,7 @@ describe('PaymentFlowMachine', () => {
     expect(snap.hasTag('ready')).toBe(true);
   });
 
-  it('requiresAction -> clientConfirming -> reconciling for client_confirm actions', async () => {
+  it('client_confirm success: requiresAction -> clientConfirming -> reconciling when deps.clientConfirm resolves', async () => {
     const { actor, deps } = setup({
       startIntent: {
         ...baseIntent,
@@ -189,7 +195,87 @@ describe('PaymentFlowMachine', () => {
     );
   });
 
-  it('clientConfirming failure transitions to failed with error', async () => {
+  it('client_confirm success: full path uses ProviderFactoryRegistry capability routing', async () => {
+    const resolvedIntent: PaymentIntent = { ...baseIntent, status: 'succeeded', id: 'pi_1' };
+    const startIntentWithClientConfirm: PaymentIntent = {
+      ...baseIntent,
+      status: 'requires_action',
+      nextAction: { kind: 'client_confirm', token: 'tok_runtime' },
+    };
+    const mockHandlerExecute = vi.fn(
+      (_req: { providerId: string; action: unknown; context: unknown }) => of(resolvedIntent),
+    );
+    const mockHandler = { execute: mockHandlerExecute };
+    const mockFactory = { getClientConfirmHandler: () => mockHandler };
+    const mockRegistry = {
+      has: () => true,
+      get: () => mockFactory,
+    };
+
+    const deps = {
+      startPayment: vi.fn(async () => startIntentWithClientConfirm),
+      confirmPayment: vi.fn(async () => baseIntent),
+      cancelPayment: vi.fn(async () => ({ ...baseIntent, status: 'canceled' as const })),
+      getStatus: vi.fn(async () => baseIntent),
+      clientConfirm: vi.fn(
+        async (request: { providerId: string; action: unknown; context: PaymentFlowContext }) => {
+          const factory = mockRegistry.get();
+          const handler = factory.getClientConfirmHandler?.();
+          if (!handler)
+            throw createPaymentError(
+              'unsupported_client_confirm',
+              'errors.unsupported_client_confirm',
+              undefined,
+              null,
+            );
+          return firstValueFrom(handler.execute(request));
+        },
+      ),
+      finalize: vi.fn(async () => baseIntent),
+    };
+
+    const config = {
+      polling: { baseDelayMs: 100000, maxDelayMs: 100000, maxAttempts: 99 },
+      statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 0 },
+    };
+    const machine = createPaymentFlowMachine(deps, config);
+    const actor = createActor(machine) as PaymentFlowActorRef;
+    actor.start();
+    activeActors.push(actor);
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: 'o1',
+        amount: 100,
+        currency: 'MXN',
+        method: { type: 'card', token: 'tok_123' },
+      },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+
+    actor.send({ type: 'CONFIRM', providerId: 'stripe', intentId: 'pi_1' });
+
+    await waitForSnapshot(actor, (s) => s.value === 'clientConfirming');
+
+    await waitForSnapshot(
+      actor,
+      (s) => s.value === 'reconciling' || s.value === 'reconcilingInvoke',
+    );
+
+    expect(mockHandlerExecute).toHaveBeenCalledTimes(1);
+    expect(mockHandlerExecute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: 'stripe',
+        action: { kind: 'client_confirm', token: 'tok_runtime' },
+      }),
+    );
+    expect(deps.clientConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('clientConfirming failure transitions to failed with PaymentError (unsupported_client_confirm)', async () => {
     const { actor } = setup({
       startIntent: {
         ...baseIntent,
@@ -220,6 +306,8 @@ describe('PaymentFlowMachine', () => {
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
     expect(snap.hasTag('error')).toBe(true);
+    expect(snap.context.error?.code).toBe('unsupported_client_confirm');
+    expect(snap.context.error?.messageKey).toBe('errors.unsupported_client_confirm');
   });
 
   it('START -> done when intent is final', async () => {

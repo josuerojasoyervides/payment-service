@@ -14,14 +14,14 @@
 ## 📍 Mission State (New-Chat Context)
 
 - **Critical Task:** PR4.3 — Move Stripe client confirmation out of UI into application orchestration (provider-agnostic).
-- **Last completed (4.3.2):** Provider-agnostic client-confirm routing via ProviderFactoryRegistry. Optional capability `getClientConfirmHandler?(): ClientConfirmPort | null` on ProviderFactory; orchestrator uses registry.get(providerId).getClientConfirmHandler?.() ?? null. No handler → PaymentError(code: 'unsupported_client_confirm', messageKey: 'errors.unsupported_client_confirm'). StripeJsAdapter not present in repo; Stripe/PayPal factories omit capability (return null).
-- **Next step:** 4.3.3 — Wire machine invoke (clientConfirming stage) to orchestration; on success CLIENT_CONFIRM_SUCCEEDED → reconciling; on failure CLIENT_CONFIRM_FAILED with PaymentError.
-- **Key files:** `provider-factory.port.ts`, `next-action-orchestrator.service.ts`, `payment-flow-client-confirm.stage.ts`, `payment-flow.actor.service.ts`.
+- **Last completed (4.3.3):** clientConfirming stage invokes deps.clientConfirm (orchestration); onDone → reconciling + setIntent, onError → failed + setError. Machine tests: success path (CONFIRM → clientConfirming → reconciling), failure path (clientConfirmReject with PaymentError unsupported_client_confirm → failed, error.code/messageKey asserted). No REFRESH fallback; no provider branching.
+- **Next step:** 4.3.4 — Add/adjust tests (min coverage: machine/integration, failure path, security).
+- **Key files:** `payment-flow-client-confirm.stage.ts`, `payment-flow.machine.spec.ts`, `payment-flow.actor.service.ts`.
 
 ## 🛠️ Technical Snapshot
 
-- **Client-confirm routing:** NextActionOrchestratorService injects ProviderFactoryRegistry; requestClientConfirm resolves handler via factory.getClientConfirmHandler?.() ?? null; no providerId switch in application.
-- **Application:** ClientConfirmPort optional on factory; machine clientConfirming invokes deps.clientConfirm (already wired to orchestrator in actor).
+- **clientConfirming:** invoke clientConfirm → onDone (CLIENT_CONFIRM_SUCCEEDED semantics) → reconciling; onError (CLIENT_CONFIRM_FAILED semantics) → failed + setError(PaymentError).
+- **Actor:** deps.clientConfirm = firstValueFrom(nextActionOrchestrator.requestClientConfirm(...)); orchestrator uses registry capability.
 
 ## 🚀 Git Planning & Workflow
 
@@ -56,7 +56,7 @@
 
 ## ⏭️ Immediate Next Action
 
-- [ ] PR4.3.3: Wire machine invoke (clientConfirming stage) to orchestration; CLIENT_CONFIRM_SUCCEEDED/FAILED transitions.
+- [ ] PR4.3.4: Add/adjust tests (min coverage: success/failure paths, security asserts).
 
 ---
 
