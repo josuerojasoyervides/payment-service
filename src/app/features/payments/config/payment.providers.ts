@@ -22,12 +22,15 @@ import { FakeStripeGetIntentGateway } from '@payments/infrastructure/stripe/fake
 
 import { ExternalEventAdapter } from '../application/adapters/external-event.adapter';
 import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
+import { CLIENT_CONFIRM_PORTS } from '../application/api/tokens/client-confirm.token';
+import { FINALIZE_PORTS } from '../application/api/tokens/finalize.token';
 import { PAYMENT_PROVIDER_FACTORIES } from '../application/api/tokens/payment-provider-factories.token';
 import { PAYMENT_PROVIDER_METHOD_POLICIES } from '../application/api/tokens/payment-provider-method-policies.token';
 import { PAYMENT_STATE } from '../application/api/tokens/payment-state.token';
 import { ProviderFactoryRegistry } from '../application/orchestration/registry/provider-factory.registry';
 import { ProviderMethodPolicyRegistry } from '../application/orchestration/registry/provider-method-policy.registry';
 import { FallbackOrchestratorService } from '../application/orchestration/services/fallback-orchestrator.service';
+import { NextActionOrchestratorService } from '../application/orchestration/services/next-action-orchestrator.service';
 import { PaymentsStore } from '../application/orchestration/store/payment-store';
 import { CancelPaymentUseCase } from '../application/orchestration/use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '../application/orchestration/use-cases/confirm-payment.use-case';
@@ -129,11 +132,17 @@ const USE_CASE_PROVIDERS: Provider[] = [
   GetPaymentStatusUseCase,
 ];
 
+const ACTION_PORT_PROVIDERS: Provider[] = [
+  { provide: CLIENT_CONFIRM_PORTS, useValue: [] },
+  { provide: FINALIZE_PORTS, useValue: [] },
+];
+
 const APPLICATION_PROVIDERS: Provider[] = [
   ProviderFactoryRegistry,
   ProviderMethodPolicyRegistry,
   ExternalEventAdapter,
   FallbackOrchestratorService,
+  NextActionOrchestratorService,
   PaymentsStore,
   PaymentFlowActorService,
   PaymentFlowFacade,
@@ -151,6 +160,7 @@ function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provide
     ...FACTORY_PROVIDERS,
     ...POLICY_PROVIDERS,
     ...USE_CASE_PROVIDERS,
+    ...ACTION_PORT_PROVIDERS,
     ...APPLICATION_PROVIDERS,
     ...SHARED_PROVIDERS,
     ...(options.extraProviders ?? []),
