@@ -2,6 +2,7 @@ import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.ty
 import { assign, fromPromise, setup } from 'xstate';
 
 import { normalizePaymentError } from '../store/projection/payment-store.errors';
+import { createFlowContext, updateFlowContextProviderRefs } from './payment-flow.context';
 import { PaymentFlowDeps } from './payment-flow.deps';
 import {
   canFallbackPolicy,
@@ -76,10 +77,16 @@ export const createPaymentFlowMachine = (
       setStartInput: assign(({ event }) => {
         if (event.type !== 'START') return {};
 
+        const flowContext = createFlowContext({
+          providerId: event.providerId,
+          request: event.request,
+          existing: event.flowContext ?? null,
+        });
+
         return {
           providerId: event.providerId,
           request: event.request,
-          flowContext: event.flowContext ?? null,
+          flowContext,
           intent: null,
           intentId: null,
           error: null,
@@ -146,11 +153,18 @@ export const createPaymentFlowMachine = (
         };
       }),
 
-      setIntent: assign(({ event }) => {
+      setIntent: assign(({ event, context }) => {
         if (!('output' in event)) return {};
+
+        const flowContext = updateFlowContextProviderRefs({
+          context: context.flowContext,
+          providerId: event.output.provider,
+          refs: { intentId: event.output.id },
+        });
         return {
           intent: event.output,
           intentId: event.output.id,
+          flowContext,
           error: null,
           polling: { attempt: 0 },
           statusRetry: { count: 0 },

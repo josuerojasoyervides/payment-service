@@ -13,17 +13,14 @@
 
 ## 📍 Mission State (New-Chat Context)
 
-- **Critical Task:** PR2 (NextAction contract + UI generic renderer) in progress.
-- **Recent Changes (PR2):**
-  - Provider-agnostic `NextAction.kind` contract implemented (redirect | client_confirm | manual_step | external_wait).
-  - Stripe/PayPal/SPEI mappers + strategies updated to emit new kinds.
-  - UI `NextActionCard` now renders by kind only and emits a generic action request.
-  - Checkout page calls `PaymentFlowFacade.performNextAction()` and no longer uses provider-specific logic.
-  - Added UI guardrail test to block provider identifiers in NextAction UI files.
-  - Added NextActionCard unit tests and updated integration/strategy tests for new kinds.
-  - Fixed TS errors: added `ui.continue_action` to i18n types, hardened fake Stripe intent mapper, tightened SPEI spec assertions, and made NextActionCard fallback render safe.
-- **Open/Relevant Files:** `docs/ai-active-context.md`, `docs/flow-brain.md`, `docs/architecture-rules.md`, `docs/goals.md`.
-- **Error Context:** All tests green after PR2 updates (bun run test).
+- **Critical Task:** PR3 (FlowContext + providerRefs + safe persistence + re-entry) in progress.
+- **Recent Changes (PR3 - 3.1):**
+  - Expanded `PaymentFlowContext` with flowId, providerRefs, correlation refs, timestamps, and return tracking fields.
+  - Added flow context utilities (flowId generation, context creation, providerRefs merge/update).
+  - Machine now creates a normalized FlowContext on START and merges intent ids into providerRefs.
+  - Added unit tests for FlowContext creation and providerRefs merge behavior.
+- **Open/Relevant Files:** `docs/ai-active-context.md`, `docs/provider-integration-plan.md`, `docs/flow-brain.md`, `docs/architecture-rules.md`, `docs/goals.md`.
+- **Error Context:** Not run in this step.
 
 ## 🛠️ Technical Snapshot (Angular)
 
@@ -58,11 +55,12 @@
 - [x] **Branch:** `chore/store-fallback-cleanup` | **Commit:** `chore(payments): clean store/fallback visuals`
 - [x] **Branch:** `feat/flow-retry-polling` | **Commit:** `feat(flow): add retry/backoff and polling cadence`
 - [x] **Branch:** `feat/external-event-mappers` | **Commit:** `feat(flow): add external event mappers`
-- [ ] **Branch:** `task/next-action-generic` | **Commit:** `refactor(flow): normalize nextAction kind`
+- [x] **Branch:** `task/next-action-generic` | **Commit:** `refactor(flow): normalize nextAction kind`
+- [ ] **Branch:** `task/flow-context-reentry` | **Commit:** `feat(flow): add providerRefs and safe context store`
 
 ## ⏭️ Immediate Next Action
 
-- [ ] Finish PR2: run targeted tests and finalize PR2 summary.
+- [ ] Finish PR3.1 and confirm to proceed to 3.2.
 - [ ] Close docs refresh (update flow brain, cleanup docs).
 
 ---
