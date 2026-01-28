@@ -18,13 +18,15 @@ describe('payment-flow.context', () => {
 
   it('creates a deterministic flow context with ids and timestamps', () => {
     const nowMs = 1_700_000_000_000;
+    const flowIdGenerator = () => 'flow_stub';
     const result = createFlowContext({
       providerId: 'stripe',
       request,
       nowMs,
+      flowIdGenerator,
     });
 
-    expect(result.flowId).toBe(`flow_${nowMs.toString(36)}_1`);
+    expect(result.flowId).toBe('flow_stub');
     expect(result.providerId).toBe('stripe');
     expect(result.externalReference).toBe('order_123');
     expect(result.createdAt).toBe(nowMs);

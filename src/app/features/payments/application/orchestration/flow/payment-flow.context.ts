@@ -8,23 +8,24 @@ import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-re
 
 export const FLOW_CONTEXT_TTL_MS = 30 * 60 * 1000;
 
-let flowSequence = 0;
+export type FlowIdGenerator = (nowMs: number) => string;
 
-export function generateFlowId(nowMs: number): string {
-  flowSequence += 1;
-  return `flow_${nowMs.toString(36)}_${flowSequence.toString(36)}`;
-}
+export const defaultFlowIdGenerator: FlowIdGenerator = (nowMs) => {
+  return `flow_${nowMs.toString(36)}_${createRandomSuffix()}`;
+};
 
 export function createFlowContext(params: {
   providerId: PaymentProviderId;
   request: CreatePaymentRequest;
   existing?: PaymentFlowContext | null;
   nowMs?: number;
+  flowIdGenerator?: FlowIdGenerator;
 }): PaymentFlowContext {
   const nowMs = params.nowMs ?? Date.now();
   const base = params.existing ?? {};
+  const flowIdGenerator = params.flowIdGenerator ?? defaultFlowIdGenerator;
 
-  const flowId = base.flowId ?? generateFlowId(nowMs);
+  const flowId = base.flowId ?? flowIdGenerator(nowMs);
   const createdAt = base.createdAt ?? nowMs;
   const expiresAt = base.expiresAt ?? nowMs + FLOW_CONTEXT_TTL_MS;
   const externalReference = base.externalReference ?? params.request.orderId;
@@ -87,4 +88,18 @@ function mergeReferenceSet(
     if (value !== undefined) merged[key] = value;
   });
   return merged;
+}
+
+function createRandomSuffix(): string {
+  if (typeof globalThis === 'undefined' || !globalThis.crypto) {
+    throw new Error('Secure random generator is not available');
+  }
+
+  if (globalThis.crypto.randomUUID) {
+    return globalThis.crypto.randomUUID().replace(/-/g, '').slice(0, 8);
+  }
+
+  const bytes = new Uint8Array(8);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }

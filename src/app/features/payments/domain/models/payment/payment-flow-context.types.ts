@@ -11,7 +11,8 @@ export type ProviderReferenceKey = 'intentId' | 'orderId' | 'preferenceId' | 'pa
 export type ProviderReferenceSet = Partial<Record<ProviderReferenceKey, string>> &
   Record<string, string | undefined>;
 
-export type ProviderReferences = Partial<Record<PaymentProviderId, ProviderReferenceSet>>;
+export type ProviderRefs = ProviderReferenceSet;
+export type ProviderReferences = Partial<Record<PaymentProviderId, ProviderRefs>>;
 
 export interface PaymentFlowContext {
   /** Stable internal flow id for correlation */

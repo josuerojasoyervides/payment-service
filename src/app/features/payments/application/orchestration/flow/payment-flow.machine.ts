@@ -156,14 +156,19 @@ export const createPaymentFlowMachine = (
       setIntent: assign(({ event, context }) => {
         if (!('output' in event)) return {};
 
-        const flowContext = updateFlowContextProviderRefs({
-          context: context.flowContext,
-          providerId: event.output.provider,
-          refs: { intentId: event.output.id },
-        });
+        const providerRefs = event.output.providerRefs;
+        const flowContext = providerRefs
+          ? updateFlowContextProviderRefs({
+              context: context.flowContext,
+              providerId: event.output.provider,
+              refs: providerRefs,
+            })
+          : context.flowContext;
+
+        const resolvedIntentId = providerRefs?.intentId ?? event.output.id;
         return {
           intent: event.output,
-          intentId: event.output.id,
+          intentId: resolvedIntentId,
           flowContext,
           error: null,
           polling: { attempt: 0 },
