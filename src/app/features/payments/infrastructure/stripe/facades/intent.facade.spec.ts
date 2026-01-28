@@ -5,13 +5,12 @@ import type {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
+import { StripeIntentFacade } from '@payments/infrastructure/stripe/facades/intent.facade';
+import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/gateways/intent/cancel-intent.gateway';
+import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/gateways/intent/confirm-intent.gateway';
+import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/gateways/intent/create-intent.gateway';
+import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/gateways/intent/get-intent.gateway';
 import { of } from 'rxjs';
-
-import { StripeCancelIntentGateway } from '../gateways/intent/cancel-intent.gateway';
-import { StripeConfirmIntentGateway } from '../gateways/intent/confirm-intent.gateway';
-import { StripeCreateIntentGateway } from '../gateways/intent/create-intent.gateway';
-import { StripeGetIntentGateway } from '../gateways/intent/get-intent.gateway';
-import { StripeIntentFacade } from './intent.facade';
 
 describe('IntentFacade (adapter)', () => {
   let gateway: StripeIntentFacade;

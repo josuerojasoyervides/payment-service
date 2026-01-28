@@ -1,4 +1,4 @@
-import type { StripeErrorResponse } from '../dto/stripe.dto';
+import type { StripeErrorResponse } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 interface StripeErrorEnvelope {
   error: StripeErrorResponse['error'];

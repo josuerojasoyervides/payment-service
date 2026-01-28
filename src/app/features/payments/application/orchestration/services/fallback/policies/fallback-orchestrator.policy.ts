@@ -1,10 +1,9 @@
+import type { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
 import type { FallbackConfig } from '@payments/domain/models/fallback/fallback-config.types';
 import type { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-
-import type { ProviderFactoryRegistry } from '../../../registry/provider-factory.registry';
 
 /**
  * ✅ Eligibility / stopping conditions

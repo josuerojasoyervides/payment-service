@@ -1,6 +1,5 @@
 import type { Routes } from '@angular/router';
-
-import providePayments from './config/payment.providers';
+import providePayments from '@payments/config/payment.providers';
 
 /**
  * Payments module routes with lazy loading.

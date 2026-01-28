@@ -1,8 +1,7 @@
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { generateId } from '@payments/infrastructure/fake/helpers/get-id.helper';
+import { hashString } from '@payments/infrastructure/fake/helpers/hash-string.helper';
 import type { StripeSpeiSourceDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
-
-import { generateId } from './get-id.helper';
-import { hashString } from './hash-string.helper';
 
 export function createFakeSpeiSource(req: CreatePaymentRequest): StripeSpeiSourceDto {
   const sourceId = generateId('src');

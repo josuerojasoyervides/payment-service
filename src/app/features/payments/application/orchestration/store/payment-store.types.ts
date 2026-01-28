@@ -1,4 +1,9 @@
 import type { WritableStateSource } from '@ngrx/signals';
+import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
+import type {
+  PaymentFlowStatus,
+  PaymentsState,
+} from '@payments/application/orchestration/store/projection/payment-store.state';
 import type { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type {
@@ -6,9 +11,6 @@ import type {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-
-import type { PaymentHistoryEntry } from './history/payment-store.history.types';
-import type { PaymentFlowStatus, PaymentsState } from './projection/payment-store.state';
 
 /**
  * Minimal store shape used by internal helpers.

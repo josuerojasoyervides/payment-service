@@ -1,5 +1,8 @@
-import { resolveStatusReference } from '../payment-flow.context';
-import type { PaymentFlowMachineContext, PaymentFlowStatesConfig } from '../payment-flow.types';
+import { resolveStatusReference } from '@payments/application/orchestration/flow/payment-flow.context';
+import type {
+  PaymentFlowMachineContext,
+  PaymentFlowStatesConfig,
+} from '@payments/application/orchestration/flow/payment-flow.types';
 
 export const reconcileStates = {
   reconciling: {

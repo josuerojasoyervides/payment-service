@@ -1,6 +1,5 @@
+import { generateId } from '@payments/infrastructure/fake/helpers/get-id.helper';
 import type { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
-
-import { generateId } from './get-id.helper';
 
 export function createConfirmedPaypalOrder(orderId: string): PaypalOrderDto {
   const captureId = generateId('CAPTURE').toUpperCase();

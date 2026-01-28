@@ -1,15 +1,14 @@
-import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
-import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { createActor } from 'xstate';
-
-import { createPaymentFlowMachine } from '../application/orchestration/flow/payment-flow.machine';
-import type { PaymentFlowConfigOverrides } from '../application/orchestration/flow/payment-flow.policy';
+import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
+import type { PaymentFlowConfigOverrides } from '@payments/application/orchestration/flow/payment-flow.policy';
 import type {
   PaymentFlowActorRef,
   PaymentFlowMachineContext,
   PaymentFlowSnapshot,
-} from '../application/orchestration/flow/payment-flow.types';
+} from '@payments/application/orchestration/flow/payment-flow.types';
+import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
+import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { createActor } from 'xstate';
 
 interface Deferred<T> {
   promise: Promise<T>;

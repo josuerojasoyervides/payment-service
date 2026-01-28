@@ -2,10 +2,9 @@ import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-
-import type { StripePaymentIntentDto } from '../dto/stripe.dto';
-import { STATUS_MAP } from './internal-status.mapper';
-import { mapStripeNextAction } from './next-action.mapper';
+import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
+import { STATUS_MAP } from '@payments/infrastructure/stripe/mappers/internal-status.mapper';
+import { mapStripeNextAction } from '@payments/infrastructure/stripe/mappers/next-action.mapper';
 
 export function mapPaymentIntent(
   dto: StripePaymentIntentDto,

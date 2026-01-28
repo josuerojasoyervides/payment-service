@@ -4,11 +4,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
+import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-
-import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
-import { StatusComponent } from './status.page';
+import { StatusComponent } from '@payments/ui/pages/status/status.page';
 
 describe('StatusComponent', () => {
   let component: StatusComponent;

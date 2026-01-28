@@ -2,8 +2,7 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 import type { CurrencyCode } from '@payments/domain/models/payment/payment-intent.types';
-
-import type { OrderItem } from '../../shared/ui.types';
+import type { OrderItem } from '@payments/ui/shared/ui.types';
 
 /**
  * Component that displays order summary.

@@ -2,7 +2,7 @@ import type {
   PaymentFlowEvent,
   PaymentFlowMachineContext,
   PaymentFlowStatesConfig,
-} from '../payment-flow.types';
+} from '@payments/application/orchestration/flow/payment-flow.types';
 
 export const confirmStates = {
   confirming: {

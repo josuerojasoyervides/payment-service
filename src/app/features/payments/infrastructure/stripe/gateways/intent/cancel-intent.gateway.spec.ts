@@ -4,8 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import type { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-
-import { StripeCancelIntentGateway } from './cancel-intent.gateway';
+import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/gateways/intent/cancel-intent.gateway';
 
 describe('StripeCancelIntentGateway', () => {
   let gateway: StripeCancelIntentGateway;

@@ -1,11 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
+import { PaypalIntentFacade } from '@payments/infrastructure/paypal/facades/intent.facade';
+import { PaypalProviderFactory } from '@payments/infrastructure/paypal/factories/paypal-provider.factory';
+import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/handlers/paypal-finalize.handler';
+import { PaypalRedirectStrategy } from '@payments/infrastructure/paypal/strategies/paypal-redirect.strategy';
 import { firstValueFrom, of } from 'rxjs';
-
-import { PaypalIntentFacade } from '../facades/intent.facade';
-import { PaypalFinalizeHandler } from '../handlers/paypal-finalize.handler';
-import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
-import { PaypalProviderFactory } from './paypal-provider.factory';
 
 describe('PaypalProviderFactory', () => {
   let factory: PaypalProviderFactory;

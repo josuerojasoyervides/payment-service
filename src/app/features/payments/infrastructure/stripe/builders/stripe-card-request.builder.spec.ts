@@ -1,6 +1,5 @@
 import { I18nKeys } from '@core/i18n';
-
-import { StripeCardRequestBuilder } from './stripe-card-request.builder';
+import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/builders/stripe-card-request.builder';
 
 describe('StripeCardRequestBuilder', () => {
   let builder: StripeCardRequestBuilder;

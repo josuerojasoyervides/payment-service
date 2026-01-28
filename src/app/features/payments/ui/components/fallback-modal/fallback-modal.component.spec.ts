@@ -3,8 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { I18nKeys, I18nService } from '@core/i18n';
 import type { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-
-import { FallbackModalComponent } from './fallback-modal.component';
+import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 
 describe('FallbackModalComponent', () => {
   let component: FallbackModalComponent;

@@ -2,6 +2,11 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
+import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
+import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
+import { HISTORY_MAX_ENTRIES } from '@payments/application/orchestration/store/history/payment-store.history.types';
+import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
+import { initialPaymentsState } from '@payments/application/orchestration/store/projection/payment-store.state';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type {
   PaymentIntent,
@@ -9,12 +14,6 @@ import type {
 } from '@payments/domain/models/payment/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { Subject } from 'rxjs';
-
-import { PaymentFlowActorService } from '../flow/payment-flow.actor.service';
-import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
-import { HISTORY_MAX_ENTRIES } from './history/payment-store.history.types';
-import { PaymentsStore } from './payment-store';
-import { initialPaymentsState } from './projection/payment-store.state';
 
 describe('PaymentsStore', () => {
   let store: InstanceType<typeof PaymentsStore>;

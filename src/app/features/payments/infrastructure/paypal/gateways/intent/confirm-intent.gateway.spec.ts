@@ -3,9 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/confirm-intent.gateway';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
-
-import { PaypalConfirmIntentGateway } from './confirm-intent.gateway';
 
 describe('PaypalConfirmIntentGateway', () => {
   let gateway: PaypalConfirmIntentGateway;

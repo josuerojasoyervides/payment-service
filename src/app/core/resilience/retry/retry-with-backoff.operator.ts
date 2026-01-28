@@ -1,16 +1,15 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import type { Observable } from 'rxjs';
-import { throwError, timer } from 'rxjs';
-import { mergeMap, retryWhen, scan } from 'rxjs/operators';
-
-import type { RetryConfig } from './retry.types';
+import type { RetryConfig } from '@core/resilience/retry/retry.types';
 import {
   calculateBackoffDelay,
   DEFAULT_RETRY_CONFIG,
   isRetryableError,
   parseRetryAfterHeader,
   RetryExhaustedError,
-} from './retry.types';
+} from '@core/resilience/retry/retry.types';
+import type { Observable } from 'rxjs';
+import { throwError, timer } from 'rxjs';
+import { mergeMap, retryWhen, scan } from 'rxjs/operators';
 
 /**
  * Estado interno del operador de retry.

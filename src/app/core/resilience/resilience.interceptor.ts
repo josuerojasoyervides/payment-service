@@ -1,12 +1,11 @@
 import type { HttpInterceptorFn } from '@angular/common/http';
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { LoggerService } from '@core/logging/logger.service';
+import { CircuitBreakerService, CircuitOpenError } from '@core/resilience/circuit-breaker';
+import { RateLimiterService, RateLimitExceededError } from '@core/resilience/rate-limiter';
+import { DEFAULT_RESILIENCE_CONFIG } from '@core/resilience/resilience.types';
 import { catchError, tap, throwError } from 'rxjs';
-
-import { LoggerService } from '../logging/logger.service';
-import { CircuitBreakerService, CircuitOpenError } from './circuit-breaker';
-import { RateLimiterService, RateLimitExceededError } from './rate-limiter';
-import { DEFAULT_RESILIENCE_CONFIG } from './resilience.types';
 
 /**
  * URL patterns excluded from circuit breaker and rate limiting.

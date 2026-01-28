@@ -20,8 +20,7 @@ import { PaymentIntentCardComponent } from '@payments/ui/components/payment-inte
 import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
 import { SpeiInstructionsComponent } from '@payments/ui/components/spei-instructions/spei-instructions.component';
-
-import type { OrderItem, PaymentButtonState } from '../../shared/ui.types';
+import type { OrderItem, PaymentButtonState } from '@payments/ui/shared/ui.types';
 
 /**
  * Showcase page to demonstrate all UI components.

@@ -2,11 +2,11 @@ import { provideHttpClient, withInterceptors, withInterceptorsFromDi } from '@an
 import type { ApplicationConfig } from '@angular/core';
 import { provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { cacheInterceptor } from '@core/caching';
+import { loggingInterceptor } from '@core/logging';
+import { resilienceInterceptor, retryInterceptor } from '@core/resilience';
 
 import { routes } from './app.routes';
-import { cacheInterceptor } from './core/caching';
-import { loggingInterceptor } from './core/logging';
-import { resilienceInterceptor, retryInterceptor } from './core/resilience';
 /**
  * Main application configuration.
  *

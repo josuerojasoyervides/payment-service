@@ -1,14 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import type {
+  ProviderMethodPolicy,
+  ProviderMethodPolicyPort,
+} from '@payments/application/api/ports/provider-method-policy.port';
+import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/payment-provider-method-policies.token';
+import type {
   PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-
-import type {
-  ProviderMethodPolicy,
-  ProviderMethodPolicyPort,
-} from '../../api/ports/provider-method-policy.port';
-import { PAYMENT_PROVIDER_METHOD_POLICIES } from '../../api/tokens/payment-provider-method-policies.token';
 
 @Injectable()
 export class ProviderMethodPolicyRegistry {

@@ -3,14 +3,13 @@ import type { OnDestroy } from '@angular/core';
 import { Component, computed, effect, inject, input, isDevMode, output } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
 import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
-import { AutofocusDirective } from '@shared/directives/autofocus.directive';
-import { debounceTime, Subject, takeUntil } from 'rxjs';
-
 import type {
   FieldRequirement,
   FieldRequirements,
   PaymentOptions,
-} from '../../../domain/ports/payment/payment-request-builder.port';
+} from '@payments/domain/ports/payment/payment-request-builder.port';
+import { AutofocusDirective } from '@shared/directives/autofocus.directive';
+import { debounceTime, Subject, takeUntil } from 'rxjs';
 
 type DynamicControl = FormControl<string | boolean>;
 type DynamicForm = FormRecord<DynamicControl>;

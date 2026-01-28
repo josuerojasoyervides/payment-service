@@ -1,10 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { PaypalRedirectStrategy } from '@payments/infrastructure/paypal/strategies/paypal-redirect.strategy';
 import { firstValueFrom, of } from 'rxjs';
-
-import type { PaymentGatewayPort } from '../../../application/api/ports/payment-gateway.port';
-import { PaypalRedirectStrategy } from './paypal-redirect.strategy';
 
 describe('PaypalRedirectStrategy', () => {
   let strategy: PaypalRedirectStrategy;

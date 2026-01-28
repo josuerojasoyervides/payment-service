@@ -1,4 +1,6 @@
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import type { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
+import type { PaymentsStoreContext } from '@payments/application/orchestration/store/payment-store.types';
 import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import type {
@@ -8,9 +10,6 @@ import type {
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
 import { ignoreElements, pipe, tap } from 'rxjs';
-
-import type { PaymentFlowActorService } from '../flow/payment-flow.actor.service';
-import type { PaymentsStoreContext } from './payment-store.types';
 
 export interface PaymentsStoreDeps {
   stateMachine: PaymentFlowActorService;

@@ -5,12 +5,11 @@ import type {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import type { GetPaymentStatusRequest } from '@payments/domain/models/payment/payment-request.types';
+import { createFakePaypalOrderStatus } from '@payments/infrastructure/fake/helpers/create-fake-paypal-order-status.helper';
+import { createFakeStripeIntentStatus } from '@payments/infrastructure/fake/helpers/create-fake-stripe-intent-status.helper';
+import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';
+import { mapIntent } from '@payments/infrastructure/fake/mappers/intent.mapper';
 import type { Observable } from 'rxjs';
-
-import { createFakePaypalOrderStatus } from '../../helpers/create-fake-paypal-order-status.helper';
-import { createFakeStripeIntentStatus } from '../../helpers/create-fake-stripe-intent-status.helper';
-import { simulateNetworkDelay } from '../../helpers/simulate-network-delay.helper';
-import { mapIntent } from '../../mappers/intent.mapper';
 
 @Injectable()
 export abstract class FakeGetIntentGateway extends PaymentOperationPort<

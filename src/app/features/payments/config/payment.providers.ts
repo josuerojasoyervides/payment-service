@@ -1,30 +1,29 @@
-import type { EnvironmentProviders} from '@angular/core';
+import type { EnvironmentProviders } from '@angular/core';
 import { type Provider } from '@angular/core';
+import { ExternalEventAdapter } from '@payments/application/adapters/external-event.adapter';
+import { NgRxSignalsStateAdapter } from '@payments/application/adapters/ngrx-signals-state.adapter';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
+import { CLIENT_CONFIRM_PORTS } from '@payments/application/api/tokens/client-confirm.token';
+import { FINALIZE_PORTS } from '@payments/application/api/tokens/finalize.token';
+import { PAYMENT_STATE } from '@payments/application/api/tokens/payment-state.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
-
-import { ExternalEventAdapter } from '../application/adapters/external-event.adapter';
-import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
-import { CLIENT_CONFIRM_PORTS } from '../application/api/tokens/client-confirm.token';
-import { FINALIZE_PORTS } from '../application/api/tokens/finalize.token';
-import { PAYMENT_STATE } from '../application/api/tokens/payment-state.token';
-import { ProviderFactoryRegistry } from '../application/orchestration/registry/provider-factory.registry';
-import { ProviderMethodPolicyRegistry } from '../application/orchestration/registry/provider-method-policy.registry';
-import { FallbackOrchestratorService } from '../application/orchestration/services/fallback-orchestrator.service';
-import { NextActionOrchestratorService } from '../application/orchestration/services/next-action-orchestrator.service';
-import { PaymentsStore } from '../application/orchestration/store/payment-store';
-import { CancelPaymentUseCase } from '../application/orchestration/use-cases/cancel-payment.use-case';
-import { ConfirmPaymentUseCase } from '../application/orchestration/use-cases/confirm-payment.use-case';
-import { GetPaymentStatusUseCase } from '../application/orchestration/use-cases/get-payment-status.use-case';
-import { StartPaymentUseCase } from '../application/orchestration/use-cases/start-payment.use-case';
-import { IdempotencyKeyFactory } from '../shared/idempotency/idempotency-key.factory';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import { ProviderMethodPolicyRegistry } from '@payments/application/orchestration/registry/provider-method-policy.registry';
+import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
+import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action-orchestrator.service';
+import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
+import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
+import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
+import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
+import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
 import {
   type PaymentsProvidersMode,
   type PaymentsProvidersOptions,
-} from './payments-providers.types';
-import { providePaypalProviderConfig } from './providers/paypal.providers';
-import { provideStripeProviderConfig } from './providers/stripe.providers';
+} from '@payments/config/payments-providers.types';
+import { providePaypalProviderConfig } from '@payments/config/providers/paypal.providers';
+import { provideStripeProviderConfig } from '@payments/config/providers/stripe.providers';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 function selectProviderConfigs(mode: PaymentsProvidersMode): Provider[] {
   return [...provideStripeProviderConfig(mode), ...providePaypalProviderConfig(mode)];

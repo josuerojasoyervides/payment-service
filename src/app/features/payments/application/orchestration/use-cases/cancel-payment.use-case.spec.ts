@@ -1,5 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type {
   PaymentIntent,
@@ -9,11 +13,6 @@ import type {
 import type { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { firstValueFrom, of, throwError } from 'rxjs';
-
-import type { PaymentGatewayPort } from '../../api/ports/payment-gateway.port';
-import type { ProviderFactory } from '../../api/ports/provider-factory.port';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { CancelPaymentUseCase } from './cancel-payment.use-case';
 
 describe('CancelPaymentUseCase', () => {
   let useCase: CancelPaymentUseCase;

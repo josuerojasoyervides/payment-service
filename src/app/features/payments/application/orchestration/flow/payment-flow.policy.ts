@@ -1,6 +1,5 @@
+import type { PaymentFlowMachineContext } from '@payments/application/orchestration/flow/payment-flow.types';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-
-import type { PaymentFlowMachineContext } from './payment-flow.types';
 
 export interface PaymentFlowConfig {
   polling: {

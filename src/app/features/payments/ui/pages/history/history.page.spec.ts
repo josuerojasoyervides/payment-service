@@ -4,8 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
-
-import { HistoryComponent } from './history.page';
+import { HistoryComponent } from '@payments/ui/pages/history/history.page';
 
 describe('HistoryComponent', () => {
   let component: HistoryComponent;

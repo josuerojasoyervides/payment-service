@@ -5,12 +5,11 @@ import type {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import type { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { createCanceledStripeIntent } from '@payments/infrastructure/fake/helpers/create-canceled-stripe-intent.helper';
+import { createVoidedPaypalOrder } from '@payments/infrastructure/fake/helpers/create-voided-paypal-order.helper';
+import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';
+import { mapIntent } from '@payments/infrastructure/fake/mappers/intent.mapper';
 import type { Observable } from 'rxjs';
-
-import { createCanceledStripeIntent } from '../../helpers/create-canceled-stripe-intent.helper';
-import { createVoidedPaypalOrder } from '../../helpers/create-voided-paypal-order.helper';
-import { simulateNetworkDelay } from '../../helpers/simulate-network-delay.helper';
-import { mapIntent } from '../../mappers/intent.mapper';
 
 @Injectable()
 export abstract class FakeCancelIntentGateway extends PaymentOperationPort<

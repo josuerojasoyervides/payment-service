@@ -1,25 +1,13 @@
 import { computed, inject, Injectable, InjectionToken } from '@angular/core';
 import { LoggerService } from '@core/logging/logger.service';
-import type { FallbackConfig } from '@payments/domain/models/fallback/fallback-config.types';
-import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/models/fallback/fallback-config.types';
-import type {
-  FallbackAvailableEvent,
-  FallbackUserResponse,
-} from '@payments/domain/models/fallback/fallback-event.types';
-import type { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
-import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { Subject } from 'rxjs';
-
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { createFallbackStateSignal } from './fallback/fallback-orchestrator.state';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import { createFallbackStateSignal } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.state';
 import type {
   AutoFallbackStartedPayload,
   FallbackExecutePayload,
   FinishStatus,
   ReportFailurePayload,
-} from './fallback/fallback-orchestrator.types';
+} from '@payments/application/orchestration/services/fallback/fallback-orchestrator.types';
 import {
   hasDifferentEventId,
   isAutoExecutingGuard,
@@ -31,7 +19,7 @@ import {
   isResponseAcceptedGuard,
   isSameEventAndNotRespondedGuard,
   isSelectedProviderInAlternativesGuard,
-} from './fallback/policies/fallback-orchestrator.guards';
+} from '@payments/application/orchestration/services/fallback/policies/fallback-orchestrator.guards';
 import {
   generateEventIdPolicy,
   getAlternativeProvidersPolicy,
@@ -39,8 +27,11 @@ import {
   hasReachedMaxAttemptsPolicy,
   isEligibleForFallbackPolicy,
   shouldAutoFallbackPolicy,
-} from './fallback/policies/fallback-orchestrator.policy';
-import { scheduleAfterDelay, scheduleTTL } from './fallback/runtime/fallback-orchestrator.timers';
+} from '@payments/application/orchestration/services/fallback/policies/fallback-orchestrator.policy';
+import {
+  scheduleAfterDelay,
+  scheduleTTL,
+} from '@payments/application/orchestration/services/fallback/runtime/fallback-orchestrator.timers';
 import {
   registerFailureTransition,
   resetTransition,
@@ -49,7 +40,18 @@ import {
   setFailedNoRequestTransition,
   setPendingManualTransition,
   setTerminalTransition,
-} from './fallback/runtime/fallback-orchestrator.transitions';
+} from '@payments/application/orchestration/services/fallback/runtime/fallback-orchestrator.transitions';
+import type { FallbackConfig } from '@payments/domain/models/fallback/fallback-config.types';
+import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/models/fallback/fallback-config.types';
+import type {
+  FallbackAvailableEvent,
+  FallbackUserResponse,
+} from '@payments/domain/models/fallback/fallback-event.types';
+import type { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { Subject } from 'rxjs';
 
 /**
  * Token for injecting fallback configuration.

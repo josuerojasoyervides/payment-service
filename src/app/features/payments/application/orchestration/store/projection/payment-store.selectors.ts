@@ -1,6 +1,5 @@
 import { computed } from '@angular/core';
-
-import type { PaymentsSelectorsSource } from '../payment-store.types';
+import type { PaymentsSelectorsSource } from '@payments/application/orchestration/store/payment-store.types';
 
 /**
  * Store selectors / derived state.

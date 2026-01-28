@@ -1,5 +1,11 @@
 import { I18nKeys } from '@core/i18n';
 import type { LoggerService } from '@core/logging';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type {
+  PaymentStrategy,
+  StrategyContext,
+  StrategyPrepareResult,
+} from '@payments/application/api/ports/payment-strategy.port';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import type {
   PaymentIntent,
@@ -10,13 +16,6 @@ import type { TokenValidator } from '@payments/domain/ports/provider/token-valid
 import { NullTokenValidator } from '@payments/domain/ports/provider/token-validator.port';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
-
-import type { PaymentGatewayPort } from '../../application/api/ports/payment-gateway.port';
-import type {
-  PaymentStrategy,
-  StrategyContext,
-  StrategyPrepareResult,
-} from '../../application/api/ports/payment-strategy.port';
 
 /**
  * Strategy for credit/debit card payments.

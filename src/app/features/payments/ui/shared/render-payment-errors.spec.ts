@@ -1,7 +1,6 @@
 import type { I18nService } from '@core/i18n';
 import { I18nKeys } from '@core/i18n';
-
-import { renderPaymentError } from './render-payment-errors';
+import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
 describe('renderPaymentError', () => {
   it('returns unknown_error when error is null', () => {

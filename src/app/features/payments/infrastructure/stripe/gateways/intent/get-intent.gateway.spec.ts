@@ -3,8 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-
-import { StripeGetIntentGateway } from './get-intent.gateway';
+import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/gateways/intent/get-intent.gateway';
 
 describe('StripeGetIntentGateway', () => {
   let gateway: StripeGetIntentGateway;

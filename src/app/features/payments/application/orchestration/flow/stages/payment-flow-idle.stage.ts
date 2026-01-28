@@ -1,4 +1,4 @@
-import type { PaymentFlowStatesConfig } from '../payment-flow.types';
+import type { PaymentFlowStatesConfig } from '@payments/application/orchestration/flow/payment-flow.types';
 
 export const idleStates = {
   idle: {

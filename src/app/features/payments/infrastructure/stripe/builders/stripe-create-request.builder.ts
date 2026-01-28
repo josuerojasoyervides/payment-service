@@ -6,8 +6,7 @@ import type {
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import type { PaymentOptions } from '@payments/domain/ports/payment/payment-request-builder.port';
 import { PaymentRequestBuilder } from '@payments/domain/ports/payment/payment-request-builder.port';
-
-import type { StripeCreateIntentRequest } from '../dto/stripe.dto';
+import type { StripeCreateIntentRequest } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 export function buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreateIntentRequest {
   const isCard = req.method.type === 'card';

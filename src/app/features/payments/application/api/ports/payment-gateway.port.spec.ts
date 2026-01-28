@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
+import { BasePaymentGateway } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type {
   PaymentIntent,
@@ -16,8 +17,6 @@ import type {
 } from '@payments/domain/models/payment/payment-request.types';
 import type { Observable } from 'rxjs';
 import { firstValueFrom, of, throwError } from 'rxjs';
-
-import { BasePaymentGateway } from './payment-gateway.port';
 
 class PaymentGatewayTest extends BasePaymentGateway<any, any> {
   readonly providerId = 'paypal' as const;

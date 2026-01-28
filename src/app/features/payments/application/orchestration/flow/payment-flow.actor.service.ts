@@ -2,6 +2,26 @@ import type { Signal } from '@angular/core';
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LoggerService } from '@core/logging';
+import {
+  isPaymentFlowSnapshot,
+  isSnapshotInspectionEventWithSnapshot,
+} from '@payments/application/orchestration/flow/payment-flow.guards';
+import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
+import {
+  FlowContextStore,
+  toFlowContext,
+} from '@payments/application/orchestration/flow/payment-flow.persistence';
+import type {
+  PaymentFlowActorRef,
+  PaymentFlowCommandEvent,
+  PaymentFlowEvent,
+  PaymentFlowMachine,
+  PaymentFlowMachineContext,
+  PaymentFlowSnapshot,
+  PaymentFlowSystemEvent,
+} from '@payments/application/orchestration/flow/payment-flow.types';
+import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
+import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action-orchestrator.service';
 import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
@@ -11,24 +31,6 @@ import type { PaymentError } from '@payments/domain/models/payment/payment-error
 import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
-
-import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
-import { NextActionOrchestratorService } from '../services/next-action-orchestrator.service';
-import {
-  isPaymentFlowSnapshot,
-  isSnapshotInspectionEventWithSnapshot,
-} from './payment-flow.guards';
-import { createPaymentFlowMachine } from './payment-flow.machine';
-import { FlowContextStore, toFlowContext } from './payment-flow.persistence';
-import type {
-  PaymentFlowActorRef,
-  PaymentFlowCommandEvent,
-  PaymentFlowEvent,
-  PaymentFlowMachine,
-  PaymentFlowMachineContext,
-  PaymentFlowSnapshot,
-  PaymentFlowSystemEvent,
-} from './payment-flow.types';
 
 function createFlowContextStore(): FlowContextStore | null {
   try {

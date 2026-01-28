@@ -1,4 +1,5 @@
 import type { WritableSignal } from '@angular/core';
+import type { FinishStatus } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.types';
 import type { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
 import type {
   FailedAttempt,
@@ -8,8 +9,6 @@ import { INITIAL_FALLBACK_STATE } from '@payments/domain/models/fallback/fallbac
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-
-import type { FinishStatus } from '../fallback-orchestrator.types';
 
 /**
  * ✅ Reset / Initial

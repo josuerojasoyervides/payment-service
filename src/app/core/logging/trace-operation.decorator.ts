@@ -1,4 +1,4 @@
-import type { LoggerService } from './logger.service';
+import type { LoggerService } from '@core/logging/logger.service';
 
 /**
  * Configuration options for the `TraceOperation` decorator.

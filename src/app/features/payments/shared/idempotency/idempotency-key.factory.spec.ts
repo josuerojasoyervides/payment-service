@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-
-import { IdempotencyKeyFactory } from './idempotency-key.factory';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 describe('IdempotencyKeyFactory', () => {
   let factory: IdempotencyKeyFactory;

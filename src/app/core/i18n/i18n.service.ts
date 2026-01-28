@@ -1,9 +1,8 @@
 import { inject, Injectable, signal } from '@angular/core';
+import type { Language, Translations } from '@core/i18n/i18n.types';
+import { en } from '@core/i18n/translations/en';
+import { es } from '@core/i18n/translations/es';
 import { LoggerService } from '@core/logging';
-
-import type { Language, Translations } from './i18n.types';
-import { en } from './translations/en';
-import { es } from './translations/es';
 
 /**
  * Internationalization (i18n) service.

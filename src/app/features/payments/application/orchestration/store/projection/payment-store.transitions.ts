@@ -1,4 +1,5 @@
 import { patchState } from '@ngrx/signals';
+import type { PaymentsStoreContext } from '@payments/application/orchestration/store/payment-store.types';
 import { INITIAL_FALLBACK_STATE } from '@payments/domain/models/fallback/fallback-state.types';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type {
@@ -6,8 +7,6 @@ import type {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-
-import type { PaymentsStoreContext } from '../payment-store.types';
 
 /**
  * Transition: marks the store as `loading` right away.

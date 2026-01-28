@@ -6,6 +6,7 @@ import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
 import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
@@ -18,14 +19,12 @@ import type {
   PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
-
-import { ProviderFactoryRegistry } from '../../../application/orchestration/registry/provider-factory.registry';
 import type {
   FieldRequirements,
   PaymentOptions,
-} from '../../../domain/ports/payment/payment-request-builder.port';
-import { CheckoutComponent } from './checkout.page';
+} from '@payments/domain/ports/payment/payment-request-builder.port';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
+import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 
 describe('CheckoutComponent', () => {
   let component: CheckoutComponent;

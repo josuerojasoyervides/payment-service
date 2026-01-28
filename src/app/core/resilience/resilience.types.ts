@@ -1,9 +1,9 @@
-import type { CircuitBreakerConfig } from './circuit-breaker';
-import { DEFAULT_CIRCUIT_BREAKER_CONFIG } from './circuit-breaker';
-import type { RateLimiterConfig } from './rate-limiter';
-import { DEFAULT_RATE_LIMITER_CONFIG } from './rate-limiter';
-import type { RetryConfig } from './retry';
-import { DEFAULT_RETRY_CONFIG } from './retry';
+import type { CircuitBreakerConfig } from '@core/resilience/circuit-breaker';
+import { DEFAULT_CIRCUIT_BREAKER_CONFIG } from '@core/resilience/circuit-breaker';
+import type { RateLimiterConfig } from '@core/resilience/rate-limiter';
+import { DEFAULT_RATE_LIMITER_CONFIG } from '@core/resilience/rate-limiter';
+import type { RetryConfig } from '@core/resilience/retry';
+import { DEFAULT_RETRY_CONFIG } from '@core/resilience/retry';
 
 /**
  * Complete resilience configuration.

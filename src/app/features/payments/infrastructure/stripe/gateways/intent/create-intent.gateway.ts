@@ -5,17 +5,16 @@ import type {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import type { Observable } from 'rxjs';
-
-import { STRIPE_API_BASE } from '../../constants/base-api.constant';
+import { STRIPE_API_BASE } from '@payments/infrastructure/stripe/constants/base-api.constant';
 import type {
   StripeCreateIntentRequest,
   StripePaymentIntentDto,
   StripeSpeiSourceDto,
-} from '../../dto/stripe.dto';
-import { mapPaymentIntent } from '../../mappers/payment-intent.mapper';
-import { SpeiSourceMapper } from '../../mappers/spei-source.mapper';
-import { getIdempotencyHeaders } from '../../validators/get-idempotency-headers';
+} from '@payments/infrastructure/stripe/dto/stripe.dto';
+import { mapPaymentIntent } from '@payments/infrastructure/stripe/mappers/payment-intent.mapper';
+import { SpeiSourceMapper } from '@payments/infrastructure/stripe/mappers/spei-source.mapper';
+import { getIdempotencyHeaders } from '@payments/infrastructure/stripe/validators/get-idempotency-headers';
+import type { Observable } from 'rxjs';
 
 @Injectable()
 export class StripeCreateIntentGateway extends PaymentOperationPort<

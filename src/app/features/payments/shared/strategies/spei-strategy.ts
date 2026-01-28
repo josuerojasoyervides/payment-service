@@ -1,5 +1,11 @@
 import { I18nKeys } from '@core/i18n';
 import type { LoggerService } from '@core/logging';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type {
+  PaymentStrategy,
+  StrategyContext,
+  StrategyPrepareResult,
+} from '@payments/application/api/ports/payment-strategy.port';
 import type { NextActionManualStep } from '@payments/domain/models/payment/payment-action.types';
 import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
 import type {
@@ -9,13 +15,6 @@ import type {
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
-
-import type { PaymentGatewayPort } from '../../application/api/ports/payment-gateway.port';
-import type {
-  PaymentStrategy,
-  StrategyContext,
-  StrategyPrepareResult,
-} from '../../application/api/ports/payment-strategy.port';
 
 /**
  * Strategy for payments via SPEI (Interbank Electronic Payments System).

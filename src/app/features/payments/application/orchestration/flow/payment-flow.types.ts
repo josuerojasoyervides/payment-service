@@ -1,3 +1,10 @@
+import type {
+  ExternalStatusUpdatedPayload,
+  RedirectReturnedPayload,
+  WebhookReceivedPayload,
+} from '@payments/application/adapters/events/payment-flow.events';
+// ✅ IMPORTANT: type-only import to avoid runtime circular dependency
+import type { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type { FallbackMode } from '@payments/domain/models/fallback/fallback-state.types';
 import type { NextActionClientConfirm } from '@payments/domain/models/payment/payment-action.types';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
@@ -16,14 +23,6 @@ import type {
   SnapshotFrom,
   StatesConfig,
 } from 'xstate';
-
-import type {
-  ExternalStatusUpdatedPayload,
-  RedirectReturnedPayload,
-  WebhookReceivedPayload,
-} from '../../adapters/events/payment-flow.events';
-// ✅ IMPORTANT: type-only import to avoid runtime circular dependency
-import type { createPaymentFlowMachine } from './payment-flow.machine';
 
 export type ActorId = 'start' | 'confirm' | 'cancel' | 'status' | 'clientConfirm' | 'finalize';
 

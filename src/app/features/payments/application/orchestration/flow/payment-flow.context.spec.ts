@@ -1,12 +1,11 @@
-import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-
 import {
   createFlowContext,
   FLOW_CONTEXT_TTL_MS,
   mergeProviderRefs,
   updateFlowContextProviderRefs,
-} from './payment-flow.context';
+} from '@payments/application/orchestration/flow/payment-flow.context';
+import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
 describe('payment-flow.context', () => {
   const request: CreatePaymentRequest = {

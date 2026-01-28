@@ -4,8 +4,7 @@ import { I18nKeys, I18nService } from '@core/i18n';
 import type { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
 import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
-
-import { getDefaultProviders } from '../../shared/ui.types';
+import { getDefaultProviders } from '@payments/ui/shared/ui.types';
 
 /**
  * Modal that displays fallback options when a provider fails.

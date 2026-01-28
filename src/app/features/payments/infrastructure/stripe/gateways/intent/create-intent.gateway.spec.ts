@@ -5,8 +5,7 @@ import { LoggerService } from '@core/logging';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-
-import { StripeCreateIntentGateway } from './create-intent.gateway';
+import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/gateways/intent/create-intent.gateway';
 
 describe('StripeCreateIntentGateway', () => {
   let gateway: StripeCreateIntentGateway;

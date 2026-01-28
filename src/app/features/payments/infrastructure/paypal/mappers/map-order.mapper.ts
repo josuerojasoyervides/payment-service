@@ -2,10 +2,9 @@ import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-
-import type { PaypalOrderDto } from '../dto/paypal.dto';
-import { findPaypalLink } from '../dto/paypal.dto';
-import { STATUS_MAP } from './status.mapper';
+import type { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
+import { findPaypalLink } from '@payments/infrastructure/paypal/dto/paypal.dto';
+import { STATUS_MAP } from '@payments/infrastructure/paypal/mappers/status.mapper';
 
 export function mapOrder(dto: PaypalOrderDto, providerId: PaymentProviderId): PaymentIntent {
   const status = STATUS_MAP[dto.status] ?? 'processing';

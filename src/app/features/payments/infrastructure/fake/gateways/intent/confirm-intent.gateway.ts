@@ -5,12 +5,11 @@ import type {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import type { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { createConfirmedPaypalOrder } from '@payments/infrastructure/fake/helpers/create-confirmed-paypal-order.helper';
+import { createConfirmedStripeIntent } from '@payments/infrastructure/fake/helpers/create-confirmed-stripe-intent.helper';
+import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';
+import { mapIntent } from '@payments/infrastructure/fake/mappers/intent.mapper';
 import type { Observable } from 'rxjs';
-
-import { createConfirmedPaypalOrder } from '../../helpers/create-confirmed-paypal-order.helper';
-import { createConfirmedStripeIntent } from '../../helpers/create-confirmed-stripe-intent.helper';
-import { simulateNetworkDelay } from '../../helpers/simulate-network-delay.helper';
-import { mapIntent } from '../../mappers/intent.mapper';
 
 @Injectable()
 export abstract class FakeConfirmIntentGateway extends PaymentOperationPort<

@@ -1,4 +1,7 @@
-import type { PaymentFlowMachineContext, PaymentFlowStatesConfig } from '../payment-flow.types';
+import type {
+  PaymentFlowMachineContext,
+  PaymentFlowStatesConfig,
+} from '@payments/application/orchestration/flow/payment-flow.types';
 
 export const pollingStates = {
   polling: {

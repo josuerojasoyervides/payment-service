@@ -1,6 +1,6 @@
-import type { PaymentError } from '../payment/payment-error.types';
-import type { PaymentProviderId } from '../payment/payment-intent.types';
-import type { CreatePaymentRequest } from '../payment/payment-request.types';
+import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 
 /**
  * Event emitted when fallback alternatives are available.

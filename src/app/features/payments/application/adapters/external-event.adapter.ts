@@ -1,11 +1,10 @@
 import { inject, Injectable } from '@angular/core';
-
-import { PaymentFlowActorService } from '../orchestration/flow/payment-flow.actor.service';
 import type {
   ExternalStatusUpdatedPayload,
   RedirectReturnedPayload,
   WebhookReceivedPayload,
-} from './events/payment-flow.events';
+} from '@payments/application/adapters/events/payment-flow.events';
+import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 
 @Injectable()
 export class ExternalEventAdapter {

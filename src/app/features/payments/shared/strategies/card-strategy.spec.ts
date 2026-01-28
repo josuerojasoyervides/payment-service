@@ -1,13 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { TokenValidator } from '@payments/domain/ports/provider/token-validator.port';
+import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { firstValueFrom, of } from 'rxjs';
-
-import type { PaymentGatewayPort } from '../../application/api/ports/payment-gateway.port';
-import type { TokenValidator } from '../../domain/ports/provider/token-validator.port';
-import { CardStrategy } from './card-strategy';
 
 describe('CardStrategy', () => {
   let strategy: CardStrategy;

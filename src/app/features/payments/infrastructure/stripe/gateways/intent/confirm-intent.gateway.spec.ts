@@ -4,8 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import type { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-
-import { StripeConfirmIntentGateway } from './confirm-intent.gateway';
+import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/gateways/intent/confirm-intent.gateway';
 
 describe('StripeConfirmIntentGateway', () => {
   let gateway: StripeConfirmIntentGateway;
