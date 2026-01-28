@@ -20,50 +20,36 @@ describe('ExternalEventAdapter', () => {
     adapter = TestBed.inject(ExternalEventAdapter);
   });
 
-  it('sends PROVIDER_UPDATE and REFRESH by default', () => {
-    adapter.providerUpdate({
+  it('sends REDIRECT_RETURNED without REFRESH', () => {
+    adapter.redirectReturned({
       providerId: 'stripe',
       referenceId: 'pi_123',
-      status: 'succeeded',
-      raw: {},
     });
 
     expect(actor.sendSystem).toHaveBeenCalledWith({
-      type: 'PROVIDER_UPDATE',
+      type: 'REDIRECT_RETURNED',
       payload: {
         providerId: 'stripe',
         referenceId: 'pi_123',
-        status: 'succeeded',
-        raw: {},
       },
     });
 
-    expect(actor.send).toHaveBeenCalledWith({
-      type: 'REFRESH',
-      providerId: 'stripe',
-      intentId: 'pi_123',
-    });
+    expect(actor.send).not.toHaveBeenCalled();
   });
 
-  it('skips REFRESH when refresh option is false', () => {
-    adapter.providerUpdate(
-      {
-        providerId: 'paypal',
-        referenceId: 'ORDER_123',
-        raw: {},
-      },
-      { refresh: false },
-    );
+  it('sends EXTERNAL_STATUS_UPDATED', () => {
+    adapter.externalStatusUpdated({
+      providerId: 'paypal',
+      referenceId: 'ORDER_123',
+    });
 
     expect(actor.sendSystem).toHaveBeenCalledWith({
-      type: 'PROVIDER_UPDATE',
+      type: 'EXTERNAL_STATUS_UPDATED',
       payload: {
         providerId: 'paypal',
         referenceId: 'ORDER_123',
-        raw: {},
       },
     });
-
     expect(actor.send).not.toHaveBeenCalled();
   });
 
@@ -71,7 +57,6 @@ describe('ExternalEventAdapter', () => {
     adapter.webhookReceived({
       providerId: 'stripe',
       referenceId: 'pi_999',
-      eventType: 'payment_intent.succeeded',
       raw: { id: 'evt_1' },
     });
 
@@ -80,43 +65,9 @@ describe('ExternalEventAdapter', () => {
       payload: {
         providerId: 'stripe',
         referenceId: 'pi_999',
-        eventType: 'payment_intent.succeeded',
         raw: { id: 'evt_1' },
       },
     });
-  });
-
-  it('forwards validation failures and status confirmations', () => {
-    adapter.validationFailed({
-      stage: 'INITIATE',
-      reason: 'missing token',
-      raw: { field: 'token' },
-    });
-
-    adapter.statusConfirmed({
-      providerId: 'stripe',
-      referenceId: 'pi_888',
-      status: 'succeeded',
-      raw: {},
-    });
-
-    expect(actor.sendSystem).toHaveBeenCalledWith({
-      type: 'VALIDATION_FAILED',
-      payload: {
-        stage: 'INITIATE',
-        reason: 'missing token',
-        raw: { field: 'token' },
-      },
-    });
-
-    expect(actor.sendSystem).toHaveBeenCalledWith({
-      type: 'STATUS_CONFIRMED',
-      payload: {
-        providerId: 'stripe',
-        referenceId: 'pi_888',
-        status: 'succeeded',
-        raw: {},
-      },
-    });
+    expect(actor.send).not.toHaveBeenCalled();
   });
 });

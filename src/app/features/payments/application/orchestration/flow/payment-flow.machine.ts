@@ -30,6 +30,7 @@ import { doneStates } from './stages/payment-flow-done.stage';
 import { fallbackStates } from './stages/payment-flow-fallback.stage';
 import { idleStates } from './stages/payment-flow-idle.stage';
 import { pollingStates } from './stages/payment-flow-polling.stage';
+import { reconcileStates } from './stages/payment-flow-reconcile.stage';
 import { startStates } from './stages/payment-flow-start.stage';
 
 export const createPaymentFlowMachine = (
@@ -105,6 +106,22 @@ export const createPaymentFlowMachine = (
         };
       }),
 
+      setExternalEventInput: assign(({ event, context }) => {
+        if (
+          event.type !== 'REDIRECT_RETURNED' &&
+          event.type !== 'EXTERNAL_STATUS_UPDATED' &&
+          event.type !== 'WEBHOOK_RECEIVED'
+        )
+          return {};
+
+        return {
+          providerId: event.payload.providerId,
+          intentId: event.payload.referenceId ?? context.intentId ?? context.intent?.id ?? null,
+          error: null,
+          statusRetry: { count: 0 },
+        };
+      }),
+
       setConfirmInput: assign(({ event }) => {
         if (event.type !== 'CONFIRM') return {};
 
@@ -156,6 +173,19 @@ export const createPaymentFlowMachine = (
 
         return {
           error: normalizePaymentError(new Error(`Missing ${missing.join(' & ')} for REFRESH`)),
+        };
+      }),
+
+      setExternalEventError: assign(({ context }) => {
+        const missing = [
+          !context.providerId ? 'providerId' : null,
+          !(context.intentId ?? context.intent?.id) ? 'referenceId' : null,
+        ].filter(Boolean);
+
+        return {
+          error: normalizePaymentError(
+            new Error(`Missing ${missing.join(' & ')} for external event reconciliation`),
+          ),
         };
       }),
 
@@ -241,10 +271,9 @@ export const createPaymentFlowMachine = (
 
     on: {
       RESET: { target: '.idle', actions: 'clear' },
-      PROVIDER_UPDATE: { actions: 'noop' },
-      WEBHOOK_RECEIVED: { actions: 'noop' },
-      VALIDATION_FAILED: { actions: 'noop' },
-      STATUS_CONFIRMED: { actions: 'noop' },
+      REDIRECT_RETURNED: { target: '.reconciling', actions: 'setExternalEventInput' },
+      EXTERNAL_STATUS_UPDATED: { target: '.reconciling', actions: 'setExternalEventInput' },
+      WEBHOOK_RECEIVED: { target: '.reconciling', actions: 'setExternalEventInput' },
     },
 
     context: () => ({
@@ -270,6 +299,7 @@ export const createPaymentFlowMachine = (
       ...startStates,
       ...confirmStates,
       ...pollingStates,
+      ...reconcileStates,
       ...cancelStates,
       ...fallbackStates,
       ...doneStates,

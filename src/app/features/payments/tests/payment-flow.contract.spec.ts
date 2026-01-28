@@ -244,6 +244,71 @@ describe('PaymentFlow contract tests', () => {
     expect(actor.getSnapshot().value).toBe('polling');
   });
 
+  it('requiresAction accepts REDIRECT_RETURNED -> reconcilingInvoke', async () => {
+    const statusDeferred = createDeferred<PaymentIntent>();
+    const { actor, deps } = setup({
+      startIntent: { ...baseIntent, status: 'requires_action' },
+      statusDeferred,
+    });
+
+    actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
+    await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+
+    actor.send({
+      type: 'REDIRECT_RETURNED',
+      payload: { providerId: 'stripe', referenceId: 'pi_return' },
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'reconcilingInvoke');
+    expect(snap.value).toBe('reconcilingInvoke');
+
+    statusDeferred.resolve({ ...baseIntent, id: 'pi_return', status: 'succeeded' });
+    await waitForSnapshot(actor, (s) => s.value === 'done');
+
+    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_return' });
+  });
+
+  it('idle accepts EXTERNAL_STATUS_UPDATED -> reconcilingInvoke', async () => {
+    const statusDeferred = createDeferred<PaymentIntent>();
+    const { actor, deps } = setup({ statusDeferred });
+
+    actor.send({
+      type: 'EXTERNAL_STATUS_UPDATED',
+      payload: { providerId: 'paypal', referenceId: 'ORDER_123' },
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'reconcilingInvoke');
+    expect(snap.value).toBe('reconcilingInvoke');
+
+    statusDeferred.resolve({
+      ...baseIntent,
+      provider: 'paypal',
+      id: 'ORDER_123',
+      status: 'processing',
+    });
+    await waitForSnapshot(actor, (s) => s.value === 'polling');
+
+    expect(deps.getStatus).toHaveBeenCalledWith('paypal', { intentId: 'ORDER_123' });
+  });
+
+  it('idle accepts WEBHOOK_RECEIVED -> reconcilingInvoke', async () => {
+    const statusDeferred = createDeferred<PaymentIntent>();
+    const { actor, deps } = setup({ statusDeferred });
+
+    actor.send({
+      type: 'WEBHOOK_RECEIVED',
+      payload: { providerId: 'stripe', referenceId: 'pi_webhook', raw: { id: 'evt_1' } },
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'reconcilingInvoke');
+    expect(snap.value).toBe('reconcilingInvoke');
+
+    statusDeferred.resolve({ ...baseIntent, id: 'pi_webhook', status: 'succeeded' });
+    await waitForSnapshot(actor, (s) => s.value === 'done');
+
+    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_webhook' });
+  });
+
   it('failed accepts FALLBACK_REQUESTED -> fallbackCandidate', async () => {
     const { actor } = setup({ startReject: true });
 
