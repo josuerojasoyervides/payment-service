@@ -28,7 +28,8 @@ export class PaypalFinalizeHandler implements FinalizePort {
 
   private resolveOrderId(request: FinalizeRequest): string {
     const providerRefs = request.context.providerRefs?.[request.providerId] ?? null;
-    const fromRefs = providerRefs?.orderId ?? providerRefs?.intentId ?? null;
+    const fromRefs =
+      providerRefs?.orderId ?? providerRefs?.intentId ?? providerRefs?.paymentId ?? null;
     const fromExternalRef = request.context.externalReference ?? null;
 
     const orderId = fromRefs ?? fromExternalRef;

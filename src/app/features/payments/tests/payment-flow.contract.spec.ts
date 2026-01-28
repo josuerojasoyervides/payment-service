@@ -1,3 +1,4 @@
+import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import { createActor } from 'xstate';
@@ -79,6 +80,7 @@ const setup = (
     confirmDeferred: Deferred<PaymentIntent>;
     cancelDeferred: Deferred<PaymentIntent>;
     statusDeferred: Deferred<PaymentIntent>;
+    finalizeUnsupportedFinalize: boolean;
     config: PaymentFlowConfigOverrides;
   }>,
 ) => {
@@ -102,7 +104,17 @@ const setup = (
       return overrides?.statusIntent ?? baseIntent;
     }),
     clientConfirm: vi.fn(async () => baseIntent),
-    finalize: vi.fn(async () => baseIntent),
+    finalize: vi.fn(async () => {
+      if (overrides?.finalizeUnsupportedFinalize) {
+        throw createPaymentError(
+          'unsupported_finalize',
+          'errors.unsupported_finalize',
+          undefined,
+          null,
+        );
+      }
+      return baseIntent;
+    }),
   };
 
   const config: PaymentFlowConfigOverrides = overrides?.config ?? {
@@ -246,7 +258,7 @@ describe('PaymentFlow contract tests', () => {
     expect(actor.getSnapshot().value).toBe('polling');
   });
 
-  it('requiresAction accepts REDIRECT_RETURNED -> reconcilingInvoke', async () => {
+  it('requiresAction accepts REDIRECT_RETURNED -> finalizing -> reconcilingInvoke', async () => {
     const statusDeferred = createDeferred<PaymentIntent>();
     const { actor, deps } = setup({
       startIntent: { ...baseIntent, status: 'requires_action' },
@@ -263,10 +275,33 @@ describe('PaymentFlow contract tests', () => {
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'reconcilingInvoke');
     expect(snap.value).toBe('reconcilingInvoke');
+    expect(deps.finalize).toHaveBeenCalledTimes(1);
 
     statusDeferred.resolve({ ...baseIntent, id: 'pi_return', status: 'succeeded' });
     await waitForSnapshot(actor, (s) => s.value === 'done');
 
+    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_return' });
+  });
+
+  it('REDIRECT_RETURNED with unsupported_finalize transitions to reconciling not failed', async () => {
+    const statusDeferred = createDeferred<PaymentIntent>();
+    const { actor, deps } = setup({
+      statusDeferred,
+      finalizeUnsupportedFinalize: true,
+    });
+
+    actor.send({
+      type: 'REDIRECT_RETURNED',
+      payload: { providerId: 'stripe', referenceId: 'pi_return' },
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'reconcilingInvoke');
+    expect(snap.value).toBe('reconcilingInvoke');
+    expect(snap.hasTag('error')).toBe(false);
+    expect(deps.finalize).toHaveBeenCalledTimes(1);
+
+    statusDeferred.resolve({ ...baseIntent, id: 'pi_return', status: 'succeeded' });
+    await waitForSnapshot(actor, (s) => s.value === 'done');
     expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_return' });
   });
 

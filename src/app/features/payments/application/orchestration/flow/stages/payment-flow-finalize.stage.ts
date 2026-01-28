@@ -10,7 +10,14 @@ export const finalizeStates = {
         flowContext: context.flowContext!,
       }),
       onDone: { target: 'reconciling', actions: 'setIntent' },
-      onError: { target: 'failed', actions: 'setError' },
+      onError: [
+        {
+          guard: 'isUnsupportedFinalizeError',
+          target: 'reconciling',
+          actions: 'clearError',
+        },
+        { target: 'failed', actions: 'setError' },
+      ],
     },
   },
 } as const satisfies PaymentFlowStatesConfig;

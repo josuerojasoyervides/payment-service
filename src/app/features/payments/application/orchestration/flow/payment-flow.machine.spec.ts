@@ -93,13 +93,18 @@ describe('PaymentFlowMachine', () => {
         }
         return overrides?.clientConfirmIntent ?? baseIntent;
       }),
-      finalize: vi.fn(async () =>
-        overrides?.finalizeReject
-          ? (() => {
-              throw new Error();
-            })()
-          : (overrides?.finalizeIntent ?? baseIntent),
-      ),
+      finalize: vi.fn(async () => {
+        if (overrides?.finalizeReject) throw new Error();
+        if (overrides?.finalizeUnsupportedFinalize) {
+          throw createPaymentError(
+            'unsupported_finalize',
+            'errors.unsupported_finalize',
+            undefined,
+            null,
+          );
+        }
+        return overrides?.finalizeIntent ?? baseIntent;
+      }),
     };
 
     const machine = createPaymentFlowMachine(deps, overrides?.config, overrides?.initialContext);
@@ -401,6 +406,28 @@ describe('PaymentFlowMachine', () => {
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
     expect(snap.hasTag('error')).toBe(true);
+  });
+
+  it('finalizing unsupported_finalize transitions to reconciling not failed', async () => {
+    const { actor, deps } = setup({
+      finalizeUnsupportedFinalize: true,
+      statusIntent: { ...baseIntent, id: 'pi_return', status: 'succeeded' },
+    });
+
+    actor.send({
+      type: 'REDIRECT_RETURNED',
+      payload: { providerId: 'stripe', referenceId: 'pi_return' },
+    });
+
+    const snap = await waitForSnapshot(
+      actor,
+      (s) => s.value === 'reconciling' || s.value === 'reconcilingInvoke',
+      500,
+    );
+    expect(snap.hasTag('error')).toBe(false);
+    expect(deps.finalize).toHaveBeenCalledTimes(1);
+
+    await waitForSnapshot(actor, (s) => s.value === 'done');
   });
 
   it('REFRESH uses context intentId when event is missing it', async () => {

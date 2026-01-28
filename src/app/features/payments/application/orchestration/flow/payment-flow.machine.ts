@@ -1,7 +1,7 @@
 import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import { assign, fromPromise, setup } from 'xstate';
 
-import { normalizePaymentError } from '../store/projection/payment-store.errors';
+import { isPaymentError, normalizePaymentError } from '../store/projection/payment-store.errors';
 import {
   createFlowContext,
   mergeExternalReference,
@@ -153,13 +153,23 @@ export const createPaymentFlowMachine = (
           return {};
 
         const referenceId = event.payload.referenceId ?? '';
-        const flowContext = referenceId
+        const merged = referenceId
           ? mergeExternalReference({
               context: context.flowContext,
               providerId: event.payload.providerId,
               referenceId,
             })
-          : context.flowContext;
+          : null;
+        const flowContext: PaymentFlowMachineContext['flowContext'] =
+          merged ??
+          (referenceId
+            ? {
+                providerId: event.payload.providerId,
+                providerRefs: {
+                  [event.payload.providerId]: { paymentId: referenceId },
+                },
+              }
+            : context.flowContext);
 
         const resolvedReference = resolveStatusReference(flowContext, event.payload.providerId);
 
@@ -333,6 +343,10 @@ export const createPaymentFlowMachine = (
       canFallback: ({ context }) => canFallbackPolicy(context),
       canPoll: ({ context }) => canPollPolicy(config, context),
       canRetryStatus: ({ context }) => canRetryStatusPolicy(config, context),
+      isUnsupportedFinalizeError: ({ event }) => {
+        const e = (event as { error?: unknown }).error;
+        return isPaymentError(e) && e.code === 'unsupported_finalize';
+      },
     },
   }).createMachine({
     id: 'paymentFlow',
@@ -340,7 +354,7 @@ export const createPaymentFlowMachine = (
 
     on: {
       RESET: { target: '.idle', actions: 'clear' },
-      REDIRECT_RETURNED: { target: '.reconciling', actions: 'setExternalEventInput' },
+      REDIRECT_RETURNED: { target: '.finalizing', actions: 'setExternalEventInput' },
       EXTERNAL_STATUS_UPDATED: { target: '.reconciling', actions: 'setExternalEventInput' },
       WEBHOOK_RECEIVED: { target: '.reconciling', actions: 'setExternalEventInput' },
     },

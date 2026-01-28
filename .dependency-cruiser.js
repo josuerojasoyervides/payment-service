@@ -30,7 +30,7 @@ module.exports = {
           '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$', // other configs
           '^src/app/features/payments/domain/',
           '^src/app/features/payments/infrastructure/stripe/dto/stripe.dto.ts$', // DTO used by gateways
-          '^src/app/features/payments/application/state/payment-state.port.ts$', // Port used by adapters
+          '^src/app/features/payments/application/api/tokens/payment-state.token.ts$', // Token used by adapters
         ],
       },
       to: {},
