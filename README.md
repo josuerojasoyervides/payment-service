@@ -1,321 +1,180 @@
-# Payment Service — Angular payments module (architecture lab)
+# Payment Service — Personal Architecture Lab
 
-This repo is a **personal lab** to design and stabilize a real payments module (Stripe + PayPal), built with architecture that is:
-
-- **easy to test**
-- **easy to extend** (add providers, methods, rules)
-- **hard to break** (guardrails/architecture tests)
-
-Yes: internally there is a lot of abstraction.
-The goal is that it feels _hard to enter_ at first, but **very easy to maintain, scale, and change** once you learn the mental map.
-
-## What problem does this architecture solve?
-
-When you add real payments to a project, this usually happens:
-
-1. You handle a simple happy path
-2. An edge case appears
-3. You add an `if` in the UI
-4. Then another `if` in infrastructure
-
-Here the goal is the opposite:
-
-- Add a new provider without rewriting everything
-- Keep the module testable even when it grows complex
-- Keep errors and i18n consistent (no "anything goes")
-- Keep fallback (Stripe -> PayPal) as a central policy, not a UI hack
+This repo is a **personal architecture lab** for a payments module: Stripe + PayPal + Fakes (for tests).  
+**Primary goals:** testable, extendable, and hard to break.  
+**Disclaimer:** This is a learning project — **not production-ready**. Do not use as a real payments library without hardening.
 
 ---
 
-## Getting started
+## Table of contents
+
+- [Quickstart](#quickstart)
+- [What to try first](#what-to-try-first)
+- [Architecture maps (charts)](#architecture-maps-charts)
+- [Mental model](#mental-model)
+- [Key architecture decisions (why)](#key-architecture-decisions-why)
+- [Walkthrough: what happens when you click Pay](#walkthrough-what-happens-when-you-click-pay)
+- [Extending: add a new provider](#extending-add-a-new-provider)
+- [Guardrails](#guardrails)
+- [Internal docs](#internal-docs)
+- [FAQ](#faq)
+
+---
+
+## Quickstart
 
 ```bash
 bun install
 bun start
 ```
 
-The app lazy-loads the payments module and exposes a few demo pages.
+Open the app and go to **`/payments/checkout`** (the default payments page). From there you can reach the other payment pages via links or by URL.
 
-> Note: the test runner is based on **Vitest** (see `tsconfig.spec.json`).
+**Useful commands:**
 
----
-
-## Where to start reading (recommended path)
-
-If you open the folder and see 200 files, it is normal to feel lost.
-This is a 10-minute tour that usually works:
-
-1. **Module routes (wiring)**
-   Here you see what pages exist and where the module providers are loaded.
-
-2. **Providers / DI composition**
-
-3. **Flow Facade (public API for the flow)**
-   This is the UI control point: `start`, `confirm`, `cancel`, `refresh`, `reset`.
-
-4. **Use Cases (module verbs)**
-   Business flow without UI.
-
-5. **ProviderFactoryRegistry (provider selection)**
+- `bun run test:ci` — run the full test suite
+- `bun run lint` — run ESLint (no auto-fix)
 
 ---
 
-## Module structure (mental map)
+## What to try first
 
-Everything for the feature lives here:
+These routes exist under `/payments` (e.g. `http://localhost:4200/payments/checkout`):
 
-```
-src/app/features/payments
-├─ config/            # DI wiring (composition)
-├─ domain/            # Models, contracts, rules (pure TS)
-├─ application/       # Use cases, ports, store, orchestration (no UI)
-├─ infrastructure/    # Providers (Stripe/PayPal), mapping, DTOs
-├─ shared/            # Shared feature utilities (non-UI)
-├─ ui/                # Pages and components (render + translation)
-└─ tests/             # Architecture guardrails (boundaries)
-```
-
-### Domain (most important)
-
-Domain is the module language. Here you define:
-
-- `PaymentIntent` (payment state)
-- `PaymentError` (normalized error)
-- request types (`CreatePaymentRequest`, etc.)
-- ports like `PaymentRequestBuilder`
-
-### Application
-
-Use cases and orchestration live here:
-
-- `PaymentsStore` (state projection/adapter)
-
-Application **should not know specific providers** (Stripe/PayPal).
-
-### Infrastructure
-
-Implements what Application defines:
-
-- Gateways/facades that talk to Stripe/PayPal
-- Error normalization
-- Fake gateways (simulation)
-
-### UI
-
-Pages and components:
-
-- UI can import from all layers
+| Route                  | What you see                                            | What it demonstrates                                                 |
+| ---------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
+| **/payments/checkout** | Checkout form (provider, method, amount) and Pay button | Main flow: start payment, next actions (redirect/3DS), fallback      |
+| **/payments/return**   | “Payment completed” or similar after redirect           | Return from 3DS or PayPal; flow continues without extra UI logic     |
+| **/payments/cancel**   | Cancel/abandon outcome                                  | PayPal (or other) cancel path; same return component, different data |
+| **/payments/status**   | Form to look up a payment by ID                         | Status lookup without going through checkout                         |
+| **/payments/history**  | List of past intents (from store)                       | Read model / projection for UI                                       |
+| **/payments/showcase** | Demo of payment-related components                      | UI components in isolation                                           |
 
 ---
 
-## Glossary (plain English)
+## Architecture maps (charts)
 
-**PaymentIntent**: what is happening with a payment:
+Two maps explain the system: **runtime** (who talks to whom during a payment) and **dependencies** (what is allowed to import what — the guardrails).
 
-- required fields: `id`, `provider`, `status`, `amount`, `currency`
-- optional: `redirectUrl` / `nextAction` if extra steps are required (3DS, PayPal approve)
+**Runtime: what talks to what during a payment**
 
-**PaymentError** travels as **data**, not as translated text:
+![Payments runtime map](charts/chart-payments-runtime-29-jan.png)
 
-- `messageKey` is a **key**, not final copy
-- `params` are serializable values for interpolation
+**Dependencies: what may import what (guardrails)**
 
----
+![Dependency map](charts/chart-dependancy-29-jan.png)
 
-## Core architecture rules
-
-- XState is the source of truth for the flow (start/confirm/cancel/refresh/reset).
-- `PaymentsStore` only projects snapshot + fallback + history (no orchestration).
-- Fallback is modeled as flow states (and uses the orchestrator as policy/telemetry).
-- Refresh-from-idle supports context if event keys are missing.
-- There are unit tests for the machine and for the bridge/store.
+**How to use these maps:** When you feel lost, start at the centre (the **Flow** / state machine), then follow the bridges to the **store**, **UI**, and **providers**. The runtime map shows the live flow; the dependency map shows the rules the repo enforces so the architecture stays consistent.
 
 ---
 
-## Example: card payment with Stripe
+## Mental model
 
-1. UI builds a request (builder or form)
-2. UI calls Flow Facade `start()`
-3. Actor invokes the Use Case
-4. Use Case resolves the ProviderFactory
-5. Factory creates the Strategy (and gateways)
-6. Infrastructure talks to the provider
-7. UI renders the intent
-
----
-
-## Why does `ProviderFactoryRegistry` exist?
-
-Because the module supports **multiple providers** without filling the UI with `if (stripe)`.
-
-Instead of this:
-
-```ts
-if (provider === 'stripe') { ... }
-if (provider === 'paypal') { ... }
-```
-
-Use this:
-
-```ts
-const factory = registry.get(provider);
-const strategy = factory.createStrategy(method);
-```
-
-**Quick analogy:**
-It is like power plugs on a trip:
-
-- You do not want to rewrite your charger per country.
-- You want an adapter that gives you the _same output_ even if the plug changes.
+- **UI** — Renders state, collects input, shows next steps and errors. It does not orchestrate; it calls the flow API and reacts to the store.
+- **Store** — A read model / projection for the UI (loading, ready, error, history, fallback). It is **not** the brain; it only reflects what the flow engine decided.
+- **Flow engine (state machine)** — The “brain”: it decides what happens next (start, confirm, redirect, webhook, timeout, fallback). All payment sequencing lives here.
+- **Next-action** — How the system models “extra steps” (e.g. 3DS, “approve in PayPal”, redirect). The flow produces a **next action** (e.g. redirect URL or client confirm); the UI renders it generically.
+- **Fallback** — A policy subsystem: when a provider fails, the orchestrator can suggest or trigger a switch (e.g. Stripe → PayPal). This is not a UI hack; it is testable and consistent.
+- **Providers** — Interchangeable implementations (Stripe, PayPal, Fake). They sit behind a registry/factory; the rest of the app does not branch by provider name.
+- **Telemetry** — Structured breadcrumbs (flowId, providerId, state, event, refs) so you can debug and verify behaviour. Redaction rules keep logs safe (no secrets, no raw PII).
 
 ---
 
-## What is an Abstract Factory here?
+## Key architecture decisions (why)
 
-In real life, Stripe and PayPal do not just change one endpoint.
-They change several pieces at the same time:
+This section is the core: each decision exists to avoid a specific failure mode.
 
-- how the order/intent is created
-- required fields (token, returnUrl, email...)
-- the approval flow (PayPal redirect / 3DS)
-- how status is read
-- how errors are normalized
+### 6.1 Why a state machine for payments?
 
-An **Abstract Factory** lets you ask for a **complete compatible package**:
+Payments are **non-linear**: redirects, retries, timeouts, webhooks, and race conditions. Without a clear model you get a **flags soup** and impossible states (e.g. “redirecting” and “showing fallback” at once). A **state machine** gives explicit states and explicit events so behaviour is predictable and testable.
 
-- request builder
-- strategy
-- gateway set
+### 6.2 Why the Store is NOT the brain
 
-**The rest of the system never needs to know the provider.**
+The **store** is a **projection** for the UI — it reflects the current snapshot, fallback state, and history. Orchestration (what to do next) lives in the **flow engine**. Keeping the store as “read-only view” keeps the UI simple and testable and avoids business logic creeping into the view layer.
 
----
+### 6.3 Why providers are behind a registry/factory (no "if stripe")
 
-## Why do we have Strategies?
+The app must support **multiple providers** without `if (provider === 'stripe')` in the UI or application layer. A **registry/factory** lets you add or replace providers by implementing a contract and registering it; the rest of the system stays provider-agnostic. Provider-specific rules stay contained in infrastructure.
 
-Because **one provider can have multiple methods**:
+### 6.4 Why "Next-action" exists
 
-- card
-- SPEI
-- PayPal redirect
+Some payments need **extra user steps** (open URL, complete 3DS, approve in PayPal). Instead of hard-coding each step in the UI, the flow models them as **next-action** data (e.g. kind: redirect, client_confirm). The UI renders by kind; the flow engine decides what the next action is. That keeps the UI generic and the flow in charge.
 
-Each method has different rules, so:
+### 6.5 Why fallback is a policy subsystem
 
-- Strategy A = how to start/confirm card
-- Strategy B = how to start SPEI
-- Strategy C = PayPal redirect flow
+When a provider fails, “try another provider” should not be a one-off UI hack. **Fallback** is a dedicated policy: the orchestrator decides eligibility and mode (manual/auto), and the flow consumes fallback events. That makes failure handling consistent and testable.
 
-This avoids a giant "god object".
+### 6.6 Why errors + i18n are separated
+
+Errors travel as **structured data** (e.g. `messageKey`, `params`). The **UI** translates; infrastructure never hardcodes user-facing copy. Benefits: stable tests (assert on keys/params), easy copy changes, and a single place for translation.
+
+### 6.7 Why telemetry exists (PR6 outcome)
+
+Debugging **asynchronous** flows (webhooks, redirects, timeouts) is hard without a trail. **Telemetry** records structured events (command sent, state changed, effect start/finish, error raised) with flowId, providerId, and refs — and redaction so secrets and raw PII never reach logs. It supports both stress tests and real debugging.
 
 ---
 
-## Fallback: "if one provider fails, try another"
+## Walkthrough: what happens when you click Pay
 
-This service detects eligible failures and decides:
-
-- **manual mode:** show a modal and let the user choose
-- **auto mode:** attempt the next provider automatically
-
-> This logic becomes unmaintainable if it lives in the UI.
-
----
-
-## Why you may need a State Machine
-
-Payments have states that are **not** linear:
-
-- retries with TTL and timers
-- redirects
-- back-and-forth between providers
-
-Without a state machine, you end up with flags and impossible combinations like:
-
-"I am in redirect **and** showing a fallback modal."
-
-State machines make it explicit:
-
-- valid states
-- events that drive transitions
-
-This repo is already there: XState is the flow source of truth, with polling cadence and retry/backoff modeled in the machine (see docs).
+1. **UI** builds a payment request (provider, method, amount) and calls the flow API (e.g. start).
+2. **Flow engine** receives the command and decides which provider/method to use (via registry).
+3. **Flow** triggers the right **effect** (e.g. create intent); the **provider** (Stripe/PayPal/Fake) is invoked.
+4. **Provider** returns an intent (e.g. `requires_action` with redirect URL or next step).
+5. **Flow** updates its state and may emit a **next-action** (e.g. “redirect to this URL”).
+6. **Store** (projection) is updated from the flow snapshot; **UI** re-renders (loading/ready/next step/error).
+7. User follows the next action (e.g. redirects to 3DS or PayPal).
+8. **Return/cancel** or **webhook** hits the app; an **adapter** normalises it into a **system event** (e.g. redirect returned, webhook received).
+9. **Flow** consumes the system event (with correlation/dedupe) and may move to finalising or reconciling.
+10. **Provider** is called again if needed (e.g. finalise/capture); **flow** converges to success or failure.
+11. **Store** reflects the final state; **UI** shows result (success/error/history).
+12. **Telemetry** has recorded commands, state changes, effects, and errors so you can trace the run.
 
 ---
 
-## I18n & errors (non-negotiable rule)
+## Extending: add a new provider
 
-### Why?
+High-level checklist (no deep code here):
 
-If infrastructure translates, the text becomes frozen and you cannot:
+1. **Implement the provider adapter** — Create/confirm/status/cancel (and any method-specific steps), plus error normalisation and DTO mapping. Implement the same ports the existing providers use.
+2. **Register it in composition/config** — Add your provider’s factory and wiring to the config that composes the payments module (so the registry can resolve it).
+3. **Add minimal tests** — Unit tests for gateways/normalisers and at least one stress-style scenario (e.g. idempotency or terminal safety) so the new provider is covered by the same guarantees.
+4. **Run test and lint** — `bun run test:ci` and `bun run lint` must pass.
 
-- change copy without touching code
-- test by key/params in a stable way
-
-### So how do we render?
-
-```ts
-i18n.t(error.messageKey, error.params);
-```
-
-Helpers:
-
-- `renderPaymentError(i18n, error)`
+The rest of the system (UI, flow, store, next-action, fallback) should stay unchanged.
 
 ---
 
-## Guardrails: "you cannot add debt without it yelling"
+## Guardrails
 
-There are tests that act like "import police":
+The repo protects its own architecture:
 
-- UI-only translation enforcement
-- messageKey must be a key (never translated text)
+- **UI cannot import infrastructure** — Pages and components do not import Stripe/PayPal adapters directly; they use the flow API and the store. Dependency-cruiser and boundary tests enforce this.
+- **Domain is framework-free** — The domain layer has no Angular, RxJS, or XState; it stays pure types, contracts, and rules.
+- **Architecture tests yell early** — Tests (e.g. boundary/import rules) fail the build if someone breaks these rules.
 
-The goal is to make it _harder to break architecture by accident_.
-
----
-
-## Pages available (quick test)
-
-- `/payments/checkout` -> main flow
-- `/payments/return` -> return from 3DS/PayPal
-- `/payments/cancel` -> PayPal cancel
-- `/payments/status` -> status by ID
-- `/payments/history` -> intent history
-- `/payments/showcase` -> component demo
-
----
-
-## Add a new provider (mini guide)
-
-When you want to add "ProviderX" without breaking the module:
-
-1. Implement infrastructure:
-   - gateways/facades + DTO + mappers + error normalization
-2. Add minimal tests per operation
-3. Register it in config
-
-The rest of the system should stay the same.
+So: you can rely on “UI → application → domain” and “infrastructure → application”; the tooling checks it.
 
 ---
 
 ## Internal docs
 
-If you want the formal version (north star + snapshot):
+For deeper detail, read these (no content copied here):
 
-- `docs/goals.md`
-- `docs/architecture-rules.md`
+- **docs/goals.md** — North star and intent
+- **docs/architecture-rules.md** — Layers, boundaries, and current state
+- **docs/flow-brain.md** — State machine and transitions
+- **docs/provider-integration-plan.md** — Provider contracts and migration plan
+- **docs/observability/flow-telemetry.md** — Telemetry envelope, redaction, sinks
 
 ---
 
-## Quick FAQ
+## FAQ
 
-### "Why not use services directly in the UI?"
+**Why so much structure?**  
+Payments get complex quickly (redirects, webhooks, retries, fallback). Structure keeps behaviour predictable and testable so you can add providers and features without turning the codebase into a tangle of conditionals.
 
-Because payments get chaotic fast. Separation keeps the UI from becoming a god object.
+**Is this production ready?**  
+No. This is a learning/architecture project. Use it to study design and patterns; do not deploy as-is for real money without security, compliance, and operational hardening.
 
-### "Why are there fake providers?"
-
-So you can develop UI + flows + fallback without relying on real APIs.
-
-### "Is this production ready?"
-
-No. This is a learning/architecture project. **Do not use it as a real payments library without hardening.**
+**Can I use this as a library?**  
+Not as a drop-in library. You can reuse ideas, patterns, and structure in your own project, but the repo is an app with its own routes and config. Copy and adapt what fits your context.
