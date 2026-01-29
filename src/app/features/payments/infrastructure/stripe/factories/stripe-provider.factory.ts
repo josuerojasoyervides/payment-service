@@ -10,8 +10,8 @@ import type {
   FieldRequirements,
   PaymentRequestBuilder,
 } from '@payments/domain/ports/payment/payment-request-builder.port';
-import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/builders/stripe-card-request.builder';
-import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/builders/stripe-spei-request.builder';
+import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/methods/card/builders/stripe-card-request.builder';
+import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/methods/spei/builders/stripe-spei-request.builder';
 import { StripeTokenValidator } from '@payments/infrastructure/stripe/validators/stripe-token.validator';
 import { StripeIntentFacade } from '@payments/infrastructure/stripe/workflows/intent/facades/intent.facade';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
