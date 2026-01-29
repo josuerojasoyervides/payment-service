@@ -144,7 +144,10 @@ module.exports = {
         'from.pathNot re of the not-to-dev-dep rule in the dependency-cruiser configuration',
       from: {
         path: '^(src)',
-        pathNot: '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
+        pathNot: [
+          '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
+          '(^|/)__tests__/', // harness/helpers under __tests__ may use vitest etc.
+        ],
       },
       to: {
         dependencyTypes: ['npm-dev'],
