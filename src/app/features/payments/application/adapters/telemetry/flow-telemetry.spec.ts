@@ -5,7 +5,7 @@ import { PaymentFlowActorService } from '@payments/application/orchestration/flo
 import providePayments from '@payments/config/payment.providers';
 
 describe('Flow telemetry (PR6.1 smoke)', () => {
-  it('records COMMAND_SENT and STATE_CHANGED when actor receives a command', () => {
+  it('records COMMAND_SENT and STATE_CHANGED with atMs when actor receives a command', () => {
     const sink = new InMemoryFlowTelemetrySink();
 
     TestBed.configureTestingModule({
@@ -17,6 +17,9 @@ describe('Flow telemetry (PR6.1 smoke)', () => {
 
     const events = sink.getEvents();
     expect(events.length).toBeGreaterThanOrEqual(1);
-    expect(events.some((e) => e.kind === 'STATE_CHANGED')).toBe(true);
+    events.forEach((e) => expect(e.atMs).toBeDefined());
+    const stateChanged = events.filter((e) => e.kind === 'STATE_CHANGED');
+    expect(stateChanged.length).toBeGreaterThanOrEqual(1);
+    stateChanged.forEach((e) => expect(e.atMs).toBeDefined());
   });
 });

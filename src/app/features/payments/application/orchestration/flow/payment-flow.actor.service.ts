@@ -173,6 +173,9 @@ export class PaymentFlowActorService {
         state: String(snapshot.value),
         tags: Array.from(snapshot.tags ?? []),
         errorCode: snapshot.context.error?.code,
+        status: snapshot.context.intent?.status,
+        atMs: Date.now(),
+        flowId: snapshot.context.flowContext?.flowId,
       });
       this.persistFlowContext(snapshot);
       this.maybeReportFallback(snapshot);
@@ -224,14 +227,25 @@ export class PaymentFlowActorService {
     }
 
     this.lastSentEvent.set(event);
-    this.telemetry.record({ kind: 'COMMAND_SENT', eventType: event.type });
+    this.telemetry.record({
+      kind: 'COMMAND_SENT',
+      eventType: event.type,
+      atMs: Date.now(),
+      flowId: snap.context.flowContext?.flowId,
+    });
     this.actor.send(event);
     return true;
   }
 
   /** Internal/system events (fallback orchestration). */
   sendSystem(event: PaymentFlowSystemEvent): void {
-    this.telemetry.record({ kind: 'SYSTEM_EVENT_SENT', eventType: event.type });
+    const snap = this.snapshot();
+    this.telemetry.record({
+      kind: 'SYSTEM_EVENT_SENT',
+      eventType: event.type,
+      atMs: Date.now(),
+      flowId: snap.context.flowContext?.flowId,
+    });
     this.actor.send(event);
   }
 
