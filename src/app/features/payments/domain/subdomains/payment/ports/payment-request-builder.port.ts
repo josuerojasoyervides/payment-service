@@ -1,4 +1,4 @@
-import type { AutoCompleteHint } from '@payments/domain/models/payment/autocomplete-hint.types';
+import type { AutoCompleteHint } from '@payments/domain/subdomains/payment/contracts/autocomplete-hint.types';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type {
   CurrencyCode,
