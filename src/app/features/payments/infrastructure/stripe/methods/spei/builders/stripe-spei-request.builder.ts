@@ -1,6 +1,6 @@
 import { I18nKeys } from '@core/i18n/i18n.keys';
 import type { CurrencyCode } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { PaymentOptions } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { PaymentRequestBuilder } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 

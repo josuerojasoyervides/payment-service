@@ -4,7 +4,7 @@ import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { FAKE_ERRORS } from '@payments/infrastructure/fake/constants/fake-errors';
 import { createFakePaypalOrder } from '@payments/infrastructure/fake/helpers/create-fake-paypal-order.helper';
 import { createFakeSpeiSource } from '@payments/infrastructure/fake/helpers/create-fake-spei-source.helper';

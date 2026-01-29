@@ -4,7 +4,7 @@ import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { createConfirmedPaypalOrder } from '@payments/infrastructure/fake/helpers/create-confirmed-paypal-order.helper';
 import { createConfirmedStripeIntent } from '@payments/infrastructure/fake/helpers/create-confirmed-stripe-intent.helper';
 import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';

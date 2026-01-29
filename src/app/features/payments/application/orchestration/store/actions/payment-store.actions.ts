@@ -8,7 +8,7 @@ import type {
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { ignoreElements, pipe, tap } from 'rxjs';
 
 export interface PaymentsStoreDeps {

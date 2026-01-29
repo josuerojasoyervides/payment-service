@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/cancel-intent.gateway';
 
 describe('StripeCancelIntentGateway', () => {

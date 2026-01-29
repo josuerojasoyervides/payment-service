@@ -2,13 +2,13 @@ import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contra
 import type {
   FallbackAvailableEvent,
   FallbackUserResponse,
-} from '@payments/domain/subdomains/fallback/contracts/fallback-event.types';
+} from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type {
   FallbackState,
   FallbackStatus,
 } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 /**
  * ✅ Config / Enabled

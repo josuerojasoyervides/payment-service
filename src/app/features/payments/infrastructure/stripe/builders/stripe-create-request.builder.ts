@@ -3,7 +3,7 @@ import type {
   CurrencyCode,
   PaymentMethodType,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { PaymentOptions } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { PaymentRequestBuilder } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import type { StripeCreateIntentRequest } from '@payments/infrastructure/stripe/dto/stripe.dto';

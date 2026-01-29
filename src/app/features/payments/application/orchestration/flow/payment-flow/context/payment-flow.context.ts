@@ -4,7 +4,7 @@ import type {
   ProviderReferenceSet,
 } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 export const FLOW_CONTEXT_TTL_MS = 30 * 60 * 1000;
 
