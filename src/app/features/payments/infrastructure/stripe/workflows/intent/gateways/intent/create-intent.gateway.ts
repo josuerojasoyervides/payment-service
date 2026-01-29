@@ -11,7 +11,7 @@ import type {
   StripeSpeiSourceDto,
 } from '@payments/infrastructure/stripe/dto/stripe.dto';
 import { SpeiSourceMapper } from '@payments/infrastructure/stripe/mappers/spei-source.mapper';
-import { getIdempotencyHeaders } from '@payments/infrastructure/stripe/validators/get-idempotency-headers';
+import { getIdempotencyHeaders } from '@payments/infrastructure/stripe/shared/idempotency/get-idempotency-headers';
 import { STRIPE_API_BASE } from '@payments/infrastructure/stripe/workflows/intent/api/base-api.constant';
 import { mapPaymentIntent } from '@payments/infrastructure/stripe/workflows/intent/mappers/payment-intent.mapper';
 import type { Observable } from 'rxjs';

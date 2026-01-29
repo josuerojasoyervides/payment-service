@@ -6,7 +6,7 @@ import type {
 } from '@payments/domain/models/payment/payment-intent.types';
 import type { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
 import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
-import { getIdempotencyHeaders } from '@payments/infrastructure/stripe/validators/get-idempotency-headers';
+import { getIdempotencyHeaders } from '@payments/infrastructure/stripe/shared/idempotency/get-idempotency-headers';
 import { STRIPE_API_BASE } from '@payments/infrastructure/stripe/workflows/intent/api/base-api.constant';
 import { mapPaymentIntent } from '@payments/infrastructure/stripe/workflows/intent/mappers/payment-intent.mapper';
 import type { Observable } from 'rxjs';
