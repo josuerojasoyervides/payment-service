@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { FLOW_TELEMETRY_SINK } from '@payments/application/adapters/telemetry/flow-telemetry-sink.token';
-import { InMemoryFlowTelemetrySink } from '@payments/application/adapters/telemetry/in-memory-flow-telemetry-sink';
+import { InMemoryFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/dev-only/in-memory-flow-telemetry-sink';
+import { FLOW_TELEMETRY_SINK } from '@payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import providePayments from '@payments/config/payment.providers';
 
-describe('Flow telemetry (PR6.1 smoke)', () => {
+describe('Flow telemetry', () => {
   it('records COMMAND_SENT and STATE_CHANGED with atMs when actor receives a command', () => {
     const sink = new InMemoryFlowTelemetrySink();
 

@@ -1,4 +1,7 @@
-import type { FlowTelemetryEvent, FlowTelemetrySink } from './flow-telemetry.types';
+import type {
+  FlowTelemetryEvent,
+  FlowTelemetrySink,
+} from '@payments/application/adapters/telemetry/types/flow-telemetry.types';
 
 function isDuplicateStateChanged(prev: FlowTelemetryEvent, next: FlowTelemetryEvent): boolean {
   if (prev.kind !== 'STATE_CHANGED' || next.kind !== 'STATE_CHANGED') return false;
