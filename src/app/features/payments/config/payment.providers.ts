@@ -3,6 +3,8 @@ import { type Provider } from '@angular/core';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external-event.adapter';
 import { WEBHOOK_NORMALIZER_REGISTRY } from '@payments/application/adapters/events/webhook-normalizer-registry.token';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
+import { FLOW_TELEMETRY_SINK } from '@payments/application/adapters/telemetry/flow-telemetry-sink.token';
+import { NoopFlowTelemetrySink } from '@payments/application/adapters/telemetry/noop-flow-telemetry-sink';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
 import { PAYMENT_STATE } from '@payments/application/api/tokens/flow/payment-state.token';
 import { CLIENT_CONFIRM_PORTS } from '@payments/application/api/tokens/operations/client-confirm.token';
@@ -59,6 +61,7 @@ const APPLICATION_PROVIDERS: Provider[] = [
   PaymentFlowFacade,
   PaymentHistoryFacade,
   { provide: PAYMENT_STATE, useClass: NgRxSignalsStateAdapter },
+  { provide: FLOW_TELEMETRY_SINK, useClass: NoopFlowTelemetrySink },
 ];
 
 const SHARED_PROVIDERS: Provider[] = [IdempotencyKeyFactory];

@@ -2,6 +2,7 @@ import type { Signal } from '@angular/core';
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LoggerService } from '@core/logging';
+import { FLOW_TELEMETRY_SINK } from '@payments/application/adapters/telemetry/flow-telemetry-sink.token';
 import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type {
   PaymentFlowActorRef,
@@ -91,6 +92,7 @@ export class PaymentFlowActorService {
   private readonly nextActionOrchestrator = inject(NextActionOrchestratorService);
   private readonly logger = inject(LoggerService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly telemetry = inject(FLOW_TELEMETRY_SINK);
 
   private readonly flowContextStore = createFlowContextStore();
   private readonly initialContext = buildInitialMachineContext(this.flowContextStore);
@@ -166,6 +168,12 @@ export class PaymentFlowActorService {
     this.prevSnapshot = this.actor.getSnapshot() as PaymentFlowSnapshot;
     this.actor.subscribe((snapshot) => {
       this._snapshot.set(snapshot);
+      this.telemetry.record({
+        kind: 'STATE_CHANGED',
+        state: String(snapshot.value),
+        tags: Array.from(snapshot.tags ?? []),
+        errorCode: snapshot.context.error?.code,
+      });
       this.persistFlowContext(snapshot);
       this.maybeReportFallback(snapshot);
       this.maybeNotifyFallbackSuccess(snapshot);
@@ -216,12 +224,14 @@ export class PaymentFlowActorService {
     }
 
     this.lastSentEvent.set(event);
+    this.telemetry.record({ kind: 'COMMAND_SENT', eventType: event.type });
     this.actor.send(event);
     return true;
   }
 
   /** Internal/system events (fallback orchestration). */
   sendSystem(event: PaymentFlowSystemEvent): void {
+    this.telemetry.record({ kind: 'SYSTEM_EVENT_SENT', eventType: event.type });
     this.actor.send(event);
   }
 
