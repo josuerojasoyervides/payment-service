@@ -21,12 +21,12 @@ import {
   type PaymentsProvidersMode,
   type PaymentsProvidersOptions,
 } from '@payments/config/payments-providers.types';
-import { providePaypalProviderConfig } from '@payments/config/providers/paypal.providers';
-import { provideStripeProviderConfig } from '@payments/config/providers/stripe.providers';
+import { providePaypalPayments } from '@payments/infrastructure/paypal/di/provide-paypal-payments';
+import { provideStripePayments } from '@payments/infrastructure/stripe/di/provide-stripe-payments';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 function selectProviderConfigs(mode: PaymentsProvidersMode): Provider[] {
-  return [...provideStripeProviderConfig(mode), ...providePaypalProviderConfig(mode)];
+  return [...provideStripePayments(mode), ...providePaypalPayments(mode)];
 }
 
 const USE_CASE_PROVIDERS: Provider[] = [
