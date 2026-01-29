@@ -741,6 +741,71 @@ describe('PaymentFlowMachine', () => {
     expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_reentry' });
   });
 
+  it('dedupes EXTERNAL_STATUS_UPDATED events with same eventId', async () => {
+    const { actor, deps } = setup({
+      initialContext: {
+        flowContext: {
+          flowId: 'flow_ext_dedupe',
+          providerId: 'stripe',
+          providerRefs: { stripe: { paymentId: 'pi_ext' } },
+          createdAt: Date.now(),
+          expiresAt: Date.now() + 60_000,
+        },
+        providerId: 'stripe',
+        intentId: 'pi_ext',
+      },
+      statusIntent: {
+        ...baseIntent,
+        id: 'pi_ext',
+        status: 'succeeded',
+      },
+    });
+
+    const payload = { providerId: 'stripe' as const, referenceId: 'pi_ext', eventId: 'evt_1' };
+
+    actor.send({ type: 'EXTERNAL_STATUS_UPDATED', payload });
+    actor.send({ type: 'EXTERNAL_STATUS_UPDATED', payload });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'done', 1500);
+    expect(snap.hasTag('ready')).toBe(true);
+    expect(deps.getStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('dedupes WEBHOOK_RECEIVED events with same eventId', async () => {
+    const { actor, deps } = setup({
+      initialContext: {
+        flowContext: {
+          flowId: 'flow_webhook_dedupe',
+          providerId: 'stripe',
+          providerRefs: { stripe: { paymentId: 'pi_webhook_ext' } },
+          createdAt: Date.now(),
+          expiresAt: Date.now() + 60_000,
+        },
+        providerId: 'stripe',
+        intentId: 'pi_webhook_ext',
+      },
+      statusIntent: {
+        ...baseIntent,
+        id: 'pi_webhook_ext',
+        status: 'succeeded',
+      },
+    });
+
+    const payload = {
+      providerId: 'stripe' as const,
+      referenceId: 'pi_webhook_ext',
+      eventId: 'evt_webhook_1',
+      raw: { id: 'evt_webhook_1' },
+    };
+
+    actor.send({ type: 'WEBHOOK_RECEIVED', payload });
+    actor.send({ type: 'WEBHOOK_RECEIVED', payload });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'done', 1500);
+    expect(snap.hasTag('ready')).toBe(true);
+    expect(deps.getStatus).toHaveBeenCalledTimes(1);
+  });
+
   it('preserves provider refs across id swap and resolves canonical status reference', async () => {
     const initialContext = {
       flowContext: {
