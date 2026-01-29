@@ -1,8 +1,8 @@
+import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import type {
   PaymentIntent,
   PaymentIntentStatus,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
 
 export function mapPaypalOrder(dto: PaypalOrderDto): PaymentIntent {
   const statusMap: Record<PaypalOrderDto['status'], PaymentIntentStatus> = {

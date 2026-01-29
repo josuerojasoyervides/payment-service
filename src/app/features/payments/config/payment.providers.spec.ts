@@ -6,7 +6,7 @@ import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ng
 import { PAYMENT_STATE } from '@payments/application/api/tokens/flow/payment-state.token';
 import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import providePayments, { providePaymentsWithConfig } from '@payments/config/payment.providers';
-import { PaypalProviderFactory } from '@payments/infrastructure/paypal/factories/paypal-provider.factory';
+import { PaypalProviderFactory } from '@payments/infrastructure/paypal/core/factories/paypal-provider.factory';
 
 describe('payment.providers', () => {
   it('registers factories and state adapter (smoke)', () => {

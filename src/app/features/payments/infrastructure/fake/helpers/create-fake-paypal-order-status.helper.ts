@@ -1,4 +1,4 @@
-import type { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
+import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 
 export function createFakePaypalOrderStatus(orderId: string): PaypalOrderDto {
   return {

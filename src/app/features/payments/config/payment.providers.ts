@@ -3,6 +3,10 @@ import { type Provider } from '@angular/core';
 import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
 import { WEBHOOK_NORMALIZER_REGISTRY } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
 import {
+  PaypalWebhookNormalizer,
+  providePaypalPayments,
+} from '@app/features/payments/infrastructure/paypal/core/di/provide-paypal-payments';
+import {
   provideStripePayments,
   StripeWebhookNormalizer,
 } from '@app/features/payments/infrastructure/stripe/core/di/provide-stripe-payments';
@@ -28,10 +32,6 @@ import {
   type PaymentsProvidersMode,
   type PaymentsProvidersOptions,
 } from '@payments/config/payments-providers.types';
-import {
-  PaypalWebhookNormalizer,
-  providePaypalPayments,
-} from '@payments/infrastructure/paypal/di/provide-paypal-payments';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 function selectProviderConfigs(mode: PaymentsProvidersMode): Provider[] {

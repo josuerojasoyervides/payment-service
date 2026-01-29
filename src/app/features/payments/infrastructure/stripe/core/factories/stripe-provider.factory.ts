@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { StripeTokenValidator } from '@app/features/payments/infrastructure/stripe/shared/validators/stripe-token.validator';
+import { StripeTokenValidatorPolicy } from '@app/features/payments/infrastructure/stripe/shared/policies/stripe-token-validator.policy';
 import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
@@ -165,7 +165,7 @@ export class StripeProviderFactory implements ProviderFactory {
   private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
     switch (type) {
       case 'card':
-        return new CardStrategy(this.gateway, new StripeTokenValidator(), this.logger);
+        return new CardStrategy(this.gateway, new StripeTokenValidatorPolicy(), this.logger);
       case 'spei':
         return new SpeiStrategy(this.gateway, this.logger);
       default:
