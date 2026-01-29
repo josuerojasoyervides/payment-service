@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
+import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
 import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import { createPaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';

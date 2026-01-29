@@ -1,4 +1,5 @@
 import { effect, inject } from '@angular/core';
+import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import {
   patchState,
   signalStore,
@@ -8,7 +9,6 @@ import {
   withState,
 } from '@ngrx/signals';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
-import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
 import { createPaymentsStoreActions } from '@payments/application/orchestration/store/actions/payment-store.actions';
 import { createFallbackHandlers } from '@payments/application/orchestration/store/fallback/payment-store.fallback';
 import type { PaymentsState } from '@payments/application/orchestration/store/payment-store.state';

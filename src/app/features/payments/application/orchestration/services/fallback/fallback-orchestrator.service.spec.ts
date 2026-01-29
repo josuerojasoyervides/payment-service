@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import {
   FALLBACK_CONFIG,
   FallbackOrchestratorService,
-} from '@payments/application/orchestration/services/fallback-orchestrator.service';
+} from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
 import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';

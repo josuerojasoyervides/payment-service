@@ -1,13 +1,13 @@
 import { computed, inject, Injectable, InjectionToken } from '@angular/core';
-import { LoggerService } from '@core/logging/logger.service';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
-import { createFallbackStateSignal } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.state';
+import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
+import { createFallbackStateSignal } from '@app/features/payments/application/orchestration/services/fallback/helpers/fallback-orchestrator.state';
 import type {
   AutoFallbackStartedPayload,
   FallbackExecutePayload,
   FinishStatus,
   ReportFailurePayload,
-} from '@payments/application/orchestration/services/fallback/fallback-orchestrator.types';
+} from '@app/features/payments/application/orchestration/services/fallback/helpers/fallback-orchestrator.types';
+import { LoggerService } from '@core/logging/logger.service';
 import {
   hasDifferentEventId,
   isAutoExecutingGuard,

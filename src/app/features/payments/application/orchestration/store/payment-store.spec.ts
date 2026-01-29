@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
-import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
+import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import { HISTORY_MAX_ENTRIES } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
 import { initialPaymentsState } from '@payments/application/orchestration/store/payment-store.state';

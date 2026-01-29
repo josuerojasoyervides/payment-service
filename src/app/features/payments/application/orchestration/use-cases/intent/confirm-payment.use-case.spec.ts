@@ -2,36 +2,37 @@ import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
-import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
+import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/confirm-payment.use-case';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { GetPaymentStatusRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { firstValueFrom, of, throwError } from 'rxjs';
 
-describe('GetPaymentStatusUseCase', () => {
-  let useCase: GetPaymentStatusUseCase;
+describe('ConfirmPaymentUseCase', () => {
+  let useCase: ConfirmPaymentUseCase;
 
-  const req: GetPaymentStatusRequest = {
+  const req: ConfirmPaymentRequest = {
     intentId: 'pi_1',
+    returnUrl: 'https://example.com/return',
   };
 
   const gatewayMock = {
-    getIntent: vi.fn(() =>
+    confirmIntent: vi.fn(() =>
       of({
         id: 'pi_1',
         provider: 'stripe',
-        status: 'requires_action',
+        status: 'processing',
         amount: 100,
         currency: 'MXN',
       } satisfies PaymentIntent),
     ),
-  } as Pick<PaymentGatewayPort, 'getIntent'>;
+  } as Pick<PaymentGatewayPort, 'confirmIntent'>;
 
   const providerFactoryMock: ProviderFactory = {
     providerId: 'stripe' as const,
@@ -50,25 +51,25 @@ describe('GetPaymentStatusUseCase', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        GetPaymentStatusUseCase,
+        ConfirmPaymentUseCase,
         { provide: ProviderFactoryRegistry, useValue: registryMock },
         IdempotencyKeyFactory,
       ],
     });
 
-    useCase = TestBed.inject(GetPaymentStatusUseCase);
+    useCase = TestBed.inject(ConfirmPaymentUseCase);
     vi.clearAllMocks();
   });
 
-  it('resolves provider and calls gateway.getIntent with idempotency key', async () => {
+  it('resolves provider and calls gateway.confirmIntent with idempotency key', async () => {
     const result = await firstValueFrom(useCase.execute(req, 'stripe'));
 
     expect(registryMock.get).toHaveBeenCalledWith('stripe');
     expect(providerFactoryMock.getGateway).toHaveBeenCalledTimes(1);
-    expect(gatewayMock.getIntent).toHaveBeenCalledWith(
+    expect(gatewayMock.confirmIntent).toHaveBeenCalledWith(
       expect.objectContaining({
         ...req,
-        idempotencyKey: 'stripe:get:pi_1',
+        idempotencyKey: 'stripe:confirm:pi_1',
       }),
     );
     expect(result.id).toBe('pi_1');
@@ -85,13 +86,13 @@ describe('GetPaymentStatusUseCase', () => {
       );
     });
 
-    it('propagates observable errors from gateway.getIntent()', async () => {
+    it('propagates observable errors from gateway.confirmIntent()', async () => {
       const error: PaymentError = {
         code: 'provider_error',
         messageKey: I18nKeys.errors.provider_error,
         raw: {},
       };
-      (gatewayMock.getIntent as any).mockReturnValueOnce(throwError(() => error));
+      (gatewayMock.confirmIntent as any).mockReturnValueOnce(throwError(() => error));
 
       await expect(firstValueFrom(useCase.execute(req, 'stripe'))).rejects.toMatchObject({
         code: 'provider_error',

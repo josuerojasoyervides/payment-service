@@ -1,5 +1,5 @@
+import type { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import type { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
-import type { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 

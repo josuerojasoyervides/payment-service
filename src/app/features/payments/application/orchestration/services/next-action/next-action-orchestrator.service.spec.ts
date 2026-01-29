@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import type { ClientConfirmPort } from '@payments/application/api/ports/client-confirm.port';
 import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
-import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action-orchestrator.service';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
+import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
 import { firstValueFrom, of } from 'rxjs';
 
 describe('NextActionOrchestratorService', () => {

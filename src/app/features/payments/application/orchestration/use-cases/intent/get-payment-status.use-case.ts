@@ -1,40 +1,40 @@
 import { inject, Injectable } from '@angular/core';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { GetPaymentStatusRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { safeDefer } from '@shared/rxjs/safe-defer';
 import type { Observable } from 'rxjs';
 
 /**
- * Use case: Cancel a payment.
+ * Use case: Get payment status.
  *
- * Cancels a PaymentIntent for a specific provider:
- * - Stripe: cancels PaymentIntent
- * - PayPal: void/cancel Order if not captured yet
+ * Fetch current status of a PaymentIntent for a specific provider.
+ * - Polling after 3DS
+ * - SPEI status checks
+ * - UI refresh after PayPal return
  *
  * ✅ Fallback does not apply here: intent already lives in a specific provider.
  * On failure, the error is propagated and Store/UI decide how to present it.
  */
 @Injectable()
-export class CancelPaymentUseCase {
+export class GetPaymentStatusUseCase {
   private readonly registry = inject(ProviderFactoryRegistry);
   private readonly idempotencyKeyFactory = inject(IdempotencyKeyFactory);
 
-  execute(req: CancelPaymentRequest, providerId: PaymentProviderId): Observable<PaymentIntent> {
+  execute(req: GetPaymentStatusRequest, providerId: PaymentProviderId): Observable<PaymentIntent> {
     return safeDefer(() => {
-      const requestWithIdempotency: CancelPaymentRequest = {
+      const requestWithIdempotency: GetPaymentStatusRequest = {
         ...req,
         idempotencyKey:
-          req.idempotencyKey ??
-          this.idempotencyKeyFactory.generateForCancel(providerId, req.intentId),
+          req.idempotencyKey ?? this.idempotencyKeyFactory.generateForGet(providerId, req.intentId),
       };
 
       const gateway = this.registry.get(providerId).getGateway();
-      return gateway.cancelIntent(requestWithIdempotency);
+      return gateway.getIntent(requestWithIdempotency);
     });
   }
 }
