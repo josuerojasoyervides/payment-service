@@ -5,11 +5,11 @@ import type {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/models/payment/payment-request.types';
-import { PaypalIntentFacade } from '@payments/infrastructure/paypal/facades/intent.facade';
-import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/cancel-intent.gateway';
-import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/confirm-intent.gateway';
-import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/create-intent.gateway';
-import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/get-intent.gateway';
+import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/facades/intent.facade';
+import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/cancel-intent.gateway';
+import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/confirm-intent.gateway';
+import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/create-intent.gateway';
+import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/get-intent.gateway';
 import { of } from 'rxjs';
 
 describe('IntentFacade (adapter)', () => {

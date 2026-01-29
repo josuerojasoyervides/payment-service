@@ -6,7 +6,7 @@ import { LoggerService } from '@core/logging';
 import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/create-intent.gateway';
+import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/create-intent.gateway';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 describe('PaypalCreateIntentGateway', () => {

@@ -8,18 +8,18 @@ import {
 } from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
 import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
 import { fakeIntentFacadeFactory } from '@payments/config/providers/fake-intent-facade.factory';
-import { PaypalIntentFacade } from '@payments/infrastructure/paypal/facades/intent.facade';
 import { PaypalProviderFactory } from '@payments/infrastructure/paypal/factories/paypal-provider.factory';
-import { FakePaypalCancelIntentGateway } from '@payments/infrastructure/paypal/fake-gateways/intent/fake-paypal-cancel-intent.gateway';
-import { FakePaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/fake-gateways/intent/fake-paypal-confirm-intent.gateway';
-import { FakePaypalCreateIntentGateway } from '@payments/infrastructure/paypal/fake-gateways/intent/fake-paypal-create-intent.gateway';
-import { FakePaypalGetIntentGateway } from '@payments/infrastructure/paypal/fake-gateways/intent/fake-paypal-get-intent.gateway';
-import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/cancel-intent.gateway';
-import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/confirm-intent.gateway';
-import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/create-intent.gateway';
-import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/get-intent.gateway';
-import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/handlers/paypal-finalize.handler';
 import { PaypalProviderMethodPolicy } from '@payments/infrastructure/paypal/policies/paypal-provider-method.policy';
+import { FakePaypalCancelIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-cancel-intent.gateway';
+import { FakePaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-confirm-intent.gateway';
+import { FakePaypalCreateIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-create-intent.gateway';
+import { FakePaypalGetIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-get-intent.gateway';
+import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/facades/intent.facade';
+import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/cancel-intent.gateway';
+import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/confirm-intent.gateway';
+import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/create-intent.gateway';
+import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/get-intent.gateway';
+import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
 
 const PAYPAL_FACTORY_PROVIDERS: Provider[] = [
   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: PaypalProviderFactory, multi: true },

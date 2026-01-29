@@ -5,7 +5,7 @@ import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
-import { PaypalIntentFacade } from '@payments/infrastructure/paypal/facades/intent.facade';
+import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/facades/intent.facade';
 import type { Observable } from 'rxjs';
 
 /**
