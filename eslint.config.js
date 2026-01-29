@@ -107,7 +107,7 @@ module.exports = defineConfig([
 
   // ✅ TESTS relajados
   {
-    files: ['**/*.spec.ts', '**/*.integration.spec.ts'],
+    files: ['**/*.spec.ts', '**/*.integration.spec.ts', '**/*.harness.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-empty-function': 'off',

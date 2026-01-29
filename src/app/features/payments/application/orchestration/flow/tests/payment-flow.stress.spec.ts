@@ -14,7 +14,7 @@ import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/c
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
-import { createScenarioHarness } from './payment-flow.scenario-harness';
+import { createScenarioHarness } from './payment-flow.harness';
 
 const baseRequest: CreatePaymentRequest = {
   orderId: 'o1',
