@@ -3,9 +3,11 @@
  * Boots the flow actor with InMemory telemetry; exposes sendCommand, sendSystem,
  * getSnapshot, telemetry helpers, and flush/fake-timer utilities.
  */
+import type { Provider } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type {
   ExternalStatusUpdatedPayload,
+  RedirectReturnedPayload,
   WebhookReceivedPayload,
 } from '@payments/application/adapters/events/payment-flow.events';
 import type { FlowTelemetryEvent } from '@payments/application/adapters/telemetry/flow-telemetry.types';
@@ -24,8 +26,8 @@ import { vi } from 'vitest';
 export interface ScenarioHarness {
   sendCommand(type: string, payload?: Record<string, unknown>): boolean;
   sendSystem(
-    type: 'WEBHOOK_RECEIVED' | 'EXTERNAL_STATUS_UPDATED',
-    payload: WebhookReceivedPayload | ExternalStatusUpdatedPayload,
+    type: 'REDIRECT_RETURNED' | 'WEBHOOK_RECEIVED' | 'EXTERNAL_STATUS_UPDATED',
+    payload: RedirectReturnedPayload | WebhookReceivedPayload | ExternalStatusUpdatedPayload,
   ): void;
   getSnapshot(): PaymentFlowSnapshot;
   getTelemetryEvents(): readonly FlowTelemetryEvent[];
@@ -33,7 +35,7 @@ export interface ScenarioHarness {
     kindOrPredicate?: FlowTelemetryEvent['kind'] | ((e: FlowTelemetryEvent) => boolean),
   ): number;
   findLastEvent(predicate: (e: FlowTelemetryEvent) => boolean): FlowTelemetryEvent | undefined;
-  flushMicrotasks(): Promise<void>;
+  flushMicrotasks(times?: number): Promise<void>;
   useFakeTimers(): void;
   tick(ms: number): void;
   useRealTimers(): void;
@@ -60,10 +62,11 @@ function buildCommandEvent(
 }
 
 export interface ScenarioHarnessOptions {
-  extraProviders?: unknown[];
+  extraProviders?: Provider[];
 }
 
 export function createScenarioHarness(options?: ScenarioHarnessOptions): ScenarioHarness {
+  TestBed.resetTestingModule();
   const sink = new InMemoryFlowTelemetrySink(500);
 
   TestBed.configureTestingModule({
@@ -82,10 +85,15 @@ export function createScenarioHarness(options?: ScenarioHarnessOptions): Scenari
       return actor.send(event);
     },
     sendSystem(
-      type: 'WEBHOOK_RECEIVED' | 'EXTERNAL_STATUS_UPDATED',
-      payload: WebhookReceivedPayload | ExternalStatusUpdatedPayload,
+      type: 'REDIRECT_RETURNED' | 'WEBHOOK_RECEIVED' | 'EXTERNAL_STATUS_UPDATED',
+      payload: RedirectReturnedPayload | WebhookReceivedPayload | ExternalStatusUpdatedPayload,
     ): void {
-      if (type === 'WEBHOOK_RECEIVED')
+      if (type === 'REDIRECT_RETURNED')
+        actor.sendSystem({
+          type: 'REDIRECT_RETURNED',
+          payload: payload as RedirectReturnedPayload,
+        });
+      else if (type === 'WEBHOOK_RECEIVED')
         actor.sendSystem({ type: 'WEBHOOK_RECEIVED', payload: payload as WebhookReceivedPayload });
       else
         actor.sendSystem({
@@ -107,8 +115,8 @@ export function createScenarioHarness(options?: ScenarioHarnessOptions): Scenari
     findLastEvent(predicate: (e: FlowTelemetryEvent) => boolean): FlowTelemetryEvent | undefined {
       return sink.findLast(predicate);
     },
-    async flushMicrotasks(): Promise<void> {
-      await Promise.resolve();
+    async flushMicrotasks(times = 3): Promise<void> {
+      for (let i = 0; i < times; i++) await Promise.resolve();
     },
     useFakeTimers(): void {
       vi.useFakeTimers();
