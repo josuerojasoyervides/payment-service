@@ -1,5 +1,5 @@
 import { I18nKeys } from '@core/i18n';
-import { PaypalRedirectRequestBuilder } from '@payments/infrastructure/paypal/builders/paypal-redirect-request.builder';
+import { PaypalRedirectRequestBuilder } from '@payments/infrastructure/paypal/methods/redirect/builders/paypal-redirect-request.builder';
 
 export function expectSyncPaymentError(fn: () => unknown, expected: any) {
   try {

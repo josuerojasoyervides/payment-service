@@ -7,12 +7,12 @@ import type {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { PAYPAL_API_BASE } from '@payments/infrastructure/paypal/constants/base-api.constant';
 import type {
   PaypalCreateOrderRequest,
   PaypalOrderDto,
 } from '@payments/infrastructure/paypal/dto/paypal.dto';
-import { mapOrder } from '@payments/infrastructure/paypal/mappers/map-order.mapper';
+import { PAYPAL_API_BASE } from '@payments/infrastructure/paypal/workflows/order/api/base-api.constant';
+import { mapOrder } from '@payments/infrastructure/paypal/workflows/order/mappers/map-order.mapper';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import type { Observable } from 'rxjs';
 

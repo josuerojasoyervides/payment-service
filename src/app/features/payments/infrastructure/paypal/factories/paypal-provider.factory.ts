@@ -11,10 +11,10 @@ import type {
   FieldRequirements,
   PaymentRequestBuilder,
 } from '@payments/domain/ports/payment/payment-request-builder.port';
-import { PaypalRedirectRequestBuilder } from '@payments/infrastructure/paypal/builders/paypal-redirect-request.builder';
-import { PaypalIntentFacade } from '@payments/infrastructure/paypal/facades/intent.facade';
-import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/handlers/paypal-finalize.handler';
-import { PaypalRedirectStrategy } from '@payments/infrastructure/paypal/strategies/paypal-redirect.strategy';
+import { PaypalRedirectRequestBuilder } from '@payments/infrastructure/paypal/methods/redirect/builders/paypal-redirect-request.builder';
+import { PaypalRedirectStrategy } from '@payments/infrastructure/paypal/methods/redirect/strategies/paypal-redirect.strategy';
+import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/facades/intent.facade';
+import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
 
 /**
  * PayPal provider factory.

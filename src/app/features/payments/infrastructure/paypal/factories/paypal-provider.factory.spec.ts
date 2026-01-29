@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
-import { PaypalIntentFacade } from '@payments/infrastructure/paypal/facades/intent.facade';
 import { PaypalProviderFactory } from '@payments/infrastructure/paypal/factories/paypal-provider.factory';
-import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/handlers/paypal-finalize.handler';
-import { PaypalRedirectStrategy } from '@payments/infrastructure/paypal/strategies/paypal-redirect.strategy';
+import { PaypalRedirectStrategy } from '@payments/infrastructure/paypal/methods/redirect/strategies/paypal-redirect.strategy';
+import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/facades/intent.facade';
+import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
 import { firstValueFrom, of } from 'rxjs';
 
 describe('PaypalProviderFactory', () => {

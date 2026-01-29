@@ -3,11 +3,10 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/gateways/intent/confirm-intent.gateway';
-import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
+import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/cancel-intent.gateway';
 
-describe('PaypalConfirmIntentGateway', () => {
-  let gateway: PaypalConfirmIntentGateway;
+describe('PaypalCancelIntentGateway', () => {
+  let gateway: PaypalCancelIntentGateway;
   let httpMock: HttpTestingController;
 
   const loggerMock = {
@@ -22,13 +21,12 @@ describe('PaypalConfirmIntentGateway', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        PaypalConfirmIntentGateway,
-        IdempotencyKeyFactory,
+        PaypalCancelIntentGateway,
         { provide: LoggerService, useValue: loggerMock },
       ],
     });
 
-    gateway = TestBed.inject(PaypalConfirmIntentGateway);
+    gateway = TestBed.inject(PaypalCancelIntentGateway);
     httpMock = TestBed.inject(HttpTestingController);
   });
 
@@ -36,26 +34,25 @@ describe('PaypalConfirmIntentGateway', () => {
     httpMock.verify();
   });
 
-  it('POST /orders/:id/capture with idempotency header', () => {
+  it('POST /orders/:id/void and maps payment intent correctly', () => {
     gateway.execute({ intentId: 'ORDER_1' }).subscribe({
       next: (intent: PaymentIntent) => {
         expect(intent.id).toBe('ORDER_1');
         expect(intent.provider).toBe('paypal');
-        expect(intent.status).toBe('succeeded');
+        expect(intent.status).toBe('canceled');
       },
       error: () => {
         expect.fail('should not emit error');
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/paypal/orders/ORDER_1/capture');
+    const httpReq = httpMock.expectOne('/api/payments/paypal/orders/ORDER_1/void');
     expect(httpReq.request.method).toBe('POST');
     expect(httpReq.request.body).toEqual({});
-    expect(httpReq.request.headers.get('PayPal-Request-Id')).toBe('paypal:confirm:ORDER_1');
 
     httpReq.flush({
       id: 'ORDER_1',
-      status: 'COMPLETED',
+      status: 'VOIDED',
       purchase_units: [
         {
           amount: {
@@ -79,7 +76,7 @@ describe('PaypalConfirmIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/paypal/orders/ORDER_ERROR/capture');
+    const httpReq = httpMock.expectOne('/api/payments/paypal/orders/ORDER_ERROR/void');
     expect(httpReq.request.method).toBe('POST');
 
     httpReq.flush(
