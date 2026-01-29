@@ -17,16 +17,29 @@ export type PaymentFlowSystemEventType =
 export interface RedirectReturnedPayload {
   providerId: PaymentProviderId;
   referenceId: string;
+  /**
+   * Optional nonce to deduplicate multiple returns for the same redirect.
+   * If omitted, the machine will fall back to using `referenceId` as the nonce.
+   */
+  returnNonce?: string;
 }
 
 export interface ExternalStatusUpdatedPayload {
   providerId: PaymentProviderId;
   referenceId: string;
+  /**
+   * Optional provider event id used for webhook/external event deduplication.
+   */
+  eventId?: string;
 }
 
 export interface WebhookReceivedPayload {
   providerId: PaymentProviderId;
   referenceId?: string;
+  /**
+   * Optional provider event id used for webhook deduplication.
+   */
+  eventId?: string;
   raw?: unknown;
 }
 

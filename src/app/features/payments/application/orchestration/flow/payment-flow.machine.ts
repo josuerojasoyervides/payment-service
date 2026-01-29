@@ -22,6 +22,7 @@ import {
   getPollingDelayMs,
   getStatusRetryDelayMs,
   hasIntentPolicy,
+  hasProcessingTimedOutPolicy,
   hasRefreshKeysPolicy,
   isFinalIntentPolicy,
   needsClientConfirmPolicy,
@@ -355,10 +356,43 @@ export const createPaymentFlowMachine = (
         const flowContext = context.flowContext
           ? {
               ...context.flowContext,
+              // Keep both for backwards compatibility; lastReturnNonce is the primary
+              // dedupe key, lastReturnReferenceId remains as an audit hint.
+              lastReturnNonce: context.flowContext.lastReturnNonce ?? refId,
               lastReturnReferenceId: refId,
               lastReturnAt: Date.now(),
             }
           : null;
+        return { flowContext };
+      }),
+
+      setProcessingTimeoutError: assign(({ context }) => {
+        const flowId = context.flowContext?.flowId ?? null;
+        return {
+          intent: null,
+          error: createPaymentError(
+            'processing_timeout',
+            'errors.processing_timeout',
+            flowId ? { flowId } : undefined,
+            null,
+          ),
+        };
+      }),
+
+      markExternalEventProcessed: assign(({ event, context }) => {
+        if (event.type !== 'EXTERNAL_STATUS_UPDATED' && event.type !== 'WEBHOOK_RECEIVED')
+          return {};
+
+        const eventId = (event.payload as { eventId?: string }).eventId;
+        if (!eventId) return {};
+
+        const flowContext = context.flowContext
+          ? {
+              ...context.flowContext,
+              lastExternalEventId: eventId,
+            }
+          : null;
+
         return { flowContext };
       }),
     },
@@ -386,7 +420,19 @@ export const createPaymentFlowMachine = (
       isDuplicateReturn: ({ event, context }) => {
         if (event.type !== 'REDIRECT_RETURNED') return false;
         const refId = event.payload.referenceId ?? '';
-        return context.flowContext?.lastReturnReferenceId === refId;
+        const lastNonce =
+          context.flowContext?.lastReturnNonce ?? context.flowContext?.lastReturnReferenceId;
+        return !!lastNonce && lastNonce === refId;
+      },
+      isDuplicateExternalEvent: ({ event, context }) => {
+        if (event.type !== 'EXTERNAL_STATUS_UPDATED' && event.type !== 'WEBHOOK_RECEIVED')
+          return false;
+        const eventId = (event.payload as { eventId?: string }).eventId;
+        if (!eventId) return false;
+        return context.flowContext?.lastExternalEventId === eventId;
+      },
+      isProcessingTimedOut: ({ context }) => {
+        return hasProcessingTimedOutPolicy(config, context);
       },
     },
   }).createMachine({
@@ -403,16 +449,34 @@ export const createPaymentFlowMachine = (
         },
         {
           guard: 'isDuplicateReturn',
-          target: '.reconciling',
-          actions: 'setExternalEventInput',
+          // Duplicate returns are treated as no-ops; keep the current state.
+          actions: 'noop',
         },
         {
           target: '.finalizing',
           actions: ['setExternalEventInput', 'markReturnProcessed'],
         },
       ],
-      EXTERNAL_STATUS_UPDATED: { target: '.reconciling', actions: 'setExternalEventInput' },
-      WEBHOOK_RECEIVED: { target: '.reconciling', actions: 'setExternalEventInput' },
+      EXTERNAL_STATUS_UPDATED: [
+        {
+          guard: 'isDuplicateExternalEvent',
+          actions: 'noop',
+        },
+        {
+          target: '.reconciling',
+          actions: ['setExternalEventInput', 'markExternalEventProcessed'],
+        },
+      ],
+      WEBHOOK_RECEIVED: [
+        {
+          guard: 'isDuplicateExternalEvent',
+          actions: 'noop',
+        },
+        {
+          target: '.reconciling',
+          actions: ['setExternalEventInput', 'markExternalEventProcessed'],
+        },
+      ],
     },
 
     context: () => {

@@ -12,11 +12,25 @@ export interface PaymentFlowConfig {
     maxDelayMs: number;
     maxRetries: number;
   };
+  /**
+   * Processing resolution policy.
+   *
+   * Controls how long a flow is allowed to stay in a non-terminal `processing`
+   * status before transitioning to a terminal error (e.g. `processing_timeout`).
+   */
+  processing: {
+    /**
+     * Maximum duration (in ms) that the flow is allowed to stay alive
+     * since `createdAt` before we consider it a timeout.
+     */
+    maxDurationMs: number;
+  };
 }
 
 export type PaymentFlowConfigOverrides = Partial<{
   polling: Partial<PaymentFlowConfig['polling']>;
   statusRetry: Partial<PaymentFlowConfig['statusRetry']>;
+  processing: Partial<PaymentFlowConfig['processing']>;
 }>;
 
 export const DEFAULT_PAYMENT_FLOW_CONFIG: PaymentFlowConfig = {
@@ -29,6 +43,10 @@ export const DEFAULT_PAYMENT_FLOW_CONFIG: PaymentFlowConfig = {
     baseDelayMs: 500,
     maxDelayMs: 5000,
     maxRetries: 2,
+  },
+  processing: {
+    // 15 minutes in lab environments; production can tune this via overrides.
+    maxDurationMs: 15 * 60 * 1000,
   },
 };
 
@@ -43,6 +61,10 @@ export function resolvePaymentFlowConfig(
     statusRetry: {
       ...DEFAULT_PAYMENT_FLOW_CONFIG.statusRetry,
       ...(overrides.statusRetry ?? {}),
+    },
+    processing: {
+      ...DEFAULT_PAYMENT_FLOW_CONFIG.processing,
+      ...(overrides.processing ?? {}),
     },
   };
 }
@@ -108,6 +130,26 @@ export function canRetryStatusPolicy(
   context: PaymentFlowMachineContext,
 ): boolean {
   return context.statusRetry.count < config.statusRetry.maxRetries;
+}
+
+/**
+ * Returns true when the processing resolution policy has been exceeded.
+ *
+ * This is intentionally conservative: either exceeding the maximum number of
+ * polling attempts **or** the maximum processing duration will trigger a timeout.
+ */
+export function hasProcessingTimedOutPolicy(
+  config: PaymentFlowConfig,
+  context: PaymentFlowMachineContext,
+  nowMs: number = Date.now(),
+): boolean {
+  const createdAt = context.flowContext?.createdAt;
+  const ageMs = createdAt != null ? nowMs - createdAt : 0;
+
+  const exceededAttempts = context.polling.attempt >= config.polling.maxAttempts;
+  const exceededDuration = createdAt != null && ageMs > config.processing.maxDurationMs;
+
+  return exceededAttempts || exceededDuration;
 }
 
 export function getPollingDelayMs(config: PaymentFlowConfig, attempt: number): number {

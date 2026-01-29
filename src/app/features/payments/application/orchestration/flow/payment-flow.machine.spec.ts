@@ -447,17 +447,21 @@ describe('PaymentFlowMachine', () => {
       statusIntent: { ...baseIntent, id: 'pi_return', status: 'succeeded' },
     });
 
+    const before = actor.getSnapshot() as PaymentFlowSnapshot;
+    expect(before.value).toBe('idle');
+    expect(before.context.flowContext?.lastReturnNonce).toBeUndefined();
+
     actor.send({
       type: 'REDIRECT_RETURNED',
       payload: { providerId: 'stripe', referenceId: 'pi_return' },
     });
 
-    const snap = await waitForSnapshot(
-      actor,
-      (s) => s.value === 'reconciling' || s.value === 'reconcilingInvoke',
-      500,
-    );
-    expect(snap.value).not.toBe('finalizing');
+    const snap = actor.getSnapshot() as PaymentFlowSnapshot;
+    // Duplicate return is a no-op: machine stays in the same state.
+    expect(snap.value).toBe('idle');
+    // markReturnProcessed must not run for duplicates (nonce remains undefined).
+    expect(snap.context.flowContext?.lastReturnNonce).toBeUndefined();
+    // No finalize call should be triggered on duplicates.
     expect(deps.finalize).toHaveBeenCalledTimes(0);
   });
 
@@ -615,6 +619,7 @@ describe('PaymentFlowMachine', () => {
       config: {
         polling: { baseDelayMs: 1, maxDelayMs: 1, maxAttempts: 2 },
         statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 1 },
+        processing: { maxDurationMs: 60 * 1000 },
       },
     });
 
@@ -643,6 +648,7 @@ describe('PaymentFlowMachine', () => {
       config: {
         polling: { baseDelayMs: 1, maxDelayMs: 1, maxAttempts: 1 },
         statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 0 },
+        processing: { maxDurationMs: 60 * 1000 },
       },
     });
 
@@ -663,6 +669,42 @@ describe('PaymentFlowMachine', () => {
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
     expect(snap.hasTag('error')).toBe(true);
+  });
+
+  it('processing timeout: when policy bounds are exceeded, transitions to failed with processing_timeout', async () => {
+    const { actor } = setup({
+      initialContext: {
+        flowContext: {
+          flowId: 'flow_timeout',
+          providerId: 'stripe',
+          createdAt: 0,
+          expiresAt: Date.now() + 60_000,
+          providerRefs: { stripe: { paymentId: 'pi_processing' } },
+        },
+        providerId: 'stripe',
+        intentId: 'pi_processing',
+      },
+      statusIntent: {
+        ...baseIntent,
+        id: 'pi_processing',
+        status: 'processing',
+      },
+      config: {
+        polling: { baseDelayMs: 1, maxDelayMs: 1, maxAttempts: 1 },
+        statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 0 },
+        processing: { maxDurationMs: 1 },
+      },
+    });
+
+    actor.send({
+      type: 'EXTERNAL_STATUS_UPDATED',
+      payload: { providerId: 'stripe', referenceId: 'pi_processing' },
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'failed', 1500);
+    expect(snap.hasTag('error')).toBe(true);
+    expect(snap.context.error?.code).toBe('processing_timeout');
+    expect(snap.context.error?.messageKey).toBe('errors.processing_timeout');
   });
 
   it('rehydrates context and reconciles external events on re-entry', async () => {
@@ -697,6 +739,71 @@ describe('PaymentFlowMachine', () => {
 
     expect(snap.context.flowContext?.flowId).toBe('flow_reentry');
     expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_reentry' });
+  });
+
+  it('dedupes EXTERNAL_STATUS_UPDATED events with same eventId', async () => {
+    const { actor, deps } = setup({
+      initialContext: {
+        flowContext: {
+          flowId: 'flow_ext_dedupe',
+          providerId: 'stripe',
+          providerRefs: { stripe: { paymentId: 'pi_ext' } },
+          createdAt: Date.now(),
+          expiresAt: Date.now() + 60_000,
+        },
+        providerId: 'stripe',
+        intentId: 'pi_ext',
+      },
+      statusIntent: {
+        ...baseIntent,
+        id: 'pi_ext',
+        status: 'succeeded',
+      },
+    });
+
+    const payload = { providerId: 'stripe' as const, referenceId: 'pi_ext', eventId: 'evt_1' };
+
+    actor.send({ type: 'EXTERNAL_STATUS_UPDATED', payload });
+    actor.send({ type: 'EXTERNAL_STATUS_UPDATED', payload });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'done', 1500);
+    expect(snap.hasTag('ready')).toBe(true);
+    expect(deps.getStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('dedupes WEBHOOK_RECEIVED events with same eventId', async () => {
+    const { actor, deps } = setup({
+      initialContext: {
+        flowContext: {
+          flowId: 'flow_webhook_dedupe',
+          providerId: 'stripe',
+          providerRefs: { stripe: { paymentId: 'pi_webhook_ext' } },
+          createdAt: Date.now(),
+          expiresAt: Date.now() + 60_000,
+        },
+        providerId: 'stripe',
+        intentId: 'pi_webhook_ext',
+      },
+      statusIntent: {
+        ...baseIntent,
+        id: 'pi_webhook_ext',
+        status: 'succeeded',
+      },
+    });
+
+    const payload = {
+      providerId: 'stripe' as const,
+      referenceId: 'pi_webhook_ext',
+      eventId: 'evt_webhook_1',
+      raw: { id: 'evt_webhook_1' },
+    };
+
+    actor.send({ type: 'WEBHOOK_RECEIVED', payload });
+    actor.send({ type: 'WEBHOOK_RECEIVED', payload });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'done', 1500);
+    expect(snap.hasTag('ready')).toBe(true);
+    expect(deps.getStatus).toHaveBeenCalledTimes(1);
   });
 
   it('preserves provider refs across id swap and resolves canonical status reference', async () => {

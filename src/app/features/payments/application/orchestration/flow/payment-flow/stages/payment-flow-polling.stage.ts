@@ -8,7 +8,14 @@ export const pollingStates = {
     tags: ['ready', 'polling'],
     entry: ['incrementPollAttempt'],
     after: {
-      pollDelay: { target: 'fetchingStatus', guard: 'canPoll' },
+      pollDelay: [
+        {
+          guard: 'canPoll',
+          target: 'fetchingStatus',
+        },
+        // If we cannot poll anymore according to policy, let afterStatus
+        // handle the terminal transition on the next status resolution.
+      ],
     },
     on: {
       REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
@@ -57,6 +64,11 @@ export const pollingStates = {
       { guard: 'needsUserAction', target: 'requiresAction' },
       { guard: 'needsFinalize', target: 'finalizing' },
       { guard: 'isFinal', target: 'done' },
+      {
+        guard: 'isProcessingTimedOut',
+        target: 'failed',
+        actions: 'setProcessingTimeoutError',
+      },
       { target: 'polling' },
     ],
   },

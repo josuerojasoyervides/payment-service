@@ -145,4 +145,33 @@ describe('IdempotencyKeyFactory', () => {
       expect(key).toBe('stripe:get:pi_1');
     });
   });
+
+  describe('generateForFlowOperation', () => {
+    it('generates key as flowId:operation:attempt', () => {
+      const key = factory.generateForFlowOperation(
+        {
+          flowId: 'flow_123',
+          providerId: 'stripe',
+          externalReference: 'order_1',
+        },
+        'start',
+        0,
+      );
+
+      expect(key).toBe('flow_123:start:0');
+    });
+
+    it('falls back to unknown_flow when flowId is missing', () => {
+      const key = factory.generateForFlowOperation(
+        {
+          providerId: 'stripe',
+          externalReference: 'order_1',
+        } as any,
+        'get',
+        2,
+      );
+
+      expect(key).toBe('unknown_flow:get:2');
+    });
+  });
 });

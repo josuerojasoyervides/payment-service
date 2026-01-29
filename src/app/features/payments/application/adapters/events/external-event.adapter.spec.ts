@@ -23,6 +23,7 @@ describe('ExternalEventAdapter', () => {
     adapter.redirectReturned({
       providerId: 'stripe',
       referenceId: 'pi_123',
+      returnNonce: 'stripe:pi_123',
     });
 
     expect(actor.sendSystem).toHaveBeenCalledWith({
@@ -30,6 +31,7 @@ describe('ExternalEventAdapter', () => {
       payload: {
         providerId: 'stripe',
         referenceId: 'pi_123',
+        returnNonce: 'stripe:pi_123',
       },
     });
 
@@ -40,6 +42,7 @@ describe('ExternalEventAdapter', () => {
     adapter.externalStatusUpdated({
       providerId: 'paypal',
       referenceId: 'ORDER_123',
+      eventId: 'evt_123',
     });
 
     expect(actor.sendSystem).toHaveBeenCalledWith({
@@ -47,6 +50,7 @@ describe('ExternalEventAdapter', () => {
       payload: {
         providerId: 'paypal',
         referenceId: 'ORDER_123',
+        eventId: 'evt_123',
       },
     });
     expect(actor.send).not.toHaveBeenCalled();
@@ -56,6 +60,7 @@ describe('ExternalEventAdapter', () => {
     adapter.webhookReceived({
       providerId: 'stripe',
       referenceId: 'pi_999',
+      eventId: 'evt_1',
       raw: { id: 'evt_1' },
     });
 
@@ -64,6 +69,7 @@ describe('ExternalEventAdapter', () => {
       payload: {
         providerId: 'stripe',
         referenceId: 'pi_999',
+        eventId: 'evt_1',
         raw: { id: 'evt_1' },
       },
     });

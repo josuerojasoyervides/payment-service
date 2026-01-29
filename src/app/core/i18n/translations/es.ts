@@ -45,6 +45,8 @@ export const es: Translations = {
     unsupported_finalize: 'Este proveedor no soporta finalización desde este flujo.',
     return_correlation_mismatch:
       'La referencia de retorno no coincide. Esperado {{expectedId}}, recibido {{receivedId}}.',
+    processing_timeout:
+      'El pago se mantuvo en procesamiento demasiado tiempo. No pudimos confirmar un estado final de forma automática.',
   },
   messages: {
     payment_created: 'Pago creado exitosamente',

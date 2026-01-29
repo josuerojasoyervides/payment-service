@@ -23,6 +23,11 @@ export const startStates = {
     always: [
       { guard: 'needsUserAction', target: 'requiresAction' },
       { guard: 'isFinal', target: 'done' },
+      {
+        guard: 'isProcessingTimedOut',
+        target: 'failed',
+        actions: 'setProcessingTimeoutError',
+      },
       { target: 'polling' },
     ],
   },

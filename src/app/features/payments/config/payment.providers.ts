@@ -1,6 +1,7 @@
 import type { EnvironmentProviders } from '@angular/core';
 import { type Provider } from '@angular/core';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external-event.adapter';
+import { WEBHOOK_NORMALIZER_REGISTRY } from '@payments/application/adapters/events/webhook-normalizer-registry.token';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
 import { PAYMENT_STATE } from '@payments/application/api/tokens/flow/payment-state.token';
@@ -21,8 +22,14 @@ import {
   type PaymentsProvidersMode,
   type PaymentsProvidersOptions,
 } from '@payments/config/payments-providers.types';
-import { providePaypalPayments } from '@payments/infrastructure/paypal/di/provide-paypal-payments';
-import { provideStripePayments } from '@payments/infrastructure/stripe/di/provide-stripe-payments';
+import {
+  PaypalWebhookNormalizer,
+  providePaypalPayments,
+} from '@payments/infrastructure/paypal/di/provide-paypal-payments';
+import {
+  provideStripePayments,
+  StripeWebhookNormalizer,
+} from '@payments/infrastructure/stripe/di/provide-stripe-payments';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 function selectProviderConfigs(mode: PaymentsProvidersMode): Provider[] {
@@ -65,6 +72,13 @@ function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provide
     ...ACTION_PORT_PROVIDERS,
     ...APPLICATION_PROVIDERS,
     ...SHARED_PROVIDERS,
+    {
+      provide: WEBHOOK_NORMALIZER_REGISTRY,
+      useValue: {
+        stripe: new StripeWebhookNormalizer(),
+        paypal: new PaypalWebhookNormalizer(),
+      },
+    },
     ...(options.extraProviders ?? []),
   ];
 }

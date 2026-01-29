@@ -12,6 +12,7 @@ export type PaymentErrorCode =
   | 'expired_card'
   | 'unsupported_client_confirm'
   | 'unsupported_finalize'
+  | 'processing_timeout'
   | 'return_correlation_mismatch';
 
 export type PaymentErrorParams = Record<string, string | number | boolean | null | undefined>;

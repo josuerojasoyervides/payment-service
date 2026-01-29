@@ -356,7 +356,7 @@ describe('PaymentFlow contract tests', () => {
 
     actor.send({
       type: 'EXTERNAL_STATUS_UPDATED',
-      payload: { providerId: 'paypal', referenceId: 'ORDER_123' },
+      payload: { providerId: 'paypal', referenceId: 'ORDER_123', eventId: 'evt_paypal_1' },
     });
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'reconcilingInvoke');
@@ -379,7 +379,12 @@ describe('PaymentFlow contract tests', () => {
 
     actor.send({
       type: 'WEBHOOK_RECEIVED',
-      payload: { providerId: 'stripe', referenceId: 'pi_webhook', raw: { id: 'evt_1' } },
+      payload: {
+        providerId: 'stripe',
+        referenceId: 'pi_webhook',
+        eventId: 'evt_stripe_1',
+        raw: { id: 'evt_1' },
+      },
     });
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'reconcilingInvoke');
