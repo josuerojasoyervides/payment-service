@@ -6,8 +6,8 @@ import type {
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
-import type { TokenValidator } from '@payments/domain/ports/provider/token-validator.port';
-import { NullTokenValidator } from '@payments/domain/ports/provider/token-validator.port';
+import type { TokenValidator } from '@payments/domain/common/ports/token-validator.port';
+import { NullTokenValidator } from '@payments/domain/common/ports/token-validator.port';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type {
   PaymentIntent,
