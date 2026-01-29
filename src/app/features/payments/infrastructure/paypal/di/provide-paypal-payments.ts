@@ -70,7 +70,7 @@ const PAYPAL_FAKE_PROVIDERS: Provider[] = [
   ...PAYPAL_UI_META_PROVIDERS,
 ];
 
-export function providePaypalProviderConfig(mode: PaymentsProvidersMode): Provider[] {
+export function providePaypalPayments(mode: PaymentsProvidersMode): Provider[] {
   if (mode === 'real') {
     return PAYPAL_REAL_PROVIDERS;
   }

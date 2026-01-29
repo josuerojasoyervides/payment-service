@@ -67,7 +67,7 @@ const STRIPE_FAKE_PROVIDERS: Provider[] = [
   ...STRIPE_UI_META_PROVIDERS,
 ];
 
-export function provideStripeProviderConfig(mode: PaymentsProvidersMode): Provider[] {
+export function provideStripePayments(mode: PaymentsProvidersMode): Provider[] {
   if (mode === 'real') {
     return STRIPE_REAL_PROVIDERS;
   }
