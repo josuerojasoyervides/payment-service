@@ -19,6 +19,7 @@ import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/work
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
 import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-intent-facade.factory';
+export { StripeWebhookNormalizer } from '@payments/infrastructure/stripe/workflows/webhook/stripe-webhook.normalizer';
 
 const STRIPE_FACTORY_PROVIDERS: Provider[] = [
   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: StripeProviderFactory, multi: true },

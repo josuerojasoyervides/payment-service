@@ -20,6 +20,7 @@ import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workf
 import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/get-intent.gateway';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
 import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-intent-facade.factory';
+export { PaypalWebhookNormalizer } from '@payments/infrastructure/paypal/workflows/webhook/paypal-webhook.normalizer';
 
 const PAYPAL_FACTORY_PROVIDERS: Provider[] = [
   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: PaypalProviderFactory, multi: true },
