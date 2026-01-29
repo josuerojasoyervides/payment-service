@@ -1,8 +1,12 @@
 /**
- * Stress scenarios for payment flow (PR6.2): webhook dedupe, terminal no-reopen,
- * finalize idempotency, correlation mismatch.
- * Uses scenario harness + telemetry; assertions are invariant-based (tags, counts).
+ * Stress scenarios for payment flow (PR6.2): webhook dedupe, terminal safety,
+ * finalize idempotency, correlation mismatch, processing timeout, out-of-order.
+ * Uses scenario harness + telemetry; asserts providerId/refs and no duplicate side-effects.
  */
+import {
+  PAYMENT_FLOW_CONFIG_OVERRIDES,
+  PAYMENT_FLOW_INITIAL_CONTEXT,
+} from '@payments/application/orchestration/flow/payment-flow/payment-flow-config.token';
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
@@ -52,6 +56,8 @@ describe('Payment flow stress (PR6.2)', () => {
           e.state.includes('reconciling'),
       );
       expect(reconcilingCount).toBeLessThanOrEqual(2);
+      const withRefs = events.filter((e) => e.kind === 'SYSTEM_EVENT_SENT' && e.refs?.['eventId']);
+      expect(withRefs.length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -114,6 +120,8 @@ describe('Payment flow stress (PR6.2)', () => {
           (e.state.includes('reconciling') || e.state.includes('finalizing')),
       );
       expect(reconcilingOrFinalizingAfter).toBeLessThanOrEqual(reconcilingOrFinalizingBefore);
+      const systemEvents = h.getTelemetryEvents().filter((e) => e.kind === 'SYSTEM_EVENT_SENT');
+      expect(systemEvents.some((e) => e.providerId === 'stripe')).toBe(true);
     });
   });
 
@@ -172,6 +180,8 @@ describe('Payment flow stress (PR6.2)', () => {
       const webhookSent = systemSent.filter((e) => e.eventType === 'WEBHOOK_RECEIVED');
       expect(redirectSent.length).toBeGreaterThanOrEqual(1);
       expect(webhookSent.length).toBeGreaterThanOrEqual(1);
+      expect(redirectSent.every((e) => e.providerId === 'stripe')).toBe(true);
+      expect(redirectSent.some((e) => e.refs?.['referenceId'] === refId)).toBe(true);
     });
   });
 
@@ -217,6 +227,110 @@ describe('Payment flow stress (PR6.2)', () => {
           (e.state.includes('reconciling') || e.state.includes('finalizing')),
       );
       expect(reconcilingFinalizingAfter).toBeLessThanOrEqual(reconcilingFinalizingBefore);
+    });
+  });
+
+  describe('Scenario 5: processing timeout error stable', () => {
+    it('when processing exceeds maxDurationMs, transitions to failed with processing_timeout and ERROR_RAISED', async () => {
+      vi.useFakeTimers({ now: 0 });
+      const flowId = 'flow_timeout_stress';
+      const refId = 'pi_timeout';
+      const processingIntent = {
+        id: refId,
+        provider: 'stripe' as const,
+        status: 'processing' as const,
+        amount: 100,
+        currency: 'MXN' as const,
+      };
+      const h = createScenarioHarness({
+        extraProviders: [
+          {
+            provide: PAYMENT_FLOW_CONFIG_OVERRIDES,
+            useValue: {
+              processing: { maxDurationMs: 1 },
+              polling: { baseDelayMs: 1, maxDelayMs: 1, maxAttempts: 1 },
+              statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 0 },
+            },
+          },
+          {
+            provide: PAYMENT_FLOW_INITIAL_CONTEXT,
+            useValue: {
+              flowContext: {
+                flowId,
+                providerId: 'stripe',
+                createdAt: 0,
+                expiresAt: 10_000,
+                providerRefs: { stripe: { intentId: refId } },
+              },
+              providerId: 'stripe',
+              intentId: refId,
+            },
+          },
+          {
+            provide: GetPaymentStatusUseCase,
+            useValue: { execute: () => of(processingIntent) },
+          },
+        ],
+      });
+      h.sendSystem('EXTERNAL_STATUS_UPDATED', {
+        providerId: 'stripe',
+        referenceId: refId,
+        eventId: 'evt_timeout',
+      });
+      h.tick(2);
+      await h.flushMicrotasks(5);
+
+      const snap = h.getSnapshot();
+      expect(snap.hasTag('error')).toBe(true);
+      expect(snap.context.error?.code).toBe('processing_timeout');
+
+      const errorRaised = h
+        .getTelemetryEvents()
+        .filter((e) => e.kind === 'ERROR_RAISED' && e.errorCode === 'processing_timeout');
+      expect(errorRaised.length).toBeGreaterThanOrEqual(1);
+      expect(errorRaised[0].flowId).toBe(flowId);
+      expect(errorRaised[0].providerId).toBe('stripe');
+
+      vi.useRealTimers();
+    });
+  });
+
+  describe('Scenario 6: terminal safety (no re-open)', () => {
+    it('out-of-order events after terminal do not revive; state stays terminal', async () => {
+      const succeededIntent = {
+        id: 'pi_done',
+        provider: 'stripe' as const,
+        status: 'succeeded' as const,
+        amount: 100,
+        currency: 'MXN' as const,
+      };
+      const h = createScenarioHarness({
+        extraProviders: [
+          { provide: GetPaymentStatusUseCase, useValue: { execute: () => of(succeededIntent) } },
+        ],
+      });
+      h.sendSystem('WEBHOOK_RECEIVED', {
+        providerId: 'stripe',
+        referenceId: 'pi_done',
+        eventId: 'evt_1',
+      });
+      for (let i = 0; i < 15; i++) await h.flushMicrotasks();
+      const terminalValue = String(h.getSnapshot().value);
+      expect(
+        h.getSnapshot().hasTag('ready') || h.getSnapshot().hasTag('error'),
+        'flow should reach terminal (ready or error)',
+      ).toBe(true);
+
+      h.sendSystem('EXTERNAL_STATUS_UPDATED', {
+        providerId: 'stripe',
+        referenceId: 'pi_done',
+        eventId: 'evt_2',
+      });
+      h.sendSystem('REDIRECT_RETURNED', { providerId: 'stripe', referenceId: 'pi_done' });
+      for (let i = 0; i < 10; i++) await h.flushMicrotasks();
+
+      expect(String(h.getSnapshot().value)).toBe(terminalValue);
+      expect(h.getSnapshot().hasTag('ready') || h.getSnapshot().hasTag('error')).toBe(true);
     });
   });
 });
