@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import providePayments from '@payments/config/payment.providers';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 

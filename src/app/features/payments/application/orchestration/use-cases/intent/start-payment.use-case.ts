@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
+import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
+import { ProviderMethodPolicyRegistry } from '@app/features/payments/application/orchestration/registry/provider-method-policy/provider-method-policy.registry';
 import { I18nKeys } from '@core/i18n';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
-import { ProviderMethodPolicyRegistry } from '@payments/application/orchestration/registry/provider-method-policy.registry';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import type {

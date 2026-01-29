@@ -3,9 +3,9 @@
  * finalize idempotency, correlation mismatch.
  * Uses scenario harness + telemetry; assertions are invariant-based (tags, counts).
  */
-import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action-orchestrator.service';
-import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
-import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
+import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
+import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
+import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { of } from 'rxjs';
 import { vi } from 'vitest';

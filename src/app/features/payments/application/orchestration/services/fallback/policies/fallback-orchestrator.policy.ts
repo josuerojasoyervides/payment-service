@@ -1,4 +1,4 @@
-import type { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import type { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
 import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';

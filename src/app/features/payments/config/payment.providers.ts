@@ -2,6 +2,14 @@ import type { EnvironmentProviders } from '@angular/core';
 import { type Provider } from '@angular/core';
 import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
 import { WEBHOOK_NORMALIZER_REGISTRY } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
+import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
+import { ProviderMethodPolicyRegistry } from '@app/features/payments/application/orchestration/registry/provider-method-policy/provider-method-policy.registry';
+import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
+import { NextActionOrchestratorService } from '@app/features/payments/application/orchestration/services/next-action/next-action-orchestrator.service';
+import { CancelPaymentUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/cancel-payment.use-case';
+import { ConfirmPaymentUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/confirm-payment.use-case';
+import { GetPaymentStatusUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
+import { StartPaymentUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/start-payment.use-case';
 import {
   PaypalWebhookNormalizer,
   providePaypalPayments,
@@ -19,15 +27,7 @@ import { CLIENT_CONFIRM_PORTS } from '@payments/application/api/tokens/operation
 import { FINALIZE_PORTS } from '@payments/application/api/tokens/operations/finalize.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
-import { ProviderMethodPolicyRegistry } from '@payments/application/orchestration/registry/provider-method-policy.registry';
-import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
-import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action-orchestrator.service';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
-import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
-import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
-import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
-import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
 import {
   type PaymentsProvidersMode,
   type PaymentsProvidersOptions,

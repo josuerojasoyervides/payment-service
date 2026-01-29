@@ -1,5 +1,5 @@
 import type { WritableSignal } from '@angular/core';
-import type { FinishStatus } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.types';
+import type { FinishStatus } from '@app/features/payments/application/orchestration/services/fallback/helpers/fallback-orchestrator.types';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type {
   FailedAttempt,

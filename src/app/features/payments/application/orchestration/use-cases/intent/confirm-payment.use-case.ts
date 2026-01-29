@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import type {
   PaymentIntent,
   PaymentProviderId,

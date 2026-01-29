@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { ProviderMethodPolicyRegistry } from '@app/features/payments/application/orchestration/registry/provider-method-policy/provider-method-policy.registry';
 import { I18nKeys } from '@core/i18n';
 import type {
   PaymentStrategy,
   StrategyContext,
 } from '@payments/application/api/ports/payment-strategy.port';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
-import { ProviderMethodPolicyRegistry } from '@payments/application/orchestration/registry/provider-method-policy.registry';
-import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
+import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   PaymentIntent,

@@ -2,37 +2,36 @@ import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
-import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
+import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/cancel-payment.use-case';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { firstValueFrom, of, throwError } from 'rxjs';
 
-describe('ConfirmPaymentUseCase', () => {
-  let useCase: ConfirmPaymentUseCase;
+describe('CancelPaymentUseCase', () => {
+  let useCase: CancelPaymentUseCase;
 
-  const req: ConfirmPaymentRequest = {
+  const req: CancelPaymentRequest = {
     intentId: 'pi_1',
-    returnUrl: 'https://example.com/return',
   };
 
   const gatewayMock = {
-    confirmIntent: vi.fn(() =>
+    cancelIntent: vi.fn(() =>
       of({
         id: 'pi_1',
         provider: 'stripe',
-        status: 'processing',
+        status: 'canceled',
         amount: 100,
         currency: 'MXN',
       } satisfies PaymentIntent),
     ),
-  } as Pick<PaymentGatewayPort, 'confirmIntent'>;
+  } as Pick<PaymentGatewayPort, 'cancelIntent'>;
 
   const providerFactoryMock: ProviderFactory = {
     providerId: 'stripe' as const,
@@ -51,25 +50,25 @@ describe('ConfirmPaymentUseCase', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        ConfirmPaymentUseCase,
+        CancelPaymentUseCase,
         { provide: ProviderFactoryRegistry, useValue: registryMock },
         IdempotencyKeyFactory,
       ],
     });
 
-    useCase = TestBed.inject(ConfirmPaymentUseCase);
+    useCase = TestBed.inject(CancelPaymentUseCase);
     vi.clearAllMocks();
   });
 
-  it('resolves provider and calls gateway.confirmIntent with idempotency key', async () => {
+  it('resolves provider and calls gateway.cancelIntent with idempotency key', async () => {
     const result = await firstValueFrom(useCase.execute(req, 'stripe'));
 
     expect(registryMock.get).toHaveBeenCalledWith('stripe');
     expect(providerFactoryMock.getGateway).toHaveBeenCalledTimes(1);
-    expect(gatewayMock.confirmIntent).toHaveBeenCalledWith(
+    expect(gatewayMock.cancelIntent).toHaveBeenCalledWith(
       expect.objectContaining({
         ...req,
-        idempotencyKey: 'stripe:confirm:pi_1',
+        idempotencyKey: 'stripe:cancel:pi_1',
       }),
     );
     expect(result.id).toBe('pi_1');
@@ -86,13 +85,13 @@ describe('ConfirmPaymentUseCase', () => {
       );
     });
 
-    it('propagates observable errors from gateway.confirmIntent()', async () => {
+    it('propagates observable errors from gateway.cancelIntent()', async () => {
       const error: PaymentError = {
         code: 'provider_error',
         messageKey: I18nKeys.errors.provider_error,
         raw: {},
       };
-      (gatewayMock.confirmIntent as any).mockReturnValueOnce(throwError(() => error));
+      (gatewayMock.cancelIntent as any).mockReturnValueOnce(throwError(() => error));
 
       await expect(firstValueFrom(useCase.execute(req, 'stripe'))).rejects.toMatchObject({
         code: 'provider_error',
