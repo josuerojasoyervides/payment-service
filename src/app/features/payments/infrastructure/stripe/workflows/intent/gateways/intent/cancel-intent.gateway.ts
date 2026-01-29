@@ -5,10 +5,10 @@ import type {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import type { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { STRIPE_API_BASE } from '@payments/infrastructure/stripe/constants/base-api.constant';
 import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
-import { mapPaymentIntent } from '@payments/infrastructure/stripe/mappers/payment-intent.mapper';
 import { getIdempotencyHeaders } from '@payments/infrastructure/stripe/validators/get-idempotency-headers';
+import { STRIPE_API_BASE } from '@payments/infrastructure/stripe/workflows/intent/api/base-api.constant';
+import { mapPaymentIntent } from '@payments/infrastructure/stripe/workflows/intent/mappers/payment-intent.mapper';
 import type { Observable } from 'rxjs';
 
 @Injectable()
