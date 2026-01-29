@@ -2,7 +2,7 @@ import type {
   PaymentError,
   PaymentErrorCode,
   PaymentErrorParams,
-} from '@payments/domain/models/payment/payment-error.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 
 export function createPaymentError(
   code: PaymentErrorCode,

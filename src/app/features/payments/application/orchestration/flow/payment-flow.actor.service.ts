@@ -26,9 +26,9 @@ import { CancelPaymentUseCase } from '@payments/application/orchestration/use-ca
 import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
-import type { NextAction } from '@payments/domain/models/payment/payment-action.types';
-import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
+import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
 

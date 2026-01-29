@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
 import type { I18nKey } from '@core/i18n';
-import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export interface PaymentProviderUiMeta {
   providerId: PaymentProviderId;

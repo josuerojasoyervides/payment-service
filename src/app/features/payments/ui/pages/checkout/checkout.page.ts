@@ -8,16 +8,16 @@ import type { StrategyContext } from '@payments/application/api/ports/payment-st
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
-import type { NextAction } from '@payments/domain/models/payment/payment-action.types';
+import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type {
   CurrencyCode,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
   FieldRequirements,
   PaymentOptions,
-} from '@payments/domain/ports/payment/payment-request-builder.port';
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
 import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';

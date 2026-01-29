@@ -1,8 +1,8 @@
-import type { NextActionManualStep } from '@payments/domain/models/payment/payment-action.types';
+import type { NextActionManualStep } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { StripeSpeiSourceDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
 import { SpeiStatusMapper } from '@payments/infrastructure/stripe/methods/spei/mappers/spei-status.mapper';
 

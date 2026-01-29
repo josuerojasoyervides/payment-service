@@ -1,14 +1,14 @@
-import type { FallbackConfig } from '@payments/domain/models/fallback/fallback-config.types';
+import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
 import type {
   FallbackAvailableEvent,
   FallbackUserResponse,
-} from '@payments/domain/models/fallback/fallback-event.types';
+} from '@payments/domain/subdomains/fallback/contracts/fallback-event.types';
 import type {
   FallbackState,
   FallbackStatus,
-} from '@payments/domain/models/fallback/fallback-state.types';
-import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 
 /**
  * ✅ Config / Enabled

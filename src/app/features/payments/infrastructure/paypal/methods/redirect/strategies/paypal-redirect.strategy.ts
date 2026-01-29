@@ -6,13 +6,13 @@ import type {
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type {
   CurrencyCode,
   PaymentIntent,
   PaymentMethodType,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 import type { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
 import { findPaypalLink } from '@payments/infrastructure/paypal/dto/paypal.dto';
 import type { Observable } from 'rxjs';

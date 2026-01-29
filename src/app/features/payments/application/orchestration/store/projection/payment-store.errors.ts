@@ -1,5 +1,5 @@
 import { I18nKeys } from '@core/i18n';
-import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 
 export function looksLikeI18nKey(value: unknown): value is string {
   if (typeof value !== 'string') return false;

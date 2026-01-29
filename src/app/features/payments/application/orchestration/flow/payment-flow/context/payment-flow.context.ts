@@ -2,9 +2,9 @@ import type {
   PaymentFlowContext,
   ProviderReferences,
   ProviderReferenceSet,
-} from '@payments/domain/models/payment/payment-flow-context.types';
-import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 
 export const FLOW_CONTEXT_TTL_MS = 30 * 60 * 1000;
 

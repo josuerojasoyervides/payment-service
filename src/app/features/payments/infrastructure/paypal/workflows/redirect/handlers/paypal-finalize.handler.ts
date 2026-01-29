@@ -1,10 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import type { FinalizePort, FinalizeRequest } from '@payments/application/api/ports/finalize.port';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/facades/intent.facade';
 import type { Observable } from 'rxjs';
 

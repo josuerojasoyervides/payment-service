@@ -4,7 +4,7 @@
  * Contains additional information passed during the flow,
  * such as return URLs, device data, and metadata.
  */
-import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export type ProviderReferenceKey = 'intentId' | 'orderId' | 'preferenceId' | 'paymentId';
 

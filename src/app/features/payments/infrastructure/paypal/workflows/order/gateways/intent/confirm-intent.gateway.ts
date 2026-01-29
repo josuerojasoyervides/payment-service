@@ -3,8 +3,8 @@ import { PaymentOperationPort } from '@payments/application/api/ports/payment-op
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 import type { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
 import { PAYPAL_API_BASE } from '@payments/infrastructure/paypal/workflows/order/api/base-api.constant';
 import { mapOrder } from '@payments/infrastructure/paypal/workflows/order/mappers/map-order.mapper';

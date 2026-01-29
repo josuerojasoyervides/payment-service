@@ -25,11 +25,11 @@ import type { PaymentStrategy } from '@payments/application/api/ports/payment-st
 import type {
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
   FieldRequirements,
   PaymentRequestBuilder,
-} from '@payments/domain/ports/payment/payment-request-builder.port';
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 
 export interface ProviderFactory {
   /** Unique provider identifier */

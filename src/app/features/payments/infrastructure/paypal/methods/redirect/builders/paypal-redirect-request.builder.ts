@@ -1,8 +1,8 @@
 import { I18nKeys } from '@core/i18n';
-import type { CurrencyCode } from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import type { PaymentOptions } from '@payments/domain/ports/payment/payment-request-builder.port';
-import { PaymentRequestBuilder } from '@payments/domain/ports/payment/payment-request-builder.port';
+import type { CurrencyCode } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { PaymentOptions } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import { PaymentRequestBuilder } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 
 /**
  * Builder for payments via PayPal (redirect flow).

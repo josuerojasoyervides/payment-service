@@ -7,7 +7,7 @@ import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/toke
 import type {
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 @Injectable()
 export class ProviderMethodPolicyRegistry {

@@ -15,7 +15,7 @@ import type { PaymentsState } from '@payments/application/orchestration/store/pa
 import { initialPaymentsState } from '@payments/application/orchestration/store/payment-store.state';
 import { setupPaymentFlowMachineBridge } from '@payments/application/orchestration/store/projection/payment-store.machine-bridge';
 import { buildPaymentsSelectors } from '@payments/application/orchestration/store/projection/payment-store.selectors';
-import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export const PaymentsStore = signalStore(
   withState<PaymentsState>(initialPaymentsState),

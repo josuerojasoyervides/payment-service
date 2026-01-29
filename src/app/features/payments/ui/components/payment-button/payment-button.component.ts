@@ -6,7 +6,7 @@ import { PAYMENT_PROVIDER_UI_META } from '@payments/application/api/tokens/provi
 import type {
   CurrencyCode,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { PaymentButtonState } from '@payments/ui/shared/ui.types';
 import { TrackClickDirective } from '@shared/directives/track-click.directive';
 

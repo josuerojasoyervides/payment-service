@@ -8,7 +8,7 @@ import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import { mapReturnQueryToReference } from '@payments/application/adapters/events/external/payment-flow-return.mapper';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external-event.adapter';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
-import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
 
 // TODO : This is a utility function, not a component responsibility

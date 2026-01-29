@@ -5,7 +5,7 @@ import type {
 import type {
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export class StripeProviderMethodPolicy implements ProviderMethodPolicyPort {
   readonly providerId: PaymentProviderId = 'stripe';

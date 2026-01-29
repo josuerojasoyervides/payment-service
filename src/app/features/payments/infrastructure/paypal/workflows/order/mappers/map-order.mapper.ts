@@ -1,7 +1,7 @@
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
 import { findPaypalLink } from '@payments/infrastructure/paypal/dto/paypal.dto';
 import { STATUS_MAP } from '@payments/infrastructure/paypal/workflows/order/mappers/status.mapper';

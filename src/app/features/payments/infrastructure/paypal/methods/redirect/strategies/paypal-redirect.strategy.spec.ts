@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 import { PaypalRedirectStrategy } from '@payments/infrastructure/paypal/methods/redirect/strategies/paypal-redirect.strategy';
 import { firstValueFrom, of } from 'rxjs';
 

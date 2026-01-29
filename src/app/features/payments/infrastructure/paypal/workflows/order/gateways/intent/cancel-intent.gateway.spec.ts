@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
-import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/cancel-intent.gateway';
 
 describe('PaypalCancelIntentGateway', () => {

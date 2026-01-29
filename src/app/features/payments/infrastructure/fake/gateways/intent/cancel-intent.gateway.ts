@@ -3,8 +3,8 @@ import { PaymentOperationPort } from '@payments/application/api/ports/payment-op
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 import { createCanceledStripeIntent } from '@payments/infrastructure/fake/helpers/create-canceled-stripe-intent.helper';
 import { createVoidedPaypalOrder } from '@payments/infrastructure/fake/helpers/create-voided-paypal-order.helper';
 import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';
