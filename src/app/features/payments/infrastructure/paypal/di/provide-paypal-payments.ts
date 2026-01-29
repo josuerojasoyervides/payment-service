@@ -7,7 +7,6 @@ import {
   type PaymentProviderUiMeta,
 } from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
 import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
-import { fakeIntentFacadeFactory } from '@payments/config/providers/fake-intent-facade.factory';
 import { PaypalProviderFactory } from '@payments/infrastructure/paypal/factories/paypal-provider.factory';
 import { PaypalProviderMethodPolicy } from '@payments/infrastructure/paypal/policies/paypal-provider-method.policy';
 import { FakePaypalCancelIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-cancel-intent.gateway';
@@ -20,6 +19,7 @@ import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/work
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/create-intent.gateway';
 import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/get-intent.gateway';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
+import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-intent-facade.factory';
 
 const PAYPAL_FACTORY_PROVIDERS: Provider[] = [
   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: PaypalProviderFactory, multi: true },

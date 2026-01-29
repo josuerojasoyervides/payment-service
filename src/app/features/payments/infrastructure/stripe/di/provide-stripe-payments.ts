@@ -7,7 +7,6 @@ import {
   type PaymentProviderUiMeta,
 } from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
 import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
-import { fakeIntentFacadeFactory } from '@payments/config/providers/fake-intent-facade.factory';
 import { StripeProviderFactory } from '@payments/infrastructure/stripe/factories/stripe-provider.factory';
 import { StripeProviderMethodPolicy } from '@payments/infrastructure/stripe/policies/stripe-provider-method.policy';
 import { FakeStripeCancelIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-cancel-intent.gateway';
@@ -19,6 +18,7 @@ import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workf
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
+import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-intent-facade.factory';
 
 const STRIPE_FACTORY_PROVIDERS: Provider[] = [
   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: StripeProviderFactory, multi: true },
