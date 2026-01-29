@@ -6,13 +6,13 @@ import type {
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
-import type { NextActionManualStep } from '@payments/domain/models/payment/payment-action.types';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
+import type { NextActionManualStep } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type {
   PaymentIntent,
   PaymentMethodType,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
 

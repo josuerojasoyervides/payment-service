@@ -2,15 +2,7 @@ import type { Signal } from '@angular/core';
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LoggerService } from '@core/logging';
-import {
-  isPaymentFlowSnapshot,
-  isSnapshotInspectionEventWithSnapshot,
-} from '@payments/application/orchestration/flow/payment-flow.guards';
 import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
-import {
-  FlowContextStore,
-  toFlowContext,
-} from '@payments/application/orchestration/flow/payment-flow.persistence';
 import type {
   PaymentFlowActorRef,
   PaymentFlowCommandEvent,
@@ -19,16 +11,24 @@ import type {
   PaymentFlowMachineContext,
   PaymentFlowSnapshot,
   PaymentFlowSystemEvent,
-} from '@payments/application/orchestration/flow/payment-flow.types';
+} from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
+import {
+  FlowContextStore,
+  toFlowContext,
+} from '@payments/application/orchestration/flow/payment-flow/persistence/payment-flow.persistence';
+import {
+  isPaymentFlowSnapshot,
+  isSnapshotInspectionEventWithSnapshot,
+} from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.guards';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action-orchestrator.service';
 import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
-import type { NextAction } from '@payments/domain/models/payment/payment-action.types';
-import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
+import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
 

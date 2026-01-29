@@ -1,6 +1,6 @@
 import type { LoggerService } from '@core/logging';
-import type { FallbackConfig } from '@payments/domain/models/fallback/fallback-config.types';
-import type { FallbackUserResponse } from '@payments/domain/models/fallback/fallback-event.types';
+import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
+import type { FallbackUserResponse } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 
 export function warnUnknown(
   response: FallbackUserResponse,

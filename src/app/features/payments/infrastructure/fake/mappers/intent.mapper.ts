@@ -1,7 +1,7 @@
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { mapGeneric } from '@payments/infrastructure/fake/mappers/generic.mapper';
 import { mapPaypalOrder } from '@payments/infrastructure/fake/mappers/paypal-order.mapper';
 import { mapStripeIntent } from '@payments/infrastructure/fake/mappers/stripe-intent.mapper';

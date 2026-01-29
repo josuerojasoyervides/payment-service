@@ -1,11 +1,11 @@
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type {
   CurrencyCode,
   PaymentMethodType,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import type { PaymentOptions } from '@payments/domain/ports/payment/payment-request-builder.port';
-import { PaymentRequestBuilder } from '@payments/domain/ports/payment/payment-request-builder.port';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { PaymentOptions } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import { PaymentRequestBuilder } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import type { StripeCreateIntentRequest } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 export function buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreateIntentRequest {

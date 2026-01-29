@@ -6,14 +6,14 @@ import type {
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
+import type { TokenValidator } from '@payments/domain/common/ports/token-validator.port';
+import { NullTokenValidator } from '@payments/domain/common/ports/token-validator.port';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type {
   PaymentIntent,
   PaymentMethodType,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import type { TokenValidator } from '@payments/domain/ports/provider/token-validator.port';
-import { NullTokenValidator } from '@payments/domain/ports/provider/token-validator.port';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
 

@@ -3,8 +3,8 @@ import { ProviderFactoryRegistry } from '@payments/application/orchestration/reg
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { safeDefer } from '@shared/rxjs/safe-defer';
 import type { Observable } from 'rxjs';

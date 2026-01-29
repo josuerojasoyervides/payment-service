@@ -4,16 +4,16 @@ import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import type { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type { PaymentMethodType } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
   FieldRequirements,
   PaymentRequestBuilder,
-} from '@payments/domain/ports/payment/payment-request-builder.port';
-import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/builders/stripe-card-request.builder';
-import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/builders/stripe-spei-request.builder';
-import { StripeIntentFacade } from '@payments/infrastructure/stripe/facades/intent.facade';
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/methods/card/builders/stripe-card-request.builder';
+import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/methods/spei/builders/stripe-spei-request.builder';
 import { StripeTokenValidator } from '@payments/infrastructure/stripe/validators/stripe-token.validator';
+import { StripeIntentFacade } from '@payments/infrastructure/stripe/workflows/intent/facades/intent.facade';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 

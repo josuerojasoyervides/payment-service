@@ -4,13 +4,13 @@ import type { PaymentGatewayPort } from '@payments/application/api/ports/payment
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
-import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { GetPaymentStatusRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { GetPaymentStatusRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { firstValueFrom, of, throwError } from 'rxjs';
 

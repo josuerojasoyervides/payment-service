@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/payment-provider-factories.token';
+import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action-orchestrator.service';
-import { PaypalIntentFacade } from '@payments/infrastructure/paypal/facades/intent.facade';
 import { PaypalProviderFactory } from '@payments/infrastructure/paypal/factories/paypal-provider.factory';
-import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/handlers/paypal-finalize.handler';
+import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/facades/intent.facade';
+import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
 import { firstValueFrom, of } from 'rxjs';
 
 describe('NextActionOrchestratorService (PayPal wiring)', () => {

@@ -1,17 +1,17 @@
 import { I18nKeys } from '@core/i18n';
-import type { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
-import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   CurrencyCode,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
   FieldRequirements,
   FieldType,
   PaymentOptions,
-} from '@payments/domain/ports/payment/payment-request-builder.port';
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 /**
  * Order item shown in summary.
  */

@@ -1,11 +1,11 @@
 import type { EnvironmentProviders } from '@angular/core';
 import { type Provider } from '@angular/core';
-import { ExternalEventAdapter } from '@payments/application/adapters/external-event.adapter';
-import { NgRxSignalsStateAdapter } from '@payments/application/adapters/ngrx-signals-state.adapter';
+import { ExternalEventAdapter } from '@payments/application/adapters/events/external-event.adapter';
+import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
-import { CLIENT_CONFIRM_PORTS } from '@payments/application/api/tokens/client-confirm.token';
-import { FINALIZE_PORTS } from '@payments/application/api/tokens/finalize.token';
-import { PAYMENT_STATE } from '@payments/application/api/tokens/payment-state.token';
+import { PAYMENT_STATE } from '@payments/application/api/tokens/flow/payment-state.token';
+import { CLIENT_CONFIRM_PORTS } from '@payments/application/api/tokens/operations/client-confirm.token';
+import { FINALIZE_PORTS } from '@payments/application/api/tokens/operations/finalize.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
@@ -21,12 +21,12 @@ import {
   type PaymentsProvidersMode,
   type PaymentsProvidersOptions,
 } from '@payments/config/payments-providers.types';
-import { providePaypalProviderConfig } from '@payments/config/providers/paypal.providers';
-import { provideStripeProviderConfig } from '@payments/config/providers/stripe.providers';
+import { providePaypalPayments } from '@payments/infrastructure/paypal/di/provide-paypal-payments';
+import { provideStripePayments } from '@payments/infrastructure/stripe/di/provide-stripe-payments';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 function selectProviderConfigs(mode: PaymentsProvidersMode): Provider[] {
-  return [...provideStripeProviderConfig(mode), ...providePaypalProviderConfig(mode)];
+  return [...provideStripePayments(mode), ...providePaypalPayments(mode)];
 }
 
 const USE_CASE_PROVIDERS: Provider[] = [

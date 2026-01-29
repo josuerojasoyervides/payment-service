@@ -1,0 +1,22 @@
+import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
+
+export function mapStripeNextAction(dto: StripePaymentIntentDto): NextAction | undefined {
+  if (!dto.next_action) return undefined;
+
+  if (dto.next_action.type === 'redirect_to_url' && dto.next_action.redirect_to_url) {
+    return {
+      kind: 'redirect',
+      url: dto.next_action.redirect_to_url.url,
+    };
+  }
+
+  if (dto.next_action.type === 'use_stripe_sdk') {
+    return {
+      kind: 'client_confirm',
+      token: dto.client_secret,
+    };
+  }
+
+  return undefined;
+}

@@ -1,7 +1,7 @@
 import type { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
-import type { PaymentsStoreContext } from '@payments/application/orchestration/store/payment-store.types';
-import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 interface PaymentsStoreFallbackDeps {
   fallbackOrchestrator: FallbackOrchestratorService;

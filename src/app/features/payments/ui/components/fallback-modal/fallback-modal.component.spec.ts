@@ -1,8 +1,8 @@
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys, I18nService } from '@core/i18n';
-import type { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
-import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 
 describe('FallbackModalComponent', () => {

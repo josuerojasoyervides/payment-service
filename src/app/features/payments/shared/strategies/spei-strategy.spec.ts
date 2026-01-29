@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
-import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 import { firstValueFrom, of } from 'rxjs';
 

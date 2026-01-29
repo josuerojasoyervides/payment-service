@@ -6,13 +6,13 @@ import { PaymentFlowActorService } from '@payments/application/orchestration/flo
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
 import { HISTORY_MAX_ENTRIES } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
-import { initialPaymentsState } from '@payments/application/orchestration/store/projection/payment-store.state';
-import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import { initialPaymentsState } from '@payments/application/orchestration/store/payment-store.state';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { Subject } from 'rxjs';
 
 describe('PaymentsStore', () => {
