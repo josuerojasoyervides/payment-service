@@ -9,7 +9,7 @@ import type {
   ExternalStatusUpdatedPayload,
   RedirectReturnedPayload,
   WebhookReceivedPayload,
-} from '@payments/application/adapters/events/payment-flow.events';
+} from '@app/features/payments/application/adapters/events/flow/payment-flow.events';
 import type { FlowTelemetryEvent } from '@payments/application/adapters/telemetry/flow-telemetry.types';
 import { FLOW_TELEMETRY_SINK } from '@payments/application/adapters/telemetry/flow-telemetry-sink.token';
 import { InMemoryFlowTelemetrySink } from '@payments/application/adapters/telemetry/in-memory-flow-telemetry-sink';

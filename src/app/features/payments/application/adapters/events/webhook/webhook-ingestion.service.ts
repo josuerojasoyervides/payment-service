@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
-import { ExternalEventAdapter } from '@payments/application/adapters/events/external-event.adapter';
-import type { WebhookReceivedPayload } from '@payments/application/adapters/events/payment-flow.events';
-import { WEBHOOK_NORMALIZER_REGISTRY } from '@payments/application/adapters/events/webhook-normalizer-registry.token';
+import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
+import type { WebhookReceivedPayload } from '@app/features/payments/application/adapters/events/flow/payment-flow.events';
+import { WEBHOOK_NORMALIZER_REGISTRY } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { NormalizedWebhookEvent } from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
 

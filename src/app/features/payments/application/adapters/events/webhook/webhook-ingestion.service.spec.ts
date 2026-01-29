@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { ExternalEventAdapter } from '@payments/application/adapters/events/external-event.adapter';
-import { WebhookIngestionService } from '@payments/application/adapters/events/webhook-ingestion.service';
+import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
+import { WebhookIngestionService } from '@app/features/payments/application/adapters/events/webhook/webhook-ingestion.service';
 import {
   WEBHOOK_NORMALIZER_REGISTRY,
   type WebhookNormalizerRegistry,
-} from '@payments/application/adapters/events/webhook-normalizer-registry.token';
+} from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
 import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type {
   PaymentFlowActorRef,

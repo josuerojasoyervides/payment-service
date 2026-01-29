@@ -2,7 +2,7 @@ import type {
   ExternalStatusUpdatedPayload,
   RedirectReturnedPayload,
   WebhookReceivedPayload,
-} from '@payments/application/adapters/events/payment-flow.events';
+} from '@app/features/payments/application/adapters/events/flow/payment-flow.events';
 // ✅ IMPORTANT: type-only import to avoid runtime circular dependency
 import type { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type { FallbackMode } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';

@@ -1,7 +1,7 @@
 import type { EnvironmentProviders } from '@angular/core';
 import { type Provider } from '@angular/core';
-import { ExternalEventAdapter } from '@payments/application/adapters/events/external-event.adapter';
-import { WEBHOOK_NORMALIZER_REGISTRY } from '@payments/application/adapters/events/webhook-normalizer-registry.token';
+import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
+import { WEBHOOK_NORMALIZER_REGISTRY } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
 import { FLOW_TELEMETRY_SINK } from '@payments/application/adapters/telemetry/flow-telemetry-sink.token';
 import { NoopFlowTelemetrySink } from '@payments/application/adapters/telemetry/noop-flow-telemetry-sink';

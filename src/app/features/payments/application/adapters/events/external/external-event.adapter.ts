@@ -3,7 +3,7 @@ import type {
   ExternalStatusUpdatedPayload,
   RedirectReturnedPayload,
   WebhookReceivedPayload,
-} from '@payments/application/adapters/events/payment-flow.events';
+} from '@app/features/payments/application/adapters/events/flow/payment-flow.events';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 
 @Injectable()
