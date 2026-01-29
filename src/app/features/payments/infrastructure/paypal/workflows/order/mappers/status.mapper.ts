@@ -1,5 +1,5 @@
+import type { PaypalOrderStatus } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import type { PaymentIntentStatus } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { PaypalOrderStatus } from '@payments/infrastructure/paypal/dto/paypal.dto';
 
 export const STATUS_MAP: Record<PaypalOrderStatus, PaymentIntentStatus> = {
   CREATED: 'requires_action',

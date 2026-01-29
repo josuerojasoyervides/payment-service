@@ -1,9 +1,9 @@
+import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
+import { findPaypalLink } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
-import { findPaypalLink } from '@payments/infrastructure/paypal/dto/paypal.dto';
 import { STATUS_MAP } from '@payments/infrastructure/paypal/workflows/order/mappers/status.mapper';
 
 export function mapOrder(dto: PaypalOrderDto, providerId: PaymentProviderId): PaymentIntent {

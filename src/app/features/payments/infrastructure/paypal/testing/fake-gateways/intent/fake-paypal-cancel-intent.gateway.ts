@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
+import { FakeCancelIntentGateway } from '@app/features/payments/infrastructure/fake/workflows/intent/gateways/cancel-intent.gateway';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import { FakeCancelIntentGateway } from '@payments/infrastructure/fake/gateways/intent/cancel-intent.gateway';
 
 @Injectable()
 export class FakePaypalCancelIntentGateway extends FakeCancelIntentGateway {

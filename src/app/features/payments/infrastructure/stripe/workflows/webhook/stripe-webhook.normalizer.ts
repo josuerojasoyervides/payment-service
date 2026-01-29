@@ -1,3 +1,7 @@
+import type {
+  StripePaymentIntentDto,
+  StripePaymentIntentStatus,
+} from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import type { ProviderReferences } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import type {
   PaymentIntentStatus,
@@ -7,10 +11,6 @@ import type {
   NormalizedWebhookEvent,
   WebhookNormalizer,
 } from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
-import type {
-  StripePaymentIntentDto,
-  StripePaymentIntentStatus,
-} from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 /**
  * Minimal Stripe webhook event DTO for PaymentIntent events.
