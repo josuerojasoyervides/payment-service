@@ -1,0 +1,3 @@
+Boolean gates: *.policy.ts
+Examples: provider-method.policy.ts, payment-eligibility.policy.ts
+Pure functions that return boolean decisions based on domain rules.

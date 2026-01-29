@@ -1,0 +1,3 @@
+Value objects/primitives: *.vo.ts
+Examples: fallback-config.vo.ts
+Immutable value objects specific to fallback subdomain.

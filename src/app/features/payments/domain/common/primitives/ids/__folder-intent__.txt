@@ -1,0 +1,3 @@
+Value objects/primitives: *.vo.ts
+Examples: provider-id.vo.ts, payment-id.vo.ts
+Immutable value objects for IDs shared across subdomains.

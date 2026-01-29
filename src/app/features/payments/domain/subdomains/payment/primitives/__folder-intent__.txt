@@ -1,0 +1,3 @@
+Value objects/primitives: *.vo.ts
+Examples: payment-amount.vo.ts, currency-code.vo.ts
+Immutable value objects specific to payment subdomain.

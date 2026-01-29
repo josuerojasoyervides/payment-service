@@ -1,0 +1,3 @@
+Value objects/primitives: *.vo.ts
+Examples: timestamp.vo.ts, duration.vo.ts
+Immutable value objects for time-related primitives shared across subdomains.
