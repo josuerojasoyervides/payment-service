@@ -1,9 +1,9 @@
 // ============ FAKE STRIPE RESPONSES ============
 
+import { SPECIAL_TOKENS } from '@app/features/payments/infrastructure/fake/shared/constants/special-tokens';
+import { generateId } from '@app/features/payments/infrastructure/fake/shared/helpers/get-id.helper';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import { SPECIAL_TOKENS } from '@payments/infrastructure/fake/constants/special-tokens';
-import { generateId } from '@payments/infrastructure/fake/helpers/get-id.helper';
 
 export function createFakeStripeIntent(
   req: CreatePaymentRequest,

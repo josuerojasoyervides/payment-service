@@ -1,6 +1,6 @@
+import type { FakeScenario } from '@app/features/payments/infrastructure/fake/shared/types/fake-scenario.type';
 import { I18nKeys } from '@core/i18n';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type { FakeScenario } from '@payments/infrastructure/fake/types/fake-scenario.type';
 
 /**
  * Predefined errors for testing.

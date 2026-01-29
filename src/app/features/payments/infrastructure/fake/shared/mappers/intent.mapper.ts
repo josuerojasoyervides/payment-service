@@ -1,3 +1,7 @@
+import { mapGeneric } from '@app/features/payments/infrastructure/fake/shared/mappers/generic.mapper';
+import { mapPaypalOrder } from '@app/features/payments/infrastructure/fake/shared/mappers/paypal-order.mapper';
+import { mapStripeIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/stripe-intent.mapper';
+import { mapStripeSpeiSource } from '@app/features/payments/infrastructure/fake/shared/mappers/stripe-spei-source.mapper';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import type {
   StripePaymentIntentDto,
@@ -7,10 +11,6 @@ import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import { mapGeneric } from '@payments/infrastructure/fake/mappers/generic.mapper';
-import { mapPaypalOrder } from '@payments/infrastructure/fake/mappers/paypal-order.mapper';
-import { mapStripeIntent } from '@payments/infrastructure/fake/mappers/stripe-intent.mapper';
-import { mapStripeSpeiSource } from '@payments/infrastructure/fake/mappers/stripe-spei-source.mapper';
 
 export function mapIntent(dto: any, providerId: PaymentProviderId): PaymentIntent {
   if ('object' in dto && dto.object === 'payment_intent') {

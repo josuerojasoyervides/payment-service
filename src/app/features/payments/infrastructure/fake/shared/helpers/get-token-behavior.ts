@@ -1,4 +1,4 @@
-import { SPECIAL_TOKENS } from '@payments/infrastructure/fake/constants/special-tokens';
+import { SPECIAL_TOKENS } from '@app/features/payments/infrastructure/fake/shared/constants/special-tokens';
 
 /**
  * Checks if token is special and determines behavior.

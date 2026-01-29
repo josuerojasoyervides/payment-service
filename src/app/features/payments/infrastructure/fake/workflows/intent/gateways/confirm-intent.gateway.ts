@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
+import { createConfirmedPaypalOrder } from '@app/features/payments/infrastructure/fake/shared/helpers/create-confirmed-paypal-order.helper';
+import { createConfirmedStripeIntent } from '@app/features/payments/infrastructure/fake/shared/helpers/create-confirmed-stripe-intent.helper';
+import { simulateNetworkDelay } from '@app/features/payments/infrastructure/fake/shared/helpers/simulate-network-delay.helper';
+import { mapIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/intent.mapper';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import { createConfirmedPaypalOrder } from '@payments/infrastructure/fake/helpers/create-confirmed-paypal-order.helper';
-import { createConfirmedStripeIntent } from '@payments/infrastructure/fake/helpers/create-confirmed-stripe-intent.helper';
-import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';
-import { mapIntent } from '@payments/infrastructure/fake/mappers/intent.mapper';
 import type { Observable } from 'rxjs';
 
 @Injectable()

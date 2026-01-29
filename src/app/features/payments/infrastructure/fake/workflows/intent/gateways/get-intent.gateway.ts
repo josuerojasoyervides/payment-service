@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
+import { createFakePaypalOrderStatus } from '@app/features/payments/infrastructure/fake/shared/helpers/create-fake-paypal-order-status.helper';
+import { createFakeStripeIntentStatus } from '@app/features/payments/infrastructure/fake/shared/helpers/create-fake-stripe-intent-status.helper';
+import { simulateNetworkDelay } from '@app/features/payments/infrastructure/fake/shared/helpers/simulate-network-delay.helper';
+import { mapIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/intent.mapper';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { GetPaymentStatusRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import { createFakePaypalOrderStatus } from '@payments/infrastructure/fake/helpers/create-fake-paypal-order-status.helper';
-import { createFakeStripeIntentStatus } from '@payments/infrastructure/fake/helpers/create-fake-stripe-intent-status.helper';
-import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';
-import { mapIntent } from '@payments/infrastructure/fake/mappers/intent.mapper';
 import type { Observable } from 'rxjs';
 
 @Injectable()

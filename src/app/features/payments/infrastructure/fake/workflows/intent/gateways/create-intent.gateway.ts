@@ -1,4 +1,12 @@
 import { Injectable } from '@angular/core';
+import { FAKE_ERRORS } from '@app/features/payments/infrastructure/fake/shared/constants/fake-errors';
+import { createFakePaypalOrder } from '@app/features/payments/infrastructure/fake/shared/helpers/create-fake-paypal-order.helper';
+import { createFakeSpeiSource } from '@app/features/payments/infrastructure/fake/shared/helpers/create-fake-spei-source.helper';
+import { createFakeStripeIntent } from '@app/features/payments/infrastructure/fake/shared/helpers/create-fake-stripe-intent.helper';
+import { getTokenBehavior } from '@app/features/payments/infrastructure/fake/shared/helpers/get-token-behavior';
+import { simulateNetworkDelay } from '@app/features/payments/infrastructure/fake/shared/helpers/simulate-network-delay.helper';
+import { validateCreate as validateCreateHelper } from '@app/features/payments/infrastructure/fake/shared/helpers/validate-create.helper';
+import { mapIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/intent.mapper';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import type {
@@ -6,14 +14,6 @@ import type {
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import { FAKE_ERRORS } from '@payments/infrastructure/fake/constants/fake-errors';
-import { createFakePaypalOrder } from '@payments/infrastructure/fake/helpers/create-fake-paypal-order.helper';
-import { createFakeSpeiSource } from '@payments/infrastructure/fake/helpers/create-fake-spei-source.helper';
-import { createFakeStripeIntent } from '@payments/infrastructure/fake/helpers/create-fake-stripe-intent.helper';
-import { getTokenBehavior } from '@payments/infrastructure/fake/helpers/get-token-behavior';
-import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';
-import { validateCreate as validateCreateHelper } from '@payments/infrastructure/fake/helpers/validate-create.helper';
-import { mapIntent } from '@payments/infrastructure/fake/mappers/intent.mapper';
 import type { Observable } from 'rxjs';
 import { throwError } from 'rxjs';
 @Injectable()
