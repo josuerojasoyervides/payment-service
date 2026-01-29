@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { LoggerService, TraceOperation } from '@core/logging';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
@@ -79,5 +80,24 @@ export class IdempotencyKeyFactory {
       case 'get':
         return this.generateForGet(providerId, intentId);
     }
+  }
+
+  /**
+   * Flow-oriented idempotency key generator.
+   *
+   * This follows the provider-agnostic rule described in the integration plan:
+   *   key = flowId + ':' + operation + ':' + attempt
+   *
+   * It is safe to introduce alongside the existing per-request helpers; callers
+   * can migrate incrementally.
+   */
+  generateForFlowOperation(
+    context: PaymentFlowContext | null,
+    operation: IdempotencyOperation,
+    attempt: number,
+  ): string {
+    const flowId = context?.flowId ?? 'unknown_flow';
+    const clampedAttempt = Math.max(0, attempt);
+    return [flowId, operation, clampedAttempt.toString()].join(':');
   }
 }

@@ -50,6 +50,7 @@ export interface Translations {
     unsupported_client_confirm: string;
     unsupported_finalize: string;
     return_correlation_mismatch: string;
+    processing_timeout: string;
   };
 
   messages: {
