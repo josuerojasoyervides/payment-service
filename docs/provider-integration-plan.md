@@ -34,41 +34,24 @@
   - Facade: `src/app/features/payments/application/orchestration/flow/payment-flow.facade.ts`
   - Store projection bridge: `src/app/features/payments/application/orchestration/store/projection/payment-store.machine-bridge.ts`
 
-### A.2 External events (key root issue)
+### A.2 External events (current behavior)
 
-- Adapter exists: `src/app/features/payments/application/adapters/external-event.adapter.ts`
-- **Observed behavior (needs verification in code):**
-  - System events are dispatched, but machine handles them as **noop**.
-  - `REFRESH` is used as the only effective integration path.
-- **Root friction statement:**  
-  **System events exist but have no semantics; `REFRESH` is the only effective integration path.**
+- Adapter: `src/app/features/payments/application/adapters/external-event.adapter.ts`
+- **Current behavior (as of PR5):**
+  - `ExternalEventAdapter` emits **semantic system events only** (no REFRESH): `redirectReturned`, `externalStatusUpdated`, `webhookReceived`.
+  - The machine **consumes** `REDIRECT_RETURNED`, `EXTERNAL_STATUS_UPDATED`, and `WEBHOOK_RECEIVED` with real transitions: correlation/dedupe guards, then `finalizing` / `reconcilingInvoke` → terminal.
+  - Return page maps query params → referenceId and calls `externalEvents.redirectReturned(...)`; the machine owns finalize/reconcile. The adapter does **not** trigger REFRESH.
 
-**Verification anchors (symbols to search):**
+**Verification anchors (symbols):**
 
-- `ExternalEventAdapter.providerUpdate(...)`
-- `ExternalEventAdapter.webhookReceived(...)`
-- Machine `on: { PROVIDER_UPDATE: ..., WEBHOOK_RECEIVED: ... }`
-- Any `send({ type: 'REFRESH' })` calls inside adapter
+- `ExternalEventAdapter.redirectReturned`, `.externalStatusUpdated`, `.webhookReceived` → `actor.sendSystem({ type: 'REDIRECT_RETURNED' | 'EXTERNAL_STATUS_UPDATED' | 'WEBHOOK_RECEIVED', payload })`
+- Machine `on: { REDIRECT_RETURNED: [...], EXTERNAL_STATUS_UPDATED: [...], WEBHOOK_RECEIVED: [...] }` with guards and transitions to reconciling/finalizing
 
-### A.3 UI coordination (accepted deviation)
+### A.3 UI coordination (redirect return: closed)
 
-UI currently coordinates steps that should belong to application/machine. Treat as accepted deviation and close it.
-
-**Typical coordination anchors (verify symbols/paths):**
-
-- Checkout page/component: `checkout.page.ts` (e.g., `window.location.href`, `effect(() => this.flow.redirectUrl())`)
-- Next action rendering: `next-action-card.component.ts/html`
-- Return page: `return.page.ts` (parses query params; triggers adapter + refresh)
-- Return mapper: `payment-flow-return.mapper.ts` (currently provider-specific mapping)
-
-**Closure plan:** Replace UI coordination with:
-
-- Provider-agnostic `NextAction.kind` rendering (UI-only responsibility).
-- Machine/application ownership of:
-  - redirect return ingestion (`REDIRECT_RETURNED`)
-  - client confirmation (`CLIENT_CONFIRM_*`)
-  - finalization pipeline (`FINALIZE_*`)
-  - external status updates (`EXTERNAL_STATUS_UPDATED`, `WEBHOOK_RECEIVED`)
+- **Return page (current):** `return.page.ts` maps query params via `mapReturnQueryToReference` and calls `externalEvents.redirectReturned({ providerId, referenceId })`. It does **not** call confirm/capture or REFRESH; the machine handles finalize/reconciling on `REDIRECT_RETURNED`.
+- **Remaining coordination anchors (if any):** Checkout: `checkout.page.ts` (redirect URL); Next action: `next-action-card.component.ts/html`; Return mapper: `payment-flow-return.mapper.ts` (provider-agnostic mapping to referenceId).
+- **Target:** Provider-agnostic `NextAction.kind` rendering; machine owns `REDIRECT_RETURNED`, `CLIENT_CONFIRM_*`, `FINALIZE_*`, `EXTERNAL_STATUS_UPDATED`, `WEBHOOK_RECEIVED`.
 
 ### A.4 Providers (explicit separation)
 
@@ -117,10 +100,9 @@ UI currently coordinates steps that should belong to application/machine. Treat 
    - _Fix intent:_ explicit processing resolution: max duration + max polls + terminal strategy (timeout → failed/needs_manual).
    - _Closure signal:_ after policy bounds, machine transitions to a terminal state with a structured error.
 
-6. **External events have no semantics**
-   - _Impact:_ system events exist but do nothing; adapter falls back to REFRESH → weak model.
-   - _Fix intent:_ machine handles `REDIRECT_RETURNED/WEBHOOK_RECEIVED/EXTERNAL_STATUS_UPDATED` with real transitions.
-   - _Closure signal:_ ExternalEventAdapter never needs to “force REFRESH”; it emits semantic events only.
+6. **External events have semantics** _(closed in PR1/PR5)_
+   - _Was:_ system events were noop; adapter could fall back to REFRESH.
+   - _Current:_ machine handles `REDIRECT_RETURNED`, `WEBHOOK_RECEIVED`, `EXTERNAL_STATUS_UPDATED` with real transitions (reconciling/finalizing, dedupe, correlation guards). ExternalEventAdapter emits only these semantic events; no REFRESH.
 
 7. **Config/constraints not enforced centrally**
    - _Impact:_ HTTPS, return URLs, runtime keys, loaders cause production failures.
@@ -253,15 +235,9 @@ Policy must be explicit:
 
 > **Style:** atomic tasks, branch + commit per step.
 
-### PR1 (P0) — Machine handles external system events (minimal semantics)
+### PR1 (P0) — Machine handles external system events _(done)_
 
-- Branch: `task/flow-external-events`
-- Commit: `feat(flow): handle external system events`
-- Exit criteria:
-  - Machine tests show `REDIRECT_RETURNED/EXTERNAL_STATUS_UPDATED/WEBHOOK_RECEIVED` cause transitions (not noop).
-  - ExternalEventAdapter can stop forcing `REFRESH` for at least one scenario.
-- Rollback strategy:
-  - Keep compatibility path (`REFRESH`) behind a feature flag until PR3.
+- Exit criteria met: machine consumes `REDIRECT_RETURNED/EXTERNAL_STATUS_UPDATED/WEBHOOK_RECEIVED` with transitions; ExternalEventAdapter emits semantic events only (no REFRESH).
 
 ### PR2 (P0) — NextAction agnostic + UI renderer generic
 
@@ -293,15 +269,9 @@ Policy must be explicit:
 - Rollback strategy:
   - Allow “legacy confirm” to call current gateways until provider implementations are complete.
 
-### PR5 (P1) — Webhooks normalization + processing resolution policy
+### PR5 (P1) — Webhooks normalization + processing resolution policy _(done)_
 
-- Branch: `task/webhooks-resolution`
-- Commit: `feat(flow): webhook normalization and processing timeout`
-- Exit criteria:
-  - External status updates can arrive via webhook event model (even if mocked).
-  - Processing resolution transitions to terminal by policy bounds.
-- Rollback strategy:
-  - Keep polling path as fallback; webhook path can be turned off.
+- Exit criteria met: `WEBHOOK_NORMALIZER_REGISTRY` (Stripe + PayPal) in config; webhook ingestion → `ExternalEventAdapter.webhookReceived`; processing timeout policy and tests (`processing_timeout` → failed).
 
 ### PR6 (P2) — Observability + stress fakes/scenarios
 
@@ -373,8 +343,8 @@ For every new provider package:
 
 ## Appendix: “What to verify in repo” quick checklist
 
-- [ ] Do system events appear as noop in machine `on` handlers?
-- [ ] Does adapter force `REFRESH` after emitting system events?
-- [ ] Does policy define terminal transition after max polls / max duration?
+- [x] Do system events have semantics in machine `on` handlers? (yes: REDIRECT_RETURNED / EXTERNAL_STATUS_UPDATED / WEBHOOK_RECEIVED → reconciling/finalizing)
+- [x] Does adapter emit only semantic events (no REFRESH)? (yes)
+- [x] Does policy define terminal transition after max polls / max duration? (yes: processing_timeout)
 - [ ] Are there any provider-specific branches in UI components for actions?
-- [ ] Is return parsing hardcoded to specific providers?
+- [ ] Is return parsing provider-agnostic (query → referenceId → redirectReturned)?
