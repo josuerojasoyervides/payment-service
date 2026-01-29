@@ -6,7 +6,7 @@ import { PaymentFlowActorService } from '@payments/application/orchestration/flo
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import { HISTORY_MAX_ENTRIES } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
-import { initialPaymentsState } from '@payments/application/orchestration/store/payment-store.state';
+import { initialPaymentsState } from '@payments/application/orchestration/store/types/payment-store-state';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   PaymentIntent,

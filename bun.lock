@@ -5,6 +5,7 @@
     "": {
       "name": "payment-service",
       "dependencies": {
+        "@angular-architects/ngrx-toolkit": "^21.0.1",
         "@angular/common": "^21.1.0",
         "@angular/compiler": "^21.1.0",
         "@angular/core": "^21.1.0",
@@ -83,6 +84,8 @@
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 
     "@ampproject/remapping": ["@ampproject/remapping@2.3.0", "", { "dependencies": { "@jridgewell/gen-mapping": "^0.3.5", "@jridgewell/trace-mapping": "^0.3.24" } }, "sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw=="],
+
+    "@angular-architects/ngrx-toolkit": ["@angular-architects/ngrx-toolkit@21.0.1", "", { "dependencies": { "tslib": "^2.3.0" }, "peerDependencies": { "@angular/common": "^21.0.0", "@angular/core": "^21.0.0", "@ngrx/signals": "^21.0.0", "@ngrx/store": "^21.0.0", "rxjs": "^7.0.0" }, "optionalPeers": ["@ngrx/store"] }, "sha512-mbwNxO+HIhf5ocUdgj7ywrSCpLLzgAg+whktDDhBoVQfLdlTZKoI6NRuOAjxTksaaok85Wv6+nHGBRuJLDIjsQ=="],
 
     "@angular-devkit/architect": ["@angular-devkit/architect@0.2101.0", "", { "dependencies": { "@angular-devkit/core": "21.1.0", "rxjs": "7.8.2" }, "bin": { "architect": "bin/cli.js" } }, "sha512-vnNAzWXwSRGTHk2K7woIQsj7WDYZp69Z3DBdlxkK0H08ymkJ/ELbhN0/AnIJNNtYCqEb57AH7Ro98n422beDuw=="],
 

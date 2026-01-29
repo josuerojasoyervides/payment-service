@@ -1,5 +1,7 @@
 import type { Signal } from '@angular/core';
 import { computed, effect, inject, Injectable } from '@angular/core';
+import type { PaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
+import { deepComputed } from '@ngrx/signals';
 import type {
   PaymentDebugSummary,
   PaymentStorePort,
@@ -8,7 +10,6 @@ import type {
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
-import type { PaymentsState } from '@payments/application/orchestration/store/payment-store.state';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
@@ -53,7 +54,7 @@ export class NgRxSignalsStateAdapter implements PaymentStorePort {
   // REACTIVE STATE (delegated to store)
   // ============================================================
 
-  readonly state: Signal<PaymentsState> = computed(() => ({
+  readonly state: Signal<PaymentsState> = deepComputed(() => ({
     status: this.store.status(),
     intent: this.store.intent(),
     error: this.store.error(),
