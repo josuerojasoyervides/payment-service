@@ -1,21 +1,21 @@
 import { Injectable } from '@angular/core';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
-import {
+import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
-import { Observable, throwError } from 'rxjs';
-
-import { FAKE_ERRORS } from '../../constants/fake-errors';
-import { createFakePaypalOrder } from '../../helpers/create-fake-paypal-order.helper';
-import { createFakeSpeiSource } from '../../helpers/create-fake-spei-source.helper';
-import { createFakeStripeIntent } from '../../helpers/create-fake-stripe-intent.helper';
-import { getTokenBehavior } from '../../helpers/get-token-behavior';
-import { simulateNetworkDelay } from '../../helpers/simulate-network-delay.helper';
-import { validateCreate as validateCreateHelper } from '../../helpers/validate-create.helper';
-import { mapIntent } from '../../mappers/intent.mapper';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { FAKE_ERRORS } from '@payments/infrastructure/fake/constants/fake-errors';
+import { createFakePaypalOrder } from '@payments/infrastructure/fake/helpers/create-fake-paypal-order.helper';
+import { createFakeSpeiSource } from '@payments/infrastructure/fake/helpers/create-fake-spei-source.helper';
+import { createFakeStripeIntent } from '@payments/infrastructure/fake/helpers/create-fake-stripe-intent.helper';
+import { getTokenBehavior } from '@payments/infrastructure/fake/helpers/get-token-behavior';
+import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';
+import { validateCreate as validateCreateHelper } from '@payments/infrastructure/fake/helpers/validate-create.helper';
+import { mapIntent } from '@payments/infrastructure/fake/mappers/intent.mapper';
+import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
+import type { Observable } from 'rxjs';
+import { throwError } from 'rxjs';
 @Injectable()
 export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
   CreatePaymentRequest,

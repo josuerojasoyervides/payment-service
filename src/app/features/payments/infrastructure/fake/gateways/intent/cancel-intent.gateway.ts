@@ -1,16 +1,15 @@
 import { Injectable } from '@angular/core';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
-import {
+import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { CancelPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { Observable } from 'rxjs';
-
-import { createCanceledStripeIntent } from '../../helpers/create-canceled-stripe-intent.helper';
-import { createVoidedPaypalOrder } from '../../helpers/create-voided-paypal-order.helper';
-import { simulateNetworkDelay } from '../../helpers/simulate-network-delay.helper';
-import { mapIntent } from '../../mappers/intent.mapper';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { createCanceledStripeIntent } from '@payments/infrastructure/fake/helpers/create-canceled-stripe-intent.helper';
+import { createVoidedPaypalOrder } from '@payments/infrastructure/fake/helpers/create-voided-paypal-order.helper';
+import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';
+import { mapIntent } from '@payments/infrastructure/fake/mappers/intent.mapper';
+import type { Observable } from 'rxjs';
 
 @Injectable()
 export abstract class FakeCancelIntentGateway extends PaymentOperationPort<

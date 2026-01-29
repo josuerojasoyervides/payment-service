@@ -1,11 +1,11 @@
-import {
+import type {
   ProviderMethodPolicy,
   ProviderMethodPolicyPort,
 } from '@payments/application/api/ports/provider-method-policy.port';
-import {
+import type {
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export class PaypalProviderMethodPolicy implements ProviderMethodPolicyPort {
   readonly providerId: PaymentProviderId = 'paypal';

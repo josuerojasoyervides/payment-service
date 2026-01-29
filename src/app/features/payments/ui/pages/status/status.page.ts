@@ -5,16 +5,13 @@ import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
-import { NextAction } from '@payments/domain/models/payment/payment-action.types';
-import {
-  PAYMENT_PROVIDER_IDS,
-  PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { PAYMENT_PROVIDER_IDS } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
+import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
+import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
-
-import { NextActionCardComponent } from '../../components/next-action-card/next-action-card.component';
-import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
-import { ProviderSelectorComponent } from '../../components/provider-selector/provider-selector.component';
 
 interface StatusPageState {
   intentId: string;

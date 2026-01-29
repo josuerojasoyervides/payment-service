@@ -1,12 +1,15 @@
-import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
-import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
+import type {
+  PaymentFlowActorRef,
+  PaymentFlowSnapshot,
+} from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
+import type { KeyValueStorage } from '@payments/application/orchestration/flow/payment-flow/persistence/payment-flow.persistence';
+import { createPaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { firstValueFrom, of } from 'rxjs';
-import { AnyActorRef, createActor } from 'xstate';
-
-import { createPaymentFlowMachine } from './payment-flow.machine';
-import { KeyValueStorage } from './payment-flow.persistence';
-import { PaymentFlowActorRef, PaymentFlowSnapshot } from './payment-flow.types';
+import type { AnyActorRef } from 'xstate';
+import { createActor } from 'xstate';
 
 let activeActors: AnyActorRef[] = [];
 

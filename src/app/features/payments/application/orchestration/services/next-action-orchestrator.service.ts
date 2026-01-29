@@ -1,15 +1,15 @@
 import { inject, Injectable } from '@angular/core';
-import { NextAction } from '@payments/domain/models/payment/payment-action.types';
-import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
-import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import {
+import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import { createPaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { Observable, throwError } from 'rxjs';
-
-import { FinalizePort } from '../../api/ports/finalize.port';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { Observable } from 'rxjs';
+import { throwError } from 'rxjs';
 
 /** Stable i18n key for unsupported client confirm (application must not import i18n.t). */
 const UNSUPPORTED_CLIENT_CONFIRM_MESSAGE_KEY = 'errors.unsupported_client_confirm';

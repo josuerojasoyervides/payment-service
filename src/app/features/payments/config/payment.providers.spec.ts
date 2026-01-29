@@ -1,13 +1,12 @@
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-
-import { NgRxSignalsStateAdapter } from '../application/adapters/ngrx-signals-state.adapter';
-import { PAYMENT_PROVIDER_FACTORIES } from '../application/api/tokens/payment-provider-factories.token';
-import { PAYMENT_STATE } from '../application/api/tokens/payment-state.token';
-import { PaypalProviderFactory } from '../infrastructure/paypal/factories/paypal-provider.factory';
-import { StripeIntentFacade } from '../infrastructure/stripe/facades/intent.facade';
-import { StripeProviderFactory } from '../infrastructure/stripe/factories/stripe-provider.factory';
-import providePayments, { providePaymentsWithConfig } from './payment.providers';
+import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
+import { PAYMENT_STATE } from '@payments/application/api/tokens/flow/payment-state.token';
+import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
+import providePayments, { providePaymentsWithConfig } from '@payments/config/payment.providers';
+import { PaypalProviderFactory } from '@payments/infrastructure/paypal/factories/paypal-provider.factory';
+import { StripeProviderFactory } from '@payments/infrastructure/stripe/factories/stripe-provider.factory';
+import { StripeIntentFacade } from '@payments/infrastructure/stripe/workflows/intent/facades/intent.facade';
 
 describe('payment.providers', () => {
   it('registers factories and state adapter (smoke)', () => {

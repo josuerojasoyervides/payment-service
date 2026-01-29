@@ -1,4 +1,4 @@
-import { StripeTokenValidator } from './stripe-token.validator';
+import { StripeTokenValidator } from '@payments/infrastructure/stripe/validators/stripe-token.validator';
 
 describe('StripeTokenValidator', () => {
   let validator: StripeTokenValidator;

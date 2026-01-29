@@ -1,15 +1,20 @@
-import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { assign, fromPromise, setup } from 'xstate';
-
-import { isPaymentError, normalizePaymentError } from '../store/projection/payment-store.errors';
 import {
   createFlowContext,
   mergeExternalReference,
   resolveStatusReference,
   updateFlowContextProviderRefs,
-} from './payment-flow.context';
-import { PaymentFlowDeps } from './payment-flow.deps';
+} from '@payments/application/orchestration/flow/payment-flow/context/payment-flow.context';
+import type { PaymentFlowDeps } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.deps';
+import type {
+  CancelInput,
+  ClientConfirmInput,
+  ConfirmInput,
+  FinalizeInput,
+  PaymentFlowEvent,
+  PaymentFlowMachineContext,
+  StartInput,
+  StatusInput,
+} from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import {
   canFallbackPolicy,
   canPollPolicy,
@@ -24,27 +29,24 @@ import {
   needsUserActionPolicy,
   type PaymentFlowConfigOverrides,
   resolvePaymentFlowConfig,
-} from './payment-flow.policy';
+} from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.policy';
+import { cancelStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-cancel.stage';
+import { clientConfirmStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-client-confirm.stage';
+import { confirmStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-confirm.stage';
+import { doneStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-done.stage';
+import { fallbackStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-fallback.stage';
+import { finalizeStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-finalize.stage';
+import { idleStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-idle.stage';
+import { pollingStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-polling.stage';
+import { reconcileStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-reconcile.stage';
+import { startStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-start.stage';
 import {
-  CancelInput,
-  ClientConfirmInput,
-  ConfirmInput,
-  FinalizeInput,
-  PaymentFlowEvent,
-  PaymentFlowMachineContext,
-  StartInput,
-  StatusInput,
-} from './payment-flow.types';
-import { cancelStates } from './stages/payment-flow-cancel.stage';
-import { clientConfirmStates } from './stages/payment-flow-client-confirm.stage';
-import { confirmStates } from './stages/payment-flow-confirm.stage';
-import { doneStates } from './stages/payment-flow-done.stage';
-import { fallbackStates } from './stages/payment-flow-fallback.stage';
-import { finalizeStates } from './stages/payment-flow-finalize.stage';
-import { idleStates } from './stages/payment-flow-idle.stage';
-import { pollingStates } from './stages/payment-flow-polling.stage';
-import { reconcileStates } from './stages/payment-flow-reconcile.stage';
-import { startStates } from './stages/payment-flow-start.stage';
+  isPaymentError,
+  normalizePaymentError,
+} from '@payments/application/orchestration/store/projection/payment-store.errors';
+import { createPaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { assign, fromPromise, setup } from 'xstate';
 
 export const createPaymentFlowMachine = (
   deps: PaymentFlowDeps,

@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit } from '@angular/core';
-import { ActivatedRoute, Params, RouterLink } from '@angular/router';
+import type { OnInit } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+import type { Params } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-
-import { mapReturnQueryToReference } from '../../../application/adapters/events/external/payment-flow-return.mapper';
-import { ExternalEventAdapter } from '../../../application/adapters/external-event.adapter';
-import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
-import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
+import { mapReturnQueryToReference } from '@payments/application/adapters/events/external/payment-flow-return.mapper';
+import { ExternalEventAdapter } from '@payments/application/adapters/events/external-event.adapter';
+import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
 
 // TODO : This is a utility function, not a component responsibility
 function normalizeQueryParams(params: Params): Record<string, string> {

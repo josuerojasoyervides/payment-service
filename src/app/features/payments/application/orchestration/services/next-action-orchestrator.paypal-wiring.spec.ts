@@ -1,12 +1,11 @@
 import { TestBed } from '@angular/core/testing';
+import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action-orchestrator.service';
+import { PaypalProviderFactory } from '@payments/infrastructure/paypal/factories/paypal-provider.factory';
+import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/facades/intent.facade';
+import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
 import { firstValueFrom, of } from 'rxjs';
-
-import { PaypalIntentFacade } from '../../../infrastructure/paypal/facades/intent.facade';
-import { PaypalProviderFactory } from '../../../infrastructure/paypal/factories/paypal-provider.factory';
-import { PaypalFinalizeHandler } from '../../../infrastructure/paypal/handlers/paypal-finalize.handler';
-import { PAYMENT_PROVIDER_FACTORIES } from '../../api/tokens/payment-provider-factories.token';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { NextActionOrchestratorService } from './next-action-orchestrator.service';
 
 describe('NextActionOrchestratorService (PayPal wiring)', () => {
   it('routes finalize via registry->paypal factory capability->handler.execute (real wiring)', async () => {

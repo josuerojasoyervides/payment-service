@@ -1,4 +1,4 @@
-import { PaypalTokenValidator } from './paypal-token.validator';
+import { PaypalTokenValidator } from '@payments/infrastructure/paypal/validators/paypal-token.validator';
 
 describe('PaypalTokenValidator', () => {
   let validator: PaypalTokenValidator;

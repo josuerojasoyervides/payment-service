@@ -1,13 +1,11 @@
 import { inject, Injectable, InjectionToken } from '@angular/core';
-
-import {
+import type {
   CorrelationContext,
-  DEFAULT_LOGGER_CONFIG,
-  LOG_LEVEL_PRIORITY,
   LogEntry,
   LoggerConfig,
   LogLevel,
-} from './logging.types';
+} from '@core/logging/logging.types';
+import { DEFAULT_LOGGER_CONFIG, LOG_LEVEL_PRIORITY } from '@core/logging/logging.types';
 
 /**
  * Token for injecting logger configuration.

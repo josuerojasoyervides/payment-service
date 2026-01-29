@@ -1,16 +1,15 @@
 import { Injectable } from '@angular/core';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
-import {
+import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { Observable } from 'rxjs';
-
-import { createConfirmedPaypalOrder } from '../../helpers/create-confirmed-paypal-order.helper';
-import { createConfirmedStripeIntent } from '../../helpers/create-confirmed-stripe-intent.helper';
-import { simulateNetworkDelay } from '../../helpers/simulate-network-delay.helper';
-import { mapIntent } from '../../mappers/intent.mapper';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { createConfirmedPaypalOrder } from '@payments/infrastructure/fake/helpers/create-confirmed-paypal-order.helper';
+import { createConfirmedStripeIntent } from '@payments/infrastructure/fake/helpers/create-confirmed-stripe-intent.helper';
+import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';
+import { mapIntent } from '@payments/infrastructure/fake/mappers/intent.mapper';
+import type { Observable } from 'rxjs';
 
 @Injectable()
 export abstract class FakeConfirmIntentGateway extends PaymentOperationPort<

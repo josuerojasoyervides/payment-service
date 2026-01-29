@@ -1,13 +1,13 @@
 //file: checkout.page.integration.spec.ts
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
-
-import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
-import { ProviderFactoryRegistry } from '../../../application/orchestration/registry/provider-factory.registry';
-import providePayments from '../../../config/payment.providers';
-import { CheckoutComponent } from './checkout.page';
+import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import providePayments from '@payments/config/payment.providers';
+import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 
 /**
  * Wait for the flow to complete:

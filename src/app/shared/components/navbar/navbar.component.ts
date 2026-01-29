@@ -1,8 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
-
-import { LanguageSelectorComponent } from '../language-selector/language-selector.component';
+import { LanguageSelectorComponent } from '@shared/components/language-selector/language-selector.component';
 
 /**
  * Simple, clean navbar component.

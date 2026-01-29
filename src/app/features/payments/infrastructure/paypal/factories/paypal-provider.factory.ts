@@ -1,21 +1,20 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
-import { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
-
-import { FinalizePort } from '../../../application/api/ports/finalize.port';
-import { PaymentStrategy } from '../../../application/api/ports/payment-strategy.port';
-import {
+import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
+import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type { PaymentMethodType } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type {
   FieldRequirements,
   PaymentRequestBuilder,
-} from '../../../domain/ports/payment/payment-request-builder.port';
-import { PaypalRedirectRequestBuilder } from '../builders/paypal-redirect-request.builder';
-import { PaypalIntentFacade } from '../facades/intent.facade';
-import { PaypalFinalizeHandler } from '../handlers/paypal-finalize.handler';
-import { PaypalRedirectStrategy } from '../strategies/paypal-redirect.strategy';
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import { PaypalRedirectRequestBuilder } from '@payments/infrastructure/paypal/methods/redirect/builders/paypal-redirect-request.builder';
+import { PaypalRedirectStrategy } from '@payments/infrastructure/paypal/methods/redirect/strategies/paypal-redirect.strategy';
+import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/facades/intent.facade';
+import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
 
 /**
  * PayPal provider factory.

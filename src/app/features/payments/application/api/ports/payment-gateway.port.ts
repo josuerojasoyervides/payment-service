@@ -2,19 +2,20 @@ import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import {
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/models/payment/payment-request.types';
-import { catchError, map, Observable, tap, throwError } from 'rxjs';
+} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { Observable } from 'rxjs';
+import { catchError, map, tap, throwError } from 'rxjs';
 
 export interface PaymentGatewayPort {
   readonly providerId: PaymentProviderId;

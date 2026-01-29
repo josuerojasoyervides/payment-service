@@ -1,4 +1,4 @@
-import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export interface ReturnFlowReference {
   providerId: PaymentProviderId;

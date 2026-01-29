@@ -1,30 +1,30 @@
 import { computed, signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
 import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
 import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
-import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
+import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type {
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
-
-import { ProviderFactoryRegistry } from '../../../application/orchestration/registry/provider-factory.registry';
-import {
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type {
   FieldRequirements,
   PaymentOptions,
-} from '../../../domain/ports/payment/payment-request-builder.port';
-import { CheckoutComponent } from './checkout.page';
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
+import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 
 describe('CheckoutComponent', () => {
   let component: CheckoutComponent;

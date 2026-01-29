@@ -4,14 +4,20 @@ import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
+import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
-import { NextAction } from '@payments/domain/models/payment/payment-action.types';
-import {
+import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import type {
   CurrencyCode,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type {
+  FieldRequirements,
+  PaymentOptions,
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
 import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
@@ -20,13 +26,6 @@ import { PaymentButtonComponent } from '@payments/ui/components/payment-button/p
 import { PaymentFormComponent } from '@payments/ui/components/payment-form/payment-form.component';
 import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
-
-import { StrategyContext } from '../../../application/api/ports/payment-strategy.port';
-import { ProviderFactoryRegistry } from '../../../application/orchestration/registry/provider-factory.registry';
-import {
-  FieldRequirements,
-  PaymentOptions,
-} from '../../../domain/ports/payment/payment-request-builder.port';
 
 interface CheckoutPageState {
   orderId: string;

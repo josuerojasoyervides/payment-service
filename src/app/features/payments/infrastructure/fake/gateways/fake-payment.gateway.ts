@@ -1,20 +1,19 @@
-import { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
-import {
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import {
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/models/payment/payment-request.types';
-import { Observable } from 'rxjs';
-
-import { FakeCancelIntentGateway } from './intent/cancel-intent.gateway';
-import { FakeConfirmIntentGateway } from './intent/confirm-intent.gateway';
-import { FakeCreateIntentGateway } from './intent/create-intent.gateway';
-import { FakeGetIntentGateway } from './intent/get-intent.gateway';
+} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { FakeCancelIntentGateway } from '@payments/infrastructure/fake/gateways/intent/cancel-intent.gateway';
+import type { FakeConfirmIntentGateway } from '@payments/infrastructure/fake/gateways/intent/confirm-intent.gateway';
+import type { FakeCreateIntentGateway } from '@payments/infrastructure/fake/gateways/intent/create-intent.gateway';
+import type { FakeGetIntentGateway } from '@payments/infrastructure/fake/gateways/intent/get-intent.gateway';
+import type { Observable } from 'rxjs';
 
 /**
  * Fake gateway for development and testing.

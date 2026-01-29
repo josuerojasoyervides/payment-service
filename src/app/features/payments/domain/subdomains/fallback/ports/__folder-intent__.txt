@@ -1,0 +1,3 @@
+Boundary interfaces: *.port.ts
+Examples: fallback-strategy.port.ts
+Ports define interfaces for fallback subdomain boundaries.

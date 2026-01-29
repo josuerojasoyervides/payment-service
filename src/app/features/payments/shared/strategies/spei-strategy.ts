@@ -1,20 +1,20 @@
 import { I18nKeys } from '@core/i18n';
-import { LoggerService } from '@core/logging';
-import { NextActionManualStep } from '@payments/domain/models/payment/payment-action.types';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import {
-  PaymentIntent,
-  PaymentMethodType,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { map, Observable, tap } from 'rxjs';
-
-import { PaymentGatewayPort } from '../../application/api/ports/payment-gateway.port';
-import {
+import type { LoggerService } from '@core/logging';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
-} from '../../application/api/ports/payment-strategy.port';
+} from '@payments/application/api/ports/payment-strategy.port';
+import type { NextActionManualStep } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type {
+  PaymentIntent,
+  PaymentMethodType,
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { Observable } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 /**
  * Strategy for payments via SPEI (Interbank Electronic Payments System).

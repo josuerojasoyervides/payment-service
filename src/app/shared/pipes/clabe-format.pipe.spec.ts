@@ -1,4 +1,4 @@
-import { ClabeFormatPipe } from './clabe-format.pipe';
+import { ClabeFormatPipe } from '@shared/pipes/clabe-format.pipe';
 
 describe('ClabeFormatPipe', () => {
   let pipe: ClabeFormatPipe;

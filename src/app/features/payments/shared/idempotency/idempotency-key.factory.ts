@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { LoggerService, TraceOperation } from '@core/logging';
-import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 export type IdempotencyOperation = 'start' | 'confirm' | 'cancel' | 'get';
 
@@ -42,6 +42,20 @@ export class IdempotencyKeyFactory {
     return `${providerId}:get:${intentId}`;
   }
 
+  /**
+   * @param providerId - The payment provider ID
+   * @param input - The input for the idempotency key generation. Can be a start request or an intent operation request.
+   * @returns The idempotency key
+   * @example
+   * const idempotencyKey = this.idempotencyKeyFactory.generate('stripe', {
+   *   operation: 'start',
+   *   req: {
+   *     orderId: '1234567890',
+   *     amount: 100,
+   *     currency: 'USD',
+   *   },
+   * });
+   */
   @TraceOperation({
     name: 'generateIdempotencyKey',
     context: 'IdempotencyKeyFactory',

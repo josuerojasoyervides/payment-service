@@ -1,17 +1,14 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import type { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, InjectionToken } from '@angular/core';
-
-import { LoggerService } from '../../logging/logger.service';
+import { LoggerService } from '@core/logging/logger.service';
+import type { RetryAttemptInfo, RetryConfig, RetryState } from '@core/resilience/retry/retry.types';
 import {
   calculateBackoffDelay,
   DEFAULT_RETRY_CONFIG,
   isRetryableError,
   isRetryableMethod,
   parseRetryAfterHeader,
-  RetryAttemptInfo,
-  RetryConfig,
-  RetryState,
-} from './retry.types';
+} from '@core/resilience/retry/retry.types';
 
 /**
  * Token for injecting Retry configuration.

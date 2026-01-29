@@ -17,14 +17,19 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
+      "@app/*": ["src/app/*"],
       "@core/*": ["src/app/core/*"],
       "@shared/*": ["src/app/shared/*"],
+      "@features/*": ["src/app/features/*"],
+
       "@payments/*": ["src/app/features/payments/*"],
-      "@payments/domain": ["src/app/features/payments/domain/models/index.ts"],
       "@payments/domain/*": ["src/app/features/payments/domain/*"],
-      "@payments/ports": ["src/app/features/payments/domain/ports/index.ts"],
       "@payments/application/*": ["src/app/features/payments/application/*"],
-      "@payments/infrastructure/*": ["src/app/features/payments/infrastructure/*"]
+      "@payments/infrastructure/*": ["src/app/features/payments/infrastructure/*"],
+      "@payments/ui/*": ["src/app/features/payments/ui/*"],
+      "@payments/config/*": ["src/app/features/payments/config/*"],
+      "@payments/shared/*": ["src/app/features/payments/shared/*"],
+      "@payments/tests/*": ["src/app/features/payments/tests/*"]
     }
   },
   "angularCompilerOptions": {

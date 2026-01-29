@@ -1,4 +1,4 @@
-import { en } from './translations/en';
+import { en } from '@core/i18n/translations/en';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;

@@ -18,19 +18,18 @@
  * others return null.
  */
 
-import {
+import type { ClientConfirmPort } from '@payments/application/api/ports/client-confirm.port';
+import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
+import type {
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import {
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type {
   FieldRequirements,
   PaymentRequestBuilder,
-} from '@payments/domain/ports/payment/payment-request-builder.port';
-
-import { ClientConfirmPort } from './client-confirm.port';
-import { FinalizePort } from './finalize.port';
-import { PaymentGatewayPort } from './payment-gateway.port';
-import { PaymentStrategy } from './payment-strategy.port';
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 
 export interface ProviderFactory {
   /** Unique provider identifier */

@@ -1,10 +1,10 @@
-import { NextActionClientConfirm } from '@payments/domain/models/payment/payment-action.types';
-import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import {
+import type { NextActionClientConfirm } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { Observable } from 'rxjs';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { Observable } from 'rxjs';
 
 export interface ClientConfirmRequest {
   providerId: PaymentProviderId;

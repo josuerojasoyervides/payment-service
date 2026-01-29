@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
-import { PaymentMethodType } from '@payments/domain/models/payment/payment-intent.types';
-
-import { getDefaultMethods, MethodOption } from '../../shared/ui.types';
+import type { PaymentMethodType } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { MethodOption } from '@payments/ui/shared/ui.types';
+import { getDefaultMethods } from '@payments/ui/shared/ui.types';
 
 @Component({
   selector: 'app-method-selector',

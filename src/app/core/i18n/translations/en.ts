@@ -1,4 +1,4 @@
-import type { Translations } from '../i18n.types';
+import type { Translations } from '@core/i18n/i18n.types';
 
 export const en: Translations = {
   errors: {

@@ -1,7 +1,7 @@
-import {
+import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export function mapGeneric(dto: any, providerId: PaymentProviderId): PaymentIntent {
   return {

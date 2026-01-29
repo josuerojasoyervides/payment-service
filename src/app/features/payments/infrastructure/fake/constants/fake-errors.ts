@@ -1,7 +1,6 @@
 import { I18nKeys } from '@core/i18n';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-
-import { FakeScenario } from '../types/fake-scenario.type';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type { FakeScenario } from '@payments/infrastructure/fake/types/fake-scenario.type';
 
 /**
  * Predefined errors for testing.

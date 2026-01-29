@@ -1,18 +1,17 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import {
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import { ProviderMethodPolicyRegistry } from '@payments/application/orchestration/registry/provider-method-policy.registry';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
-import { Observable } from 'rxjs';
-
-import { safeDefer } from '../../../../../shared/rxjs/safe-defer';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { ProviderMethodPolicyRegistry } from '../registry/provider-method-policy.registry';
+import { safeDefer } from '@shared/rxjs/safe-defer';
+import type { Observable } from 'rxjs';
 
 @Injectable()
 export class StartPaymentUseCase {
