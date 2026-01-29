@@ -273,13 +273,13 @@ Policy must be explicit:
 
 - Exit criteria met: `WEBHOOK_NORMALIZER_REGISTRY` (Stripe + PayPal) in config; webhook ingestion → `ExternalEventAdapter.webhookReceived`; processing timeout policy and tests (`processing_timeout` → failed).
 
-### PR6 (P2) — Observability + stress fakes/scenarios
+### PR6 (P2) — Observability + stress fakes/scenarios _(done)_
 
 - Branch: `task/flow-observability`
 - Commit: `feat(flow): add flow telemetry and fake scenarios`
-- Exit criteria:
-  - Logs/telemetry include `flowId/providerId/state/event/refs`.
-  - Stress scenario suite exists and runs deterministically.
+- Exit criteria met:
+  - Logs/telemetry include `flowId/providerId/state/event/refs`; redaction; InMemory/Console/Noop/Composite sinks.
+  - Stress scenario suite (idempotency, dedupe, correlation, terminal safety, processing timeout) runs deterministically. See `docs/observability/flow-telemetry.md`.
 
 ---
 

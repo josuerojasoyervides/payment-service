@@ -10,9 +10,9 @@ import type {
   RedirectReturnedPayload,
   WebhookReceivedPayload,
 } from '@app/features/payments/application/adapters/events/flow/payment-flow.events';
-import type { FlowTelemetryEvent } from '@payments/application/adapters/telemetry/flow-telemetry.types';
-import { FLOW_TELEMETRY_SINK } from '@payments/application/adapters/telemetry/flow-telemetry-sink.token';
-import { InMemoryFlowTelemetrySink } from '@payments/application/adapters/telemetry/in-memory-flow-telemetry-sink';
+import { InMemoryFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/dev-only/in-memory-flow-telemetry-sink';
+import type { FlowTelemetryEvent } from '@app/features/payments/application/adapters/telemetry/types/flow-telemetry.types';
+import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type {
   PaymentFlowCommandEvent,
