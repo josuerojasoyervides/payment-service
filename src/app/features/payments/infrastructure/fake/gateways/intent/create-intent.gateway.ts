@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import type {
   PaymentIntent,
@@ -13,7 +14,6 @@ import { getTokenBehavior } from '@payments/infrastructure/fake/helpers/get-toke
 import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';
 import { validateCreate as validateCreateHelper } from '@payments/infrastructure/fake/helpers/validate-create.helper';
 import { mapIntent } from '@payments/infrastructure/fake/mappers/intent.mapper';
-import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
 import type { Observable } from 'rxjs';
 import { throwError } from 'rxjs';
 @Injectable()

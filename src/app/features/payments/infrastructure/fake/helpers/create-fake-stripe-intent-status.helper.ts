@@ -1,5 +1,5 @@
+import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import { hashString } from '@payments/infrastructure/fake/helpers/hash-string.helper';
-import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 export function createFakeStripeIntentStatus(intentId: string): StripePaymentIntentDto {
   // Deterministic status based on intentId hash

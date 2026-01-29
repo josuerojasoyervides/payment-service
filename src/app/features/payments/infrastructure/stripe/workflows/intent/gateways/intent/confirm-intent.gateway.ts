@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
+import type {
+  StripeConfirmIntentRequest,
+  StripePaymentIntentDto,
+} from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import type {
-  StripeConfirmIntentRequest,
-  StripePaymentIntentDto,
-} from '@payments/infrastructure/stripe/dto/stripe.dto';
 import { getIdempotencyHeaders } from '@payments/infrastructure/stripe/shared/idempotency/get-idempotency-headers';
 import { STRIPE_API_BASE } from '@payments/infrastructure/stripe/workflows/intent/api/base-api.constant';
 import { mapPaymentIntent } from '@payments/infrastructure/stripe/workflows/intent/mappers/payment-intent.mapper';

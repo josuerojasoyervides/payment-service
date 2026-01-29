@@ -1,5 +1,5 @@
+import type { StripePaymentIntentStatus } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import type { PaymentIntentStatus } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { StripePaymentIntentStatus } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 export const STATUS_MAP: Record<StripePaymentIntentStatus, PaymentIntentStatus> = {
   requires_payment_method: 'requires_payment_method',

@@ -1,4 +1,7 @@
 import type { Provider } from '@angular/core';
+import { StripeProviderFactory } from '@app/features/payments/infrastructure/stripe/core/factories/stripe-provider.factory';
+import { StripeProviderMethodPolicy } from '@app/features/payments/infrastructure/stripe/payment-methods/policies/stripe-provider-method.policy';
+import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
 import { I18nKeys } from '@core/i18n';
 import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
@@ -7,13 +10,10 @@ import {
   type PaymentProviderUiMeta,
 } from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
 import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
-import { StripeProviderFactory } from '@payments/infrastructure/stripe/factories/stripe-provider.factory';
-import { StripeProviderMethodPolicy } from '@payments/infrastructure/stripe/policies/stripe-provider-method.policy';
 import { FakeStripeCancelIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-cancel-intent.gateway';
 import { FakeStripeConfirmIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-confirm-intent.gateway';
 import { FakeStripeCreateIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-create-intent.gateway';
 import { FakeStripeGetIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-get-intent.gateway';
-import { StripeIntentFacade } from '@payments/infrastructure/stripe/workflows/intent/facades/intent.facade';
 import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/cancel-intent.gateway';
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';

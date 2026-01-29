@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
+import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import { StripeIntentFacade } from '@payments/infrastructure/stripe/workflows/intent/facades/intent.facade';
 import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/cancel-intent.gateway';
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';

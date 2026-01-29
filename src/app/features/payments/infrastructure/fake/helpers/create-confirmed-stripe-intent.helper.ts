@@ -1,4 +1,4 @@
-import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
+import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 
 export function createConfirmedStripeIntent(intentId: string): StripePaymentIntentDto {
   return {

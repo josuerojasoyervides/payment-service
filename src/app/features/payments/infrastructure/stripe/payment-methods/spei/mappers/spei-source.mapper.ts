@@ -1,10 +1,10 @@
+import type { StripeSpeiSourceDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import type { NextActionManualStep } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { StripeSpeiSourceDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
-import { SpeiStatusMapper } from '@payments/infrastructure/stripe/methods/spei/mappers/spei-status.mapper';
+import { SpeiStatusMapper } from '@payments/infrastructure/stripe/payment-methods/spei/mappers/spei-status.mapper';
 
 export class SpeiSourceMapper {
   constructor(private readonly providerId: PaymentProviderId) {}

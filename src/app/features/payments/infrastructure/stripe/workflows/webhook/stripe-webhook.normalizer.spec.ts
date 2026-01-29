@@ -1,5 +1,5 @@
+import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import type { NormalizedWebhookEvent } from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
-import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
 import {
   type StripePaymentIntentWebhookEvent,
   StripeWebhookNormalizer,

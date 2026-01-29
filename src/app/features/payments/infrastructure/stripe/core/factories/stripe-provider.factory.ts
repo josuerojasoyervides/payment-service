@@ -1,4 +1,6 @@
 import { inject, Injectable } from '@angular/core';
+import { StripeTokenValidator } from '@app/features/payments/infrastructure/stripe/shared/validators/stripe-token.validator';
+import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
@@ -10,10 +12,8 @@ import type {
   FieldRequirements,
   PaymentRequestBuilder,
 } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
-import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/methods/card/builders/stripe-card-request.builder';
-import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/methods/spei/builders/stripe-spei-request.builder';
-import { StripeTokenValidator } from '@payments/infrastructure/stripe/validators/stripe-token.validator';
-import { StripeIntentFacade } from '@payments/infrastructure/stripe/workflows/intent/facades/intent.facade';
+import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/card/builders/stripe-card-request.builder';
+import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/spei/builders/stripe-spei-request.builder';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 

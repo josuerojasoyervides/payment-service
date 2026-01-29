@@ -1,3 +1,4 @@
+import type { StripeCreateIntentRequest } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type {
   CurrencyCode,
@@ -6,7 +7,6 @@ import type {
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { PaymentOptions } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { PaymentRequestBuilder } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
-import type { StripeCreateIntentRequest } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 export function buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreateIntentRequest {
   const isCard = req.method.type === 'card';

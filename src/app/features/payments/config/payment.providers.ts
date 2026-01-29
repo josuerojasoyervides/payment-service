@@ -2,6 +2,10 @@ import type { EnvironmentProviders } from '@angular/core';
 import { type Provider } from '@angular/core';
 import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
 import { WEBHOOK_NORMALIZER_REGISTRY } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
+import {
+  provideStripePayments,
+  StripeWebhookNormalizer,
+} from '@app/features/payments/infrastructure/stripe/core/di/provide-stripe-payments';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
 import { FLOW_TELEMETRY_SINK } from '@payments/application/adapters/telemetry/flow-telemetry-sink.token';
 import { NoopFlowTelemetrySink } from '@payments/application/adapters/telemetry/noop-flow-telemetry-sink';
@@ -28,10 +32,6 @@ import {
   PaypalWebhookNormalizer,
   providePaypalPayments,
 } from '@payments/infrastructure/paypal/di/provide-paypal-payments';
-import {
-  provideStripePayments,
-  StripeWebhookNormalizer,
-} from '@payments/infrastructure/stripe/di/provide-stripe-payments';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 function selectProviderConfigs(mode: PaymentsProvidersMode): Provider[] {

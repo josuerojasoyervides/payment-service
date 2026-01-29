@@ -1,5 +1,5 @@
+import type { StripeErrorResponse } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import { I18nKeys } from '@core/i18n';
-import type { StripeErrorResponse } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 export class ErrorKeyMapper {
   mapErrorKey(error: StripeErrorResponse['error']): string {
