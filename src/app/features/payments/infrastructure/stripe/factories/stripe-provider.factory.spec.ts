@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
-import { StripeIntentFacade } from '@payments/infrastructure/stripe/facades/intent.facade';
 import { StripeProviderFactory } from '@payments/infrastructure/stripe/factories/stripe-provider.factory';
+import { StripeIntentFacade } from '@payments/infrastructure/stripe/workflows/intent/facades/intent.facade';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 import { firstValueFrom, of } from 'rxjs';

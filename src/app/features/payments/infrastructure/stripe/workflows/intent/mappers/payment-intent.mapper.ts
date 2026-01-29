@@ -3,8 +3,8 @@ import type {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
-import { STATUS_MAP } from '@payments/infrastructure/stripe/mappers/internal-status.mapper';
-import { mapStripeNextAction } from '@payments/infrastructure/stripe/mappers/next-action.mapper';
+import { STATUS_MAP } from '@payments/infrastructure/stripe/workflows/intent/mappers/internal-status.mapper';
+import { mapStripeNextAction } from '@payments/infrastructure/stripe/workflows/intent/mappers/next-action.mapper';
 
 export function mapPaymentIntent(
   dto: StripePaymentIntentDto,

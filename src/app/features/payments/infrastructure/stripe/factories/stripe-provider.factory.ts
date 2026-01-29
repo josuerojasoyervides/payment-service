@@ -12,8 +12,8 @@ import type {
 } from '@payments/domain/ports/payment/payment-request-builder.port';
 import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/builders/stripe-spei-request.builder';
-import { StripeIntentFacade } from '@payments/infrastructure/stripe/facades/intent.facade';
 import { StripeTokenValidator } from '@payments/infrastructure/stripe/validators/stripe-token.validator';
+import { StripeIntentFacade } from '@payments/infrastructure/stripe/workflows/intent/facades/intent.facade';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 
