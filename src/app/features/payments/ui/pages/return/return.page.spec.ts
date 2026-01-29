@@ -1,14 +1,14 @@
 import { signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
+import { mapReturnQueryToReference } from '@app/features/payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-
-import { mapReturnQueryToReference } from '../../../application/adapters/events/external/payment-flow-return.mapper';
-import { ExternalEventAdapter } from '../../../application/adapters/external-event.adapter';
-import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
-import { ReturnComponent } from './return.page';
+import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { ReturnComponent } from '@payments/ui/pages/return/return.page';
 
 describe('ReturnComponent', () => {
   let component: ReturnComponent;
@@ -44,10 +44,9 @@ describe('ReturnComponent', () => {
     };
 
     mockExternalEvents = {
-      providerUpdate: vi.fn(),
+      redirectReturned: vi.fn(),
+      externalStatusUpdated: vi.fn(),
       webhookReceived: vi.fn(),
-      validationFailed: vi.fn(),
-      statusConfirmed: vi.fn(),
     };
 
     // I18nService mock
@@ -116,14 +115,13 @@ describe('ReturnComponent', () => {
       expect(component.returnPageState.intentId()).toBe('seti_test_123');
     });
 
-    it('should refresh payment when intentId exists and not cancel flow', () => {
+    it('should emit redirect return when intentId exists', () => {
       mockActivatedRoute.snapshot.queryParams = {
         payment_intent: 'pi_test_123',
       };
       component.ngOnInit();
-      expect(mockExternalEvents.providerUpdate).toHaveBeenCalledWith(
+      expect(mockExternalEvents.redirectReturned).toHaveBeenCalledWith(
         expect.objectContaining({ providerId: 'stripe', referenceId: 'pi_test_123' }),
-        { refresh: true },
       );
     });
   });
@@ -139,14 +137,13 @@ describe('ReturnComponent', () => {
       expect(component.returnPageState.paypalPayerId()).toBe('PAYER123456');
     });
 
-    it('should refresh payment when PayPal token exists', () => {
+    it('should emit redirect return when PayPal token exists', () => {
       mockActivatedRoute.snapshot.queryParams = {
         token: 'ORDER_FAKE_XYZ',
       };
       component.ngOnInit();
-      expect(mockExternalEvents.providerUpdate).toHaveBeenCalledWith(
+      expect(mockExternalEvents.redirectReturned).toHaveBeenCalledWith(
         expect.objectContaining({ providerId: 'paypal', referenceId: 'ORDER_FAKE_XYZ' }),
-        { refresh: true },
       );
     });
   });
@@ -158,15 +155,14 @@ describe('ReturnComponent', () => {
       expect(component.returnPageState.isCancelFlow()).toBe(true);
     });
 
-    it('should not refresh payment when cancel flow', () => {
+    it('should still emit redirect return when cancel flow', () => {
       mockActivatedRoute.snapshot.data = { cancelFlow: true };
       mockActivatedRoute.snapshot.queryParams = {
         payment_intent: 'pi_test_123',
       };
       component.ngOnInit();
-      expect(mockExternalEvents.providerUpdate).toHaveBeenCalledWith(
+      expect(mockExternalEvents.redirectReturned).toHaveBeenCalledWith(
         expect.objectContaining({ providerId: 'stripe', referenceId: 'pi_test_123' }),
-        { refresh: false },
       );
     });
 

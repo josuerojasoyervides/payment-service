@@ -12,19 +12,24 @@
  * 1. Know which methods the provider supports (getSupportedMethods)
  * 2. Know which fields each method needs (getFieldRequirements)
  * 3. Get the correct builder (createRequestBuilder)
+ *
+ * Optional capability: getClientConfirmHandler — providers that support
+ * client-side confirmation (e.g. Stripe 3DS) expose a ClientConfirmPort;
+ * others return null.
  */
 
-import {
+import type { ClientConfirmPort } from '@payments/application/api/ports/client-confirm.port';
+import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
+import type {
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import {
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type {
   FieldRequirements,
   PaymentRequestBuilder,
-} from '@payments/domain/ports/payment/payment-request-builder.port';
-
-import { PaymentGatewayPort } from './payment-gateway.port';
-import { PaymentStrategy } from './payment-strategy.port';
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 
 export interface ProviderFactory {
   /** Unique provider identifier */
@@ -97,4 +102,18 @@ export interface ProviderFactory {
    * // ]
    */
   getFieldRequirements(type: PaymentMethodType): FieldRequirements;
+
+  /**
+   * Optional: returns a handler for client-side confirmation (e.g. Stripe 3DS).
+   * Providers that do not support client confirm return null.
+   * Application routing uses this capability; no provider-name branching.
+   */
+  getClientConfirmHandler?(): ClientConfirmPort | null;
+
+  /**
+   * Optional: returns a handler for finalization (e.g. PayPal capture/complete order).
+   * Not all providers support a finalize step; those providers return null.
+   * Application routing uses this capability; no provider-name branching.
+   */
+  getFinalizeHandler?(): FinalizePort | null;
 }

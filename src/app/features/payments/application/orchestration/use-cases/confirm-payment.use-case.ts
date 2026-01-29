@@ -1,14 +1,13 @@
 import { inject, Injectable } from '@angular/core';
-import {
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
-import { Observable } from 'rxjs';
-
-import { safeDefer } from '../../../../../shared/rxjs/safe-defer';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
+import { safeDefer } from '@shared/rxjs/safe-defer';
+import type { Observable } from 'rxjs';
 
 /**
  * Use case: Confirm a payment.

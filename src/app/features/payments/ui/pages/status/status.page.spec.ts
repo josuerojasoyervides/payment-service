@@ -1,13 +1,13 @@
 import { signal } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-
-import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
-import { StatusComponent } from './status.page';
+import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { StatusComponent } from '@payments/ui/pages/status/status.page';
 
 describe('StatusComponent', () => {
   let component: StatusComponent;
@@ -38,6 +38,7 @@ describe('StatusComponent', () => {
       refresh: vi.fn(() => true),
       confirm: vi.fn(() => true),
       cancel: vi.fn(() => true),
+      performNextAction: vi.fn(() => true),
     };
 
     await TestBed.configureTestingModule({
@@ -148,6 +149,12 @@ describe('StatusComponent', () => {
       patchState(component.statusPageState, { selectedProvider: 'paypal' });
       component.confirmPayment('ORDER_FAKE_XYZ');
       expect(mockFlowFacade.confirm).toHaveBeenCalled();
+    });
+
+    it('should call performNextAction when next-action is requested', () => {
+      const action = { kind: 'client_confirm' as const, token: 'tok_runtime' };
+      component.onNextActionRequested(action);
+      expect(mockFlowFacade.performNextAction).toHaveBeenCalledWith(action);
     });
   });
 

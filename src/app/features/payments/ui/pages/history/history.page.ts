@@ -4,14 +4,13 @@ import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed } from '@ngrx/signals';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
-import { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
-import {
+import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
+import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
 import { ACTION_REQUIRED_STATUSES } from '@payments/ui/shared/ui.types';
-
-import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
 
 /**
  * Payment history page.

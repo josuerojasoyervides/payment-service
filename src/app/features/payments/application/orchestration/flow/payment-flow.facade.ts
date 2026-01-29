@@ -1,10 +1,10 @@
 import { computed, inject, Injectable } from '@angular/core';
-import { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-
-import { StrategyContext } from '../../api/ports/payment-strategy.port';
-import { PaymentFlowActorService } from './payment-flow.actor.service';
-import { PaymentFlowPublicEvent } from './payment-flow.types';
+import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
+import type { PaymentFlowPublicEvent } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
+import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 // If you already have a formal flowContext type in your project, use it here.
 // Otherwise, this is a minimal version to avoid `any`.
@@ -82,7 +82,28 @@ export class PaymentFlowFacade {
     } satisfies PaymentFlowPublicEvent);
   }
 
+  performNextAction(action: NextAction | null): boolean {
+    if (!action) return false;
+
+    if (action.kind === 'redirect') {
+      if (!action.url) return false;
+      this.navigateToExternal(action.url);
+      return true;
+    }
+
+    if (action.kind === 'client_confirm') {
+      return this.confirm();
+    }
+
+    return false;
+  }
+
   reset(): boolean {
     return this.flow.send({ type: 'RESET' } satisfies PaymentFlowPublicEvent);
+  }
+
+  private navigateToExternal(url: string): void {
+    if (typeof window === 'undefined') return;
+    window.location.href = url;
   }
 }

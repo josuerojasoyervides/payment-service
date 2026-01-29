@@ -1,13 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { NextActionSpei } from '@payments/domain/models/payment/payment-action.types';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 import { firstValueFrom, of } from 'rxjs';
-
-import { PaymentGatewayPort } from '../../application/api/ports/payment-gateway.port';
-import { SpeiStrategy } from './spei-strategy';
 
 describe('SpeiStrategy', () => {
   let strategy: SpeiStrategy;
@@ -160,13 +158,12 @@ describe('SpeiStrategy', () => {
       const result = await firstValueFrom(strategy.start(validReq));
 
       expect(result.status).toBe('requires_action');
-      expect(result.nextAction?.type).toBe('spei');
-
-      const speiAction = result.nextAction as NextActionSpei;
-      expect(speiAction.clabe).toBeDefined();
-      expect(speiAction.reference).toBeDefined();
-      expect(speiAction.bank).toBeDefined();
-      expect(speiAction.expiresAt).toBeDefined();
+      const nextAction = result.nextAction;
+      expect(nextAction?.kind).toBe('manual_step');
+      if (nextAction?.kind !== 'manual_step') {
+        throw new Error('Expected manual_step next action');
+      }
+      expect(nextAction.details?.length).toBeGreaterThan(0);
     });
 
     it('removes token from prepared request', async () => {
@@ -184,15 +181,9 @@ describe('SpeiStrategy', () => {
       const intent: PaymentIntent = {
         ...intentResponse,
         nextAction: {
-          type: 'spei',
-          instructions: 'Transfer',
-          clabe: '123',
-          reference: '456',
-          bank: 'STP',
-          beneficiary: 'Test',
-          amount: 100,
-          currency: 'MXN',
-          expiresAt: new Date().toISOString(),
+          kind: 'manual_step',
+          instructions: ['Transfer'],
+          details: [{ label: 'CLABE', value: '123' }],
         },
       };
       expect(strategy.requiresUserAction(intent)).toBe(true);
@@ -208,27 +199,20 @@ describe('SpeiStrategy', () => {
       const intent: PaymentIntent = {
         ...intentResponse,
         nextAction: {
-          type: 'spei',
-          instructions: 'Transfer',
-          clabe: '646180111812345678',
-          reference: '1234567',
-          bank: 'STP',
-          beneficiary: 'Test Company',
-          amount: 100,
-          currency: 'MXN',
-          expiresAt: new Date().toISOString(),
+          kind: 'manual_step',
+          instructions: ['Transfer'],
+          details: [
+            { label: 'CLABE', value: '646180111812345678' },
+            { label: 'Reference', value: '1234567' },
+          ],
         },
       };
 
       const instructions = strategy.getUserInstructions(intent);
 
-      expect(instructions).toContain('ui.spei_instructions_title');
-      expect(instructions).toContain('ui.spei_step_1');
-      expect(instructions).toContain('ui.spei_deadline');
-
-      expect(instructions).toContain('100');
-      expect(instructions).toContain('646180111812345678');
-      expect(instructions).toContain('1234567');
+      expect(instructions).toEqual(
+        expect.arrayContaining(['Complete the transfer using the details below.']),
+      );
     });
 
     it('returns null when not a SPEI intent', () => {

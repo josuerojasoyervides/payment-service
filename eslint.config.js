@@ -7,6 +7,7 @@ const unusedImports = require('eslint-plugin-unused-imports');
 const eslintConfigPrettier = require('eslint-config-prettier');
 const simpleImportSort = require('eslint-plugin-simple-import-sort');
 const ngrx = require('@ngrx/eslint-plugin/v9');
+const importPlugin = require('eslint-plugin-import');
 
 module.exports = defineConfig([
   // ✅ ignora basura
@@ -27,8 +28,18 @@ module.exports = defineConfig([
     processor: angular.processInlineTemplates,
 
     plugins: {
+      import: importPlugin,
       'unused-imports': unusedImports,
       'simple-import-sort': simpleImportSort,
+    },
+
+    settings: {
+      'import/resolver': {
+        typescript: {
+          project: ['./tsconfig.json'],
+          alwaysTryTypes: true,
+        },
+      },
     },
 
     rules: {
@@ -44,6 +55,21 @@ module.exports = defineConfig([
 
       // ✅ deja que unused-imports controle todo lo unused (y borre imports con --fix)
       '@typescript-eslint/no-unused-vars': 'off',
+      "@typescript-eslint/consistent-type-imports": "error",
+      "@typescript-eslint/consistent-type-assertions": "error",
+
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../**'],
+              message:
+                'No uses imports relativos hacia parent (../..). Usa aliases tipo @core/*, @shared/*, @payments/*.',
+            },
+          ],
+        },
+      ],
 
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [

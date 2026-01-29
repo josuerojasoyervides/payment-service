@@ -1,4 +1,4 @@
-import type { Translations } from '../i18n.types';
+import type { Translations } from '@core/i18n/i18n.types';
 
 export const es: Translations = {
   errors: {
@@ -40,6 +40,13 @@ export const es: Translations = {
     paypal_order_not_approved: 'Debes aprobar el pago en PayPal antes de continuar.',
     paypal_internal_error: 'PayPal está experimentando problemas. Intenta más tarde.',
     paypal_auth_error: 'Error de autenticación con PayPal. Contacta soporte.',
+    unsupported_client_confirm:
+      'Este proveedor no soporta confirmación en el cliente desde este flujo.',
+    unsupported_finalize: 'Este proveedor no soporta finalización desde este flujo.',
+    return_correlation_mismatch:
+      'La referencia de retorno no coincide. Esperado {{expectedId}}, recibido {{receivedId}}.',
+    processing_timeout:
+      'El pago se mantuvo en procesamiento demasiado tiempo. No pudimos confirmar un estado final de forma automática.',
   },
   messages: {
     payment_created: 'Pago creado exitosamente',
@@ -120,6 +127,7 @@ export const es: Translations = {
     after_approve_verify:
       'Después de aprobar en PayPal, haz clic en "Verificar estado" para confirmar el pago.',
     action_required: 'Acción requerida',
+    continue_action: 'Continuar',
     action_requires_attention: 'Este tipo de acción requiere atención adicional.',
     view_action_details: 'Ver detalles de la acción',
     checkout: 'Checkout',

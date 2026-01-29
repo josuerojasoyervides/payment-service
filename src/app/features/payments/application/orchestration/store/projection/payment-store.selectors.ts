@@ -1,6 +1,5 @@
 import { computed } from '@angular/core';
-
-import { PaymentsSelectorsSource } from '../payment-store.types';
+import type { PaymentsSelectorsSource } from '@payments/application/orchestration/store/types/payment-store.types';
 
 /**
  * Store selectors / derived state.
@@ -22,7 +21,9 @@ export function buildPaymentsSelectors(state: PaymentsSelectorsSource) {
     // Intent-specific states
     requiresUserAction: computed(() => {
       const intent = state.intent();
-      return intent?.status === 'requires_action' || !!intent?.nextAction;
+      const action = intent?.nextAction;
+      const actionable = action ? action.kind !== 'external_wait' : false;
+      return intent?.status === 'requires_action' || actionable;
     }),
     isSucceeded: computed(() => state.intent()?.status === 'succeeded'),
     isProcessing: computed(() => state.intent()?.status === 'processing'),

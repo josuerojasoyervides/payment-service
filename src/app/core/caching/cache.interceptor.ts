@@ -1,11 +1,15 @@
-import { HttpInterceptorFn, HttpRequest, HttpResponse } from '@angular/common/http';
+import type { HttpInterceptorFn, HttpRequest } from '@angular/common/http';
+import { HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { CacheService } from '@core/caching/cache.service';
+import {
+  generateCacheKey,
+  parseCacheControlMaxAge,
+  shouldSkipCache,
+} from '@core/caching/cache.types';
+import { LoggerService } from '@core/logging/logger.service';
 import { of } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-
-import { LoggerService } from '../logging/logger.service';
-import { CacheService } from './cache.service';
-import { generateCacheKey, parseCacheControlMaxAge, shouldSkipCache } from './cache.types';
 
 /**
  * HTTP interceptor that implements response caching.

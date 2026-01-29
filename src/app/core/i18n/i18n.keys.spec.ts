@@ -1,7 +1,6 @@
+import { I18nKeys } from '@core/i18n/i18n.keys';
+import { en } from '@core/i18n/translations/en';
 import { describe, expect, it } from 'vitest';
-
-import { I18nKeys } from './i18n.keys';
-import { en } from './translations/en';
 
 describe('I18nKeys', () => {
   describe('buildKeys function', () => {

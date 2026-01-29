@@ -4,14 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
+import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type {
   CurrencyCode,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
 import { OrderSummaryComponent } from '@payments/ui/components/order-summary/order-summary.component';
@@ -20,8 +20,7 @@ import { PaymentIntentCardComponent } from '@payments/ui/components/payment-inte
 import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
 import { SpeiInstructionsComponent } from '@payments/ui/components/spei-instructions/spei-instructions.component';
-
-import { OrderItem, PaymentButtonState } from '../../shared/ui.types';
+import type { OrderItem, PaymentButtonState } from '@payments/ui/shared/ui.types';
 
 /**
  * Showcase page to demonstrate all UI components.

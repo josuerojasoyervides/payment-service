@@ -1,21 +1,22 @@
 import { inject, Injectable, InjectionToken } from '@angular/core';
-
-import { LoggerService } from '../logging/logger.service';
-import {
+import type {
   CacheConfig,
   CacheEntry,
   CacheEntryStats,
   CacheInfo,
   CacheOptions,
   CacheResult,
+  TTLPattern,
+} from '@core/caching/cache.types';
+import {
   COMMON_TTL_PATTERNS,
   DEFAULT_CACHE_CONFIG,
   estimateSizeInBytes,
   generateCacheKey,
   getTTLForUrl,
   isExcludedFromCache,
-  TTLPattern,
-} from './cache.types';
+} from '@core/caching/cache.types';
+import { LoggerService } from '@core/logging/logger.service';
 
 /**
  * Token to inject Cache configuration.

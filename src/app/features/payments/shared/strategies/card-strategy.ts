@@ -1,23 +1,21 @@
 import { I18nKeys } from '@core/i18n';
-import { LoggerService } from '@core/logging';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import {
-  PaymentIntent,
-  PaymentMethodType,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import {
-  NullTokenValidator,
-  TokenValidator,
-} from '@payments/domain/ports/provider/token-validator.port';
-import { map, Observable, tap } from 'rxjs';
-
-import { PaymentGatewayPort } from '../../application/api/ports/payment-gateway.port';
-import {
+import type { LoggerService } from '@core/logging';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
-} from '../../application/api/ports/payment-strategy.port';
+} from '@payments/application/api/ports/payment-strategy.port';
+import type { TokenValidator } from '@payments/domain/common/ports/token-validator.port';
+import { NullTokenValidator } from '@payments/domain/common/ports/token-validator.port';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type {
+  PaymentIntent,
+  PaymentMethodType,
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { Observable } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 /**
  * Strategy for credit/debit card payments.
@@ -142,18 +140,18 @@ export class CardStrategy implements PaymentStrategy {
    * Determines if the intent requires user action (3DS).
    */
   requiresUserAction(intent: PaymentIntent): boolean {
-    return intent.status === 'requires_action' && intent.nextAction?.type === '3ds';
+    return intent.status === 'requires_action' && intent.nextAction?.kind === 'client_confirm';
   }
 
   /**
    * Generates instructions for the user if 3DS is pending.
    */
-  getUserInstructions(intent: PaymentIntent): string | null {
+  getUserInstructions(intent: PaymentIntent): string[] | null {
     if (!this.requiresUserAction(intent)) {
       return null;
     }
 
-    return I18nKeys.messages.bank_verification_required;
+    return [I18nKeys.messages.bank_verification_required];
   }
 
   /**
@@ -167,10 +165,9 @@ export class CardStrategy implements PaymentStrategy {
     return {
       ...intent,
       nextAction: {
-        type: '3ds',
-        clientSecret: intent.clientSecret,
+        kind: 'client_confirm',
+        token: intent.clientSecret,
         returnUrl: context?.returnUrl ?? window.location.href,
-        threeDsVersion: '2.0',
       },
     };
   }

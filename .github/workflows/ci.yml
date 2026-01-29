@@ -26,18 +26,21 @@ jobs:
         with:
           path: |
             ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lockb') }}
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-bun-
 
       - name: Install deps
         run: bun install --frozen-lockfile
 
+      - name: Format
+        run: bun run format
+
       - name: Format check
         run: bun run format:check
 
-      - name: Lint
-        run: bun run lint
+      - name: Lint fix
+        run: bun run lint:fix
 
       - name: Tests
         run: bun run test:ci

@@ -1,13 +1,13 @@
 //file: checkout.page.integration.spec.ts
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
-
-import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
-import { ProviderFactoryRegistry } from '../../../application/orchestration/registry/provider-factory.registry';
-import providePayments from '../../../config/payment.providers';
-import { CheckoutComponent } from './checkout.page';
+import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import providePayments from '@payments/config/payment.providers';
+import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 
 /**
  * Wait for the flow to complete:
@@ -278,9 +278,9 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intent?.provider).toBe('stripe');
       expect(intent?.status).toBe('requires_action');
 
-      // Should include nextAction type 3DS
+      // Should include nextAction kind client_confirm
       expect(intent?.nextAction).toBeTruthy();
-      expect(intent?.nextAction?.type).toBe('3ds');
+      expect(intent?.nextAction?.kind).toBe('client_confirm');
 
       // The component should reflect it
       expect(component.flowState.currentIntent()).toBeTruthy();
@@ -380,7 +380,7 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intent).toBeTruthy();
       expect(intent?.status).toBe('requires_action');
       expect(intent?.nextAction).toBeTruthy();
-      expect(intent?.nextAction?.type).toBe('spei');
+      expect(intent?.nextAction?.kind).toBe('manual_step');
     });
 
     it('should not process SPEI when customerEmail is missing (invalid form)', async () => {
@@ -420,7 +420,7 @@ describe('CheckoutComponent - Real Integration', () => {
       await settle(fixture);
     });
 
-    it('should process full PayPal payment with nextAction.paypal_approve', async () => {
+    it('should process full PayPal payment with nextAction redirect', async () => {
       const requirements = component.fieldRequirements();
       expect(requirements).toBeTruthy();
 
@@ -444,20 +444,11 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intent?.provider).toBe('paypal');
       expect(intent?.status).toBe('requires_action');
       expect(intent?.nextAction).toBeTruthy();
-      expect(intent?.nextAction?.type).toBe('paypal_approve');
+      expect(intent?.nextAction?.kind).toBe('redirect');
 
-      // Improvement: validate that the action provides a useful link (approveUrl/url)
-      // (sin amarrarte a una sola propiedad exacta)
-      if (intent?.nextAction?.type === 'paypal_approve') {
+      if (intent?.nextAction?.kind === 'redirect') {
         const action: any = intent.nextAction;
-
-        const possibleUrl =
-          action.approveUrl ||
-          action.url ||
-          action.redirectUrl ||
-          action.links?.find?.((l: any) => l?.rel === 'approve')?.href;
-
-        expect(possibleUrl).toBeTruthy();
+        expect(action.url).toBeTruthy();
       }
     }, 10000);
   });

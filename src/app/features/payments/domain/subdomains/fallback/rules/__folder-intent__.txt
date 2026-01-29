@@ -1,0 +1,3 @@
+Pure functions: *.rule.ts
+Examples: select-fallback-provider.rule.ts
+Pure functions that derive/decide/calculate domain logic.

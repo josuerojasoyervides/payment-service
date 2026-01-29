@@ -1,19 +1,21 @@
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
+import type {
+  PaymentStrategy,
+  StrategyContext,
+} from '@payments/application/api/ports/payment-strategy.port';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import { ProviderMethodPolicyRegistry } from '@payments/application/orchestration/registry/provider-method-policy.registry';
+import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type {
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { firstValueFrom, of, throwError } from 'rxjs';
-
-import { PaymentStrategy, StrategyContext } from '../../api/ports/payment-strategy.port';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { ProviderMethodPolicyRegistry } from '../registry/provider-method-policy.registry';
-import { StartPaymentUseCase } from './start-payment.use-case';
 
 describe('StartPaymentUseCase', () => {
   let useCase: StartPaymentUseCase;

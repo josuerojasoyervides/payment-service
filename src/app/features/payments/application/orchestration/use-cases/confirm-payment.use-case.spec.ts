@@ -1,19 +1,18 @@
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import {
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
+import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type {
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { firstValueFrom, of, throwError } from 'rxjs';
-
-import { PaymentGatewayPort } from '../../api/ports/payment-gateway.port';
-import { ProviderFactory } from '../../api/ports/provider-factory.port';
-import { ProviderFactoryRegistry } from '../registry/provider-factory.registry';
-import { ConfirmPaymentUseCase } from './confirm-payment.use-case';
 
 describe('ConfirmPaymentUseCase', () => {
   let useCase: ConfirmPaymentUseCase;

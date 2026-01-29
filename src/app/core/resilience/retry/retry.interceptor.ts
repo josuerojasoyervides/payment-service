@@ -1,11 +1,11 @@
-import { HttpErrorResponse, HttpEvent, HttpInterceptorFn } from '@angular/common/http';
+import type { HttpErrorResponse, HttpEvent, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Observable, throwError, timer } from 'rxjs';
+import { LoggerService } from '@core/logging/logger.service';
+import { CircuitBreakerService, CircuitOpenError } from '@core/resilience/circuit-breaker';
+import { RetryService } from '@core/resilience/retry/retry.service';
+import type { Observable } from 'rxjs';
+import { throwError, timer } from 'rxjs';
 import { catchError, mergeMap, tap } from 'rxjs/operators';
-
-import { LoggerService } from '../../logging/logger.service';
-import { CircuitBreakerService, CircuitOpenError } from '../circuit-breaker';
-import { RetryService } from './retry.service';
 
 /**
  * URL patterns excluded from automatic retries.

@@ -1,4 +1,5 @@
-import { defer, Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { defer } from 'rxjs';
 
 /**
  * Project standard:

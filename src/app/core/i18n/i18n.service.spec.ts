@@ -1,11 +1,10 @@
 import { TestBed } from '@angular/core/testing';
+import { I18nKeys } from '@core/i18n/i18n.keys';
+import { I18nService } from '@core/i18n/i18n.service';
+import type { Language } from '@core/i18n/i18n.types';
+import { en } from '@core/i18n/translations/en';
+import { es } from '@core/i18n/translations/es';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { I18nKeys } from './i18n.keys';
-import { I18nService } from './i18n.service';
-import { Language } from './i18n.types';
-import { en } from './translations/en';
-import { es } from './translations/es';
 
 describe('I18nService', () => {
   let service: I18nService;

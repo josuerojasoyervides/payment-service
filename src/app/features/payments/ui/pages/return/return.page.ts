@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnInit } from '@angular/core';
-import { ActivatedRoute, Params, RouterLink } from '@angular/router';
+import type { OnInit } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+import type { Params } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
+import { mapReturnQueryToReference } from '@app/features/payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-
-import { mapReturnQueryToReference } from '../../../application/adapters/events/external/payment-flow-return.mapper';
-import { ExternalEventAdapter } from '../../../application/adapters/external-event.adapter';
-import { PaymentFlowFacade } from '../../../application/orchestration/flow/payment-flow.facade';
-import { PaymentIntentCardComponent } from '../../components/payment-intent-card/payment-intent-card.component';
+import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
 
 // TODO : This is a utility function, not a component responsibility
 function normalizeQueryParams(params: Params): Record<string, string> {
@@ -117,15 +118,10 @@ export class ReturnComponent implements OnInit {
 
     const reference = mapReturnQueryToReference(params);
     if (reference.referenceId) {
-      this.externalEvents.providerUpdate(
-        {
-          providerId: reference.providerId,
-          referenceId: reference.referenceId,
-          status: this.returnPageState.redirectStatus() ?? undefined,
-          raw: params,
-        },
-        { refresh: !this.returnPageState.isCancelFlow() },
-      );
+      this.externalEvents.redirectReturned({
+        providerId: reference.providerId,
+        referenceId: reference.referenceId,
+      });
     }
   }
 
@@ -135,7 +131,7 @@ export class ReturnComponent implements OnInit {
 
   refreshPaymentByReference(referenceId: string): void {
     const reference = mapReturnQueryToReference(this.route.snapshot.queryParams);
-    const providerId = reference.referenceId ? reference.providerId : 'stripe';
+    const providerId = reference.providerId;
     this.flow.refresh(providerId, referenceId);
   }
 

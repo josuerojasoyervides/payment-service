@@ -1,8 +1,20 @@
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { assign, fromPromise, setup } from 'xstate';
-
-import { normalizePaymentError } from '../store/projection/payment-store.errors';
-import { PaymentFlowDeps } from './payment-flow.deps';
+import {
+  createFlowContext,
+  mergeExternalReference,
+  resolveStatusReference,
+  updateFlowContextProviderRefs,
+} from '@payments/application/orchestration/flow/payment-flow/context/payment-flow.context';
+import type { PaymentFlowDeps } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.deps';
+import type {
+  CancelInput,
+  ClientConfirmInput,
+  ConfirmInput,
+  FinalizeInput,
+  PaymentFlowEvent,
+  PaymentFlowMachineContext,
+  StartInput,
+  StatusInput,
+} from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import {
   canFallbackPolicy,
   canPollPolicy,
@@ -10,31 +22,37 @@ import {
   getPollingDelayMs,
   getStatusRetryDelayMs,
   hasIntentPolicy,
+  hasProcessingTimedOutPolicy,
   hasRefreshKeysPolicy,
   isFinalIntentPolicy,
+  needsClientConfirmPolicy,
+  needsFinalizePolicy,
   needsUserActionPolicy,
   type PaymentFlowConfigOverrides,
   resolvePaymentFlowConfig,
-} from './payment-flow.policy';
+} from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.policy';
+import { cancelStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-cancel.stage';
+import { clientConfirmStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-client-confirm.stage';
+import { confirmStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-confirm.stage';
+import { doneStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-done.stage';
+import { fallbackStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-fallback.stage';
+import { finalizeStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-finalize.stage';
+import { idleStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-idle.stage';
+import { pollingStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-polling.stage';
+import { reconcileStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-reconcile.stage';
+import { startStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-start.stage';
 import {
-  CancelInput,
-  ConfirmInput,
-  PaymentFlowEvent,
-  PaymentFlowMachineContext,
-  StartInput,
-  StatusInput,
-} from './payment-flow.types';
-import { cancelStates } from './stages/payment-flow-cancel.stage';
-import { confirmStates } from './stages/payment-flow-confirm.stage';
-import { doneStates } from './stages/payment-flow-done.stage';
-import { fallbackStates } from './stages/payment-flow-fallback.stage';
-import { idleStates } from './stages/payment-flow-idle.stage';
-import { pollingStates } from './stages/payment-flow-polling.stage';
-import { startStates } from './stages/payment-flow-start.stage';
+  isPaymentError,
+  normalizePaymentError,
+} from '@payments/application/orchestration/store/projection/payment-store.errors';
+import { createPaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { assign, fromPromise, setup } from 'xstate';
 
 export const createPaymentFlowMachine = (
   deps: PaymentFlowDeps,
   configOverrides: PaymentFlowConfigOverrides = {},
+  initialContext?: Partial<PaymentFlowMachineContext>,
 ) => {
   const config = resolvePaymentFlowConfig(configOverrides);
 
@@ -68,6 +86,21 @@ export const createPaymentFlowMachine = (
       status: fromPromise<PaymentIntent, StatusInput>(async ({ input }) => {
         return deps.getStatus(input.providerId, { intentId: input.intentId });
       }),
+
+      clientConfirm: fromPromise<PaymentIntent, ClientConfirmInput>(async ({ input }) => {
+        return deps.clientConfirm({
+          providerId: input.providerId,
+          action: input.action,
+          context: input.flowContext,
+        });
+      }),
+
+      finalize: fromPromise<PaymentIntent, FinalizeInput>(async ({ input }) => {
+        return deps.finalize({
+          providerId: input.providerId,
+          context: input.flowContext,
+        });
+      }),
     },
 
     actions: {
@@ -75,10 +108,16 @@ export const createPaymentFlowMachine = (
       setStartInput: assign(({ event }) => {
         if (event.type !== 'START') return {};
 
+        const flowContext = createFlowContext({
+          providerId: event.providerId,
+          request: event.request,
+          existing: event.flowContext ?? null,
+        });
+
         return {
           providerId: event.providerId,
           request: event.request,
-          flowContext: event.flowContext ?? null,
+          flowContext,
           intent: null,
           intentId: null,
           error: null,
@@ -97,9 +136,56 @@ export const createPaymentFlowMachine = (
       setRefreshInput: assign(({ event, context }) => {
         if (event.type !== 'REFRESH') return {};
 
+        const providerId = event.providerId ?? context.providerId;
+        const resolvedReference = resolveStatusReference(context.flowContext, providerId ?? null);
+
         return {
-          providerId: event.providerId ?? context.providerId,
-          intentId: event.intentId ?? context.intentId ?? context.intent?.id ?? null,
+          providerId,
+          intentId:
+            event.intentId ?? resolvedReference ?? context.intentId ?? context.intent?.id ?? null,
+          error: null,
+          statusRetry: { count: 0 },
+        };
+      }),
+
+      setExternalEventInput: assign(({ event, context }) => {
+        if (
+          event.type !== 'REDIRECT_RETURNED' &&
+          event.type !== 'EXTERNAL_STATUS_UPDATED' &&
+          event.type !== 'WEBHOOK_RECEIVED'
+        )
+          return {};
+
+        const referenceId = event.payload.referenceId ?? '';
+        const merged = referenceId
+          ? mergeExternalReference({
+              context: context.flowContext,
+              providerId: event.payload.providerId,
+              referenceId,
+            })
+          : null;
+        const flowContext: PaymentFlowMachineContext['flowContext'] =
+          merged ??
+          (referenceId
+            ? {
+                providerId: event.payload.providerId,
+                providerRefs: {
+                  [event.payload.providerId]: { paymentId: referenceId },
+                },
+              }
+            : context.flowContext);
+
+        const resolvedReference = resolveStatusReference(flowContext, event.payload.providerId);
+
+        return {
+          providerId: event.payload.providerId,
+          intentId:
+            event.payload.referenceId ??
+            resolvedReference ??
+            context.intentId ??
+            context.intent?.id ??
+            null,
+          flowContext,
           error: null,
           statusRetry: { count: 0 },
         };
@@ -129,11 +215,23 @@ export const createPaymentFlowMachine = (
         };
       }),
 
-      setIntent: assign(({ event }) => {
+      setIntent: assign(({ event, context }) => {
         if (!('output' in event)) return {};
+
+        const providerRefs = event.output.providerRefs;
+        const flowContext = providerRefs
+          ? updateFlowContextProviderRefs({
+              context: context.flowContext,
+              providerId: event.output.provider,
+              refs: providerRefs,
+            })
+          : context.flowContext;
+
+        const resolvedIntentId = providerRefs?.intentId ?? event.output.id;
         return {
           intent: event.output,
-          intentId: event.output.id,
+          intentId: resolvedIntentId,
+          flowContext,
           error: null,
           polling: { attempt: 0 },
           statusRetry: { count: 0 },
@@ -156,6 +254,19 @@ export const createPaymentFlowMachine = (
 
         return {
           error: normalizePaymentError(new Error(`Missing ${missing.join(' & ')} for REFRESH`)),
+        };
+      }),
+
+      setExternalEventError: assign(({ context }) => {
+        const missing = [
+          !context.providerId ? 'providerId' : null,
+          !(context.intentId ?? context.intent?.id) ? 'referenceId' : null,
+        ].filter(Boolean);
+
+        return {
+          error: normalizePaymentError(
+            new Error(`Missing ${missing.join(' & ')} for external event reconciliation`),
+          ),
         };
       }),
 
@@ -224,16 +335,105 @@ export const createPaymentFlowMachine = (
       })),
 
       clearError: assign(() => ({ error: null })),
+
+      setReturnCorrelationError: assign(({ event, context }) => {
+        if (event.type !== 'REDIRECT_RETURNED') return {};
+        const storedRef = resolveStatusReference(context.flowContext, event.payload.providerId);
+        const receivedId = event.payload.referenceId ?? '';
+        return {
+          error: createPaymentError(
+            'return_correlation_mismatch',
+            'errors.return_correlation_mismatch',
+            { expectedId: storedRef ?? '', receivedId },
+            null,
+          ),
+        };
+      }),
+
+      markReturnProcessed: assign(({ event, context }) => {
+        if (event.type !== 'REDIRECT_RETURNED') return {};
+        const refId = event.payload.referenceId ?? '';
+        const flowContext = context.flowContext
+          ? {
+              ...context.flowContext,
+              // Keep both for backwards compatibility; lastReturnNonce is the primary
+              // dedupe key, lastReturnReferenceId remains as an audit hint.
+              lastReturnNonce: context.flowContext.lastReturnNonce ?? refId,
+              lastReturnReferenceId: refId,
+              lastReturnAt: Date.now(),
+            }
+          : null;
+        return { flowContext };
+      }),
+
+      setProcessingTimeoutError: assign(({ context }) => {
+        const flowId = context.flowContext?.flowId ?? null;
+        return {
+          intent: null,
+          error: createPaymentError(
+            'processing_timeout',
+            'errors.processing_timeout',
+            flowId ? { flowId } : undefined,
+            null,
+          ),
+        };
+      }),
+
+      markExternalEventProcessed: assign(({ event, context }) => {
+        if (event.type !== 'EXTERNAL_STATUS_UPDATED' && event.type !== 'WEBHOOK_RECEIVED')
+          return {};
+
+        const eventId = (event.payload as { eventId?: string }).eventId;
+        if (!eventId) return {};
+
+        const flowContext = context.flowContext
+          ? {
+              ...context.flowContext,
+              lastExternalEventId: eventId,
+            }
+          : null;
+
+        return { flowContext };
+      }),
     },
 
     guards: {
       hasIntent: ({ context }) => hasIntentPolicy(context),
       needsUserAction: ({ context }) => needsUserActionPolicy(context),
+      needsClientConfirm: ({ context }) => needsClientConfirmPolicy(context),
+      needsFinalize: ({ context }) => needsFinalizePolicy(context),
       isFinal: ({ context }) => isFinalIntentPolicy(context),
       hasRefreshKeys: ({ context }) => hasRefreshKeysPolicy(context),
       canFallback: ({ context }) => canFallbackPolicy(context),
       canPoll: ({ context }) => canPollPolicy(config, context),
       canRetryStatus: ({ context }) => canRetryStatusPolicy(config, context),
+      isUnsupportedFinalizeError: ({ event }) => {
+        const e = (event as { error?: unknown }).error;
+        return isPaymentError(e) && e.code === 'unsupported_finalize';
+      },
+      isReturnCorrelationMismatch: ({ event, context }) => {
+        if (event.type !== 'REDIRECT_RETURNED') return false;
+        const storedRef = resolveStatusReference(context.flowContext, event.payload.providerId);
+        const receivedId = event.payload.referenceId ?? '';
+        return storedRef != null && storedRef !== '' && storedRef !== receivedId;
+      },
+      isDuplicateReturn: ({ event, context }) => {
+        if (event.type !== 'REDIRECT_RETURNED') return false;
+        const refId = event.payload.referenceId ?? '';
+        const lastNonce =
+          context.flowContext?.lastReturnNonce ?? context.flowContext?.lastReturnReferenceId;
+        return !!lastNonce && lastNonce === refId;
+      },
+      isDuplicateExternalEvent: ({ event, context }) => {
+        if (event.type !== 'EXTERNAL_STATUS_UPDATED' && event.type !== 'WEBHOOK_RECEIVED')
+          return false;
+        const eventId = (event.payload as { eventId?: string }).eventId;
+        if (!eventId) return false;
+        return context.flowContext?.lastExternalEventId === eventId;
+      },
+      isProcessingTimedOut: ({ context }) => {
+        return hasProcessingTimedOutPolicy(config, context);
+      },
     },
   }).createMachine({
     id: 'paymentFlow',
@@ -241,35 +441,74 @@ export const createPaymentFlowMachine = (
 
     on: {
       RESET: { target: '.idle', actions: 'clear' },
-      PROVIDER_UPDATE: { actions: 'noop' },
-      WEBHOOK_RECEIVED: { actions: 'noop' },
-      VALIDATION_FAILED: { actions: 'noop' },
-      STATUS_CONFIRMED: { actions: 'noop' },
+      REDIRECT_RETURNED: [
+        {
+          guard: 'isReturnCorrelationMismatch',
+          target: '.failed',
+          actions: 'setReturnCorrelationError',
+        },
+        {
+          guard: 'isDuplicateReturn',
+          // Duplicate returns are treated as no-ops; keep the current state.
+          actions: 'noop',
+        },
+        {
+          target: '.finalizing',
+          actions: ['setExternalEventInput', 'markReturnProcessed'],
+        },
+      ],
+      EXTERNAL_STATUS_UPDATED: [
+        {
+          guard: 'isDuplicateExternalEvent',
+          actions: 'noop',
+        },
+        {
+          target: '.reconciling',
+          actions: ['setExternalEventInput', 'markExternalEventProcessed'],
+        },
+      ],
+      WEBHOOK_RECEIVED: [
+        {
+          guard: 'isDuplicateExternalEvent',
+          actions: 'noop',
+        },
+        {
+          target: '.reconciling',
+          actions: ['setExternalEventInput', 'markExternalEventProcessed'],
+        },
+      ],
     },
 
-    context: () => ({
-      providerId: null,
-      request: null,
-      flowContext: null,
-      intent: null,
-      intentId: null,
-      error: null,
-      fallback: {
-        eligible: false,
-        mode: 'manual',
-        failedProviderId: null,
+    context: () => {
+      const base: PaymentFlowMachineContext = {
+        providerId: null,
         request: null,
-        selectedProviderId: null,
-      },
-      polling: { attempt: 0 },
-      statusRetry: { count: 0 },
-    }),
+        flowContext: null,
+        intent: null,
+        intentId: null,
+        error: null,
+        fallback: {
+          eligible: false,
+          mode: 'manual',
+          failedProviderId: null,
+          request: null,
+          selectedProviderId: null,
+        },
+        polling: { attempt: 0 },
+        statusRetry: { count: 0 },
+      };
+
+      return { ...base, ...(initialContext ?? {}) };
+    },
 
     states: {
       ...idleStates,
       ...startStates,
       ...confirmStates,
+      ...clientConfirmStates,
+      ...finalizeStates,
       ...pollingStates,
+      ...reconcileStates,
       ...cancelStates,
       ...fallbackStates,
       ...doneStates,

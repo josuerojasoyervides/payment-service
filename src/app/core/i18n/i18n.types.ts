@@ -47,6 +47,10 @@ export interface Translations {
     paypal_order_not_approved: string;
     paypal_internal_error: string;
     paypal_auth_error: string;
+    unsupported_client_confirm: string;
+    unsupported_finalize: string;
+    return_correlation_mismatch: string;
+    processing_timeout: string;
   };
 
   messages: {
@@ -78,6 +82,7 @@ export interface Translations {
     retry: string;
     back: string;
     next: string;
+    continue_action: string;
 
     // Formularios
     select_provider: string;

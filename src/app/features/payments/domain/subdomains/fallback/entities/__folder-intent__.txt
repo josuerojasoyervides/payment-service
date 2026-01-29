@@ -1,0 +1,3 @@
+Entities/models: *.model.ts
+(Only if needed; otherwise keep empty)
+Entities represent domain aggregates with identity and lifecycle.

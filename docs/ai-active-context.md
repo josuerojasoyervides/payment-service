@@ -1,60 +1,35 @@
 # 🧠 Active Context & Session State
 
-> **SURVIVAL INSTRUCTIONS (CROSS-SESSION CONTINUITY):**
->
-> 1. **Primary Mission:** This file bridges chats. If context hits 80% or a new session starts, read this file first to get the project snapshot.
-> 2. **Mandatory Update:** Before each handover, update this file with exact state and pending logic.
-> 3. **Pruning:** Keep it under 1,500 tokens. Remove completed tasks; the code is the truth, this file is only “work in progress.”
-> 4. **Transfer:** Move technical debt and vision changes to `goals.md`.
+> Short snapshot of the **current** mission. Keep it under ~1,500 tokens and treat the code as the source of truth.
 
 ---
 
-## 🕒 Last Sync: 2026-01-26
+## 🕒 Last Sync: 2026-01-29
 
-## 📍 Mission State (New-Chat Context)
+## 📍 Mission State
 
-- **Critical Task:** Flow scalability plan Steps 1–4 completed; docs refresh and cleanup in progress.
-- **Open/Relevant Files:** `docs/ai-active-context.md`, `docs/flow-brain.md`, `docs/architecture-rules.md`, `docs/goals.md`.
-- **Error Context:** None.
+- **Current mission:** Payments module refactor structurally complete (PR0–PR10). Keep the tree healthy; resume product-level work.
+- **PR5 complete:** Webhooks normalization + processing resolution. Tests + lint green. ExternalEventAdapter emits REDIRECT_RETURNED / WEBHOOK_RECEIVED / EXTERNAL_STATUS_UPDATED only; machine consumes them → reconciling/finalizing. WEBHOOK_NORMALIZER_REGISTRY (Stripe + PayPal) in config; processing_timeout policy + tests.
+- **Next: PR6 — Observability + stress suite.** Branch: `task/flow-observability`. Exit: logs/telemetry include flowId/providerId/state/event/refs; stress scenario suite runs deterministically.
+- **Key folders (today):**
+  - Domain: `domain/common/**`, `domain/subdomains/payment/**`, `domain/subdomains/fallback/**`
+  - Infra: `infrastructure/stripe/**`, `infrastructure/paypal/**` (di, workflows, methods, errors, testing)
+  - Config: `config/payment.providers.ts` (provideStripePayments / providePaypalPayments only)
 
-## 🛠️ Technical Snapshot (Angular)
+---
 
-- **Signal/Observable State:** XState is source of truth; store is projection + fallback + history.
-- **Application layout:** `application/{api,orchestration,adapters}` with flow, store, and services under orchestration.
-- **Dependency Injection:** `app.config.ts` wires HttpClient interceptors; fake backend interceptor removed.
+## 🧩 Naming & folder intent (Domain)
 
-## 🚀 Git Planning & Workflow
+- **Suffix rules:** `*.types.ts`, `*.event.ts`, `*.command.ts`, `*.vo.ts`, `*.rule.ts`, `*.policy.ts`, `*.port.ts`
+- **Folders:** `domain/common/primitives/{ids,money,time}`, `domain/common/ports`, `domain/subdomains/{payment,fallback}/{contracts,entities,primitives,rules,policies,ports}`
 
-> **RULE:** Atomic tasks for clean PRs.
->
-> - **Big Feature:** parent branch -> sub-branches `task/`.
-> - **Small Feature:** direct branch off parent.
-> - **Deliverable:** branch name + commit message per task.
->
-> **Personal Workflow Preferences:**
->
-> - We can talk in Spanish, but all code/comments/docs are in English.
-> - Always assess if request is a Big or Small Feature.
-> - Split implementation into atomic steps.
-> - For each step, add branch name + commit message below.
-
-### 📋 Session Backlog (Micro-tasks)
-
-- [x] **Branch:** `chore/remove-fake-backend-interceptor` | **Commit:** `chore(core): remove fake backend interceptor`
-- [x] **Branch:** `docs/clean-ports-debt-notes` | **Commit:** `docs: remove port migration requirement`
-- [x] **Branch:** `feat/fallback-hardening-limits` | **Commit:** `feat(fallback): enforce limits and expand coverage`
-- [x] **Branch:** `feat/ui-qol-utilities` | **Commit:** `feat(ui): add status label pipe, click tracking, and autofocus`
-- [x] **Branch:** `docs/fallback-hardening` | **Commit:** `docs(fallback): document limits and reset behavior`
-- [x] **Branch:** `feat/i18n-translate-pipe` | **Commit:** `feat(i18n): add template translation pipe`
-- [x] **Branch:** `refactor/flow-public-events` | **Commit:** `refactor(flow): separate command and system events`
-- [x] **Branch:** `chore/store-fallback-cleanup` | **Commit:** `chore(payments): clean store/fallback visuals`
-- [x] **Branch:** `feat/flow-retry-polling` | **Commit:** `feat(flow): add retry/backoff and polling cadence`
-- [x] **Branch:** `feat/external-event-mappers` | **Commit:** `feat(flow): add external event mappers`
+---
 
 ## ⏭️ Immediate Next Action
 
-- [ ] Close docs refresh (update flow brain, cleanup docs).
+- [ ] PR6: Add flow telemetry (flowId/providerId/state/event/refs) and deterministic stress scenario suite.
+- Boundaries: Domain framework-free; UI never imports Infrastructure; Application depends only on Domain/Shared.
 
 ---
 
-_Note: Prune details older than 3 interactions to preserve tokens._
+_Note: prune historical details; this file is for latest active context only._

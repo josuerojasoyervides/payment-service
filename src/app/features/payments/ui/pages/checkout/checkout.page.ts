@@ -4,13 +4,20 @@ import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
+import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory.registry';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
-import {
+import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import type {
   CurrencyCode,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type {
+  FieldRequirements,
+  PaymentOptions,
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
 import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
@@ -19,13 +26,6 @@ import { PaymentButtonComponent } from '@payments/ui/components/payment-button/p
 import { PaymentFormComponent } from '@payments/ui/components/payment-form/payment-form.component';
 import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
-
-import { StrategyContext } from '../../../application/api/ports/payment-strategy.port';
-import { ProviderFactoryRegistry } from '../../../application/orchestration/registry/provider-factory.registry';
-import {
-  FieldRequirements,
-  PaymentOptions,
-} from '../../../domain/ports/payment/payment-request-builder.port';
 
 interface CheckoutPageState {
   orderId: string;
@@ -183,11 +183,6 @@ export class CheckoutComponent {
         });
       }
     });
-
-    effect(() => {
-      const url = this.flow.redirectUrl();
-      if (url) this.onPaypalRequested(url);
-    });
   }
 
   selectProvider(provider: PaymentProviderId): void {
@@ -307,11 +302,10 @@ export class CheckoutComponent {
     this.fallback.reset();
   }
 
-  onPaypalRequested(url: string): void {
-    this.logger.info('Redirecting to PayPal', 'CheckoutPage', { url });
-    if (typeof window !== 'undefined') {
-      // TODO : This is orchestration layer responsibility, not UI layer
-      window.location.href = url;
+  onNextActionRequested(action: NextAction): void {
+    const ok = this.flow.performNextAction(action);
+    if (!ok) {
+      this.logger.warn('NEXT_ACTION ignored', 'CheckoutPage', { kind: action.kind });
     }
   }
   confirmPayment(): void {

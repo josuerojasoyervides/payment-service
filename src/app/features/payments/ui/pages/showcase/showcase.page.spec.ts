@@ -1,8 +1,8 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { I18nKeys } from '@core/i18n';
-
-import { ShowcaseComponent } from './showcase.page';
+import { ShowcaseComponent } from '@payments/ui/pages/showcase/showcase.page';
 
 describe('ShowcaseComponent', () => {
   let component: ShowcaseComponent;

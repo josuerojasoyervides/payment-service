@@ -1,28 +1,86 @@
-import { computed, DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
+import type { Signal } from '@angular/core';
+import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LoggerService } from '@core/logging';
-import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
-import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
-import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
-import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
-import { PaymentError } from '@payments/domain/models/payment/payment-error.types';
-import { firstValueFrom } from 'rxjs';
-import { createActor } from 'xstate';
-
-import { FallbackOrchestratorService } from '../services/fallback-orchestrator.service';
-import {
-  isPaymentFlowSnapshot,
-  isSnapshotInspectionEventWithSnapshot,
-} from './payment-flow.guards';
-import { createPaymentFlowMachine } from './payment-flow.machine';
-import {
+import { FLOW_TELEMETRY_SINK } from '@payments/application/adapters/telemetry/flow-telemetry-sink.token';
+import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
+import type {
   PaymentFlowActorRef,
   PaymentFlowCommandEvent,
   PaymentFlowEvent,
   PaymentFlowMachine,
+  PaymentFlowMachineContext,
   PaymentFlowSnapshot,
   PaymentFlowSystemEvent,
-} from './payment-flow.types';
+} from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
+import {
+  FlowContextStore,
+  toFlowContext,
+} from '@payments/application/orchestration/flow/payment-flow/persistence/payment-flow.persistence';
+import {
+  isPaymentFlowSnapshot,
+  isSnapshotInspectionEventWithSnapshot,
+} from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.guards';
+import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback-orchestrator.service';
+import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action-orchestrator.service';
+import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/cancel-payment.use-case';
+import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/confirm-payment.use-case';
+import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/get-payment-status.use-case';
+import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/start-payment.use-case';
+import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
+import { firstValueFrom } from 'rxjs';
+import { createActor } from 'xstate';
+
+function createFlowContextStore(): FlowContextStore | null {
+  try {
+    if (typeof globalThis === 'undefined') return null;
+    if (!('localStorage' in globalThis)) return null;
+    return new FlowContextStore(globalThis.localStorage);
+  } catch {
+    return null;
+  }
+}
+
+function buildInitialMachineContext(
+  store: FlowContextStore | null,
+): Partial<PaymentFlowMachineContext> | undefined {
+  const persisted = store?.load();
+  if (!persisted) return undefined;
+
+  const flowContext = toFlowContext(persisted);
+  const providerId = flowContext.providerId ?? null;
+  const intentId = providerId ? (flowContext.providerRefs?.[providerId]?.intentId ?? null) : null;
+
+  return {
+    flowContext,
+    providerId,
+    intentId,
+  };
+}
+
+function redactNextAction(action?: NextAction): NextAction | undefined {
+  if (!action) return action;
+  if (action.kind !== 'client_confirm') return action;
+  return { ...action, token: '[redacted]' };
+}
+
+function redactFlowContext(context: PaymentFlowContext | null): PaymentFlowContext | null {
+  return context ?? null;
+}
+
+function redactIntent(
+  intent: PaymentFlowSnapshot['context']['intent'],
+): PaymentFlowSnapshot['context']['intent'] {
+  if (!intent) return intent;
+  return {
+    ...intent,
+    clientSecret: intent.clientSecret ? '[redacted]' : intent.clientSecret,
+    nextAction: redactNextAction(intent.nextAction),
+    raw: undefined,
+  };
+}
 
 @Injectable()
 export class PaymentFlowActorService {
@@ -31,19 +89,34 @@ export class PaymentFlowActorService {
   private readonly cancel = inject(CancelPaymentUseCase);
   private readonly status = inject(GetPaymentStatusUseCase);
   private readonly fallbackOrchestrator = inject(FallbackOrchestratorService);
+  private readonly nextActionOrchestrator = inject(NextActionOrchestratorService);
   private readonly logger = inject(LoggerService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly telemetry = inject(FLOW_TELEMETRY_SINK);
 
-  private readonly machine: PaymentFlowMachine = createPaymentFlowMachine({
-    startPayment: async (providerId, request, flowContext) =>
-      firstValueFrom(this.start.execute(request, providerId, flowContext)),
-    confirmPayment: async (providerId, request) =>
-      firstValueFrom(this.confirm.execute(request, providerId)),
-    cancelPayment: async (providerId, request) =>
-      firstValueFrom(this.cancel.execute(request, providerId)),
-    getStatus: async (providerId, request) =>
-      firstValueFrom(this.status.execute(request, providerId)),
-  });
+  private readonly flowContextStore = createFlowContextStore();
+  private readonly initialContext = buildInitialMachineContext(this.flowContextStore);
+
+  private readonly machine: PaymentFlowMachine = createPaymentFlowMachine(
+    {
+      startPayment: async (providerId, request, flowContext) =>
+        firstValueFrom(this.start.execute(request, providerId, flowContext)),
+      confirmPayment: async (providerId, request) =>
+        firstValueFrom(this.confirm.execute(request, providerId)),
+      cancelPayment: async (providerId, request) =>
+        firstValueFrom(this.cancel.execute(request, providerId)),
+      getStatus: async (providerId, request) =>
+        firstValueFrom(this.status.execute(request, providerId)),
+      clientConfirm: async (request) =>
+        firstValueFrom(
+          this.nextActionOrchestrator.requestClientConfirm(request.action, request.context),
+        ),
+      finalize: async (request) =>
+        firstValueFrom(this.nextActionOrchestrator.requestFinalize(request.context)),
+    },
+    {},
+    this.initialContext,
+  );
 
   private prevSnapshot: PaymentFlowSnapshot | null = null;
   private lastReportedError: PaymentError | null = null;
@@ -67,7 +140,11 @@ export class PaymentFlowActorService {
           prevState,
           changed,
           ...(tags && { tags }),
-          context: snap.context,
+          context: {
+            ...snap.context,
+            flowContext: redactFlowContext(snap.context.flowContext),
+            intent: redactIntent(snap.context.intent),
+          },
         },
         this.logger.getCorrelationId(),
       );
@@ -91,6 +168,16 @@ export class PaymentFlowActorService {
     this.prevSnapshot = this.actor.getSnapshot() as PaymentFlowSnapshot;
     this.actor.subscribe((snapshot) => {
       this._snapshot.set(snapshot);
+      this.telemetry.record({
+        kind: 'STATE_CHANGED',
+        state: String(snapshot.value),
+        tags: Array.from(snapshot.tags ?? []),
+        errorCode: snapshot.context.error?.code,
+        status: snapshot.context.intent?.status,
+        atMs: Date.now(),
+        flowId: snapshot.context.flowContext?.flowId,
+      });
+      this.persistFlowContext(snapshot);
       this.maybeReportFallback(snapshot);
       this.maybeNotifyFallbackSuccess(snapshot);
     });
@@ -135,14 +222,44 @@ export class PaymentFlowActorService {
       return false;
     }
 
+    if (event.type === 'RESET') {
+      this.flowContextStore?.clear();
+    }
+
     this.lastSentEvent.set(event);
+    this.telemetry.record({
+      kind: 'COMMAND_SENT',
+      eventType: event.type,
+      atMs: Date.now(),
+      flowId: snap.context.flowContext?.flowId,
+    });
     this.actor.send(event);
     return true;
   }
 
   /** Internal/system events (fallback orchestration). */
   sendSystem(event: PaymentFlowSystemEvent): void {
+    const snap = this.snapshot();
+    this.telemetry.record({
+      kind: 'SYSTEM_EVENT_SENT',
+      eventType: event.type,
+      atMs: Date.now(),
+      flowId: snap.context.flowContext?.flowId,
+    });
     this.actor.send(event);
+  }
+
+  private persistFlowContext(snapshot: PaymentFlowSnapshot): void {
+    if (!this.flowContextStore) return;
+    if (snapshot.hasTag('done') || snapshot.hasTag('failed')) {
+      this.flowContextStore.clear();
+      return;
+    }
+
+    const flowContext = snapshot.context.flowContext;
+    if (!flowContext) return;
+
+    this.flowContextStore.save(flowContext);
   }
 
   private maybeReportFallback(snapshot: PaymentFlowSnapshot): void {

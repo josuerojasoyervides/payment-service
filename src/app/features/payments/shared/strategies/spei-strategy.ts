@@ -1,20 +1,20 @@
 import { I18nKeys } from '@core/i18n';
-import { LoggerService } from '@core/logging';
-import { NextActionSpei } from '@payments/domain/models/payment/payment-action.types';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
-import {
-  PaymentIntent,
-  PaymentMethodType,
-} from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-import { map, Observable, tap } from 'rxjs';
-
-import { PaymentGatewayPort } from '../../application/api/ports/payment-gateway.port';
-import {
+import type { LoggerService } from '@core/logging';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
-} from '../../application/api/ports/payment-strategy.port';
+} from '@payments/application/api/ports/payment-strategy.port';
+import type { NextActionManualStep } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type {
+  PaymentIntent,
+  PaymentMethodType,
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { Observable } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 /**
  * Strategy for payments via SPEI (Interbank Electronic Payments System).
@@ -148,33 +148,21 @@ export class SpeiStrategy implements PaymentStrategy {
    * SPEI always requires user action (perform the transfer).
    */
   requiresUserAction(intent: PaymentIntent): boolean {
-    return intent.status === 'requires_action' && intent.nextAction?.type === 'spei';
+    return intent.status === 'requires_action' && intent.nextAction?.kind === 'manual_step';
   }
 
   /**
    * Generates detailed instructions for the user.
    */
-  getUserInstructions(intent: PaymentIntent): string | null {
-    if (!intent.nextAction || intent.nextAction.type !== 'spei') {
+  getUserInstructions(intent: PaymentIntent): string[] | null {
+    if (!intent.nextAction || intent.nextAction.kind !== 'manual_step') {
       return null;
     }
-
-    const speiAction = intent.nextAction as NextActionSpei;
-
     return [
-      `${I18nKeys.ui.spei_instructions_title} $${intent.amount.toLocaleString()} ${intent.currency}:`,
-      '',
-      `1. ${I18nKeys.ui.spei_step_1}`,
-      `2. ${I18nKeys.ui.spei_step_2}`,
-      `3. ${I18nKeys.ui.spei_step_3} ${speiAction.clabe}`,
-      `4. ${I18nKeys.ui.spei_step_4} $${speiAction.amount.toLocaleString()} ${speiAction.currency}`,
-      `5. ${I18nKeys.ui.spei_step_5} ${speiAction.reference}`,
-      `6. ${I18nKeys.ui.spei_step_6} ${speiAction.beneficiary}`,
-      '',
-      `⚠️ ${I18nKeys.ui.spei_deadline} ${new Date(speiAction.expiresAt).toLocaleString('es-MX')}`,
-      '',
-      I18nKeys.ui.spei_processing_time,
-    ].join('\n');
+      `Complete the transfer using the details below.`,
+      `Transfer the exact amount to avoid rejections.`,
+      `Keep your transfer receipt.`,
+    ];
   }
 
   /**
@@ -185,19 +173,24 @@ export class SpeiStrategy implements PaymentStrategy {
     req: CreatePaymentRequest,
     metadata: Record<string, unknown>,
   ): PaymentIntent {
-    const existingSpei =
-      intent.nextAction?.type === 'spei' ? (intent.nextAction as NextActionSpei) : null;
+    const details = [
+      { label: 'CLABE', value: this.extractClabeFromRaw(intent) },
+      { label: 'Reference', value: this.generateReference(req.orderId) },
+      {
+        label: 'Bank',
+        value: SpeiStrategy.RECEIVING_BANKS[intent.provider] ?? 'STP',
+      },
+      { label: 'Beneficiary', value: 'Payment Service SA de CV' },
+      { label: 'Amount', value: `${req.amount} ${req.currency}` },
+      { label: 'Expires At', value: metadata['expires_at'] as string },
+    ];
 
-    const speiAction: NextActionSpei = {
-      type: 'spei',
-      instructions: this.getUserInstructions(intent) ?? I18nKeys.messages.spei_instructions,
-      clabe: existingSpei?.clabe ?? this.extractClabeFromRaw(intent),
-      reference: existingSpei?.reference ?? this.generateReference(req.orderId),
-      bank: existingSpei?.bank ?? SpeiStrategy.RECEIVING_BANKS[intent.provider] ?? 'STP',
-      beneficiary: existingSpei?.beneficiary ?? 'Payment Service SA de CV',
-      amount: req.amount,
-      currency: req.currency,
-      expiresAt: metadata['expires_at'] as string,
+    const speiAction: NextActionManualStep = {
+      kind: 'manual_step',
+      instructions: this.getUserInstructions(intent) ?? [
+        'Make a bank transfer using the details below.',
+      ],
+      details,
     };
 
     return {

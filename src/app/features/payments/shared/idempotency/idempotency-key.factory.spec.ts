@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
-
-import { IdempotencyKeyFactory } from './idempotency-key.factory';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 describe('IdempotencyKeyFactory', () => {
   let factory: IdempotencyKeyFactory;
@@ -144,6 +143,35 @@ describe('IdempotencyKeyFactory', () => {
     it('generates correct key for get operation', () => {
       const key = factory.generate('stripe', { operation: 'get', req: { intentId: 'pi_1' } });
       expect(key).toBe('stripe:get:pi_1');
+    });
+  });
+
+  describe('generateForFlowOperation', () => {
+    it('generates key as flowId:operation:attempt', () => {
+      const key = factory.generateForFlowOperation(
+        {
+          flowId: 'flow_123',
+          providerId: 'stripe',
+          externalReference: 'order_1',
+        },
+        'start',
+        0,
+      );
+
+      expect(key).toBe('flow_123:start:0');
+    });
+
+    it('falls back to unknown_flow when flowId is missing', () => {
+      const key = factory.generateForFlowOperation(
+        {
+          providerId: 'stripe',
+          externalReference: 'order_1',
+        } as any,
+        'get',
+        2,
+      );
+
+      expect(key).toBe('unknown_flow:get:2');
     });
   });
 });

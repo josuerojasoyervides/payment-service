@@ -1,13 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import type { TokenValidator } from '@payments/domain/common/ports/token-validator.port';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { firstValueFrom, of } from 'rxjs';
-
-import { PaymentGatewayPort } from '../../application/api/ports/payment-gateway.port';
-import { TokenValidator } from '../../domain/ports/provider/token-validator.port';
-import { CardStrategy } from './card-strategy';
 
 describe('CardStrategy', () => {
   let strategy: CardStrategy;
@@ -187,8 +186,8 @@ describe('CardStrategy', () => {
         strategy.start(validReq, { returnUrl: 'https://return.com' }),
       );
 
-      expect(result.nextAction?.type).toBe('3ds');
-      expect((result.nextAction as any)?.clientSecret).toBe('pi_secret_123');
+      expect(result.nextAction?.kind).toBe('client_confirm');
+      expect((result.nextAction as any)?.token).toBe('pi_secret_123');
       expect((result.nextAction as any)?.returnUrl).toBe('https://return.com');
     });
   });
@@ -198,7 +197,7 @@ describe('CardStrategy', () => {
       const intent: PaymentIntent = {
         ...intentResponse,
         status: 'requires_action',
-        nextAction: { type: '3ds', clientSecret: 'secret', returnUrl: '' },
+        nextAction: { kind: 'client_confirm', token: 'secret', returnUrl: '' },
       };
       expect(strategy.requiresUserAction(intent)).toBe(true);
     });
@@ -214,10 +213,10 @@ describe('CardStrategy', () => {
       const intent: PaymentIntent = {
         ...intentResponse,
         status: 'requires_action',
-        nextAction: { type: '3ds', clientSecret: 'secret', returnUrl: '' },
+        nextAction: { kind: 'client_confirm', token: 'secret', returnUrl: '' },
       };
       const instructions = strategy.getUserInstructions(intent);
-      expect(instructions).toBe('messages.bank_verification_required');
+      expect(instructions).toEqual(['messages.bank_verification_required']);
     });
 
     it('returns null when no action required', () => {
