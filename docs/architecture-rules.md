@@ -1,6 +1,6 @@
 # Payments Module — Architecture & Quality Rules
 
-> **Last review:** 2026-01-26
+> **Last review:** 2026-01-29
 > This repo is a lab to practice payments architecture **without turning it into a spider web**.
 
 ## How to read this document
@@ -233,3 +233,43 @@ Per critical operation, at minimum:
 - mapping correctness
 
 **Current state:** coverage exists but is still inconsistent.
+
+---
+
+## 9) Domain folder intent & temporary placeholders
+
+**Rule (target)**
+
+- The **folder** expresses the _intent_ (contracts, entities, primitives, rules, policies, ports).
+- The **suffix** expresses the _artifact type_:
+  - `*.types.ts` → types/unions/enums.
+  - `*.model.ts` → named data structures (entities/aggregates) when needed.
+  - `*.event.ts` → domain events / event maps.
+  - `*.command.ts` → operation inputs (requests/commands).
+  - `*.vo.ts` → value objects / primitives.
+  - `*.rule.ts` → pure decision/derivation functions.
+  - `*.policy.ts` → boolean gates.
+  - `*.port.ts` → boundary interfaces.
+
+**Current state (Domain layout as of 2026-01-29)**
+
+- `domain/common/`:
+  - `primitives/{ids,money,time}` → shared value objects.
+  - `ports/` → truly cross-subdomain ports (e.g. token validators).
+- `domain/subdomains/payment/{contracts,entities,primitives,rules,policies,ports}`
+- `domain/subdomains/fallback/{contracts,entities,primitives,rules,policies,ports}`
+
+To keep the structure visible while subfolders are still empty, we use **temporary markers**:
+
+- Each placeholder folder may contain a `__folder-intent__.txt` file describing:
+  - which suffixes belong there (e.g. `*.vo.ts`, `*.rule.ts`),
+  - 1–2 examples of expected artifacts.
+- These `.txt` files are **not** imported anywhere and can be safely deleted once real code exists in that folder.
+
+**Config & DI interplay (reminder)**
+
+- `config/payment.providers.ts` is the **composition root** of the feature.
+  - It imports only `provideStripePayments` and `providePaypalPayments` from:
+    - `@payments/infrastructure/stripe/di/provide-stripe-payments`
+    - `@payments/infrastructure/paypal/di/provide-paypal-payments`
+- Each provider’s DI file is the single public entrypoint for its wiring; `config/` does **not** reach into internal folders like `workflows/**` or `methods/**`.

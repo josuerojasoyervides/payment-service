@@ -1,7 +1,8 @@
 # Stripe Flow Findings (Implementation Stress Report)
 
 > Date: 2026-01-27
-> Scope: Stripe Card + 3DS flow based on current architecture and newly added Stripe.js adapter
+> Scope: Stripe Card + 3DS flow based on then-current architecture and a Stripe.js adapter
+> Note: file paths mentioned below reflect the codebase **before** the Stripe/PayPal infrastructure refactors (PR5–PR6). Some files now live under `workflows/**` and `methods/**`; use the IDE search to locate their current equivalents.
 
 ## 1) What was implemented
 
