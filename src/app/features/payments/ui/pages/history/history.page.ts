@@ -8,7 +8,7 @@ import type { PaymentHistoryEntry } from '@payments/application/orchestration/st
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
 import { ACTION_REQUIRED_STATUSES } from '@payments/ui/shared/ui.types';
 

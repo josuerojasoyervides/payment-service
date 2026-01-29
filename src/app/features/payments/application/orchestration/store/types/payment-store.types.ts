@@ -4,13 +4,13 @@ import type {
   PaymentFlowStatus,
   PaymentsState,
 } from '@payments/application/orchestration/store/payment-store.state';
-import type { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
-import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 
 /**
  * Minimal store shape used by internal helpers.

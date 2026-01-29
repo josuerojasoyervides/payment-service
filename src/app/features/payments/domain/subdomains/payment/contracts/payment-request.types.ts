@@ -1,7 +1,7 @@
 import type {
   CurrencyCode,
   PaymentMethodType,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 /**
  * Generic request to create a payment.

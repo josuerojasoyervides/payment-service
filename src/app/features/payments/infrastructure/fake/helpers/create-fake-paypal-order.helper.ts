@@ -1,6 +1,6 @@
 // ============ FAKE PAYPAL RESPONSES ============
 
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 import { generateId } from '@payments/infrastructure/fake/helpers/get-id.helper';
 import type { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
 

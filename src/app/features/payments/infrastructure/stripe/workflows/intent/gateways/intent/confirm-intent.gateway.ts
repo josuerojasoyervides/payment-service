@@ -3,8 +3,8 @@ import { PaymentOperationPort } from '@payments/application/api/ports/payment-op
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { ConfirmPaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 import type {
   StripeConfirmIntentRequest,
   StripePaymentIntentDto,

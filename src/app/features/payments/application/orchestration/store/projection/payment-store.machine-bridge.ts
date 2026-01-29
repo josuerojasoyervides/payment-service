@@ -11,7 +11,7 @@ import {
   applySilentFailureState,
 } from '@payments/application/orchestration/store/projection/payment-store.transitions';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
-import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 /**
  * Bridge: connects the XState machine to PaymentsStore.

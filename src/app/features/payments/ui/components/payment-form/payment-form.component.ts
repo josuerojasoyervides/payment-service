@@ -7,7 +7,7 @@ import type {
   FieldRequirement,
   FieldRequirements,
   PaymentOptions,
-} from '@payments/domain/ports/payment/payment-request-builder.port';
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { AutofocusDirective } from '@shared/directives/autofocus.directive';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 

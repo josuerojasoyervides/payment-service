@@ -1,4 +1,4 @@
-import type { PaymentIntentStatus } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentIntentStatus } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { PaypalOrderStatus } from '@payments/infrastructure/paypal/dto/paypal.dto';
 
 export const STATUS_MAP: Record<PaypalOrderStatus, PaymentIntentStatus> = {

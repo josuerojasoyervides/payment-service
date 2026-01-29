@@ -44,8 +44,8 @@ import {
   isPaymentError,
   normalizePaymentError,
 } from '@payments/application/orchestration/store/projection/payment-store.errors';
-import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
-import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
+import { createPaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { assign, fromPromise, setup } from 'xstate';
 
 export const createPaymentFlowMachine = (

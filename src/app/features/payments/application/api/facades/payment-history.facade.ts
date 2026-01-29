@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { PAYMENT_STATE } from '@payments/application/api/tokens/flow/payment-state.token';
-import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 @Injectable({ providedIn: 'root' })
 export class PaymentHistoryFacade {

@@ -3,18 +3,18 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { I18nKeys } from '@core/i18n';
 import { BasePaymentGateway } from '@payments/application/api/ports/payment-gateway.port';
-import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   PaymentIntent,
   PaymentIntentStatus,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 import type { Observable } from 'rxjs';
 import { firstValueFrom, of, throwError } from 'rxjs';
 

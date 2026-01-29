@@ -9,19 +9,19 @@ import type { StrategyContext } from '@payments/application/api/ports/payment-st
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
 import type { PaymentsState } from '@payments/application/orchestration/store/payment-store.state';
-import type { FallbackAvailableEvent } from '@payments/domain/models/fallback/fallback-event.types';
-import type { FallbackState } from '@payments/domain/models/fallback/fallback-state.types';
-import type { PaymentError } from '@payments/domain/models/payment/payment-error.types';
+import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.types';
+import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 
 /**
  * Adapter that implements PaymentStatePort using NgRx Signals.

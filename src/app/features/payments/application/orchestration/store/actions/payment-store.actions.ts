@@ -1,14 +1,14 @@
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import type { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
-import type { PaymentFlowContext } from '@payments/domain/models/payment/payment-flow-context.types';
-import type { PaymentProviderId } from '@payments/domain/models/payment/payment-intent.types';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 import { ignoreElements, pipe, tap } from 'rxjs';
 
 export interface PaymentsStoreDeps {

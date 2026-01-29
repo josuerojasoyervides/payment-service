@@ -3,8 +3,8 @@ import { PaymentOperationPort } from '@payments/application/api/ports/payment-op
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { GetPaymentStatusRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { GetPaymentStatusRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
 import { STRIPE_API_BASE } from '@payments/infrastructure/stripe/workflows/intent/api/base-api.constant';
 import { mapPaymentIntent } from '@payments/infrastructure/stripe/workflows/intent/mappers/payment-intent.mapper';

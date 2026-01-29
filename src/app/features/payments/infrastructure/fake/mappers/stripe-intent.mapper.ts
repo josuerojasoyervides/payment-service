@@ -1,7 +1,7 @@
 import type {
   PaymentIntent,
   PaymentIntentStatus,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
 
 export function mapStripeIntent(dto: StripePaymentIntentDto): PaymentIntent {

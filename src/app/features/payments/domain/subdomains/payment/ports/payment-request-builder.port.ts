@@ -1,10 +1,10 @@
 import type { AutoCompleteHint } from '@payments/domain/models/payment/autocomplete-hint.types';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type {
   CurrencyCode,
   PaymentMethodType,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 
 /**
  * Generic options for the builder.

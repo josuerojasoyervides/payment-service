@@ -5,9 +5,9 @@ import type {
   PaymentFlowSnapshot,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import type { PaymentFlowConfigOverrides } from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.policy';
-import { createPaymentError } from '@payments/domain/models/payment/payment-error.factory';
-import type { PaymentIntent } from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+import { createPaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 import { createActor } from 'xstate';
 
 interface Deferred<T> {

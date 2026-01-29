@@ -1,7 +1,7 @@
 import type {
   PaymentIntent,
   PaymentIntentStatus,
-} from '@payments/domain/models/payment/payment-intent.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
 
 export function mapPaypalOrder(dto: PaypalOrderDto): PaymentIntent {

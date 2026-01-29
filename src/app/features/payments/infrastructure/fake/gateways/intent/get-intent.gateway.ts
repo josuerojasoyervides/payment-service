@@ -3,8 +3,8 @@ import { PaymentOperationPort } from '@payments/application/api/ports/payment-op
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { GetPaymentStatusRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { GetPaymentStatusRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 import { createFakePaypalOrderStatus } from '@payments/infrastructure/fake/helpers/create-fake-paypal-order-status.helper';
 import { createFakeStripeIntentStatus } from '@payments/infrastructure/fake/helpers/create-fake-stripe-intent-status.helper';
 import { simulateNetworkDelay } from '@payments/infrastructure/fake/helpers/simulate-network-delay.helper';

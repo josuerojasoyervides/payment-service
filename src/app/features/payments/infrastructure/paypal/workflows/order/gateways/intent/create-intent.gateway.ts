@@ -1,12 +1,12 @@
 import { inject, Injectable } from '@angular/core';
 import { I18nKeys } from '@core/i18n';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
-import { invalidRequestError } from '@payments/domain/models/payment/payment-error.factory';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/models/payment/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/models/payment/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
 import type {
   PaypalCreateOrderRequest,
   PaypalOrderDto,
