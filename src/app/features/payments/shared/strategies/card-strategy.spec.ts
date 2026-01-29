@@ -4,7 +4,7 @@ import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { TokenValidator } from '@payments/domain/common/ports/token-validator.port';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { firstValueFrom, of } from 'rxjs';
 

@@ -4,7 +4,7 @@ import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { safeDefer } from '@shared/rxjs/safe-defer';
 import type { Observable } from 'rxjs';

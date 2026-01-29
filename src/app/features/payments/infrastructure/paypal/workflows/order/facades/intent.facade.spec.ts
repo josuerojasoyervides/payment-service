@@ -4,7 +4,7 @@ import type {
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/facades/intent.facade';
 import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/cancel-intent.gateway';
 import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/intent/confirm-intent.gateway';

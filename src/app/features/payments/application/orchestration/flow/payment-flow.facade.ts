@@ -4,7 +4,7 @@ import { PaymentFlowActorService } from '@payments/application/orchestration/flo
 import type { PaymentFlowPublicEvent } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 // If you already have a formal flowContext type in your project, use it here.
 // Otherwise, this is a minimal version to avoid `any`.

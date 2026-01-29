@@ -12,7 +12,7 @@ import type {
   PaymentIntent,
   PaymentMethodType,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { PaypalOrderDto } from '@payments/infrastructure/paypal/dto/paypal.dto';
 import { findPaypalLink } from '@payments/infrastructure/paypal/dto/paypal.dto';
 import type { Observable } from 'rxjs';

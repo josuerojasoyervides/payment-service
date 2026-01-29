@@ -8,7 +8,7 @@ import type {
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { FakeCancelIntentGateway } from '@payments/infrastructure/fake/gateways/intent/cancel-intent.gateway';
 import type { FakeConfirmIntentGateway } from '@payments/infrastructure/fake/gateways/intent/confirm-intent.gateway';
 import type { FakeCreateIntentGateway } from '@payments/infrastructure/fake/gateways/intent/create-intent.gateway';

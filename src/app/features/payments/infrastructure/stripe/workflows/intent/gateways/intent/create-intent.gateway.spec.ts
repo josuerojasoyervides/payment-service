@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
 
 describe('StripeCreateIntentGateway', () => {

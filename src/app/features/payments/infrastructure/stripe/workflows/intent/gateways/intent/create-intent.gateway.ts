@@ -4,7 +4,7 @@ import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type {
   StripeCreateIntentRequest,
   StripePaymentIntentDto,

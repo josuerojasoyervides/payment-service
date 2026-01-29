@@ -46,11 +46,11 @@ import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/subdomains/fallback/co
 import type {
   FallbackAvailableEvent,
   FallbackUserResponse,
-} from '@payments/domain/subdomains/fallback/contracts/fallback-event.types';
+} from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { Subject } from 'rxjs';
 
 /**

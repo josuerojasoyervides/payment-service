@@ -5,7 +5,7 @@ import type {
   PaymentFlowStatus,
   PaymentsState,
 } from '@payments/application/orchestration/store/payment-store.state';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.types';
+import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
@@ -17,7 +17,7 @@ import type {
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 /**
  * Unsubscribe function.

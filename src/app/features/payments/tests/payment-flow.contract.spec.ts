@@ -7,7 +7,7 @@ import type {
 import type { PaymentFlowConfigOverrides } from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.policy';
 import { createPaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { createActor } from 'xstate';
 
 interface Deferred<T> {
