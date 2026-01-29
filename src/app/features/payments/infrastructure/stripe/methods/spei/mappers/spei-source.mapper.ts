@@ -4,7 +4,7 @@ import type {
   PaymentProviderId,
 } from '@payments/domain/models/payment/payment-intent.types';
 import type { StripeSpeiSourceDto } from '@payments/infrastructure/stripe/dto/stripe.dto';
-import { SpeiStatusMapper } from '@payments/infrastructure/stripe/mappers/spei-status.mapper';
+import { SpeiStatusMapper } from '@payments/infrastructure/stripe/methods/spei/mappers/spei-status.mapper';
 
 export class SpeiSourceMapper {
   constructor(private readonly providerId: PaymentProviderId) {}
