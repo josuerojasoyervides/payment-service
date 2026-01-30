@@ -1,15 +1,25 @@
+/**
+ * Imperative wrapper around the payment flow machine.
+ *
+ * What it is: entry point to send commands (START, CONFIRM, CANCEL, REFRESH, RESET) into the
+ * XState actor. Exposes snapshot, flags, and helpers for flow interaction.
+ *
+ * What it is NOT: the main UI API when PAYMENT_STATE (PaymentStorePort) exists. Prefer injecting
+ * PAYMENT_STATE for reactive state and actions in UI.
+ *
+ * When to use: debugging, demos, harnesses, or temporary integration paths. Kept neutral;
+ * no commitment to remove, but intended usage is secondary to the port.
+ *
+ * PaymentFlowContext: the facade accepts `flowContext` in start(); the canonical type lives in
+ * Domain (payment-flow-context.types). This layer only forwards it; no separate alias.
+ */
 import { computed, inject, Injectable } from '@angular/core';
-import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type { PaymentFlowPublicEvent } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-
-// If you already have a formal flowContext type in your project, use it here.
-// Otherwise, this is a minimal version to avoid `any`.
-// TODO : Check if this is still needed
-export type PaymentFlowContext = StrategyContext;
 
 @Injectable()
 export class PaymentFlowFacade {

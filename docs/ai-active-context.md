@@ -8,27 +8,24 @@
 
 ## 📍 Mission State
 
-- **Current mission:** Payments module refactor structurally complete (PR0–PR10). Keep the tree healthy; resume product-level work.
-- **PR6 complete:** Flow telemetry (flowId/providerId/state/event/refs + redaction + InMemory/Console/Noop/Composite sinks); stress suite (idempotency, dedupe, correlation, terminal safety, processing timeout). See `docs/observability/flow-telemetry.md`.
-- **Key folders:**
-  - Domain: `domain/common/**`, `domain/subdomains/payment/**`, `domain/subdomains/fallback/**`
-  - Application: `application/orchestration/flow/**`, `application/adapters/telemetry/**`
-  - Infra: `infrastructure/stripe/**`, `infrastructure/paypal/**`
-  - Config: `config/payment.providers.ts`
+- **Current mission:** Payments refactor structurally complete (PR0–PR10). Keep tree healthy; resume product work.
+- **Key folders:** Domain `domain/**`, Application `application/orchestration/**`, `application/adapters/**`, Infra `infrastructure/**`, Config `config/payment.providers.ts`.
+
+## 🖥️ UI surface & boundaries (current vs intended)
+
+- **Intended:** UI should inject PAYMENT_STATE (PaymentStorePort) for reactive state and actions.
+- **Current:** UI pages still use PaymentFlowFacade today (migration pending).
+- **Rule:** UI must not import PaymentsStore or selector modules directly.
 
 ---
 
 ## 🧩 Naming & folder intent (Domain)
 
-- **Suffix rules:** `*.types.ts`, `*.event.ts`, `*.command.ts`, `*.vo.ts`, `*.rule.ts`, `*.policy.ts`, `*.port.ts`
+- **Suffixes:** `*.types.ts`, `*.event.ts`, `*.command.ts`, `*.vo.ts`, `*.rule.ts`, `*.policy.ts`, `*.port.ts`
 - **Folders:** `domain/common/primitives/{ids,money,time}`, `domain/subdomains/{payment,fallback}/{contracts,entities,primitives,rules,policies,ports}`
 
 ---
 
 ## ⏭️ Immediate Next Action
 
-- Resume product-level work; add providers/methods per architecture rules. Boundaries: Domain framework-free; UI never imports Infrastructure; Application depends only on Domain/Shared.
-
----
-
-_Note: prune historical details; this file is for latest active context only._
+- Resume product-level work; add providers/methods per architecture rules. Domain framework-free; UI never imports Infrastructure.

@@ -37,28 +37,17 @@ export interface PaymentDebugSummary {
 }
 
 /**
- * Payments state port.
+ * UI API contract: UI couples to this port + PAYMENT_STATE token only.
  *
- * This interface defines the contract that any state implementation
- * must satisfy. It decouples components from the concrete implementation
- * (NgRx Signals, Akita, NGXS, etc.).
- *
- * Principles:
- * - Components only know this port
- * - Concrete implementation is injected via token
- * - Eases testing and technology changes
+ * Enables swapping the implementation (e.g. NgRx, Akita) without breaking UI.
+ * Components inject the token and use the port interface; they never import
+ * the store or selectors directly.
  *
  * @example
- * ```typescript
- * // In a component
- * private readonly state = inject(PAYMENT_STATE);
- *
- * readonly isLoading = this.state.isLoading;
- * readonly intent = this.state.intent;
- *
- * pay() {
- *   this.state.startPayment(request, 'stripe');
- * }
+ * ```ts
+ * const state = inject(PAYMENT_STATE);
+ * readonly loading = state.isLoading;
+ * readonly intent = state.intent;
  * ```
  */
 export interface PaymentStorePort {

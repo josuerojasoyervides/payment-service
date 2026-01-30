@@ -1,3 +1,10 @@
+/**
+ * Projected state surface consumable by UI via the port.
+ *
+ * Observes the XState machine and the fallback orchestrator; projects their state into
+ * signals (status, intent, error, fallback, history). UI must not import this store
+ * directly — use PAYMENT_STATE (PaymentStorePort) instead.
+ */
 import { effect, inject } from '@angular/core';
 import {
   updateState,

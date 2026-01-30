@@ -25,26 +25,10 @@ import type {
 } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 /**
- * Adapter that implements PaymentStatePort using NgRx Signals.
+ * Adapter implementing PaymentStorePort by delegating to PaymentsStore.
  *
- * This adapter lets components use the port without knowing
- * the concrete implementation. If you later switch
- * from NgRx Signals to another library, you only need a new adapter.
- *
- * Pattern: Adapter
- * - Adapts PaymentsStore interface to PaymentStatePort contract
- * - Components do not access PaymentsStore directly
- * - Eases testing with port mocks
- *
- * @example
- * ```typescript
- * // In payment.providers.ts
- * { provide: PAYMENT_STATE, useClass: NgRxSignalsStateAdapter }
- *
- * // In a component
- * private readonly state = inject(PAYMENT_STATE);
- * readonly isLoading = this.state.isLoading; // Signal<boolean>
- * ```
+ * Decouples UI from the concrete store; UI depends only on the port. Config wires
+ * PAYMENT_STATE to this adapter (e.g. in payment.providers).
  */
 @Injectable()
 export class NgRxSignalsStateAdapter implements PaymentStorePort {

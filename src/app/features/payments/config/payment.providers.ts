@@ -1,3 +1,9 @@
+/**
+ * Config layer: DI wiring for the payments feature.
+ *
+ * Binds PAYMENT_STATE (PaymentStorePort) to its adapter (NgRxSignalsStateAdapter).
+ * Composition root for providers, use cases, stores, and infra.
+ */
 import type { EnvironmentProviders } from '@angular/core';
 import { type Provider } from '@angular/core';
 import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
