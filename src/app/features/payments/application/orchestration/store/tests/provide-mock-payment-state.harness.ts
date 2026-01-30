@@ -1,12 +1,12 @@
 // src/testing/payments/mock-payment-state.ts
 import type { Provider } from '@angular/core';
 import { computed, effect, signal } from '@angular/core';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type {
   PaymentDebugSummary,
   PaymentStorePort,
 } from '@payments/application/api/ports/payment-store.port';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
-import { PAYMENT_STATE } from '@payments/application/api/tokens/flow/payment-state.token';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import type {
   PaymentFlowStatus,

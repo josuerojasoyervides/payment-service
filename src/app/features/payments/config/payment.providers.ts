@@ -8,6 +8,7 @@ import type { EnvironmentProviders } from '@angular/core';
 import { type Provider } from '@angular/core';
 import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
 import { NoopFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/prod-only/noop-flow-telemetry-sink';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { WEBHOOK_NORMALIZER_REGISTRY } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
 import { PaymentFlowMachineDriver } from '@app/features/payments/application/orchestration/flow/payment-flow-machine-driver';
@@ -29,7 +30,6 @@ import {
 } from '@app/features/payments/infrastructure/stripe/core/di/provide-stripe-payments';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
-import { PAYMENT_STATE } from '@payments/application/api/tokens/flow/payment-state.token';
 import { CLIENT_CONFIRM_PORTS } from '@payments/application/api/tokens/operations/client-confirm.token';
 import { FINALIZE_PORTS } from '@payments/application/api/tokens/operations/finalize.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';

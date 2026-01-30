@@ -111,42 +111,42 @@ export class NgRxSignalsStateAdapter implements PaymentStorePort {
     providerId: PaymentProviderId,
     context?: StrategyContext,
   ): void {
-    this.store['startPayment']({ request, providerId, context });
+    this.store.startPayment({ request, providerId, context });
   }
 
   confirmPayment(request: ConfirmPaymentRequest, providerId: PaymentProviderId): void {
-    this.store['confirmPayment']({ request, providerId });
+    this.store.confirmPayment({ request, providerId });
   }
 
   cancelPayment(request: CancelPaymentRequest, providerId: PaymentProviderId): void {
-    this.store['cancelPayment']({ request, providerId });
+    this.store.cancelPayment({ request, providerId });
   }
 
   refreshPayment(request: GetPaymentStatusRequest, providerId: PaymentProviderId): void {
-    this.store['refreshPayment']({ request, providerId });
+    this.store.refreshPayment({ request, providerId });
   }
 
   selectProvider(providerId: PaymentProviderId): void {
-    this.store['selectProvider'](providerId);
+    this.store.selectProvider(providerId);
   }
 
   clearError(): void {
-    this.store['clearError']();
+    this.store.clearError();
   }
 
   reset(): void {
-    this.store['reset']();
+    this.store.reset();
   }
 
   clearHistory(): void {
-    this.store['clearHistory']();
+    this.store.clearHistory();
   }
 
   executeFallback(providerId: PaymentProviderId): void {
-    this.store['executeFallback'](providerId);
+    this.store.executeFallback(providerId);
   }
 
   cancelFallback(): void {
-    this.store['cancelFallback']();
+    this.store.cancelFallback();
   }
 }
