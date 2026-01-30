@@ -8,6 +8,7 @@ import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { PAYMENT_PROVIDER_IDS } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';
 import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
 import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
@@ -34,6 +35,7 @@ interface StatusPageState {
     CommonModule,
     FormsModule,
     RouterLink,
+    FlowDebugPanelComponent,
     PaymentIntentCardComponent,
     NextActionCardComponent,
     ProviderSelectorComponent,
@@ -90,12 +92,12 @@ export class StatusComponent {
       const intent = this.flowState.intent();
       if (!intent) return;
 
-      // ✅ No pises si el usuario ya escribió algo o ya buscó algo
+      // Do not overwrite if user already typed or already queried
       const userTypedSomething = this.statusPageState.intentId().trim().length > 0;
       const alreadyHasQuery = this.statusPageState.lastQuery() !== null;
 
       if (userTypedSomething || alreadyHasQuery) {
-        this.didPrefill = true; // "ya no vuelvas a intentar"
+        this.didPrefill = true;
         return;
       }
 
@@ -118,11 +120,11 @@ export class StatusComponent {
       lastQuery: { provider: this.statusPageState.selectedProvider(), id },
     });
 
-    this.state.refreshPayment({ intentId: id }, this.statusPageState.selectedProvider());
+    this.state.refreshPayment({ intentId: id });
   }
 
   confirmPayment(intentId: string): void {
-    this.state.confirmPayment({ intentId }, this.statusPageState.selectedProvider());
+    this.state.confirmPayment({ intentId });
   }
 
   onNextActionRequested(action: NextAction): void {
@@ -133,13 +135,12 @@ export class StatusComponent {
     if (action.kind === 'client_confirm') {
       const intent = this.state.intent();
       const intentId = intent?.id ?? this.statusPageState.lastQuery()?.id ?? null;
-      const providerId = intent?.provider ?? this.statusPageState.selectedProvider();
-      if (intentId) this.state.confirmPayment({ intentId }, providerId);
+      if (intentId) this.state.confirmPayment({ intentId });
     }
   }
 
   cancelPayment(intentId: string): void {
-    this.state.cancelPayment({ intentId }, this.statusPageState.selectedProvider());
+    this.state.cancelPayment({ intentId });
   }
 
   refreshPayment(intentId: string): void {
@@ -147,7 +148,7 @@ export class StatusComponent {
       lastQuery: { provider: this.statusPageState.selectedProvider(), id: intentId },
     });
 
-    this.state.refreshPayment({ intentId }, this.statusPageState.selectedProvider());
+    this.state.refreshPayment({ intentId });
   }
 
   useExample(example: { id: string; provider: PaymentProviderId }): void {
@@ -174,10 +175,8 @@ export class StatusComponent {
     patchState(this.statusPageState, { intentId: value });
   }
 
-  // Guards
-  //Suggest a name for this guard
-  readonly canSearch = computed(
-    () => !this.statusPageState.intentId() || this.flowState.isLoading(),
+  readonly isSearchDisabled = computed(
+    () => !this.statusPageState.intentId()?.trim() || this.flowState.isLoading(),
   );
 
   readonly labels = deepComputed(() => ({

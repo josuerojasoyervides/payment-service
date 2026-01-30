@@ -28,7 +28,7 @@
           (retry)="resetPayment()"
           (newPayment)="resetPayment()" />
 
-        <!-- Next Action si existe -->
+        <!-- Next action when present -->
         @if (flowState.currentIntent()?.nextAction) {
           <app-next-action-card
             [nextAction]="flowState.currentIntent()!.nextAction!"
@@ -138,5 +138,8 @@
       [open]="fallbackState.isPending()"
       (confirm)="confirmFallback($event)"
       (canceled)="cancelFallback()" />
+
+    <!-- Flow debug panel (dev) -->
+    <app-flow-debug-panel />
   </div>
 </div>

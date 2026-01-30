@@ -216,5 +216,7 @@ export class ShowcaseComponent {
     openFallbackModalLabel: computed(() => this.i18n.t(I18nKeys.ui.open_fallback_modal)),
     infoLabel: computed(() => this.i18n.t(I18nKeys.ui.info)),
     fallbackModalInfoLabel: computed(() => this.i18n.t(I18nKeys.ui.fallback_modal_info)),
+    demoTokensTitle: computed(() => this.i18n.t(I18nKeys.ui.demo_tokens_title)),
+    demoTokensCheatsheet: computed(() => this.i18n.t(I18nKeys.ui.demo_tokens_cheatsheet)),
   };
 }

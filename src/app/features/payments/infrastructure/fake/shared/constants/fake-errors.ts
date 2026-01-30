@@ -29,4 +29,10 @@ export const FAKE_ERRORS: Record<FakeScenario, PaymentError> = {
     messageKey: I18nKeys.errors.expired_card,
     raw: { scenario: 'expired' },
   },
+
+  timeout: {
+    code: 'timeout',
+    messageKey: I18nKeys.errors.timeout,
+    raw: { scenario: 'timeout' },
+  },
 };

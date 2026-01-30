@@ -285,5 +285,7 @@ export interface Translations {
     return_url_label: string;
     cancel_url_label: string;
     paypal_redirect_secure_message: string;
+    demo_tokens_title: string;
+    demo_tokens_cheatsheet: string;
   };
 }

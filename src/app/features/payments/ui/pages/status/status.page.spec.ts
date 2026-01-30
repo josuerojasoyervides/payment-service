@@ -105,7 +105,7 @@ describe('StatusComponent', () => {
       component.searchIntent();
 
       expect(component.result()).toBeNull();
-      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
+      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
 
     it('should prefill lastQuery and show result when flow already has an intent', () => {
@@ -133,43 +133,37 @@ describe('StatusComponent', () => {
       patchState(component.statusPageState, { intentId: 'ORDER_FAKE_XYZ' });
       component.searchIntent();
 
-      expect(mockState.refreshPayment).toHaveBeenCalledWith(
-        { intentId: 'ORDER_FAKE_XYZ' },
-        'paypal',
-      );
+      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'ORDER_FAKE_XYZ' });
     });
 
     it('should trim whitespace from intentId', () => {
       patchState(component.statusPageState, { intentId: '  pi_test_123  ' });
       component.searchIntent();
 
-      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
+      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
   });
 
   describe('Payment actions', () => {
     it('should confirm payment', () => {
       component.confirmPayment('pi_test_123');
-      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
+      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
 
     it('should cancel payment', () => {
       component.cancelPayment('pi_test_123');
-      expect(mockState.cancelPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
+      expect(mockState.cancelPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
 
     it('should refresh payment', () => {
       component.refreshPayment('pi_test_123');
-      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
+      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
 
-    it('should use the selected provider for actions', () => {
+    it('should call confirmPayment with intentId (adapter resolves provider)', () => {
       patchState(component.statusPageState, { selectedProvider: 'paypal' });
       component.confirmPayment('ORDER_FAKE_XYZ');
-      expect(mockState.confirmPayment).toHaveBeenCalledWith(
-        { intentId: 'ORDER_FAKE_XYZ' },
-        'paypal',
-      );
+      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'ORDER_FAKE_XYZ' });
     });
 
     it('should call confirmPayment when next-action client_confirm is requested', () => {
@@ -178,7 +172,7 @@ describe('StatusComponent', () => {
       });
       const action = { kind: 'client_confirm' as const, token: 'tok_runtime' };
       component.onNextActionRequested(action);
-      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
+      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
   });
 

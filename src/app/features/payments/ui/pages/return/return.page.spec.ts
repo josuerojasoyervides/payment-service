@@ -196,7 +196,7 @@ describe('ReturnComponent', () => {
         paypalToken: null,
       });
       component.confirmPayment('pi_test_123');
-      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
+      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
 
     it('should confirm PayPal payment', () => {
@@ -205,10 +205,7 @@ describe('ReturnComponent', () => {
         paypalToken: 'ORDER_FAKE_XYZ',
       });
       component.confirmPayment('ORDER_FAKE_XYZ');
-      expect(mockState.confirmPayment).toHaveBeenCalledWith(
-        { intentId: 'ORDER_FAKE_XYZ' },
-        'paypal',
-      );
+      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'ORDER_FAKE_XYZ' });
     });
 
     it('should refresh payment', () => {
@@ -216,7 +213,7 @@ describe('ReturnComponent', () => {
         intentId: 'pi_test_123',
       });
       component.refreshPaymentByReference('pi_test_123');
-      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
+      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
   });
 
@@ -273,6 +270,46 @@ describe('ReturnComponent', () => {
 
     it('should return unknown when there are no params', () => {
       expect(component.flowType()).toBe('Unknown');
+    });
+  });
+
+  describe('Error surface', () => {
+    it('should render flow error and Try again CTA when state has error', () => {
+      const flowError = {
+        code: 'missing_provider' as const,
+        messageKey: I18nKeys.errors.missing_provider,
+        raw: undefined,
+      };
+      const baseMock = createMockPaymentState({ hasError: true, error: flowError });
+      const clearErrorSpy = vi.fn();
+      const errorMock = { ...baseMock, clearError: clearErrorSpy };
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [ReturnComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: errorMock },
+          { provide: ActivatedRoute, useValue: mockActivatedRoute },
+          {
+            provide: I18nService,
+            useValue: {
+              t: (k: string) =>
+                k === I18nKeys.errors.missing_provider ? 'Payment provider is required.' : k,
+              has: () => true,
+              setLanguage: () => {},
+              getLanguage: () => 'es',
+            },
+          },
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(ReturnComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.textContent).toContain('Payment provider is required.');
+      const tryAgainBtn = el.querySelector('button.btn-primary');
+      expect(tryAgainBtn).toBeTruthy();
+      (tryAgainBtn as HTMLButtonElement).click();
+      expect(clearErrorSpy).toHaveBeenCalled();
     });
   });
 

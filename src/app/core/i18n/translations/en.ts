@@ -257,5 +257,9 @@ export const en: Translations = {
       'You will be redirected to PayPal to complete your payment securely',
     flow_3ds: '3D Secure',
     flow_paypal_redirect: 'PayPal Redirect',
+
+    demo_tokens_title: 'Demo tokens (fake mode)',
+    demo_tokens_cheatsheet:
+      'In fake mode, use these card tokens: tok_success (immediate success), tok_3ds (redirect), tok_client_confirm (client confirm), tok_processing (then refresh), tok_decline, tok_timeout, tok_insufficient, tok_expired.',
   },
 };

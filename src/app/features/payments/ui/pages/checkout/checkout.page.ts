@@ -18,6 +18,7 @@ import type {
   PaymentOptions,
 } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
+import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';
 import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
 import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
 import { OrderSummaryComponent } from '@payments/ui/components/order-summary/order-summary.component';
@@ -60,6 +61,7 @@ interface CheckoutPageState {
     PaymentFormComponent,
     PaymentButtonComponent,
     PaymentResultComponent,
+    FlowDebugPanelComponent,
     NextActionCardComponent,
     FallbackModalComponent,
   ],
@@ -260,32 +262,20 @@ export class CheckoutComponent {
     if (action.kind === 'client_confirm') {
       const intent = this.state.intent();
       const intentId = intent?.id ?? null;
-      const providerId =
-        intent?.provider ??
-        this.state.selectedProvider() ??
-        this.checkoutPageState.selectedProvider();
-      if (intentId && providerId) this.state.confirmPayment({ intentId }, providerId);
+      if (intentId) this.state.confirmPayment({ intentId });
     }
   }
 
   confirmPayment(): void {
     const intent = this.state.intent();
     const intentId = intent?.id ?? null;
-    const providerId =
-      intent?.provider ??
-      this.state.selectedProvider() ??
-      this.checkoutPageState.selectedProvider();
-    if (intentId && providerId) this.state.confirmPayment({ intentId }, providerId);
+    if (intentId) this.state.confirmPayment({ intentId });
   }
 
   cancelPayment(): void {
     const intent = this.state.intent();
     const intentId = intent?.id ?? null;
-    const providerId =
-      intent?.provider ??
-      this.state.selectedProvider() ??
-      this.checkoutPageState.selectedProvider();
-    if (intentId && providerId) this.state.cancelPayment({ intentId }, providerId);
+    if (intentId) this.state.cancelPayment({ intentId });
   }
 
   resetPayment(): void {

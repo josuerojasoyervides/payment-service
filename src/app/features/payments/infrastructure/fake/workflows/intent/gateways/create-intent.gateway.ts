@@ -15,7 +15,23 @@ import type {
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { Observable } from 'rxjs';
-import { throwError } from 'rxjs';
+import { delay, mergeMap, of, throwError } from 'rxjs';
+
+const DEFAULT_DELAY_MS = 200;
+const TIMEOUT_DELAY_MS = 500;
+
+function addFakeDebug(
+  dto: Record<string, unknown>,
+  scenarioId: string,
+  simulatedDelayMs: number,
+  correlationId: string,
+): void {
+  dto['_fakeDebug'] = {
+    scenarioId,
+    simulatedDelayMs,
+    correlationId,
+  };
+}
 @Injectable()
 export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
   CreatePaymentRequest,
@@ -43,22 +59,34 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
       return throwError(() => FAKE_ERRORS['expired']);
     }
     if (behavior === 'timeout') {
-      return simulateNetworkDelay(createFakeStripeIntent(request, 'processing'), 10000);
+      return of(null).pipe(
+        delay(TIMEOUT_DELAY_MS),
+        mergeMap(() => throwError(() => FAKE_ERRORS['timeout'])),
+      );
     }
 
     if (request.method.type === 'spei') {
-      return simulateNetworkDelay(createFakeSpeiSource(request));
+      const dto = createFakeSpeiSource(request) as unknown as Record<string, unknown>;
+      addFakeDebug(dto, behavior, DEFAULT_DELAY_MS, request.orderId);
+      return simulateNetworkDelay(dto);
     }
 
     if (this.providerId === 'paypal') {
-      return simulateNetworkDelay(createFakePaypalOrder(request));
+      const dto = createFakePaypalOrder(request) as unknown as Record<string, unknown>;
+      addFakeDebug(dto, behavior, DEFAULT_DELAY_MS, request.orderId);
+      return simulateNetworkDelay(dto);
     }
 
     let status: StripePaymentIntentDto['status'] = 'requires_confirmation';
+    let nextActionKind: 'redirect' | 'client_confirm' | undefined;
     if (behavior === 'success') {
       status = 'succeeded';
     } else if (behavior === '3ds') {
       status = 'requires_action';
+      nextActionKind = 'redirect';
+    } else if (behavior === 'client_confirm') {
+      status = 'requires_action';
+      nextActionKind = 'client_confirm';
     } else if (behavior === 'processing') {
       status = 'processing';
     } else {
@@ -67,7 +95,12 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
       }
     }
 
-    return simulateNetworkDelay(createFakeStripeIntent(request, status));
+    const dto = createFakeStripeIntent(request, status, nextActionKind) as unknown as Record<
+      string,
+      unknown
+    >;
+    addFakeDebug(dto, behavior, DEFAULT_DELAY_MS, request.orderId);
+    return simulateNetworkDelay(dto);
   }
 
   protected override mapResponse(dto: any): PaymentIntent {

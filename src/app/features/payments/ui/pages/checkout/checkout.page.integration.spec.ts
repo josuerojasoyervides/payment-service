@@ -330,6 +330,71 @@ describe('CheckoutComponent - Real Integration', () => {
     });
   });
 
+  describe('Scenario matrix (fake tokens)', () => {
+    beforeEach(async () => {
+      patchState(component.checkoutPageState, { selectedProvider: 'stripe' });
+      patchState(component.checkoutPageState, { selectedMethod: 'card' });
+      fixture.detectChanges();
+      await settle(fixture);
+    });
+
+    it('tok_success: flow converges to isReady, historyCount grows, debugSummary coherent', async () => {
+      component.onFormChange({ token: 'tok_success1234567890abcdef' });
+      ensureValidForm(component);
+      component.processPayment();
+      await waitForPaymentComplete(state);
+      fixture.detectChanges();
+
+      expect(state.isLoading()).toBe(false);
+      expect(state.isReady()).toBe(true);
+      expect(state.hasError()).toBe(false);
+      expect(state.historyCount()).toBeGreaterThanOrEqual(1);
+      const summary = state.debugSummary();
+      expect(summary.status).toBe('ready');
+      expect(summary.intentId).toBeTruthy();
+      expect(summary.provider).toBe('stripe');
+    });
+
+    it('tok_3ds: requires_action and NextActionCard visible', async () => {
+      component.onFormChange({ token: 'tok_3ds1234567890abcdef' });
+      ensureValidForm(component);
+      component.processPayment();
+      await waitForPaymentComplete(state);
+      fixture.detectChanges();
+
+      expect(state.isLoading()).toBe(false);
+      expect(state.isReady()).toBe(true);
+      const intent = state.intent();
+      expect(intent?.status).toBe('requires_action');
+      expect(intent?.nextAction).toBeTruthy();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('app-next-action-card')).toBeTruthy();
+    });
+
+    it('tok_processing: processPayment yields intent, refresh runs and historyCount grows', async () => {
+      component.onFormChange({ token: 'tok_processing1234567890abcdef' });
+      ensureValidForm(component);
+      component.processPayment();
+      await waitForPaymentComplete(state);
+      fixture.detectChanges();
+
+      const intentAfterStart = state.intent();
+      expect(intentAfterStart).toBeTruthy();
+      expect(intentAfterStart?.status).toBe('processing');
+      const countAfterStart = state.historyCount();
+      expect(countAfterStart).toBeGreaterThanOrEqual(1);
+
+      state.refreshPayment({ intentId: intentAfterStart!.id });
+      await settle(fixture);
+      fixture.detectChanges();
+
+      expect(state.historyCount()).toBeGreaterThanOrEqual(countAfterStart);
+      const summary = state.debugSummary();
+      expect(summary.intentId).toBe(intentAfterStart?.id);
+      expect(summary.provider).toBe('stripe');
+    });
+  });
+
   describe('Flujo completo con SPEI', () => {
     beforeEach(async () => {
       patchState(component.checkoutPageState, {

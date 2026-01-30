@@ -28,7 +28,7 @@
           </p>
         </div>
 
-        <!-- Provider Selection (genérico: lista desde PAYMENT_PROVIDER_IDS) -->
+        <!-- Provider selection (generic list from PAYMENT_PROVIDER_IDS) -->
         <app-provider-selector
           [providers]="statusPageState.providerIds()"
           [selected]="statusPageState.selectedProvider()"
@@ -36,7 +36,7 @@
           (providerChange)="selectProvider($event)" />
 
         <!-- Search Button -->
-        <button class="btn-primary w-full" [disabled]="canSearch()" (click)="searchIntent()">
+        <button class="btn-primary w-full" [disabled]="isSearchDisabled()" (click)="searchIntent()">
           @if (flowState.isLoading()) {
             <div class="spinner mr-2"></div>
             {{ labels.consultingLabel() }}
@@ -121,5 +121,8 @@
         {{ labels.historyLabel() }}
       </a>
     </div>
+
+    <!-- Flow debug panel (dev) -->
+    <app-flow-debug-panel />
   </div>
 </div>

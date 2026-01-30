@@ -7,7 +7,9 @@ import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/sto
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';
 import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
+import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
 // TODO : This is a utility function, not a component responsibility
 function normalizeQueryParams(params: Params): Record<string, string> {
@@ -48,7 +50,7 @@ interface ReturnPageState {
 @Component({
   selector: 'app-return',
   standalone: true,
-  imports: [CommonModule, RouterLink, PaymentIntentCardComponent],
+  imports: [CommonModule, RouterLink, FlowDebugPanelComponent, PaymentIntentCardComponent],
   templateUrl: './return.component.html',
 })
 export class ReturnComponent implements OnInit {
@@ -74,6 +76,8 @@ export class ReturnComponent implements OnInit {
   readonly flowState = deepComputed(() => ({
     currentIntent: this.state.intent(),
     isLoading: this.state.isLoading(),
+    error: this.state.error(),
+    hasError: this.state.hasError(),
   }));
 
   // Computed
@@ -117,17 +121,19 @@ export class ReturnComponent implements OnInit {
   }
 
   confirmPayment(intentId: string): void {
-    const intent = this.state.intent();
-    const ref = this.state.getReturnReferenceFromQuery(this.route.snapshot.queryParams);
-    const providerId = intent?.provider ?? ref.providerId;
-    this.state.confirmPayment({ intentId }, providerId);
+    this.state.confirmPayment({ intentId });
   }
 
   refreshPaymentByReference(referenceId: string): void {
-    const intent = this.state.intent();
-    const ref = this.state.getReturnReferenceFromQuery(this.route.snapshot.queryParams);
-    const providerId = intent?.provider ?? ref.providerId;
-    this.state.refreshPayment({ intentId: referenceId }, providerId);
+    this.state.refreshPayment({ intentId: referenceId });
+  }
+
+  clearErrorAndRetry(): void {
+    this.state.clearError();
+  }
+
+  getErrorMessage(error: unknown): string {
+    return renderPaymentError(this.i18n, error);
   }
 
   readonly i18nLabels = deepComputed(() => ({
@@ -157,5 +163,6 @@ export class ReturnComponent implements OnInit {
     intentIdLabel: this.i18n.t(I18nKeys.ui.intent_id),
     paypalTokenLabel: this.i18n.t(I18nKeys.ui.paypal_token),
     paypalPayerIdLabel: this.i18n.t(I18nKeys.ui.paypal_payer_id),
+    tryAgainLabel: this.i18n.t(I18nKeys.ui.try_again),
   }));
 }

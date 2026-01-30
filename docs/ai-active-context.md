@@ -8,24 +8,27 @@
 
 ## 📍 Mission State
 
-- **Current mission:** Payments refactor structurally complete (PR0–PR10). Keep tree healthy; resume product work.
+- **Current mission:** Payments refactor complete. UI demo + state machine leverage + fakes for complex scenarios. Keep tree healthy; resume product work.
 - **Key folders:** Domain `domain/**`, Application `application/orchestration/**`, `application/adapters/**`, Infra `infrastructure/**`, Config `config/payment.providers.ts`.
 
-## 🖥️ UI surface & boundaries (current vs intended)
+## 🖥️ UI surface & boundaries
 
-- **Intended:** UI injects PAYMENT_STATE (PaymentFlowPort) for flow state/actions and PAYMENT_CHECKOUT_CATALOG (PaymentCheckoutCatalogPort) for checkout catalog only.
-- **Current:** 2 tokens exist: PAYMENT_STATE (FlowPort) and PAYMENT_CHECKOUT_CATALOG (CatalogPort). Adapter implements both; config wires them via useExisting (single instance). Hardening providerId: confirm/cancel/refresh accept optional providerId; adapter resolves with intent.provider → selectedProvider, sets missing_provider error when none. UI consumes tokens only, never adapters. Guardrails: ESLint + depcruise forbid UI imports from orchestration/adapters/infra/config and api/testing only in \*.spec.ts.
-- **Rule:** UI must not import PaymentsStore, registry, orchestrators, adapters, or selector modules directly.
+- **Tokens:** PAYMENT_STATE (FlowPort), PAYMENT_CHECKOUT_CATALOG (CatalogPort). Config wires both via useExisting to one adapter.
+- **UI:** Return/Status/Checkout use ports only; error surface (renderPaymentError + Try again / Clear error); confirm/cancel/refresh use optional providerId (adapter resolves). FlowDebugPanel (dev) on checkout, status, return shows debugSummary, history, actions (reset, clearError, clearHistory).
+- **Rule:** UI must not import orchestration/adapters/infra/config; api/testing only in \*.spec.ts.
 
----
+## 🧩 Fake mode (demo)
 
-## 🧩 Naming & folder intent (Domain)
+- **Scenarios (card tokens):** tok_success, tok_3ds (redirect), tok_client_confirm, tok_processing, tok_decline, tok_timeout, tok_insufficient, tok_expired. PaymentIntent.raw includes \_fakeDebug (scenarioId, simulatedDelayMs, correlationId).
+- **Showcase:** Cheat sheet of demo tokens (i18n). No provider-branching in UI.
+
+## 🧩 Naming (Domain)
 
 - **Suffixes:** `*.types.ts`, `*.event.ts`, `*.command.ts`, `*.vo.ts`, `*.rule.ts`, `*.policy.ts`, `*.port.ts`
 - **Folders:** `domain/common/primitives/{ids,money,time}`, `domain/subdomains/{payment,fallback}/{contracts,entities,primitives,rules,policies,ports}`
 
 ---
 
-## ⏭️ Immediate Next Action
+## ⏭️ Next
 
-- Resume product-level work; add providers/methods per architecture rules. Domain framework-free; UI never imports Infrastructure.
+- Resume product work; add providers/methods per architecture rules.
