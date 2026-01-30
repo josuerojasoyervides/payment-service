@@ -120,12 +120,12 @@ describe('CheckoutComponent - Real Integration', () => {
     it('should auto-select the first available provider', async () => {
       await settle(fixture);
 
-      const providers = component.availableProviders();
-      expect(providers.length).toBeGreaterThan(0);
+      const descriptors = component.providerDescriptors();
+      expect(descriptors.length).toBeGreaterThan(0);
 
       const selected = component.checkoutPageState.selectedProvider();
       expect(selected).toBeTruthy();
-      expect(providers).toContain(selected);
+      expect(descriptors.map((d) => d.id)).toContain(selected);
     });
   });
 

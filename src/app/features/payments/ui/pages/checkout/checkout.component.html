@@ -51,7 +51,7 @@
             <h2 class="text-lg font-semibold">{{ checkoutLabels.paymentProviderLabel() }}</h2>
           </div>
           <app-provider-selector
-            [providers]="availableProviders()"
+            [descriptors]="providerDescriptors()"
             [selected]="checkoutPageState.selectedProvider()"
             [disabled]="flowState.isLoading()"
             (providerChange)="selectProvider($event)" />

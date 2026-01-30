@@ -28,9 +28,9 @@
           </p>
         </div>
 
-        <!-- Provider selection (generic list from PAYMENT_PROVIDER_IDS) -->
+        <!-- Provider selection (from catalog) -->
         <app-provider-selector
-          [providers]="statusPageState.providerIds()"
+          [descriptors]="providerDescriptors()"
           [selected]="statusPageState.selectedProvider()"
           [disabled]="flowState.isLoading()"
           (providerChange)="selectProvider($event)" />

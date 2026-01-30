@@ -1,8 +1,36 @@
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { I18nKeys } from '@core/i18n';
+import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { ShowcaseComponent } from '@payments/ui/pages/showcase/showcase.page';
+
+const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
+  {
+    id: 'stripe',
+    labelKey: 'ui.provider_stripe',
+    descriptionKey: 'ui.provider_stripe_description',
+    icon: '💳',
+  },
+  {
+    id: 'paypal',
+    labelKey: 'ui.provider_paypal',
+    descriptionKey: 'ui.provider_paypal_description',
+    icon: '🅿️',
+  },
+];
+
+const mockCatalog = {
+  getProviderDescriptors: () => MOCK_DESCRIPTORS,
+  getProviderDescriptor: (id: PaymentProviderId) =>
+    MOCK_DESCRIPTORS.find((d) => d.id === id) ?? null,
+  availableProviders: () => ['stripe', 'paypal'] as PaymentProviderId[],
+  getSupportedMethods: () => ['card', 'spei'] as const,
+  getFieldRequirements: () => null,
+  buildCreatePaymentRequest: () => ({}) as any,
+};
 
 describe('ShowcaseComponent', () => {
   let component: ShowcaseComponent;
@@ -11,7 +39,7 @@ describe('ShowcaseComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ShowcaseComponent, RouterLink],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ShowcaseComponent);
@@ -31,8 +59,8 @@ describe('ShowcaseComponent', () => {
       expect(component.orderSummary.items.length).toBe(2);
     });
 
-    it('should initialize providerSelector with default values', () => {
-      expect(component.providerSelector.providers).toEqual(['stripe', 'paypal']);
+    it('should initialize providerSelector from catalog', () => {
+      expect(component.providerDescriptors().map((d) => d.id)).toEqual(['stripe', 'paypal']);
       expect(component.providerSelector.selected).toBe('stripe');
       expect(component.providerSelector.disabled).toBe(false);
     });

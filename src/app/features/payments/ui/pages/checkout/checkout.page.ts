@@ -98,9 +98,7 @@ export class CheckoutComponent {
     pendingEvent: this.state.pendingFallbackEvent(),
   }));
 
-  readonly availableProviders = computed<PaymentProviderId[]>(() => {
-    return this.catalog.availableProviders();
-  });
+  readonly providerDescriptors = computed(() => this.catalog.getProviderDescriptors());
 
   readonly availableMethods = computed<PaymentMethodType[]>(() => {
     const provider = this.checkoutPageState.selectedProvider();
@@ -130,16 +128,16 @@ export class CheckoutComponent {
 
   constructor() {
     effect(() => {
-      const providers = this.availableProviders();
+      const descriptors = this.providerDescriptors();
       const current = this.checkoutPageState.selectedProvider();
 
-      if (providers.length === 0) {
+      if (descriptors.length === 0) {
         if (current !== null) patchState(this.checkoutPageState, { selectedProvider: null });
         return;
       }
 
-      if (!current || !providers.includes(current)) {
-        const first = providers[0];
+      if (!current || !descriptors.some((d) => d.id === current)) {
+        const first = descriptors[0].id;
         patchState(this.checkoutPageState, { selectedProvider: first });
         this.state.selectProvider(first);
       }

@@ -57,7 +57,7 @@
           <div>
             <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
             <app-provider-selector
-              [providers]="providerSelector.providers"
+              [descriptors]="providerDescriptors()"
               [selected]="providerSelector.selected"
               [disabled]="providerSelector.disabled"
               (providerChange)="providerSelector.selected = $event" />
@@ -127,8 +127,9 @@
               <div>
                 <label class="label" for="provider">{{ labels.providerLabel() }}</label>
                 <select id="provider" class="input" [(ngModel)]="paymentButton.provider">
-                  <option value="stripe">{{ labels.stripeProviderLabel() }}</option>
-                  <option value="paypal">{{ labels.paypalProviderLabel() }}</option>
+                  @for (opt of catalogProviderOptions(); track opt.id) {
+                    <option [value]="opt.id">{{ opt.label }}</option>
+                  }
                 </select>
               </div>
               <div>
@@ -261,6 +262,24 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Catalog (real providers from port) -->
+      <section class="card">
+        <h2 class="text-xl font-bold mb-4 pb-4 border-b">Catalog (getProviderDescriptors)</h2>
+        <ul class="space-y-2 text-sm">
+          @for (entry of catalogDisplay(); track entry.id) {
+            <li class="flex items-center gap-2">
+              @if (entry.icon) {
+                <span>{{ entry.icon }}</span>
+              }
+              <span class="font-medium">{{ entry.label }}</span>
+              @if (entry.description) {
+                <span class="text-gray-500">— {{ entry.description }}</span>
+              }
+            </li>
+          }
+        </ul>
       </section>
 
       <!-- Demo tokens cheat sheet (fake mode) -->

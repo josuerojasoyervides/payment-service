@@ -3,13 +3,41 @@ import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
 import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
+import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { StatusComponent } from '@payments/ui/pages/status/status.page';
+
+const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
+  {
+    id: 'stripe',
+    labelKey: 'ui.provider_stripe',
+    descriptionKey: 'ui.provider_stripe_description',
+    icon: '💳',
+  },
+  {
+    id: 'paypal',
+    labelKey: 'ui.provider_paypal',
+    descriptionKey: 'ui.provider_paypal_description',
+    icon: '🅿️',
+  },
+];
+
+const mockCatalog = {
+  getProviderDescriptors: () => MOCK_DESCRIPTORS,
+  getProviderDescriptor: (id: PaymentProviderId) =>
+    MOCK_DESCRIPTORS.find((d) => d.id === id) ?? null,
+  availableProviders: () => ['stripe', 'paypal'] as PaymentProviderId[],
+  getSupportedMethods: () => ['card', 'spei'] as const,
+  getFieldRequirements: () => null,
+  buildCreatePaymentRequest: () => ({}) as any,
+};
 
 describe('StatusComponent', () => {
   let component: StatusComponent;
@@ -59,7 +87,11 @@ describe('StatusComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [StatusComponent, RouterLink],
-      providers: [{ provide: PAYMENT_STATE, useValue: mockState }, provideRouter([])],
+      providers: [
+        { provide: PAYMENT_STATE, useValue: mockState },
+        { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog },
+        provideRouter([]),
+      ],
     }).compileComponents();
 
     const i18n = TestBed.inject(I18nService);
@@ -67,6 +99,7 @@ describe('StatusComponent', () => {
 
     fixture = TestBed.createComponent(StatusComponent);
     component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
   describe('Initialization', () => {
@@ -221,7 +254,11 @@ describe('StatusComponent', () => {
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         imports: [StatusComponent, RouterLink],
-        providers: [{ provide: PAYMENT_STATE, useValue: loadingMock }, provideRouter([])],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: loadingMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog },
+          provideRouter([]),
+        ],
       }).compileComponents();
       const i18n = TestBed.inject(I18nService);
       vi.spyOn(i18n, 't').mockImplementation((key: string) => key);

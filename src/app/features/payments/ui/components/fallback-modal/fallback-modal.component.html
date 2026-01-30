@@ -59,10 +59,12 @@
               [class.border-gray-200]="selectedProvider() !== provider.id"
               [class.hover:border-gray-300]="selectedProvider() !== provider.id"
               (click)="selectProvider(provider.id)">
-              <span class="text-2xl">{{ provider.icon }}</span>
+              @if (provider.icon) {
+                <span class="text-2xl">{{ provider.icon }}</span>
+              }
 
               <div class="text-left flex-1">
-                <span class="font-medium text-gray-900">{{ provider.name }}</span>
+                <span class="font-medium text-gray-900">{{ provider.label }}</span>
 
                 @if (provider.description) {
                   <span class="text-sm text-gray-500 block">

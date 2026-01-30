@@ -1,4 +1,5 @@
 import { I18nKeys } from '@core/i18n';
+import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
@@ -67,10 +68,10 @@ export interface OrderSummaryProps {
 }
 
 /**
- * Props for the provider selector.
+ * Props for the provider selector (descriptors from catalog).
  */
 export interface ProviderSelectorProps {
-  providers: PaymentProviderId[];
+  descriptors: ProviderDescriptor[];
   selected: PaymentProviderId | null;
   disabled: boolean;
 }
@@ -117,45 +118,6 @@ export interface PaymentResultProps {
 export interface FallbackModalProps {
   event: FallbackAvailableEvent | null;
   open: boolean;
-}
-
-/**
- * Default provider configuration.
- * @deprecated Use getDefaultProviders() with I18nService instead
- */
-export const DEFAULT_PROVIDERS: ProviderOption[] = [
-  {
-    id: 'stripe',
-    name: 'Stripe',
-    icon: '💳',
-    description: 'Credit/debit cards and SPEI',
-  },
-  {
-    id: 'paypal',
-    name: 'PayPal',
-    icon: '🅿️',
-    description: 'Pay with a PayPal account',
-  },
-];
-
-/**
- * Get provider configuration using i18n.
- */
-export function getDefaultProviders(i18n: { t: (key: string) => string }): ProviderOption[] {
-  return [
-    {
-      id: 'stripe',
-      name: i18n.t(I18nKeys.ui.provider_stripe),
-      icon: '💳',
-      description: i18n.t(I18nKeys.ui.provider_stripe_description),
-    },
-    {
-      id: 'paypal',
-      name: i18n.t(I18nKeys.ui.provider_paypal),
-      icon: '🅿️',
-      description: i18n.t(I18nKeys.ui.provider_paypal_description),
-    },
-  ];
 }
 
 /**

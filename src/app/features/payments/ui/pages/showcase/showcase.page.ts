@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import type { PaymentCheckoutCatalogPort } from '@app/features/payments/application/api/ports/payment-store.port';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
@@ -49,6 +51,7 @@ import type { OrderItem, PaymentButtonState } from '@payments/ui/shared/ui.types
 export class ShowcaseComponent {
   private readonly i18n = inject(I18nService);
   private readonly logger = inject(LoggerService);
+  private readonly catalog = inject(PAYMENT_CHECKOUT_CATALOG) as PaymentCheckoutCatalogPort;
 
   // Order Summary state
   orderSummary = {
@@ -62,9 +65,29 @@ export class ShowcaseComponent {
     ] as OrderItem[],
   };
 
-  // Provider Selector state
+  /** Provider descriptors from catalog (no hardcoded ids). */
+  readonly providerDescriptors = computed(() => this.catalog.getProviderDescriptors());
+
+  /** Resolved options for Payment Button provider dropdown (label from catalog). */
+  readonly catalogProviderOptions = computed(() =>
+    this.providerDescriptors().map((d) => ({
+      id: d.id,
+      label: this.i18n.t(d.labelKey),
+    })),
+  );
+
+  /** Catalog entries for display (label, description, icon from descriptors). */
+  readonly catalogDisplay = computed(() =>
+    this.providerDescriptors().map((d) => ({
+      id: d.id,
+      label: this.i18n.t(d.labelKey),
+      description: d.descriptionKey ? this.i18n.t(d.descriptionKey) : undefined,
+      icon: d.icon,
+    })),
+  );
+
+  // Provider Selector state (selected + disabled; list comes from catalog)
   providerSelector = {
-    providers: ['stripe', 'paypal'] as PaymentProviderId[],
     selected: 'stripe' as PaymentProviderId,
     disabled: false,
   };
@@ -193,8 +216,6 @@ export class ShowcaseComponent {
     selectedLabel: computed(() => this.i18n.t(I18nKeys.ui.selected)),
     disabledLabel: computed(() => this.i18n.t(I18nKeys.ui.disabled)),
     providerLabel: computed(() => this.i18n.t(I18nKeys.ui.provider)),
-    stripeProviderLabel: computed(() => this.i18n.t(I18nKeys.ui.provider_stripe)),
-    paypalProviderLabel: computed(() => this.i18n.t(I18nKeys.ui.provider_paypal)),
     statusLabelShort: computed(() => this.i18n.t(I18nKeys.ui.status_label_short)),
     loadingLabel: computed(() => this.i18n.t(I18nKeys.ui.loading)),
     successLabel: computed(() => this.i18n.t(I18nKeys.ui.success)),

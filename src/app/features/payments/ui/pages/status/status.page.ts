@@ -2,12 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import type { PaymentCheckoutCatalogPort } from '@app/features/payments/application/api/ports/payment-store.port';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import { PAYMENT_PROVIDER_IDS } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';
 import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
 import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
@@ -16,7 +17,6 @@ import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
 interface StatusPageState {
   intentId: string;
-  providerIds: PaymentProviderId[];
   selectedProvider: PaymentProviderId;
   lastQuery: { provider: PaymentProviderId; id: string } | null;
 }
@@ -45,11 +45,13 @@ interface StatusPageState {
 export class StatusComponent {
   private readonly state = inject(PAYMENT_STATE);
   private readonly i18n = inject(I18nService);
+  private readonly catalog = inject(PAYMENT_CHECKOUT_CATALOG) as PaymentCheckoutCatalogPort;
+
+  readonly providerDescriptors = computed(() => this.catalog.getProviderDescriptors());
 
   readonly statusPageState = signalState<StatusPageState>({
     intentId: '',
-    providerIds: [...PAYMENT_PROVIDER_IDS],
-    selectedProvider: PAYMENT_PROVIDER_IDS[0],
+    selectedProvider: null as unknown as PaymentProviderId,
     lastQuery: null,
   });
 
@@ -86,6 +88,15 @@ export class StatusComponent {
   private didPrefill = false;
 
   constructor() {
+    effect(() => {
+      const descriptors = this.providerDescriptors();
+      const current = this.statusPageState.selectedProvider();
+      if (descriptors.length === 0) return;
+      if (!current || !descriptors.some((d) => d.id === current)) {
+        patchState(this.statusPageState, { selectedProvider: descriptors[0].id });
+      }
+    });
+
     effect(() => {
       if (this.didPrefill) return;
 

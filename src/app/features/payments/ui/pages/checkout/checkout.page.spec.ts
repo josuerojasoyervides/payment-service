@@ -11,6 +11,7 @@ import { patchState } from '@ngrx/signals';
 import type {
   PaymentCheckoutCatalogPort,
   PaymentFlowPort,
+  ProviderDescriptor,
 } from '@payments/application/api/ports/payment-store.port';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
@@ -27,13 +28,31 @@ import type {
 } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 
+const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
+  {
+    id: 'stripe',
+    labelKey: 'ui.provider_stripe',
+    descriptionKey: 'ui.provider_stripe_description',
+    icon: '💳',
+    supportedMethods: ['card', 'spei'],
+  },
+  {
+    id: 'paypal',
+    labelKey: 'ui.provider_paypal',
+    descriptionKey: 'ui.provider_paypal_description',
+    icon: '🅿️',
+    supportedMethods: ['card', 'spei'],
+  },
+];
+
 /** Extends port mock with checkout catalog API so component does not throw. */
 function withCheckoutCatalog<T extends PaymentFlowPort & PaymentCheckoutCatalogPort>(base: T): T {
   return {
     ...base,
     availableProviders: () => ['stripe', 'paypal'],
-    getProviderDescriptors: () => [],
-    getProviderDescriptor: () => null,
+    getProviderDescriptors: () => MOCK_DESCRIPTORS,
+    getProviderDescriptor: (id: PaymentProviderId) =>
+      MOCK_DESCRIPTORS.find((d) => d.id === id) ?? null,
     getSupportedMethods: () => ['card', 'spei'] as PaymentMethodType[],
     getFieldRequirements: () => null,
     buildCreatePaymentRequest: (): CreatePaymentRequest => ({
@@ -148,6 +167,9 @@ describe('CheckoutComponent', () => {
       executeFallback: vi.fn(),
       cancelFallback: vi.fn(),
       availableProviders: () => ['stripe', 'paypal'],
+      getProviderDescriptors: () => MOCK_DESCRIPTORS,
+      getProviderDescriptor: (id: PaymentProviderId) =>
+        MOCK_DESCRIPTORS.find((d) => d.id === id) ?? null,
       getSupportedMethods: (_providerId: PaymentProviderId) => {
         try {
           return mockFactory.getSupportedMethods();
@@ -239,10 +261,11 @@ describe('CheckoutComponent', () => {
   });
 
   describe('Available providers and methods', () => {
-    it('should get available providers from state', () => {
+    it('should get provider descriptors from catalog', () => {
       fixture.detectChanges();
-      const providers = component.availableProviders();
-      expect(providers).toEqual(['stripe', 'paypal']);
+      const descriptors = component.providerDescriptors();
+      expect(descriptors.map((d) => d.id)).toEqual(['stripe', 'paypal']);
+      expect(descriptors[0].labelKey).toBe('ui.provider_stripe');
     });
 
     it('should get available methods for the selected provider', () => {
