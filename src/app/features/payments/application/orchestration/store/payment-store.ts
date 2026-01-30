@@ -53,10 +53,26 @@ export const PaymentsStore = signalStore(
       const ctx = snap.context;
       return ctx.intent?.id ?? ctx.intentId ?? null;
     });
+    const debugStateNode = computed(() => {
+      const snap = snapshot();
+      const value = snap.value;
+      return typeof value === 'string' ? value : JSON.stringify(value);
+    });
+    const debugTags = computed(() => {
+      const snap = snapshot();
+      const tags = (snap as { tags?: Set<string> }).tags;
+      return Array.from(tags ?? [], (t) => String(t));
+    });
+    const debugLastEventType = computed(() => machine.lastSentEvent()?.type ?? null);
+    const debugLastEventPayload = computed(() => machine.lastSentEvent() ?? null);
     return {
       resumeProviderId,
       resumeIntentId,
       canResume: computed(() => !!(resumeProviderId() && resumeIntentId())),
+      debugStateNode,
+      debugTags,
+      debugLastEventType,
+      debugLastEventPayload,
     };
   }),
   withMethods(({ _fallbackOrchestrator, _stateMachine, ...store }) => {

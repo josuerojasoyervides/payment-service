@@ -23,6 +23,10 @@ export class FlowDebugPanelComponent {
   private readonly i18n = inject(I18nService);
 
   readonly debugSummary = computed(() => this.state.debugSummary());
+  readonly debugStateNode = computed(() => this.state.debugStateNode());
+  readonly debugTags = computed(() => this.state.debugTags());
+  readonly debugLastEventType = computed(() => this.state.debugLastEventType());
+  readonly debugLastEventPayload = computed(() => this.state.debugLastEventPayload());
   readonly historyCount = computed(() => this.state.historyCount());
   readonly lastHistoryEntry = computed(() => this.state.lastHistoryEntry());
   readonly history = computed(() => this.state.history());
@@ -45,6 +49,10 @@ export class FlowDebugPanelComponent {
     reset: this.i18n.t(I18nKeys.ui.retry),
     clearError: 'Clear error',
     clearHistory: this.i18n.t(I18nKeys.ui.clear_history),
+    debugStateNode: this.i18n.t(I18nKeys.ui.debug_state_node),
+    debugTags: this.i18n.t(I18nKeys.ui.debug_tags),
+    debugLastEventType: this.i18n.t(I18nKeys.ui.debug_last_event_type),
+    debugLastEventPayload: this.i18n.t(I18nKeys.ui.debug_last_event_payload),
   }));
 
   onReset(): void {

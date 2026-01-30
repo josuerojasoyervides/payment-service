@@ -50,6 +50,11 @@ export interface MockPaymentStateOverrides {
   // resume selectors (mockeable for UI tests)
   resumeProviderId?: PaymentProviderId | null;
   resumeIntentId?: string | null;
+  // debug (dev-only UI)
+  debugStateNode?: string | null;
+  debugTags?: string[];
+  debugLastEventType?: string | null;
+  debugLastEventPayload?: unknown | null;
 }
 
 export function createMockPaymentState(
@@ -122,6 +127,11 @@ export function createMockPaymentState(
     const list = history();
     return list.length ? list[list.length - 1] : null;
   });
+
+  const debugStateNode = signal<string | null>(overrides.debugStateNode ?? null);
+  const debugTags = signal<string[]>(overrides.debugTags ?? []);
+  const debugLastEventType = signal<string | null>(overrides.debugLastEventType ?? null);
+  const debugLastEventPayload = signal<unknown | null>(overrides.debugLastEventPayload ?? null);
 
   // Spy-friendly action fns
   const startPayment = (
@@ -201,6 +211,10 @@ export function createMockPaymentState(
     history,
 
     debugSummary,
+    debugStateNode,
+    debugTags,
+    debugLastEventType,
+    debugLastEventPayload,
 
     getSnapshot: () => state(),
 

@@ -106,6 +106,10 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
   // ============================================================
 
   readonly debugSummary: Signal<PaymentDebugSummary> = this.store.debugSummary;
+  readonly debugStateNode: Signal<string | null> = this.store.debugStateNode;
+  readonly debugTags: Signal<string[]> = this.store.debugTags;
+  readonly debugLastEventType: Signal<string | null> = this.store.debugLastEventType;
+  readonly debugLastEventPayload: Signal<unknown | null> = this.store.debugLastEventPayload;
 
   getSnapshot(): Readonly<PaymentsState> {
     return this.state();

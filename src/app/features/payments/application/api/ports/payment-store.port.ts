@@ -86,6 +86,13 @@ export interface PaymentFlowPort {
   readonly lastHistoryEntry: Signal<PaymentHistoryEntry | null>;
   readonly history: Signal<PaymentHistoryEntry[]>;
   readonly debugSummary: Signal<PaymentDebugSummary>;
+
+  // Debug (dev-only UI)
+  readonly debugStateNode: Signal<string | null>;
+  readonly debugTags: Signal<string[]>;
+  readonly debugLastEventType: Signal<string | null>;
+  readonly debugLastEventPayload: Signal<unknown | null>;
+
   getSnapshot(): Readonly<PaymentsState>;
   subscribe(listener: () => void): Unsubscribe;
 

@@ -256,6 +256,10 @@ export interface Translations {
     completed: string;
 
     debug_info: string;
+    debug_state_node: string;
+    debug_tags: string;
+    debug_last_event_type: string;
+    debug_last_event_payload: string;
     provider_debug: string;
     method_debug: string;
     form_valid: string;

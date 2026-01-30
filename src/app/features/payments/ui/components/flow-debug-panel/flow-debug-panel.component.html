@@ -4,6 +4,25 @@
       {{ labels().title }}
     </summary>
     <div class="mt-4 space-y-3 text-xs font-mono">
+      <section class="space-y-1">
+        <p class="font-semibold text-gray-600">Machine</p>
+        <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+          <dt class="text-gray-500">{{ labels().debugStateNode }}:</dt>
+          <dd data-testid="debug-state-node">{{ debugStateNode() ?? '—' }}</dd>
+          <dt class="text-gray-500">{{ labels().debugTags }}:</dt>
+          <dd data-testid="debug-tags">{{ debugTags().length ? debugTags().join(', ') : '—' }}</dd>
+          <dt class="text-gray-500">{{ labels().debugLastEventType }}:</dt>
+          <dd data-testid="debug-last-event-type">{{ debugLastEventType() ?? '—' }}</dd>
+          @if (debugLastEventPayload(); as payload) {
+            <dt class="text-gray-500">{{ labels().debugLastEventPayload }}:</dt>
+            <dd data-testid="debug-last-event-payload">
+              <pre class="mt-1 p-1 bg-white rounded overflow-auto text-[10px]">{{
+                payload | json
+              }}</pre>
+            </dd>
+          }
+        </dl>
+      </section>
       @let summary = debugSummary();
       <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
         <dt class="text-gray-500">{{ labels().status }}:</dt>
