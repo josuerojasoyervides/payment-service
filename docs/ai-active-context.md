@@ -14,8 +14,8 @@
 ## 🖥️ UI surface & boundaries (current vs intended)
 
 - **Intended:** UI should inject PAYMENT_STATE (PaymentStorePort) for reactive state and actions.
-- **Current:** ReturnPage, StatusPage, and Checkout use PAYMENT_STATE. Checkout no longer depends on ProviderFactoryRegistry or FallbackOrchestratorService (catalog and fallback via port).
-- **Rule:** UI must not import PaymentsStore, registry, orchestrators, or selector modules directly.
+- **Current:** ReturnPage, StatusPage, and Checkout use PAYMENT_STATE. Guardrails: ESLint + depcruise forbid UI imports from orchestration/adapters/infra/config and forbid runtime imports from application/api/testing/\*_ (testing only in _.spec.ts).
+- **Rule:** UI must not import PaymentsStore, registry, orchestrators, adapters, or selector modules directly.
 
 ---
 

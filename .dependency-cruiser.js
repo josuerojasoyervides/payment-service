@@ -232,6 +232,37 @@ module.exports = {
       to: { path: '^src/app/features/payments/infrastructure' },
     },
     {
+      name: 'ui-no-orchestration',
+      severity: 'error',
+      comment: 'UI must not import orchestration. Use PAYMENT_STATE (port) only.',
+      from: { path: '^src/app/features/payments/ui' },
+      to: { path: '^src/app/features/payments/application/orchestration' },
+    },
+    {
+      name: 'ui-no-adapters',
+      severity: 'error',
+      comment: 'UI must not import adapters. Use PAYMENT_STATE (port) only.',
+      from: { path: '^src/app/features/payments/ui' },
+      to: { path: '^src/app/features/payments/application/adapters' },
+    },
+    {
+      name: 'ui-no-config',
+      severity: 'error',
+      comment: 'UI must not import config. Config wires DI; UI only consumes tokens.',
+      from: { path: '^src/app/features/payments/ui' },
+      to: { path: '^src/app/features/payments/config' },
+    },
+    {
+      name: 'runtime-not-to-api-testing',
+      severity: 'error',
+      comment: 'application/api/testing/** may only be imported from *.spec.ts or *.test.ts.',
+      from: {
+        path: '^src',
+        pathNot: '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
+      },
+      to: { path: '^src/app/features/payments/application/api/testing' },
+    },
+    {
       name: 'infra-no-ui',
       severity: 'error',
       from: { path: '^src/app/features/payments/infrastructure' },

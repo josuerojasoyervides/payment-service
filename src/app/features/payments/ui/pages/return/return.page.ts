@@ -3,8 +3,6 @@ import type { OnInit } from '@angular/core';
 import { Component, computed, inject } from '@angular/core';
 import type { Params } from '@angular/router';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
-import { mapReturnQueryToReference } from '@app/features/payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
@@ -57,7 +55,6 @@ export class ReturnComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly state = inject(PAYMENT_STATE);
   private readonly i18n = inject(I18nService);
-  private readonly externalEvents = inject(ExternalEventAdapter);
 
   // Page State
   readonly returnPageState = signalState<ReturnPageState>({
@@ -116,26 +113,20 @@ export class ReturnComponent implements OnInit {
       isCancelFlow: !!data['cancelFlow'],
     });
 
-    const reference = mapReturnQueryToReference(params);
-    if (reference.referenceId) {
-      this.externalEvents.redirectReturned({
-        providerId: reference.providerId,
-        referenceId: reference.referenceId,
-      });
-    }
+    this.state.notifyRedirectReturned(normalizeQueryParams(params));
   }
 
   confirmPayment(intentId: string): void {
     const intent = this.state.intent();
-    const providerId =
-      intent?.provider ?? mapReturnQueryToReference(this.route.snapshot.queryParams).providerId;
+    const ref = this.state.getReturnReferenceFromQuery(this.route.snapshot.queryParams);
+    const providerId = intent?.provider ?? ref.providerId;
     this.state.confirmPayment({ intentId }, providerId);
   }
 
   refreshPaymentByReference(referenceId: string): void {
     const intent = this.state.intent();
-    const providerId =
-      intent?.provider ?? mapReturnQueryToReference(this.route.snapshot.queryParams).providerId;
+    const ref = this.state.getReturnReferenceFromQuery(this.route.snapshot.queryParams);
+    const providerId = intent?.provider ?? ref.providerId;
     this.state.refreshPayment({ intentId: referenceId }, providerId);
   }
 

@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
@@ -65,11 +66,18 @@ describe('NgRxSignalsStateAdapter', () => {
       }),
     };
 
+    const externalEventAdapterMock = {
+      redirectReturned: vi.fn(),
+      externalStatusUpdated: vi.fn(),
+      webhookReceived: vi.fn(),
+    };
+
     TestBed.configureTestingModule({
       providers: [
         NgRxSignalsStateAdapter,
         { provide: PaymentsStore, useValue: storeMock },
         { provide: ProviderFactoryRegistry, useValue: registryMock },
+        { provide: ExternalEventAdapter, useValue: externalEventAdapterMock },
       ],
     });
 

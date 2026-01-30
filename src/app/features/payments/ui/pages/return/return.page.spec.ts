@@ -2,7 +2,6 @@ import type { signal } from '@angular/core';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
 import { mapReturnQueryToReference } from '@app/features/payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
@@ -21,7 +20,6 @@ describe('ReturnComponent', () => {
     intent: ReturnType<typeof signal<PaymentIntent | null>>;
   };
   let mockActivatedRoute: any;
-  let mockExternalEvents: any;
 
   const mockIntent: PaymentIntent = {
     id: 'pi_test_123',
@@ -47,16 +45,12 @@ describe('ReturnComponent', () => {
       intent: baseMock.intent as ReturnType<typeof signal<PaymentIntent | null>>,
       confirmPayment: vi.fn(),
       refreshPayment: vi.fn(),
+      notifyRedirectReturned: vi.fn(),
     } as PaymentStorePort & {
       confirmPayment: ReturnType<typeof vi.fn>;
       refreshPayment: ReturnType<typeof vi.fn>;
+      notifyRedirectReturned: ReturnType<typeof vi.fn>;
       intent: ReturnType<typeof signal<PaymentIntent | null>>;
-    };
-
-    mockExternalEvents = {
-      redirectReturned: vi.fn(),
-      externalStatusUpdated: vi.fn(),
-      webhookReceived: vi.fn(),
     };
 
     // I18nService mock
@@ -76,7 +70,6 @@ describe('ReturnComponent', () => {
         { provide: PAYMENT_STATE, useValue: mockState },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: I18nService, useValue: mockI18n },
-        { provide: ExternalEventAdapter, useValue: mockExternalEvents },
       ],
     }).compileComponents();
 
@@ -129,8 +122,8 @@ describe('ReturnComponent', () => {
         payment_intent: 'pi_test_123',
       };
       component.ngOnInit();
-      expect(mockExternalEvents.redirectReturned).toHaveBeenCalledWith(
-        expect.objectContaining({ providerId: 'stripe', referenceId: 'pi_test_123' }),
+      expect(mockState.notifyRedirectReturned).toHaveBeenCalledWith(
+        expect.objectContaining({ payment_intent: 'pi_test_123' }),
       );
     });
   });
@@ -151,8 +144,8 @@ describe('ReturnComponent', () => {
         token: 'ORDER_FAKE_XYZ',
       };
       component.ngOnInit();
-      expect(mockExternalEvents.redirectReturned).toHaveBeenCalledWith(
-        expect.objectContaining({ providerId: 'paypal', referenceId: 'ORDER_FAKE_XYZ' }),
+      expect(mockState.notifyRedirectReturned).toHaveBeenCalledWith(
+        expect.objectContaining({ token: 'ORDER_FAKE_XYZ' }),
       );
     });
   });
@@ -170,8 +163,8 @@ describe('ReturnComponent', () => {
         payment_intent: 'pi_test_123',
       };
       component.ngOnInit();
-      expect(mockExternalEvents.redirectReturned).toHaveBeenCalledWith(
-        expect.objectContaining({ providerId: 'stripe', referenceId: 'pi_test_123' }),
+      expect(mockState.notifyRedirectReturned).toHaveBeenCalledWith(
+        expect.objectContaining({ payment_intent: 'pi_test_123' }),
       );
     });
 
@@ -307,7 +300,6 @@ describe('ReturnComponent', () => {
               getLanguage: () => 'es',
             },
           },
-          { provide: ExternalEventAdapter, useValue: mockExternalEvents },
         ],
       }).compileComponents();
       fixture = TestBed.createComponent(ReturnComponent);

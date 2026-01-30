@@ -5,6 +5,8 @@ import type {
 } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
+
+export type { PaymentHistoryEntry };
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
@@ -203,4 +205,13 @@ export interface PaymentStorePort {
     currency: CurrencyCode;
     options: PaymentOptions;
   }): CreatePaymentRequest;
+
+  /** Parse return-page query params to provider + reference (no adapter import in UI). */
+  getReturnReferenceFromQuery(queryParams: Record<string, unknown>): {
+    providerId: PaymentProviderId;
+    referenceId: string | null;
+  };
+
+  /** Notify that the user returned from a redirect (3DS, PayPal). Call from return page only. */
+  notifyRedirectReturned(queryParams: Record<string, unknown>): void;
 }

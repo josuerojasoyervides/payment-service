@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed } from '@ngrx/signals';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
-import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
+import type { PaymentHistoryEntry } from '@payments/application/api/ports/payment-store.port';
 import type {
   PaymentIntent,
   PaymentProviderId,

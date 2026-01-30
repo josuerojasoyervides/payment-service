@@ -2,6 +2,8 @@ import type { Signal } from '@angular/core';
 import { computed, effect, inject, Injectable } from '@angular/core';
 import type { PaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
 import { deepComputed } from '@ngrx/signals';
+import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
+import { mapReturnQueryToReference } from '@payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
 import type {
   PaymentDebugSummary,
   PaymentStorePort,
@@ -41,6 +43,7 @@ import type {
 export class NgRxSignalsStateAdapter implements PaymentStorePort {
   private readonly store = inject(PaymentsStore);
   private readonly registry = inject(ProviderFactoryRegistry);
+  private readonly externalEvents = inject(ExternalEventAdapter);
 
   // ============================================================
   // REACTIVE STATE (delegated to store)
@@ -200,5 +203,23 @@ export class NgRxSignalsStateAdapter implements PaymentStorePort {
       .withAmount(params.amount, params.currency)
       .withOptions(params.options)
       .build();
+  }
+
+  getReturnReferenceFromQuery(queryParams: Record<string, unknown>): {
+    providerId: PaymentProviderId;
+    referenceId: string | null;
+  } {
+    const ref = mapReturnQueryToReference(queryParams);
+    return { providerId: ref.providerId, referenceId: ref.referenceId };
+  }
+
+  notifyRedirectReturned(queryParams: Record<string, unknown>): void {
+    const ref = mapReturnQueryToReference(queryParams);
+    if (ref.referenceId) {
+      this.externalEvents.redirectReturned({
+        providerId: ref.providerId,
+        referenceId: ref.referenceId,
+      });
+    }
   }
 }
