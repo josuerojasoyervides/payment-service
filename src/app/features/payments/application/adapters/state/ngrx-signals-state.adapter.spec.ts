@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { I18nKeys } from '@core/i18n';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
@@ -47,6 +48,7 @@ describe('NgRxSignalsStateAdapter', () => {
       refreshPayment: vi.fn(),
       selectProvider: vi.fn(),
       clearError: vi.fn(),
+      setError: vi.fn(),
       reset: vi.fn(),
       clearHistory: vi.fn(),
       executeFallback: vi.fn(),
@@ -236,6 +238,53 @@ describe('NgRxSignalsStateAdapter', () => {
       const request = { intentId: 'pi_1' };
       adapter.refreshPayment(request, 'stripe');
       expect(storeMock.refreshPayment).toHaveBeenCalledWith({ request, providerId: 'stripe' });
+    });
+  });
+
+  describe('providerId resolution (confirmPayment, cancelPayment, refreshPayment)', () => {
+    const request = { intentId: 'pi_1' as const };
+
+    it('uses intent.provider when providerId is omitted', () => {
+      storeMock.currentIntent.set({
+        id: 'pi_1',
+        provider: 'stripe',
+        status: 'succeeded',
+        amount: 100,
+        currency: 'MXN',
+        clientSecret: 'secret',
+      });
+      storeMock.selectedProvider.set(null);
+
+      adapter.confirmPayment(request);
+      expect(storeMock.confirmPayment).toHaveBeenCalledWith({
+        request,
+        providerId: 'stripe',
+      });
+      expect(storeMock.setError).not.toHaveBeenCalled();
+    });
+
+    it('uses selectedProvider when providerId is omitted and no intent', () => {
+      storeMock.currentIntent.set(null);
+      storeMock.selectedProvider.set('paypal');
+
+      adapter.cancelPayment(request);
+      expect(storeMock.cancelPayment).toHaveBeenCalledWith({
+        request,
+        providerId: 'paypal',
+      });
+      expect(storeMock.setError).not.toHaveBeenCalled();
+    });
+
+    it('sets error and does not call store when providerId cannot be resolved', () => {
+      storeMock.currentIntent.set(null);
+      storeMock.selectedProvider.set(null);
+
+      adapter.refreshPayment(request);
+      expect(storeMock.refreshPayment).not.toHaveBeenCalled();
+      expect(storeMock.setError).toHaveBeenCalledWith({
+        code: 'missing_provider',
+        messageKey: I18nKeys.errors.missing_provider,
+      });
     });
   });
 

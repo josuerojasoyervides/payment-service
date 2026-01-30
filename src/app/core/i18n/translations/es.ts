@@ -10,6 +10,7 @@ export const es: Translations = {
     currency_not_supported: 'La moneda no es soportada',
     unknown_error: 'Error desconocido',
     provider_error: 'Error del proveedor de pago',
+    missing_provider: 'Se requiere el proveedor de pago.',
     invalid_request: 'Solicitud inválida',
     network_error: 'Error de red',
     timeout: 'La solicitud tardó demasiado. Intenta de nuevo.',

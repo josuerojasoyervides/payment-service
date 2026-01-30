@@ -1,6 +1,7 @@
 import type { Signal } from '@angular/core';
 import { computed, effect, inject, Injectable } from '@angular/core';
 import type { PaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
+import { I18nKeys } from '@core/i18n';
 import { deepComputed } from '@ngrx/signals';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
 import { mapReturnQueryToReference } from '@payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
@@ -125,16 +126,49 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
     this.store.startPayment({ request, providerId, context });
   }
 
-  confirmPayment(request: ConfirmPaymentRequest, providerId: PaymentProviderId): void {
-    this.store.confirmPayment({ request, providerId });
+  /** Resolve providerId: explicit → intent.provider → selectedProvider. Returns null if none. */
+  private resolveProviderId(providerId?: PaymentProviderId): PaymentProviderId | null {
+    if (providerId) return providerId;
+    const intent = this.store.currentIntent();
+    if (intent?.provider) return intent.provider;
+    const selected = this.store.selectedProvider();
+    if (selected) return selected;
+    return null;
   }
 
-  cancelPayment(request: CancelPaymentRequest, providerId: PaymentProviderId): void {
-    this.store.cancelPayment({ request, providerId });
+  private setMissingProviderError(): void {
+    this.store.setError({
+      code: 'missing_provider',
+      messageKey: I18nKeys.errors.missing_provider,
+      raw: undefined,
+    });
   }
 
-  refreshPayment(request: GetPaymentStatusRequest, providerId: PaymentProviderId): void {
-    this.store.refreshPayment({ request, providerId });
+  confirmPayment(request: ConfirmPaymentRequest, providerId?: PaymentProviderId): void {
+    const resolved = this.resolveProviderId(providerId);
+    if (!resolved) {
+      this.setMissingProviderError();
+      return;
+    }
+    this.store.confirmPayment({ request, providerId: resolved });
+  }
+
+  cancelPayment(request: CancelPaymentRequest, providerId?: PaymentProviderId): void {
+    const resolved = this.resolveProviderId(providerId);
+    if (!resolved) {
+      this.setMissingProviderError();
+      return;
+    }
+    this.store.cancelPayment({ request, providerId: resolved });
+  }
+
+  refreshPayment(request: GetPaymentStatusRequest, providerId?: PaymentProviderId): void {
+    const resolved = this.resolveProviderId(providerId);
+    if (!resolved) {
+      this.setMissingProviderError();
+      return;
+    }
+    this.store.refreshPayment({ request, providerId: resolved });
   }
 
   selectProvider(providerId: PaymentProviderId): void {

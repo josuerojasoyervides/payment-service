@@ -28,6 +28,7 @@ import { createPaymentsStoreActions } from '@payments/application/orchestration/
 import { createFallbackHandlers } from '@payments/application/orchestration/store/fallback/payment-store.fallback';
 import { setupPaymentFlowMachineBridge } from '@payments/application/orchestration/store/projection/payment-store.machine-bridge';
 import { buildPaymentsSelectors } from '@payments/application/orchestration/store/projection/payment-store.selectors';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export const PaymentsStore = signalStore(
@@ -55,6 +56,10 @@ export const PaymentsStore = signalStore(
 
       clearError() {
         updateState(store, 'clearError', { error: null, status: 'idle' });
+      },
+
+      setError(error: PaymentError) {
+        updateState(store, 'setError', { error, status: 'error' });
       },
 
       clearHistory() {

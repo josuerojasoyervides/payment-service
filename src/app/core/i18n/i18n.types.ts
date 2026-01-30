@@ -14,6 +14,7 @@ export interface Translations {
     currency_not_supported: string;
     unknown_error: string;
     provider_error: string;
+    missing_provider: string;
     invalid_request: string;
     network_error: string;
     timeout: string;

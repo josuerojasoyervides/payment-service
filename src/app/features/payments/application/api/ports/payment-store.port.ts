@@ -74,9 +74,9 @@ export interface PaymentFlowPort {
     providerId: PaymentProviderId,
     context?: StrategyContext,
   ): void;
-  confirmPayment(request: ConfirmPaymentRequest, providerId: PaymentProviderId): void;
-  cancelPayment(request: CancelPaymentRequest, providerId: PaymentProviderId): void;
-  refreshPayment(request: GetPaymentStatusRequest, providerId: PaymentProviderId): void;
+  confirmPayment(request: ConfirmPaymentRequest, providerId?: PaymentProviderId): void;
+  cancelPayment(request: CancelPaymentRequest, providerId?: PaymentProviderId): void;
+  refreshPayment(request: GetPaymentStatusRequest, providerId?: PaymentProviderId): void;
   selectProvider(providerId: PaymentProviderId): void;
   clearError(): void;
   reset(): void;

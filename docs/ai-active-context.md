@@ -14,7 +14,7 @@
 ## 🖥️ UI surface & boundaries (current vs intended)
 
 - **Intended:** UI injects PAYMENT_STATE (PaymentFlowPort) for flow state/actions and PAYMENT_CHECKOUT_CATALOG (PaymentCheckoutCatalogPort) for checkout catalog only.
-- **Current:** 2 tokens exist: PAYMENT_STATE (FlowPort) and PAYMENT_CHECKOUT_CATALOG (CatalogPort). Adapter implements both; config wires them via useExisting (single instance). UI consumes tokens only, never adapters. Guardrails: ESLint + depcruise forbid UI imports from orchestration/adapters/infra/config and api/testing only in \*.spec.ts.
+- **Current:** 2 tokens exist: PAYMENT_STATE (FlowPort) and PAYMENT_CHECKOUT_CATALOG (CatalogPort). Adapter implements both; config wires them via useExisting (single instance). Hardening providerId: confirm/cancel/refresh accept optional providerId; adapter resolves with intent.provider → selectedProvider, sets missing_provider error when none. UI consumes tokens only, never adapters. Guardrails: ESLint + depcruise forbid UI imports from orchestration/adapters/infra/config and api/testing only in \*.spec.ts.
 - **Rule:** UI must not import PaymentsStore, registry, orchestrators, adapters, or selector modules directly.
 
 ---

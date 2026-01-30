@@ -10,6 +10,7 @@ export const en: Translations = {
     currency_not_supported: 'Currency not supported',
     unknown_error: 'Unknown error',
     provider_error: 'Payment provider error',
+    missing_provider: 'Payment provider is required.',
     invalid_request: 'Invalid request',
     network_error: 'Network error',
     timeout: 'Request timed out. Please try again.',

@@ -111,9 +111,9 @@ export function createMockPaymentState(
     _provider: PaymentProviderId,
     _ctx?: StrategyContext,
   ) => {};
-  const confirmPayment = (_req: ConfirmPaymentRequest, _provider: PaymentProviderId) => {};
-  const cancelPayment = (_req: CancelPaymentRequest, _provider: PaymentProviderId) => {};
-  const refreshPayment = (_req: GetPaymentStatusRequest, _provider: PaymentProviderId) => {};
+  const confirmPayment = (_req: ConfirmPaymentRequest, _provider?: PaymentProviderId) => {};
+  const cancelPayment = (_req: CancelPaymentRequest, _provider?: PaymentProviderId) => {};
+  const refreshPayment = (_req: GetPaymentStatusRequest, _provider?: PaymentProviderId) => {};
 
   const selectProviderFn = (providerId: PaymentProviderId) => selectedProvider.set(providerId);
   const clearError = () => {
