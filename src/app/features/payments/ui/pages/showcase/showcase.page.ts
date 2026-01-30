@@ -161,31 +161,38 @@ export class ShowcaseComponent {
     expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
   };
 
+  /** True when catalog has at least one provider (for conditional rendering). */
+  readonly hasProviders = computed(() => this.catalogProviderIds().p0 != null);
+
   // Intent Card state (provider from catalog; status/actions mutable for demo)
   intentCardShowActions = true;
   intentCardExpanded = false;
   intentCardStatus: PaymentIntent['status'] = 'requires_confirmation';
   readonly intentCard = computed(() => {
     const { p0 } = this.catalogProviderIds();
+    const intent: PaymentIntent | null = p0
+      ? {
+          id: 'pi_fake_card_demo',
+          provider: p0,
+          status: this.intentCardStatus,
+          amount: 299.99,
+          currency: 'MXN' as CurrencyCode,
+        }
+      : null;
     return {
-      intent: {
-        id: 'pi_fake_card_demo',
-        provider: (p0 ?? 'card') as PaymentProviderId,
-        status: this.intentCardStatus,
-        amount: 299.99,
-        currency: 'MXN' as CurrencyCode,
-      } as PaymentIntent,
+      intent,
       showActions: this.intentCardShowActions,
       expanded: this.intentCardExpanded,
     };
   });
 
-  // Fallback Modal (open mutable; event from catalog)
+  // Fallback Modal (open mutable; event from catalog; null when no providers)
   fallbackModalOpen = false;
-  readonly fallbackModalEvent = computed(() => {
+  readonly fallbackModalEvent = computed((): FallbackAvailableEvent | null => {
     const { p0, p1 } = this.catalogProviderIds();
+    if (!p0) return null;
     return {
-      failedProvider: (p0 ?? 'card') as PaymentProviderId,
+      failedProvider: p0,
       error: {
         code: 'provider_error',
         messageKey: I18nKeys.errors.provider_error,
@@ -200,7 +207,7 @@ export class ShowcaseComponent {
       },
       timestamp: Date.now(),
       eventId: 'fb_demo_123',
-    } as FallbackAvailableEvent;
+    };
   });
 
   // Handlers
@@ -266,5 +273,6 @@ export class ShowcaseComponent {
     fallbackModalInfoLabel: computed(() => this.i18n.t(I18nKeys.ui.fallback_modal_info)),
     demoTokensTitle: computed(() => this.i18n.t(I18nKeys.ui.demo_tokens_title)),
     demoTokensCheatsheet: computed(() => this.i18n.t(I18nKeys.ui.demo_tokens_cheatsheet)),
+    noProvidersAvailable: computed(() => this.i18n.t(I18nKeys.ui.no_providers_available)),
   };
 }

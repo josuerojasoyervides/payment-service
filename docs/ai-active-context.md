@@ -4,17 +4,18 @@
 
 ---
 
-## 🕒 Last Sync: 2026-01-29
+## 🕒 Last Sync: 2026-01-30
 
 ## 📍 Mission State
 
-- **Current mission:** Payments refactor complete. UI demo + state machine leverage + fakes for complex scenarios. Keep tree healthy; resume product work.
+- **Current mission:** Payments refactor complete. UI demo + state machine + fakes. Keep tree healthy; resume product work.
 - **Key folders:** Domain `domain/**`, Application `application/orchestration/**`, `application/adapters/**`, Infra `infrastructure/**`, Config `config/payment.providers.ts`.
 
-## 🖥️ UI surface & boundaries
+## 🖥️ UI surface & boundaries (UI-01)
 
 - **Tokens:** PAYMENT_STATE (FlowPort), PAYMENT_CHECKOUT_CATALOG (CatalogPort). Config wires both via useExisting to one adapter.
-- **UI:** Return/Status/Checkout/Showcase use ports only; no provider identifiers (stripe/paypal/mercadopago) in UI runtime. Status: selected provider from state.selectedProvider(), refreshPayment(\_, providerId); examples from catalog. Return: normalize query params via shared util, notifyRedirectReturned + getReturnReferenceFromQuery, selectProvider(providerId), show provider label (catalog) + referenceId. Showcase: provider IDs from catalog.getProviderDescriptors().
+- **UI runtime:** No provider identifiers (stripe/paypal/mercadopago) and no provider-specific query keys (payment_intent, PayerID, redirect_status, etc.) in UI runtime. Return page does not parse query params by provider; uses port `getReturnReferenceFromQuery(normalized)` + `notifyRedirectReturned(normalized)`; on init calls `refreshPayment` when referenceId exists. Status/Return/Showcase: provider list and labels from catalog only.
+- **Guardrail:** `ui-provider-coupling.spec.ts` covers status/return/showcase (ts+html), bans provider names and provider-specific keys; excludes \*.spec.ts and \*.integration.spec.ts.
 - **Rule:** UI must not import infrastructure; api/testing only in \*.spec.ts.
 
 ## 🧩 Application layer (clean layering)

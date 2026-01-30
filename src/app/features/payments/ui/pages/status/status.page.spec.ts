@@ -181,7 +181,10 @@ describe('StatusComponent', () => {
       patchState(component.statusPageState, { intentId: '  pi_test_123  ' });
       component.searchIntent();
 
-      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
+      expect(mockState.refreshPayment).toHaveBeenCalledWith(
+        { intentId: 'pi_test_123' },
+        expect.any(String),
+      );
     });
   });
 

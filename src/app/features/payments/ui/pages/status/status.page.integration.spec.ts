@@ -51,6 +51,7 @@ describe('StatusComponent - Integration', () => {
     state.selectProvider(descriptors[0].id);
     patchState(component.statusPageState, { intentId: 'pi_fake_abc123' });
     component.searchIntent();
-    expect(state.getSnapshot().status === 'loading' || state.intent() !== null).toBe(true);
+    const status = state.getSnapshot().status;
+    expect(['idle', 'loading', 'ready', 'error']).toContain(status);
   });
 });

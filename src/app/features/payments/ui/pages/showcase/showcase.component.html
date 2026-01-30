@@ -11,6 +11,9 @@
           {{ labels.goToCheckoutLabel() }}
         </a>
       </div>
+      @if (!hasProviders()) {
+        <p class="mt-4 text-amber-600 text-sm">{{ labels.noProvidersAvailable() }}</p>
+      }
     </div>
 
     <!-- Components Grid -->
@@ -229,13 +232,17 @@
         <div class="grid md:grid-cols-2 gap-6">
           <div>
             <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
-            <app-payment-intent-card
-              [intent]="intentCard().intent"
-              [showActions]="intentCard().showActions"
-              [expanded]="intentCard().expanded"
-              (confirm)="onIntentAction('confirm', $event)"
-              (canceled)="onIntentAction('cancel', $event)"
-              (refresh)="onIntentAction('refresh', $event)" />
+            @if (intentCard().intent; as intent) {
+              <app-payment-intent-card
+                [intent]="intent"
+                [showActions]="intentCard().showActions"
+                [expanded]="intentCard().expanded"
+                (confirm)="onIntentAction('confirm', $event)"
+                (canceled)="onIntentAction('cancel', $event)"
+                (refresh)="onIntentAction('refresh', $event)" />
+            } @else {
+              <p class="text-sm text-gray-500">{{ labels.noProvidersAvailable() }}</p>
+            }
           </div>
           <div>
             <h3 class="font-medium mb-3">{{ labels.controlsLabel() }}</h3>
@@ -296,14 +303,18 @@
         <div class="grid md:grid-cols-2 gap-6">
           <div>
             <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
-            <button class="btn-primary" (click)="fallbackModalOpen = true">
-              {{ labels.openFallbackModalLabel() }}
-            </button>
-            <app-fallback-modal
-              [event]="fallbackModalEvent()"
-              [open]="fallbackModalOpen"
-              (confirm)="onFallbackConfirm($event)"
-              (canceled)="fallbackModalOpen = false" />
+            @if (fallbackModalEvent(); as event) {
+              <button class="btn-primary" (click)="fallbackModalOpen = true">
+                {{ labels.openFallbackModalLabel() }}
+              </button>
+              <app-fallback-modal
+                [event]="event"
+                [open]="fallbackModalOpen"
+                (confirm)="onFallbackConfirm($event)"
+                (canceled)="fallbackModalOpen = false" />
+            } @else {
+              <p class="text-sm text-gray-500">{{ labels.noProvidersAvailable() }}</p>
+            }
           </div>
           <div>
             <h3 class="font-medium mb-3">{{ labels.infoLabel() }}</h3>

@@ -111,20 +111,28 @@ describe('ShowcaseComponent', () => {
       expect(component.speiInstructions.currency).toBe('MXN');
     });
 
-    it('should have intentCard configured from catalog', () => {
+    it('should have intentCard configured from catalog when providers exist', () => {
+      expect(component.providerDescriptors().length).toBeGreaterThan(0);
       const card = component.intentCard();
-      expect(card.intent.id).toBe('pi_fake_card_demo');
-      expect(card.intent.status).toBe('requires_confirmation');
+      expect(card.intent).not.toBeNull();
+      if (card.intent) {
+        expect(card.intent.id).toBe('pi_fake_card_demo');
+        expect(card.intent.status).toBe('requires_confirmation');
+        expect(card.intent.provider).toBe(component.catalogProviderIds().p0);
+      }
       expect(card.showActions).toBe(true);
       expect(card.expanded).toBe(false);
-      expect(card.intent.provider).toBe(component.catalogProviderIds().p0);
     });
 
-    it('should have fallbackModal event from catalog', () => {
+    it('should have fallbackModal event from catalog when providers exist', () => {
       expect(component.fallbackModalOpen).toBe(false);
+      expect(component.providerDescriptors().length).toBeGreaterThan(0);
       const event = component.fallbackModalEvent();
-      expect(event.failedProvider).toBe(component.catalogProviderIds().p0);
-      expect(Array.isArray(event.alternativeProviders)).toBe(true);
+      expect(event).not.toBeNull();
+      if (event) {
+        expect(event.failedProvider).toBe(component.catalogProviderIds().p0);
+        expect(Array.isArray(event.alternativeProviders)).toBe(true);
+      }
     });
   });
 
@@ -192,15 +200,19 @@ describe('ShowcaseComponent', () => {
       expect(component.orderSummary.items[1].price).toBe(100.0);
     });
 
-    it('should have fallbackEvent configured from catalog', () => {
+    it('should have fallbackEvent configured from catalog when providers exist', () => {
+      expect(component.providerDescriptors().length).toBeGreaterThan(0);
       const event = component.fallbackModalEvent();
-      expect(event.eventId).toBe('fb_demo_123');
-      expect(event.failedProvider).toBe(component.catalogProviderIds().p0);
-      expect(event.error.code).toBe('provider_error');
-      expect(event.alternativeProviders).toEqual(
-        component.catalogProviderIds().p1 ? [component.catalogProviderIds().p1] : [],
-      );
-      expect(event.originalRequest.orderId).toBe('order_123');
+      expect(event).not.toBeNull();
+      if (event) {
+        expect(event.eventId).toBe('fb_demo_123');
+        expect(event.failedProvider).toBe(component.catalogProviderIds().p0);
+        expect(event.error.code).toBe('provider_error');
+        expect(event.alternativeProviders).toEqual(
+          component.catalogProviderIds().p1 ? [component.catalogProviderIds().p1] : [],
+        );
+        expect(event.originalRequest.orderId).toBe('order_123');
+      }
     });
 
     it('should tener expiresAt en speiInstructions en el futuro', () => {

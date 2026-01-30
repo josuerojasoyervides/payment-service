@@ -226,6 +226,7 @@ describe('ReturnComponent', () => {
         imports: [ReturnComponent, RouterLink],
         providers: [
           { provide: PAYMENT_STATE, useValue: errorMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog },
           { provide: ActivatedRoute, useValue: mockActivatedRoute },
           {
             provide: I18nService,
@@ -265,6 +266,7 @@ describe('ReturnComponent', () => {
         imports: [ReturnComponent, RouterLink],
         providers: [
           { provide: PAYMENT_STATE, useValue: loadingMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog },
           { provide: ActivatedRoute, useValue: mockActivatedRoute },
           {
             provide: I18nService,

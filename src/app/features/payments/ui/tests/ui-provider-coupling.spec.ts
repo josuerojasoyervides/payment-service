@@ -22,7 +22,16 @@ const FILES_NO_INFRASTRUCTURE_IMPORT = [
   'src/app/features/payments/ui/components/payment-intent-card/payment-intent-card.component.html',
 ];
 
-const BANNED_IDENTIFIERS = ['paypal', 'stripe', 'mercadopago'];
+/** Provider names and provider-specific query keys; content is compared in lowercase. */
+const BANNED_IDENTIFIERS = [
+  'paypal',
+  'stripe',
+  'mercadopago',
+  'payment_intent',
+  'setup_intent',
+  'payerid',
+  'redirect_status',
+];
 
 describe('Payments UI provider coupling guard', () => {
   describe('orchestration entry points (no provider identifiers)', () => {

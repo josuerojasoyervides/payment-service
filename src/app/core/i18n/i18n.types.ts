@@ -288,5 +288,7 @@ export interface Translations {
     paypal_redirect_secure_message: string;
     demo_tokens_title: string;
     demo_tokens_cheatsheet: string;
+    no_providers_available: string;
+    reference_id: string;
   };
 }

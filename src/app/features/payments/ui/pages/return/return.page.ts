@@ -87,6 +87,13 @@ export class ReturnComponent implements OnInit {
       this.state.selectProvider(providerId);
     }
 
+    if (referenceId) {
+      const providerForRefresh = providerId ?? this.state.selectedProvider();
+      if (providerForRefresh) {
+        this.state.refreshPayment({ intentId: referenceId }, providerForRefresh);
+      }
+    }
+
     patchState(this.returnPageState, {
       returnReference: { providerId, referenceId, providerLabel },
       allParams: normalizedParams,
@@ -135,6 +142,7 @@ export class ReturnComponent implements OnInit {
     flowTypeLabel: this.i18n.t(I18nKeys.ui.flow_type),
     statusLabel: this.i18n.t(I18nKeys.ui.status_label),
     intentIdLabel: this.i18n.t(I18nKeys.ui.intent_id),
+    referenceIdLabel: this.i18n.t(I18nKeys.ui.reference_id),
 
     canceled: this.i18n.t(I18nKeys.ui.canceled),
     completed: this.i18n.t(I18nKeys.ui.completed),
