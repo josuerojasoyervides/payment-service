@@ -49,7 +49,9 @@ describe('Payments UI provider coupling guard', () => {
     for (const file of FILES_NO_INFRASTRUCTURE_IMPORT) {
       it(`${file} does not import from payments/infrastructure`, () => {
         const content = readFileSync(join(process.cwd(), file), 'utf8');
-        expect(content).not.toMatch(/from\s+['"]@payments\/infrastructure/);
+        expect(content).not.toMatch(/from\s+['"]@payments\/infrastructure(\/|['"])/);
+        expect(content).not.toMatch(/require\(\s*['"]@payments\/infrastructure/);
+        expect(content).not.toMatch(/import\(\s*['"]@payments\/infrastructure/);
       });
     }
   });
