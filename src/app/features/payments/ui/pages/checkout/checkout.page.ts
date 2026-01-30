@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, isDevMode } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PaymentFlowMachineDriver } from '@app/features/payments/application/orchestration/flow/payment-flow-machine-driver';
 import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type {
   CurrencyCode,
@@ -73,7 +73,7 @@ export class CheckoutComponent {
   private readonly logger = inject(LoggerService);
   private readonly i18n = inject(I18nService);
   private readonly fallback = inject(FallbackOrchestratorService);
-  private readonly flow = inject(PaymentFlowFacade);
+  private readonly flow = inject(PaymentFlowMachineDriver);
 
   readonly flowState = deepComputed(() => ({
     isLoading: this.flow.isLoading(),

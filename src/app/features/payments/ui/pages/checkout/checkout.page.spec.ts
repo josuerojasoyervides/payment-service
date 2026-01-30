@@ -5,7 +5,7 @@ import { provideRouter, RouterLink } from '@angular/router';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { PaymentFlowMachineDriver } from '@payments/application/orchestration/flow/payment-flow-machine-driver';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/cancel-payment.use-case';
@@ -170,7 +170,7 @@ describe('CheckoutComponent', () => {
         GetPaymentStatusUseCase,
         IdempotencyKeyFactory,
         { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
-        { provide: PaymentFlowFacade, useValue: mockFlowFacade },
+        { provide: PaymentFlowMachineDriver, useValue: mockFlowFacade },
         { provide: ProviderFactoryRegistry, useValue: mockRegistry },
         { provide: LoggerService, useValue: mockLogger },
         provideRouter([]),

@@ -5,9 +5,9 @@ import type { Params } from '@angular/router';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
 import { mapReturnQueryToReference } from '@app/features/payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
+import { PaymentFlowMachineDriver } from '@app/features/payments/application/orchestration/flow/payment-flow-machine-driver';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
 
@@ -55,7 +55,7 @@ interface ReturnPageState {
 })
 export class ReturnComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly flow = inject(PaymentFlowFacade);
+  private readonly flow = inject(PaymentFlowMachineDriver);
   private readonly i18n = inject(I18nService);
   private readonly externalEvents = inject(ExternalEventAdapter);
 

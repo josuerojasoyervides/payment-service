@@ -2,9 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { PaymentFlowMachineDriver } from '@app/features/payments/application/orchestration/flow/payment-flow-machine-driver';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { PAYMENT_PROVIDER_IDS } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
@@ -41,7 +41,7 @@ interface StatusPageState {
   templateUrl: './status.component.html',
 })
 export class StatusComponent {
-  private readonly flow = inject(PaymentFlowFacade);
+  private readonly flow = inject(PaymentFlowMachineDriver);
   private readonly i18n = inject(I18nService);
 
   readonly statusPageState = signalState<StatusPageState>({

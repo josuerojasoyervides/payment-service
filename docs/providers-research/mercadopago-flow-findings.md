@@ -16,7 +16,7 @@
 
 ### 1.2 End-to-end sequence (explicit)
 
-1. `CheckoutComponent` builds request -> `PaymentFlowFacade.start('mercadopago', req, context)`.
+1. `CheckoutComponent` builds request -> `PaymentFlowMachineDriver.start('mercadopago', req, context)`.
 2. `MercadoPagoRedirectStrategy.start()` calls create preference gateway.
 3. `MercadoPagoCreateIntentGateway` sends preference payload with `back_urls`, `auto_return=approved`, `external_reference=orderId`, optional `payer.email`.
 4. Response maps to a `PaymentIntent` in `requires_action` with `redirectUrl=init_point`.

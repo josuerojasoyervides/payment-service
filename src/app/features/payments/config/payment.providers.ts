@@ -10,6 +10,7 @@ import { ExternalEventAdapter } from '@app/features/payments/application/adapter
 import { NoopFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/prod-only/noop-flow-telemetry-sink';
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { WEBHOOK_NORMALIZER_REGISTRY } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
+import { PaymentFlowMachineDriver } from '@app/features/payments/application/orchestration/flow/payment-flow-machine-driver';
 import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { ProviderMethodPolicyRegistry } from '@app/features/payments/application/orchestration/registry/provider-method-policy/provider-method-policy.registry';
 import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
@@ -32,7 +33,6 @@ import { PAYMENT_STATE } from '@payments/application/api/tokens/flow/payment-sta
 import { CLIENT_CONFIRM_PORTS } from '@payments/application/api/tokens/operations/client-confirm.token';
 import { FINALIZE_PORTS } from '@payments/application/api/tokens/operations/finalize.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
 import {
   type PaymentsProvidersMode,
@@ -64,7 +64,7 @@ const APPLICATION_PROVIDERS: Provider[] = [
   NextActionOrchestratorService,
   PaymentsStore,
   PaymentFlowActorService,
-  PaymentFlowFacade,
+  PaymentFlowMachineDriver,
   PaymentHistoryFacade,
   { provide: PAYMENT_STATE, useClass: NgRxSignalsStateAdapter },
   { provide: FLOW_TELEMETRY_SINK, useClass: NoopFlowTelemetrySink },

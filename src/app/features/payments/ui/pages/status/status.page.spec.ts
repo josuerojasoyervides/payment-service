@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { PaymentFlowMachineDriver } from '@payments/application/orchestration/flow/payment-flow-machine-driver';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { StatusComponent } from '@payments/ui/pages/status/status.page';
@@ -43,7 +43,10 @@ describe('StatusComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [StatusComponent, RouterLink],
-      providers: [{ provide: PaymentFlowFacade, useValue: mockFlowFacade }, provideRouter([])],
+      providers: [
+        { provide: PaymentFlowMachineDriver, useValue: mockFlowFacade },
+        provideRouter([]),
+      ],
     }).compileComponents();
 
     const i18n = TestBed.inject(I18nService);

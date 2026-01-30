@@ -6,7 +6,7 @@ import { ExternalEventAdapter } from '@app/features/payments/application/adapter
 import { mapReturnQueryToReference } from '@app/features/payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { PaymentFlowMachineDriver } from '@payments/application/orchestration/flow/payment-flow-machine-driver';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { ReturnComponent } from '@payments/ui/pages/return/return.page';
 
@@ -64,7 +64,7 @@ describe('ReturnComponent', () => {
     await TestBed.configureTestingModule({
       imports: [ReturnComponent, RouterLink],
       providers: [
-        { provide: PaymentFlowFacade, useValue: mockFlowFacade },
+        { provide: PaymentFlowMachineDriver, useValue: mockFlowFacade },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: I18nService, useValue: mockI18n },
         { provide: ExternalEventAdapter, useValue: mockExternalEvents },

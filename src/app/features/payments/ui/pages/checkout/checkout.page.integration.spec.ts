@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import { PaymentFlowMachineDriver } from '@payments/application/orchestration/flow/payment-flow-machine-driver';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import providePayments from '@payments/config/payment.providers';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
@@ -17,7 +17,7 @@ import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
  * If it times out, throw an error with the final state snapshot.
  */
 async function waitForPaymentComplete(
-  flow: PaymentFlowFacade,
+  flow: PaymentFlowMachineDriver,
   maxWaitMs = 2000,
   pollMs = 50,
 ): Promise<void> {
@@ -93,7 +93,7 @@ describe('CheckoutComponent - Real Integration', () => {
   let fixture: ComponentFixture<CheckoutComponent>;
   let registry: ProviderFactoryRegistry;
   let logger: LoggerService;
-  let flow: PaymentFlowFacade;
+  let flow: PaymentFlowMachineDriver;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -106,7 +106,7 @@ describe('CheckoutComponent - Real Integration', () => {
 
     registry = TestBed.inject(ProviderFactoryRegistry);
     logger = TestBed.inject(LoggerService);
-    flow = TestBed.inject(PaymentFlowFacade);
+    flow = TestBed.inject(PaymentFlowMachineDriver);
 
     // Clean state before each test
     flow.reset();

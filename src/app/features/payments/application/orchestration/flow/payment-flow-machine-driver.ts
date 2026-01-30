@@ -1,18 +1,3 @@
-/**
- * Imperative wrapper around the payment flow machine.
- *
- * What it is: entry point to send commands (START, CONFIRM, CANCEL, REFRESH, RESET) into the
- * XState actor. Exposes snapshot, flags, and helpers for flow interaction.
- *
- * What it is NOT: the main UI API when PAYMENT_STATE (PaymentStorePort) exists. Prefer injecting
- * PAYMENT_STATE for reactive state and actions in UI.
- *
- * When to use: debugging, demos, harnesses, or temporary integration paths. Kept neutral;
- * no commitment to remove, but intended usage is secondary to the port.
- *
- * PaymentFlowContext: the facade accepts `flowContext` in start(); the canonical type lives in
- * Domain (payment-flow-context.types). This layer only forwards it; no separate alias.
- */
 import { computed, inject, Injectable } from '@angular/core';
 import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
@@ -21,8 +6,22 @@ import type { NextAction } from '@payments/domain/subdomains/payment/contracts/p
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
+/**
+ * PaymentFlowMachineDriver
+ *
+ * Imperative driver for the XState payment-flow actor.
+ *
+ * Purpose:
+ * - Send machine commands (START, CONFIRM, CANCEL, REFRESH, RESET)
+ * - Provide snapshot/flags for debugging, demos, and test harnesses
+ * - Perform inherently imperative "next actions" (e.g. browser redirects)
+ *
+ * Not the UI API:
+ * - UI should inject PAYMENT_STATE (PaymentStorePort) for reactive state + actions.
+ * - Keeping UI on the port avoids coupling to XState internals and keeps the wiring swappable.
+ */
 @Injectable()
-export class PaymentFlowFacade {
+export class PaymentFlowMachineDriver {
   private readonly flow = inject(PaymentFlowActorService);
 
   readonly snapshot = this.flow.snapshot;
@@ -38,7 +37,7 @@ export class PaymentFlowFacade {
   readonly isReady = this.flow.isReady;
   readonly hasError = this.flow.hasError;
 
-  // helpers UI
+  // helpers UI (debug/demo only — UI should prefer the port)
   readonly redirectUrl = computed(() => this.intent()?.redirectUrl ?? null);
   readonly nextAction = computed(() => this.intent()?.nextAction ?? null);
 

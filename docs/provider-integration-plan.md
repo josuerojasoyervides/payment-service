@@ -15,7 +15,7 @@
 
 ### Definitions (to avoid ambiguity)
 
-- **Command**: event initiated by UI via `PaymentFlowFacade` (e.g., START / CONFIRM / CANCEL / REFRESH).
+- **Command**: event initiated by UI via `PaymentFlowMachineDriver` (e.g., START / CONFIRM / CANCEL / REFRESH).
 - **System event**: event initiated by adapters/actors (return/webhook/external updates/fallback). Must have **semantics** in the machine.
 - **Confirm**: user expresses intent to proceed (UI command).
 - **Finalize**: system executes provider-specific completion step (capture/reconcile/verify/client-confirm orchestration).
@@ -31,7 +31,7 @@
 - Runtime ownership (today):
   - Machine: `src/app/features/payments/application/orchestration/flow/payment-flow.machine.ts`
   - Actor: `src/app/features/payments/application/orchestration/flow/payment-flow.actor.service.ts`
-  - Facade: `src/app/features/payments/application/orchestration/flow/payment-flow.facade.ts`
+  - Facade: `src/app/features/payments/application/orchestration/flow/payment-flow-machine-driver.ts`
   - Store projection bridge: `src/app/features/payments/application/orchestration/store/projection/payment-store.machine-bridge.ts`
 
 ### A.2 External events (current behavior)

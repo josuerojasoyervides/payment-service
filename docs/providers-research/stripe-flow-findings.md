@@ -9,7 +9,7 @@
 ### 1.1 Stripe flow (current behavior)
 
 - UI builds a `CreatePaymentRequest` using provider builder (Stripe card or SPEI).
-- Flow starts via `PaymentFlowFacade.start()` and XState machine.
+- Flow starts via `PaymentFlowMachineDriver.start()` and XState machine.
 - Strategy validates request, prepares metadata, and calls gateway.
 - Stripe gateway creates a PaymentIntent with `confirm: true` and `return_url` for card.
 - If Stripe returns `requires_action`, UI shows NextActionCard.
