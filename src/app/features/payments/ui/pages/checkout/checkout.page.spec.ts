@@ -1,17 +1,15 @@
-import { computed, signal } from '@angular/core';
+import { signal } from '@angular/core';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
+import { createMockPaymentState } from '@app/features/payments/application/orchestration/store/tests/provide-mock-payment-state.harness';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
-import { PaymentFlowMachineDriver } from '@payments/application/orchestration/flow/payment-flow-machine-driver';
+import type { PaymentStorePort } from '@payments/application/api/ports/payment-store.port';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
-import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/cancel-payment.use-case';
-import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/confirm-payment.use-case';
-import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
-import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
@@ -23,13 +21,19 @@ import type {
   FieldRequirements,
   PaymentOptions,
 } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
-import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 
 describe('CheckoutComponent', () => {
   let component: CheckoutComponent;
   let fixture: ComponentFixture<CheckoutComponent>;
-  let mockFlowFacade: any;
+  let mockState: PaymentStorePort & {
+    startPayment: ReturnType<typeof vi.fn>;
+    confirmPayment: ReturnType<typeof vi.fn>;
+    cancelPayment: ReturnType<typeof vi.fn>;
+    reset: ReturnType<typeof vi.fn>;
+    intent: ReturnType<typeof signal<PaymentIntent | null>>;
+    error: ReturnType<typeof signal<PaymentError | null>>;
+  };
   let mockRegistry: any;
   let mockLogger: any;
   let mockFallbackOrchestrator: any;
@@ -121,26 +125,22 @@ describe('CheckoutComponent', () => {
       getAvailableProviders: vi.fn(() => ['stripe', 'paypal']),
     };
 
-    // Mock del payment state
-    mockFlowFacade = {
-      isLoading: signal(false),
-      isReady: signal(false),
-      hasError: signal(false),
-      intent: signal<PaymentIntent | null>(null),
-      error: signal<PaymentError | null>(null),
-      snapshot: signal({
-        value: 'idle',
-        context: { providerId: null, intentId: null, intent: null },
-        tags: new Set<string>(),
-      }),
-      lastSentEvent: signal(null),
-      redirectUrl: computed(() => null),
-      performNextAction: vi.fn(() => true),
-      start: vi.fn(() => true),
-      confirm: vi.fn(() => true),
-      cancel: vi.fn(() => true),
-      refresh: vi.fn(() => true),
+    const baseMock = createMockPaymentState();
+    mockState = {
+      ...baseMock,
+      intent: baseMock.intent as ReturnType<typeof signal<PaymentIntent | null>>,
+      error: baseMock.error as ReturnType<typeof signal<PaymentError | null>>,
+      startPayment: vi.fn(),
+      confirmPayment: vi.fn(),
+      cancelPayment: vi.fn(),
       reset: vi.fn(),
+    } as PaymentStorePort & {
+      startPayment: ReturnType<typeof vi.fn>;
+      confirmPayment: ReturnType<typeof vi.fn>;
+      cancelPayment: ReturnType<typeof vi.fn>;
+      reset: ReturnType<typeof vi.fn>;
+      intent: ReturnType<typeof signal<PaymentIntent | null>>;
+      error: ReturnType<typeof signal<PaymentError | null>>;
     };
 
     mockFallbackOrchestrator = {
@@ -164,13 +164,8 @@ describe('CheckoutComponent', () => {
     await TestBed.configureTestingModule({
       imports: [CheckoutComponent, RouterLink],
       providers: [
-        StartPaymentUseCase,
-        ConfirmPaymentUseCase,
-        CancelPaymentUseCase,
-        GetPaymentStatusUseCase,
-        IdempotencyKeyFactory,
+        { provide: PAYMENT_STATE, useValue: mockState },
         { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
-        { provide: PaymentFlowMachineDriver, useValue: mockFlowFacade },
         { provide: ProviderFactoryRegistry, useValue: mockRegistry },
         { provide: LoggerService, useValue: mockLogger },
         provideRouter([]),
@@ -344,9 +339,9 @@ describe('CheckoutComponent', () => {
       expect(mockBuilder.forOrder).toHaveBeenCalledWith(orderId);
       expect(mockBuilder.withAmount).toHaveBeenCalledWith(499.99, 'MXN');
       expect(mockBuilder.build).toHaveBeenCalled();
-      expect(mockFlowFacade.start).toHaveBeenCalledWith(
+      expect(mockState.startPayment).toHaveBeenCalledWith(
+        expect.any(Object),
         'stripe',
-        expect.any(Object), // request
         expect.objectContaining({
           returnUrl: expect.any(String),
           cancelUrl: expect.any(String),
@@ -366,7 +361,7 @@ describe('CheckoutComponent', () => {
         selectedProvider: null,
       });
       component.processPayment();
-      expect(mockFlowFacade.start).not.toHaveBeenCalled();
+      expect(mockState.startPayment).not.toHaveBeenCalled();
     });
 
     it('should not process payment when method is missing', () => {
@@ -374,7 +369,7 @@ describe('CheckoutComponent', () => {
         selectedMethod: null,
       });
       component.processPayment();
-      expect(mockFlowFacade.start).not.toHaveBeenCalled();
+      expect(mockState.startPayment).not.toHaveBeenCalled();
     });
 
     it('should not process payment when the form is invalid', () => {
@@ -382,7 +377,7 @@ describe('CheckoutComponent', () => {
         isFormValid: false,
       });
       component.processPayment();
-      expect(mockFlowFacade.start).not.toHaveBeenCalled();
+      expect(mockState.startPayment).not.toHaveBeenCalled();
     });
 
     it('should process payment when isFormValid is true', () => {
@@ -392,17 +387,16 @@ describe('CheckoutComponent', () => {
       component.onFormChange({ token: 'tok_test' });
       component.processPayment();
 
-      // Should process payment (start should be called)
-      expect(mockFlowFacade.start).toHaveBeenCalledWith(
+      expect(mockState.startPayment).toHaveBeenCalledWith(
+        expect.any(Object),
         'stripe',
-        expect.any(Object), // request
         expect.objectContaining({
           returnUrl: expect.any(String),
           cancelUrl: expect.any(String),
           isTest: expect.any(Boolean),
           deviceData: expect.any(Object),
         }),
-      ); // Should not log "Form invalid, payment blocked"
+      );
       const blockedCalls = mockLogger.info.mock.calls.filter(
         (call: any[]) => call[0] === 'Form invalid, payment blocked',
       );
@@ -474,38 +468,101 @@ describe('CheckoutComponent', () => {
 
   describe('Payment state', () => {
     it('should expose loading state', () => {
-      mockFlowFacade.isLoading.set(true);
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: createMockPaymentState({ isLoading: true }) },
+          { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
+          { provide: ProviderFactoryRegistry, useValue: mockRegistry },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.flowState.isLoading()).toBe(true);
     });
 
     it('should expose ready state', () => {
-      mockFlowFacade.isReady.set(true);
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: createMockPaymentState({ isReady: true }) },
+          { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
+          { provide: ProviderFactoryRegistry, useValue: mockRegistry },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.flowState.isReady()).toBe(true);
     });
 
     it('should expose error state', () => {
-      mockFlowFacade.hasError.set(true);
-      mockFlowFacade.error.set(mockError);
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          {
+            provide: PAYMENT_STATE,
+            useValue: createMockPaymentState({ hasError: true, error: mockError }),
+          },
+          { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
+          { provide: ProviderFactoryRegistry, useValue: mockRegistry },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.flowState.hasError()).toBe(true);
       expect(component.flowState.currentError()).toEqual(mockError);
     });
 
     it('should expose current intent', () => {
-      mockFlowFacade.intent.set(mockIntent);
+      (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set(mockIntent);
       fixture.detectChanges();
       expect(component.flowState.currentIntent()).toEqual(mockIntent);
     });
 
-    it('should show result when ready or when there is an error', () => {
-      mockFlowFacade.isReady.set(true);
+    it('should show result when ready', () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: createMockPaymentState({ isReady: true }) },
+          { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
+          { provide: ProviderFactoryRegistry, useValue: mockRegistry },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.showResult()).toBe(true);
+    });
 
-      mockFlowFacade.isReady.set(false);
-      mockFlowFacade.hasError.set(true);
+    it('should show result when there is an error', () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: createMockPaymentState({ hasError: true }) },
+          { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
+          { provide: ProviderFactoryRegistry, useValue: mockRegistry },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.showResult()).toBe(true);
     });
@@ -514,10 +571,9 @@ describe('CheckoutComponent', () => {
   describe('Reset', () => {
     it('should reset the payment', () => {
       component.resetPayment();
-      expect(mockFlowFacade.reset).toHaveBeenCalled();
+      expect(mockState.reset).toHaveBeenCalled();
       expect(component.checkoutPageState.isFormValid()).toBe(false);
       expect(mockLogger.info).toHaveBeenCalledWith('Payment reset', 'CheckoutPage');
-      // The orderId should change
       const newOrderId = component.checkoutPageState.orderId();
       expect(newOrderId).toBeTruthy();
     });

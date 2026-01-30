@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, isDevMode } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PaymentFlowMachineDriver } from '@app/features/payments/application/orchestration/flow/payment-flow-machine-driver';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import { I18nKeys, I18nService } from '@core/i18n';
@@ -73,14 +73,14 @@ export class CheckoutComponent {
   private readonly logger = inject(LoggerService);
   private readonly i18n = inject(I18nService);
   private readonly fallback = inject(FallbackOrchestratorService);
-  private readonly flow = inject(PaymentFlowMachineDriver);
+  private readonly state = inject(PAYMENT_STATE);
 
   readonly flowState = deepComputed(() => ({
-    isLoading: this.flow.isLoading(),
-    isReady: this.flow.isReady(),
-    hasError: this.flow.hasError(),
-    currentIntent: this.flow.intent(),
-    currentError: this.flow.error(),
+    isLoading: this.state.isLoading(),
+    isReady: this.state.isReady(),
+    hasError: this.state.hasError(),
+    currentIntent: this.state.intent(),
+    currentError: this.state.error(),
   }));
 
   readonly checkoutPageState = signalState<CheckoutPageState>({
@@ -138,14 +138,13 @@ export class CheckoutComponent {
   readonly showResult = computed(() => this.flowState.isReady() || this.flowState.hasError());
 
   readonly debugInfo = computed(() => {
-    const snap = this.flow.snapshot();
+    const summary = this.state.debugSummary();
 
     return {
-      state: snap.value,
-      providerId: snap.context.providerId,
-      intentId: snap.context.intentId ?? snap.context.intent?.id ?? null,
-      tags: snap.tags ? Array.from(snap.tags) : [],
-      lastEvent: this.flow.lastSentEvent(),
+      state: summary.status,
+      providerId: summary.provider,
+      intentId: summary.intentId,
+      tags: [] as string[],
     };
   });
 
@@ -258,14 +257,7 @@ export class CheckoutComponent {
         },
       };
 
-      const ok = this.flow.start(provider, request, context);
-
-      if (!ok) {
-        this.logger.warn('START event ignored by machine', 'CheckoutPage', {
-          provider,
-          method,
-        });
-      }
+      this.state.startPayment(request, provider, context);
     } catch (error) {
       this.logger.error('Failed to build payment request', 'CheckoutPage', error);
     }
@@ -303,23 +295,43 @@ export class CheckoutComponent {
   }
 
   onNextActionRequested(action: NextAction): void {
-    const ok = this.flow.performNextAction(action);
-    if (!ok) {
-      this.logger.warn('NEXT_ACTION ignored', 'CheckoutPage', { kind: action.kind });
+    if (action.kind === 'redirect' && action.url) {
+      if (typeof window !== 'undefined') window.location.href = action.url;
+      return;
+    }
+    if (action.kind === 'client_confirm') {
+      const intent = this.state.intent();
+      const intentId = intent?.id ?? null;
+      const providerId =
+        intent?.provider ??
+        this.state.selectedProvider() ??
+        this.checkoutPageState.selectedProvider();
+      if (intentId && providerId) this.state.confirmPayment({ intentId }, providerId);
     }
   }
+
   confirmPayment(): void {
-    const ok = this.flow.confirm();
-    if (!ok) this.logger.warn('CONFIRM ignored', 'CheckoutPage');
+    const intent = this.state.intent();
+    const intentId = intent?.id ?? null;
+    const providerId =
+      intent?.provider ??
+      this.state.selectedProvider() ??
+      this.checkoutPageState.selectedProvider();
+    if (intentId && providerId) this.state.confirmPayment({ intentId }, providerId);
   }
 
   cancelPayment(): void {
-    const ok = this.flow.cancel();
-    if (!ok) this.logger.warn('CANCEL ignored', 'CheckoutPage');
+    const intent = this.state.intent();
+    const intentId = intent?.id ?? null;
+    const providerId =
+      intent?.provider ??
+      this.state.selectedProvider() ??
+      this.checkoutPageState.selectedProvider();
+    if (intentId && providerId) this.state.cancelPayment({ intentId }, providerId);
   }
 
   resetPayment(): void {
-    this.flow.reset();
+    this.state.reset();
 
     patchState(this.checkoutPageState, {
       orderId: 'order_' + Math.random().toString(36).substring(7),

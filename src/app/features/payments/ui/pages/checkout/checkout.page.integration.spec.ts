@@ -2,63 +2,52 @@
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
-import { PaymentFlowMachineDriver } from '@payments/application/orchestration/flow/payment-flow-machine-driver';
+import type { PaymentStorePort } from '@payments/application/api/ports/payment-store.port';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import providePayments from '@payments/config/payment.providers';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 
 /**
  * Wait for the flow to complete:
- * - success: intent existe y no loading
- * - error: hasError true y no loading
- *
- * If it times out, throw an error with the final state snapshot.
+ * - success: intent exists and not loading
+ * - error: hasError true and not loading
  */
 async function waitForPaymentComplete(
-  flow: PaymentFlowMachineDriver,
+  state: PaymentStorePort,
   maxWaitMs = 2000,
   pollMs = 50,
 ): Promise<void> {
   const startTime = Date.now();
 
   while (Date.now() - startTime < maxWaitMs) {
-    const intent = flow.intent();
-    const isLoading = flow.isLoading();
-    const hasError = flow.hasError();
+    const intent = state.intent();
+    const isLoading = state.isLoading();
+    const hasError = state.hasError();
 
     if ((intent && !isLoading) || (hasError && !isLoading)) return;
 
     await new Promise((resolve) => setTimeout(resolve, pollMs));
   }
 
-  // Final snapshot for debugging
-  const final = {
-    intent: flow.intent(),
-    isLoading: flow.isLoading(),
-    isReady: flow.isReady(),
-    hasError: flow.hasError(),
-    error: flow.error(),
-    snapshot: flow.snapshot(),
-  };
+  const snap = state.getSnapshot();
+  const summary = state.debugSummary();
 
   throw new Error(
     `Payment did not complete within ${maxWaitMs}ms.\n` +
-      `Final state snapshot:\n` +
-      JSON.stringify(
+      `Final state: ${JSON.stringify(
         {
-          intent: !!final.intent,
-          isLoading: final.isLoading,
-          isReady: final.isReady,
-          hasError: final.hasError,
-          error: final.error ? 'exists' : null,
-          state: final.snapshot.value,
-          tags: final.snapshot.tags ? Array.from(final.snapshot.tags) : [],
+          intent: !!snap.intent,
+          isLoading: summary.status === 'loading',
+          isReady: summary.status === 'ready',
+          hasError: summary.status === 'error',
+          status: summary.status,
         },
         null,
         2,
-      ),
+      )}`,
   );
 }
 
@@ -93,7 +82,7 @@ describe('CheckoutComponent - Real Integration', () => {
   let fixture: ComponentFixture<CheckoutComponent>;
   let registry: ProviderFactoryRegistry;
   let logger: LoggerService;
-  let flow: PaymentFlowMachineDriver;
+  let state: PaymentStorePort;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -106,10 +95,9 @@ describe('CheckoutComponent - Real Integration', () => {
 
     registry = TestBed.inject(ProviderFactoryRegistry);
     logger = TestBed.inject(LoggerService);
-    flow = TestBed.inject(PaymentFlowMachineDriver);
+    state = TestBed.inject(PAYMENT_STATE);
 
-    // Clean state before each test
-    flow.reset();
+    state.reset();
 
     fixture.detectChanges();
     await settle(fixture);
@@ -120,7 +108,7 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(component).toBeTruthy();
       expect(registry).toBeTruthy();
       expect(logger).toBeTruthy();
-      expect(flow).toBeTruthy();
+      expect(state).toBeTruthy();
     });
 
     it('should initialize with default values', () => {
@@ -166,21 +154,21 @@ describe('CheckoutComponent - Real Integration', () => {
 
       // Should enter loading immediately
       await settle(fixture);
-      expect(flow.isLoading() || flow.isReady() || flow.hasError()).toBe(true);
+      expect(state.isLoading() || state.isReady() || state.hasError()).toBe(true);
       expect(
         component.flowState.isLoading() ||
           component.flowState.isReady() ||
           component.flowState.hasError(),
       ).toBe(true);
 
-      await waitForPaymentComplete(flow);
+      await waitForPaymentComplete(state);
       fixture.detectChanges();
 
-      expect(flow.isLoading()).toBe(false);
-      expect(flow.isReady()).toBe(true);
-      expect(flow.hasError()).toBe(false);
+      expect(state.isLoading()).toBe(false);
+      expect(state.isReady()).toBe(true);
+      expect(state.hasError()).toBe(false);
 
-      const intent = flow.intent();
+      const intent = state.intent();
       expect(intent).toBeTruthy();
       expect(intent?.provider).toBe('stripe');
       expect(intent?.status).toBe('succeeded');
@@ -200,12 +188,12 @@ describe('CheckoutComponent - Real Integration', () => {
 
       component.processPayment();
 
-      await waitForPaymentComplete(flow);
+      await waitForPaymentComplete(state);
       fixture.detectChanges();
 
-      expect(flow.hasError()).toBe(false);
+      expect(state.hasError()).toBe(false);
 
-      const intent = flow.intent();
+      const intent = state.intent();
       expect(intent).toBeTruthy();
       expect(intent?.status).toBe('succeeded');
     });
@@ -223,11 +211,11 @@ describe('CheckoutComponent - Real Integration', () => {
 
       component.processPayment();
 
-      await waitForPaymentComplete(flow);
+      await waitForPaymentComplete(state);
       fixture.detectChanges();
 
-      expect(flow.hasError()).toBe(false);
-      expect(flow.isReady()).toBe(true);
+      expect(state.hasError()).toBe(false);
+      expect(state.isReady()).toBe(true);
     });
   });
 
@@ -263,15 +251,15 @@ describe('CheckoutComponent - Real Integration', () => {
       component.processPayment();
 
       // Wait for completion (success or error)
-      await waitForPaymentComplete(flow);
+      await waitForPaymentComplete(state);
       fixture.detectChanges();
 
       // Estado final esperado
-      expect(flow.isLoading()).toBe(false);
-      expect(flow.hasError()).toBe(false);
-      expect(flow.isReady()).toBe(true);
+      expect(state.isLoading()).toBe(false);
+      expect(state.hasError()).toBe(false);
+      expect(state.isReady()).toBe(true);
 
-      const intent = flow.intent();
+      const intent = state.intent();
       expect(intent).toBeTruthy();
 
       // Should be requires_action
@@ -307,23 +295,23 @@ describe('CheckoutComponent - Real Integration', () => {
     });
 
     it('should transicionar correctamente: idle -> loading -> ready', async () => {
-      expect(flow.isLoading()).toBe(false);
-      expect(flow.isReady()).toBe(false);
-      expect(flow.hasError()).toBe(false);
+      expect(state.isLoading()).toBe(false);
+      expect(state.isReady()).toBe(false);
+      expect(state.hasError()).toBe(false);
 
       ensureValidForm(component);
 
       component.processPayment();
       await settle(fixture);
 
-      expect(flow.isLoading() || flow.isReady() || flow.hasError()).toBe(true);
+      expect(state.isLoading() || state.isReady() || state.hasError()).toBe(true);
 
-      await waitForPaymentComplete(flow);
+      await waitForPaymentComplete(state);
       fixture.detectChanges();
 
-      expect(flow.isLoading()).toBe(false);
-      expect(flow.isReady()).toBe(true);
-      expect(flow.hasError()).toBe(false);
+      expect(state.isLoading()).toBe(false);
+      expect(state.isReady()).toBe(true);
+      expect(state.hasError()).toBe(false);
     });
 
     it('should leave intent in success state after the flow', async () => {
@@ -331,10 +319,10 @@ describe('CheckoutComponent - Real Integration', () => {
 
       component.processPayment();
 
-      await waitForPaymentComplete(flow);
+      await waitForPaymentComplete(state);
       fixture.detectChanges();
 
-      const intent = flow.intent();
+      const intent = state.intent();
       expect(intent).toBeTruthy();
       expect(intent?.status).toBe('succeeded');
       expect(intent?.provider).toBe('stripe');
@@ -369,14 +357,14 @@ describe('CheckoutComponent - Real Integration', () => {
 
       component.processPayment();
 
-      await waitForPaymentComplete(flow);
+      await waitForPaymentComplete(state);
       fixture.detectChanges();
 
-      expect(flow.isLoading()).toBe(false);
-      expect(flow.isReady()).toBe(true);
-      expect(flow.hasError()).toBe(false);
+      expect(state.isLoading()).toBe(false);
+      expect(state.isReady()).toBe(true);
+      expect(state.hasError()).toBe(false);
 
-      const intent = flow.intent();
+      const intent = state.intent();
       expect(intent).toBeTruthy();
       expect(intent?.status).toBe('requires_action');
       expect(intent?.nextAction).toBeTruthy();
@@ -402,9 +390,9 @@ describe('CheckoutComponent - Real Integration', () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       fixture.detectChanges();
 
-      expect(flow.isLoading()).toBe(false);
-      expect(flow.intent()).toBeNull();
-      expect(flow.hasError()).toBe(false);
+      expect(state.isLoading()).toBe(false);
+      expect(state.intent()).toBeNull();
+      expect(state.hasError()).toBe(false);
     });
   });
 
@@ -427,18 +415,18 @@ describe('CheckoutComponent - Real Integration', () => {
       await settle(fixture);
 
       // In PayPal, the request usually carries returnUrl/cancelUrl from StrategyContext (CheckoutComponent),
-      // not necessarily from the form. Mark as valid to allow the flow.
+      // not necessarily from the form. Mark as valid to allow the state.
       ensureValidForm(component);
 
       component.processPayment();
 
-      await waitForPaymentComplete(flow, 4000);
+      await waitForPaymentComplete(state, 4000);
       fixture.detectChanges();
 
-      expect(flow.isLoading()).toBe(false);
-      expect(flow.hasError()).toBe(false);
+      expect(state.isLoading()).toBe(false);
+      expect(state.hasError()).toBe(false);
 
-      const intent = flow.intent();
+      const intent = state.intent();
       expect(intent).toBeTruthy();
 
       expect(intent?.provider).toBe('paypal');
@@ -470,11 +458,11 @@ describe('CheckoutComponent - Real Integration', () => {
 
       component.processPayment();
 
-      await waitForPaymentComplete(flow);
+      await waitForPaymentComplete(state);
       fixture.detectChanges();
 
-      expect(flow.hasError()).toBe(false);
-      expect(flow.isReady()).toBe(true);
+      expect(state.hasError()).toBe(false);
+      expect(state.isReady()).toBe(true);
     });
 
     it('should fail when token is invalid (Stripe + Card) and reflect error state', async () => {
@@ -506,23 +494,23 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(component.checkoutPageState.isFormValid()).toBe(true);
 
       // Wait for completion (success or error)
-      await waitForPaymentComplete(flow);
+      await waitForPaymentComplete(state);
       fixture.detectChanges();
 
       // ✅ Estado final esperado
-      expect(flow.isLoading()).toBe(false);
-      expect(flow.hasError()).toBe(true);
-      expect(flow.isReady()).toBe(false);
+      expect(state.isLoading()).toBe(false);
+      expect(state.hasError()).toBe(true);
+      expect(state.isReady()).toBe(false);
 
       // Idealmente no hay intent
-      expect(flow.intent()).toBeNull();
+      expect(state.intent()).toBeNull();
 
       // The component should reflect the error
       expect(component.flowState.hasError()).toBe(true);
       expect(component.flowState.currentError()).toBeTruthy();
       expect(component.showResult()).toBe(true);
 
-      const err = flow.error();
+      const err = state.error();
       if (err) {
         expect(err.messageKey).toBeTruthy();
       }
@@ -585,10 +573,10 @@ describe('CheckoutComponent - Real Integration', () => {
 
       component.processPayment();
 
-      await waitForPaymentComplete(flow);
+      await waitForPaymentComplete(state);
       fixture.detectChanges();
 
-      expect(flow.intent()).toBeTruthy();
+      expect(state.intent()).toBeTruthy();
     });
 
     it('should reset correctly after a successful payment', async () => {
@@ -597,10 +585,10 @@ describe('CheckoutComponent - Real Integration', () => {
       component.resetPayment();
       await settle(fixture);
 
-      expect(flow.intent()).toBeNull();
-      expect(flow.isLoading()).toBe(false);
-      expect(flow.isReady()).toBe(false);
-      expect(flow.hasError()).toBe(false);
+      expect(state.intent()).toBeNull();
+      expect(state.isLoading()).toBe(false);
+      expect(state.isReady()).toBe(false);
+      expect(state.hasError()).toBe(false);
 
       // El orderId should cambiar
       const newOrderId = component.checkoutPageState.orderId();
