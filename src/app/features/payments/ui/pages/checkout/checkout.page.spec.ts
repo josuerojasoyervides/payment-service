@@ -8,7 +8,10 @@ import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/sto
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
-import type { PaymentStorePort } from '@payments/application/api/ports/payment-store.port';
+import type {
+  PaymentCheckoutCatalogPort,
+  PaymentFlowPort,
+} from '@payments/application/api/ports/payment-store.port';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
@@ -25,7 +28,7 @@ import type {
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 
 /** Extends port mock with checkout catalog API so component does not throw. */
-function withCheckoutCatalog<T extends PaymentStorePort>(base: T): T {
+function withCheckoutCatalog<T extends PaymentFlowPort & PaymentCheckoutCatalogPort>(base: T): T {
   return {
     ...base,
     availableProviders: () => ['stripe', 'paypal'],
@@ -43,7 +46,7 @@ function withCheckoutCatalog<T extends PaymentStorePort>(base: T): T {
 describe('CheckoutComponent', () => {
   let component: CheckoutComponent;
   let fixture: ComponentFixture<CheckoutComponent>;
-  let mockState: PaymentStorePort & {
+  let mockState: (PaymentFlowPort & PaymentCheckoutCatalogPort) & {
     startPayment: ReturnType<typeof vi.fn>;
     confirmPayment: ReturnType<typeof vi.fn>;
     cancelPayment: ReturnType<typeof vi.fn>;
@@ -169,7 +172,7 @@ describe('CheckoutComponent', () => {
           .withOptions(params.options);
         return mockBuilder.build();
       },
-    } as PaymentStorePort & {
+    } as (PaymentFlowPort & PaymentCheckoutCatalogPort) & {
       startPayment: ReturnType<typeof vi.fn>;
       confirmPayment: ReturnType<typeof vi.fn>;
       cancelPayment: ReturnType<typeof vi.fn>;

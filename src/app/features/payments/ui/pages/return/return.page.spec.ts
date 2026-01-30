@@ -7,14 +7,14 @@ import { createMockPaymentState } from '@app/features/payments/application/api/t
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
-import type { PaymentStorePort } from '@payments/application/api/ports/payment-store.port';
+import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { ReturnComponent } from '@payments/ui/pages/return/return.page';
 
 describe('ReturnComponent', () => {
   let component: ReturnComponent;
   let fixture: ComponentFixture<ReturnComponent>;
-  let mockState: PaymentStorePort & {
+  let mockState: PaymentFlowPort & {
     confirmPayment: ReturnType<typeof vi.fn>;
     refreshPayment: ReturnType<typeof vi.fn>;
     intent: ReturnType<typeof signal<PaymentIntent | null>>;
@@ -46,7 +46,7 @@ describe('ReturnComponent', () => {
       confirmPayment: vi.fn(),
       refreshPayment: vi.fn(),
       notifyRedirectReturned: vi.fn(),
-    } as PaymentStorePort & {
+    } as PaymentFlowPort & {
       confirmPayment: ReturnType<typeof vi.fn>;
       refreshPayment: ReturnType<typeof vi.fn>;
       notifyRedirectReturned: ReturnType<typeof vi.fn>;
