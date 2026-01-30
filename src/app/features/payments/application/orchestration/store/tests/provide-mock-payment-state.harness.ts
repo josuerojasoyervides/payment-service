@@ -17,7 +17,9 @@ import type { FallbackState } from '@payments/domain/subdomains/fallback/contrac
 import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
+  CurrencyCode,
   PaymentIntent,
+  PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
@@ -26,6 +28,10 @@ import type {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type {
+  FieldRequirements,
+  PaymentOptions,
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 
 export interface MockPaymentStateOverrides {
   status?: PaymentFlowStatus;
@@ -125,6 +131,27 @@ export function createMockPaymentState(
   const executeFallback = (_provider: PaymentProviderId) => {};
   const cancelFallback = () => {};
 
+  const availableProviders = (): PaymentProviderId[] => [];
+  const getSupportedMethods = (_providerId: PaymentProviderId): PaymentMethodType[] => [];
+  const getFieldRequirements = (
+    _providerId: PaymentProviderId,
+    _method: PaymentMethodType,
+  ): FieldRequirements | null => null;
+  const buildCreatePaymentRequest = (_params: {
+    providerId: PaymentProviderId;
+    method: PaymentMethodType;
+    orderId: string;
+    amount: number;
+    currency: CurrencyCode;
+    options: PaymentOptions;
+  }): CreatePaymentRequest =>
+    ({
+      orderId: '',
+      amount: 0,
+      currency: 'MXN',
+      method: { type: 'card' },
+    }) as CreatePaymentRequest;
+
   return {
     state,
     isLoading,
@@ -169,6 +196,11 @@ export function createMockPaymentState(
 
     executeFallback,
     cancelFallback,
+
+    availableProviders,
+    getSupportedMethods,
+    getFieldRequirements,
+    buildCreatePaymentRequest,
   };
 }
 

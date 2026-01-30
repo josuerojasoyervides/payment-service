@@ -8,13 +8,16 @@ import type {
   Unsubscribe,
 } from '@payments/application/api/ports/payment-store.port';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
+  CurrencyCode,
   PaymentIntent,
+  PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
@@ -23,6 +26,10 @@ import type {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type {
+  FieldRequirements,
+  PaymentOptions,
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 
 /**
  * Adapter implementing PaymentStorePort by delegating to PaymentsStore.
@@ -33,6 +40,7 @@ import type {
 @Injectable()
 export class NgRxSignalsStateAdapter implements PaymentStorePort {
   private readonly store = inject(PaymentsStore);
+  private readonly registry = inject(ProviderFactoryRegistry);
 
   // ============================================================
   // REACTIVE STATE (delegated to store)
@@ -148,5 +156,49 @@ export class NgRxSignalsStateAdapter implements PaymentStorePort {
 
   cancelFallback(): void {
     this.store.cancelFallback();
+  }
+
+  // ============================================================
+  // CHECKOUT CATALOG
+  // ============================================================
+
+  availableProviders(): PaymentProviderId[] {
+    return this.registry.getAvailableProviders();
+  }
+
+  getSupportedMethods(providerId: PaymentProviderId): PaymentMethodType[] {
+    try {
+      return this.registry.get(providerId).getSupportedMethods();
+    } catch {
+      return [];
+    }
+  }
+
+  getFieldRequirements(
+    providerId: PaymentProviderId,
+    method: PaymentMethodType,
+  ): FieldRequirements | null {
+    try {
+      return this.registry.get(providerId).getFieldRequirements(method);
+    } catch {
+      return null;
+    }
+  }
+
+  buildCreatePaymentRequest(params: {
+    providerId: PaymentProviderId;
+    method: PaymentMethodType;
+    orderId: string;
+    amount: number;
+    currency: CurrencyCode;
+    options: PaymentOptions;
+  }): CreatePaymentRequest {
+    const factory = this.registry.get(params.providerId);
+    const builder = factory.createRequestBuilder(params.method);
+    return builder
+      .forOrder(params.orderId)
+      .withAmount(params.amount, params.currency)
+      .withOptions(params.options)
+      .build();
   }
 }

@@ -9,7 +9,9 @@ import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallbac
 import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
+  CurrencyCode,
   PaymentIntent,
+  PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
@@ -18,6 +20,10 @@ import type {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type {
+  FieldRequirements,
+  PaymentOptions,
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 
 /**
  * Unsubscribe function.
@@ -171,4 +177,30 @@ export interface PaymentStorePort {
    * Cancel pending fallback.
    */
   cancelFallback(): void;
+
+  // ============================================================
+  // CHECKOUT CATALOG (providers, methods, form, request build)
+  // ============================================================
+
+  /** List of available provider IDs. */
+  availableProviders(): PaymentProviderId[];
+
+  /** Supported payment methods for a provider. */
+  getSupportedMethods(providerId: PaymentProviderId): PaymentMethodType[];
+
+  /** Field requirements for provider+method (for dynamic form). */
+  getFieldRequirements(
+    providerId: PaymentProviderId,
+    method: PaymentMethodType,
+  ): FieldRequirements | null;
+
+  /** Build a CreatePaymentRequest from form data. */
+  buildCreatePaymentRequest(params: {
+    providerId: PaymentProviderId;
+    method: PaymentMethodType;
+    orderId: string;
+    amount: number;
+    currency: CurrencyCode;
+    options: PaymentOptions;
+  }): CreatePaymentRequest;
 }

@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import type { signal } from '@angular/core';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
@@ -8,20 +8,36 @@ import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
 import type { PaymentStorePort } from '@payments/application/api/ports/payment-store.port';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
-import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
+import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type {
   FieldRequirements,
   PaymentOptions,
 } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
+
+/** Extends port mock with checkout catalog API so component does not throw. */
+function withCheckoutCatalog<T extends PaymentStorePort>(base: T): T {
+  return {
+    ...base,
+    availableProviders: () => ['stripe', 'paypal'],
+    getSupportedMethods: () => ['card', 'spei'] as PaymentMethodType[],
+    getFieldRequirements: () => null,
+    buildCreatePaymentRequest: (): CreatePaymentRequest => ({
+      orderId: 'order_test',
+      amount: 499.99,
+      currency: 'MXN',
+      method: { type: 'card', token: 'tok_test' },
+    }),
+  };
+}
 
 describe('CheckoutComponent', () => {
   let component: CheckoutComponent;
@@ -31,12 +47,12 @@ describe('CheckoutComponent', () => {
     confirmPayment: ReturnType<typeof vi.fn>;
     cancelPayment: ReturnType<typeof vi.fn>;
     reset: ReturnType<typeof vi.fn>;
+    executeFallback: ReturnType<typeof vi.fn>;
+    cancelFallback: ReturnType<typeof vi.fn>;
     intent: ReturnType<typeof signal<PaymentIntent | null>>;
     error: ReturnType<typeof signal<PaymentError | null>>;
   };
-  let mockRegistry: any;
   let mockLogger: any;
-  let mockFallbackOrchestrator: any;
   let mockFactory: any;
   let mockBuilder: any;
 
@@ -114,17 +130,6 @@ describe('CheckoutComponent', () => {
       createRequestBuilder: vi.fn(() => mockBuilder),
     };
 
-    // Mock del registry
-    mockRegistry = {
-      get: vi.fn((providerId: PaymentProviderId) => {
-        if (providerId === 'stripe' || providerId === 'paypal') {
-          return mockFactory;
-        }
-        throw new Error(`Provider not found: ${providerId}`);
-      }),
-      getAvailableProviders: vi.fn(() => ['stripe', 'paypal']),
-    };
-
     const baseMock = createMockPaymentState();
     mockState = {
       ...baseMock,
@@ -134,20 +139,44 @@ describe('CheckoutComponent', () => {
       confirmPayment: vi.fn(),
       cancelPayment: vi.fn(),
       reset: vi.fn(),
+      executeFallback: vi.fn(),
+      cancelFallback: vi.fn(),
+      availableProviders: () => ['stripe', 'paypal'],
+      getSupportedMethods: (_providerId: PaymentProviderId) => {
+        try {
+          return mockFactory.getSupportedMethods();
+        } catch {
+          return [];
+        }
+      },
+      getFieldRequirements: (_providerId: PaymentProviderId, method: PaymentMethodType) => {
+        try {
+          return mockFactory.getFieldRequirements(method);
+        } catch {
+          return null;
+        }
+      },
+      buildCreatePaymentRequest: (params: {
+        orderId: string;
+        amount: number;
+        currency: string;
+        options: PaymentOptions;
+      }) => {
+        mockBuilder
+          .forOrder(params.orderId)
+          .withAmount(params.amount, params.currency)
+          .withOptions(params.options);
+        return mockBuilder.build();
+      },
     } as PaymentStorePort & {
       startPayment: ReturnType<typeof vi.fn>;
       confirmPayment: ReturnType<typeof vi.fn>;
       cancelPayment: ReturnType<typeof vi.fn>;
       reset: ReturnType<typeof vi.fn>;
+      executeFallback: ReturnType<typeof vi.fn>;
+      cancelFallback: ReturnType<typeof vi.fn>;
       intent: ReturnType<typeof signal<PaymentIntent | null>>;
       error: ReturnType<typeof signal<PaymentError | null>>;
-    };
-
-    mockFallbackOrchestrator = {
-      isPending: signal(false),
-      pendingEvent: signal<FallbackAvailableEvent | null>(null),
-      respondToFallback: vi.fn(),
-      reset: vi.fn(),
     };
 
     // Mock del logger
@@ -165,8 +194,6 @@ describe('CheckoutComponent', () => {
       imports: [CheckoutComponent, RouterLink],
       providers: [
         { provide: PAYMENT_STATE, useValue: mockState },
-        { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
-        { provide: ProviderFactoryRegistry, useValue: mockRegistry },
         { provide: LoggerService, useValue: mockLogger },
         provideRouter([]),
       ],
@@ -205,11 +232,10 @@ describe('CheckoutComponent', () => {
   });
 
   describe('Available providers and methods', () => {
-    it('should get available providers from the registry', () => {
+    it('should get available providers from state', () => {
       fixture.detectChanges();
       const providers = component.availableProviders();
       expect(providers).toEqual(['stripe', 'paypal']);
-      expect(mockRegistry.getAvailableProviders).toHaveBeenCalled();
     });
 
     it('should get available methods for the selected provider', () => {
@@ -219,7 +245,6 @@ describe('CheckoutComponent', () => {
       fixture.detectChanges();
       const methods = component.availableMethods();
       expect(methods).toEqual(['card', 'spei']);
-      expect(mockRegistry.get).toHaveBeenCalledWith('stripe');
       expect(mockFactory.getSupportedMethods).toHaveBeenCalled();
     });
 
@@ -229,7 +254,7 @@ describe('CheckoutComponent', () => {
     });
 
     it('should handle errors when fetching methods', () => {
-      mockRegistry.get.mockImplementationOnce(() => {
+      mockFactory.getSupportedMethods.mockImplementationOnce(() => {
         throw new Error('Provider not found');
       });
       patchState(component.checkoutPageState, {
@@ -334,8 +359,6 @@ describe('CheckoutComponent', () => {
       component.onFormChange({ token: 'tok_test' });
       component.processPayment();
 
-      expect(mockRegistry.get).toHaveBeenCalledWith('stripe');
-      expect(mockFactory.createRequestBuilder).toHaveBeenCalledWith('card');
       expect(mockBuilder.forOrder).toHaveBeenCalledWith(orderId);
       expect(mockBuilder.withAmount).toHaveBeenCalledWith(499.99, 'MXN');
       expect(mockBuilder.build).toHaveBeenCalled();
@@ -445,7 +468,7 @@ describe('CheckoutComponent', () => {
   describe('Fallback', () => {
     it('should confirm fallback', () => {
       component.confirmFallback('paypal');
-      expect(mockFallbackOrchestrator.respondToFallback).not.toHaveBeenCalled();
+      expect(mockState.executeFallback).toHaveBeenCalledWith('paypal');
       expect(mockLogger.info).toHaveBeenCalledWith('Fallback confirmed', 'CheckoutPage', {
         provider: 'paypal',
       });
@@ -453,13 +476,22 @@ describe('CheckoutComponent', () => {
 
     it('should cancel fallback', () => {
       component.cancelFallback();
-      expect(mockFallbackOrchestrator.reset).toHaveBeenCalled();
+      expect(mockState.cancelFallback).toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith('Fallback cancelled', 'CheckoutPage');
     });
 
     it('should detect when fallback is pending', () => {
-      mockFallbackOrchestrator.isPending.set(true);
-      mockFallbackOrchestrator.pendingEvent.set(mockFallbackEvent);
+      const fallbackMock = createMockPaymentState({
+        fallback: {
+          ...INITIAL_FALLBACK_STATE,
+          status: 'pending',
+          pendingEvent: mockFallbackEvent,
+        },
+      });
+      Object.assign(mockState, {
+        hasPendingFallback: fallbackMock.hasPendingFallback,
+        pendingFallbackEvent: fallbackMock.pendingFallbackEvent,
+      });
       fixture.detectChanges();
       expect(component.fallbackState.isPending()).toBe(true);
       expect(component.fallbackState.pendingEvent()).toEqual(mockFallbackEvent);
@@ -472,9 +504,10 @@ describe('CheckoutComponent', () => {
       TestBed.configureTestingModule({
         imports: [CheckoutComponent, RouterLink],
         providers: [
-          { provide: PAYMENT_STATE, useValue: createMockPaymentState({ isLoading: true }) },
-          { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
-          { provide: ProviderFactoryRegistry, useValue: mockRegistry },
+          {
+            provide: PAYMENT_STATE,
+            useValue: withCheckoutCatalog(createMockPaymentState({ isLoading: true })),
+          },
           { provide: LoggerService, useValue: mockLogger },
           provideRouter([]),
         ],
@@ -490,9 +523,10 @@ describe('CheckoutComponent', () => {
       TestBed.configureTestingModule({
         imports: [CheckoutComponent, RouterLink],
         providers: [
-          { provide: PAYMENT_STATE, useValue: createMockPaymentState({ isReady: true }) },
-          { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
-          { provide: ProviderFactoryRegistry, useValue: mockRegistry },
+          {
+            provide: PAYMENT_STATE,
+            useValue: withCheckoutCatalog(createMockPaymentState({ isReady: true })),
+          },
           { provide: LoggerService, useValue: mockLogger },
           provideRouter([]),
         ],
@@ -510,10 +544,10 @@ describe('CheckoutComponent', () => {
         providers: [
           {
             provide: PAYMENT_STATE,
-            useValue: createMockPaymentState({ hasError: true, error: mockError }),
+            useValue: withCheckoutCatalog(
+              createMockPaymentState({ hasError: true, error: mockError }),
+            ),
           },
-          { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
-          { provide: ProviderFactoryRegistry, useValue: mockRegistry },
           { provide: LoggerService, useValue: mockLogger },
           provideRouter([]),
         ],
@@ -536,9 +570,10 @@ describe('CheckoutComponent', () => {
       TestBed.configureTestingModule({
         imports: [CheckoutComponent, RouterLink],
         providers: [
-          { provide: PAYMENT_STATE, useValue: createMockPaymentState({ isReady: true }) },
-          { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
-          { provide: ProviderFactoryRegistry, useValue: mockRegistry },
+          {
+            provide: PAYMENT_STATE,
+            useValue: withCheckoutCatalog(createMockPaymentState({ isReady: true })),
+          },
           { provide: LoggerService, useValue: mockLogger },
           provideRouter([]),
         ],
@@ -554,9 +589,10 @@ describe('CheckoutComponent', () => {
       TestBed.configureTestingModule({
         imports: [CheckoutComponent, RouterLink],
         providers: [
-          { provide: PAYMENT_STATE, useValue: createMockPaymentState({ hasError: true }) },
-          { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
-          { provide: ProviderFactoryRegistry, useValue: mockRegistry },
+          {
+            provide: PAYMENT_STATE,
+            useValue: withCheckoutCatalog(createMockPaymentState({ hasError: true })),
+          },
           { provide: LoggerService, useValue: mockLogger },
           provideRouter([]),
         ],

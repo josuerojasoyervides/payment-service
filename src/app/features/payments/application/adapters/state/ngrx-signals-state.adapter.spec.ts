@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
 import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 
@@ -51,8 +52,25 @@ describe('NgRxSignalsStateAdapter', () => {
       cancelFallback: vi.fn(),
     };
 
+    const registryMock = {
+      getAvailableProviders: () => [] as const,
+      get: () => ({
+        getSupportedMethods: () => [] as const,
+        getFieldRequirements: () => null,
+        createRequestBuilder: () => ({
+          forOrder: () => ({
+            withAmount: () => ({ withOptions: () => ({ build: () => ({}) as any }) }),
+          }),
+        }),
+      }),
+    };
+
     TestBed.configureTestingModule({
-      providers: [NgRxSignalsStateAdapter, { provide: PaymentsStore, useValue: storeMock }],
+      providers: [
+        NgRxSignalsStateAdapter,
+        { provide: PaymentsStore, useValue: storeMock },
+        { provide: ProviderFactoryRegistry, useValue: registryMock },
+      ],
     });
 
     adapter = TestBed.inject(NgRxSignalsStateAdapter);

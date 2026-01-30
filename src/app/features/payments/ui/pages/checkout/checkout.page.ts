@@ -2,8 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, isDevMode } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
-import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
-import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
@@ -69,10 +67,8 @@ interface CheckoutPageState {
 export class CheckoutComponent {
   readonly isDevMode = isDevMode();
 
-  private readonly registry = inject(ProviderFactoryRegistry);
   private readonly logger = inject(LoggerService);
   private readonly i18n = inject(I18nService);
-  private readonly fallback = inject(FallbackOrchestratorService);
   private readonly state = inject(PAYMENT_STATE);
 
   readonly flowState = deepComputed(() => ({
@@ -93,46 +89,26 @@ export class CheckoutComponent {
     isFormValid: false,
   });
 
-  // TODO : Should this be a global state or should be handled by the state machine?
   readonly fallbackState = deepComputed(() => ({
-    isPending: this.fallback.isPending(),
-    pendingEvent: this.fallback.pendingEvent(),
+    isPending: this.state.hasPendingFallback(),
+    pendingEvent: this.state.pendingFallbackEvent(),
   }));
 
   readonly availableProviders = computed<PaymentProviderId[]>(() => {
-    return this.registry.getAvailableProviders();
+    return this.state.availableProviders();
   });
 
   readonly availableMethods = computed<PaymentMethodType[]>(() => {
     const provider = this.checkoutPageState.selectedProvider();
     if (!provider) return [];
-
-    try {
-      return this.registry.get(provider).getSupportedMethods();
-    } catch (e) {
-      if (this.isDevMode)
-        this.logger.warn('Failed to resolve methods', 'CheckoutPage', { provider, e });
-      return [];
-    }
+    return this.state.getSupportedMethods(provider);
   });
 
   readonly fieldRequirements = computed<FieldRequirements | null>(() => {
     const provider = this.checkoutPageState.selectedProvider();
     const method = this.checkoutPageState.selectedMethod();
     if (!provider || !method) return null;
-    try {
-      const factory = this.registry.get(provider);
-      return factory.getFieldRequirements(method);
-    } catch (e) {
-      if (this.isDevMode) {
-        this.logger.warn('Failed to resolve field requirements', 'CheckoutPage', {
-          provider,
-          method,
-          e,
-        });
-      }
-      return null;
-    }
+    return this.state.getFieldRequirements(provider, method);
   });
 
   readonly showResult = computed(() => this.flowState.isReady() || this.flowState.hasError());
@@ -159,7 +135,9 @@ export class CheckoutComponent {
       }
 
       if (!current || !providers.includes(current)) {
-        patchState(this.checkoutPageState, { selectedProvider: providers[0] });
+        const first = providers[0];
+        patchState(this.checkoutPageState, { selectedProvider: first });
+        this.state.selectProvider(first);
       }
     });
 
@@ -185,9 +163,8 @@ export class CheckoutComponent {
   }
 
   selectProvider(provider: PaymentProviderId): void {
-    patchState(this.checkoutPageState, {
-      selectedProvider: provider,
-    });
+    patchState(this.checkoutPageState, { selectedProvider: provider });
+    this.state.selectProvider(provider);
     this.logger.info('Provider selected', 'CheckoutPage', { provider });
   }
 
@@ -228,16 +205,15 @@ export class CheckoutComponent {
     });
 
     try {
-      const factory = this.registry.get(provider);
-      const builder = factory.createRequestBuilder(method);
-
       const options = this.checkoutPageState.formOptions();
-
-      const request = builder
-        .forOrder(this.checkoutPageState.orderId())
-        .withAmount(this.checkoutPageState.amount(), this.checkoutPageState.currency())
-        .withOptions(options)
-        .build();
+      const request = this.state.buildCreatePaymentRequest({
+        providerId: provider,
+        method,
+        orderId: this.checkoutPageState.orderId(),
+        amount: this.checkoutPageState.amount(),
+        currency: this.checkoutPageState.currency(),
+        options,
+      });
 
       this.logger.info('Payment request built', 'CheckoutPage', {
         orderId: request.orderId,
@@ -245,7 +221,6 @@ export class CheckoutComponent {
         method: request.method.type,
       });
 
-      // Construir PaymentFlowContext
       const context: StrategyContext = {
         returnUrl: this.buildReturnUrl(),
         cancelUrl: this.buildCancelUrl(),
@@ -265,33 +240,14 @@ export class CheckoutComponent {
     this.logger.endCorrelation(correlationCtx);
   }
 
-  // === Fallback handlers ===
   confirmFallback(provider: PaymentProviderId): void {
     this.logger.info('Fallback confirmed', 'CheckoutPage', { provider });
-    const event = this.fallbackState.pendingEvent();
-    if (!event) return;
-
-    this.fallback.respondToFallback({
-      eventId: event.eventId,
-      accepted: true,
-      selectedProvider: provider,
-      timestamp: Date.now(),
-    });
+    this.state.executeFallback(provider);
   }
 
   cancelFallback(): void {
     this.logger.info('Fallback cancelled', 'CheckoutPage');
-    const event = this.fallbackState.pendingEvent();
-    if (event) {
-      this.fallback.respondToFallback({
-        eventId: event.eventId,
-        accepted: false,
-        timestamp: Date.now(),
-      });
-      return;
-    }
-
-    this.fallback.reset();
+    this.state.cancelFallback();
   }
 
   onNextActionRequested(action: NextAction): void {
