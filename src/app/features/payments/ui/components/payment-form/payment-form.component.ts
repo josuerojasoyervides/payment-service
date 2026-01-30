@@ -11,6 +11,14 @@ import type {
 import { AutofocusDirective } from '@shared/directives/autofocus.directive';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 
+function setOpt<K extends keyof PaymentOptions>(
+  opts: PaymentOptions,
+  key: K,
+  value: PaymentOptions[K],
+): void {
+  opts[key] = value;
+}
+
 type DynamicControl = FormControl<string | boolean>;
 type DynamicForm = FormRecord<DynamicControl>;
 
@@ -154,21 +162,49 @@ export class PaymentFormComponent implements OnDestroy {
   }
 
   private emitFormState(): void {
-    const values = this.form.value;
+    const reqs = this.requirements();
     const options: PaymentOptions = {};
 
-    if (typeof values['token'] === 'string' && values['token']) options.token = values['token'];
-    if (typeof values['returnUrl'] === 'string' && values['returnUrl'])
-      options.returnUrl = values['returnUrl'];
-    if (typeof values['cancelUrl'] === 'string' && values['cancelUrl'])
-      options.cancelUrl = values['cancelUrl'];
-    if (typeof values['customerEmail'] === 'string' && values['customerEmail'])
-      options.customerEmail = values['customerEmail'];
+    if (!reqs) {
+      this.formChange.emit(options);
+      this.formValidChange.emit(this.form.valid);
+      return;
+    }
 
-    if (typeof values['saveForFuture'] === 'boolean') {
-      options.saveForFuture = values['saveForFuture'];
-    } else if (typeof values['saveForFuture'] === 'string') {
-      options.saveForFuture = values['saveForFuture'] === 'true';
+    for (const field of reqs.fields) {
+      const control = this.form.get(field.name);
+      if (!control) continue;
+
+      const value = control.value;
+
+      if (field.name === 'saveForFuture') {
+        if (typeof value === 'boolean') {
+          setOpt(options, 'saveForFuture', value);
+        } else if (typeof value === 'string') {
+          setOpt(options, 'saveForFuture', value.trim() === 'true');
+        }
+        continue;
+      }
+
+      if (typeof value === 'boolean') {
+        setOpt(
+          options,
+          field.name as keyof PaymentOptions,
+          value as PaymentOptions[keyof PaymentOptions],
+        );
+        continue;
+      }
+
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed) {
+          setOpt(
+            options,
+            field.name as Exclude<keyof PaymentOptions, 'saveForFuture'>,
+            trimmed as PaymentOptions[Exclude<keyof PaymentOptions, 'saveForFuture'>],
+          );
+        }
+      }
     }
 
     this.formChange.emit(options);

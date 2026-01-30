@@ -22,8 +22,14 @@
     <!-- Show result on success or error (phase-driven) -->
     @if (showResult()) {
       <div class="mb-6">
+        @if (showFallbackExecutingBanner()) {
+          <app-fallback-status-banner
+            [isExecuting]="isFallbackExecuting()"
+            [isAuto]="isAutoFallback()"
+            (canceled)="cancelFallback()" />
+        }
         @if (showProcessingPanel()) {
-          <div class="card mb-6">
+          <div class="card mb-6" data-testid="processing-panel">
             <h2 class="text-lg font-semibold mb-2">{{ checkoutLabels.processingStatusTitle() }}</h2>
             <p class="text-gray-600 text-sm mb-4">{{ checkoutLabels.processingStatusHint() }}</p>
             <button type="button" class="btn-primary" (click)="refreshProcessingStatus()">
@@ -46,7 +52,7 @@
       </div>
     } @else {
       @if (showResumeBanner()) {
-        <div class="card mb-6 bg-amber-50 border border-amber-200">
+        <div class="card mb-6 bg-amber-50 border border-amber-200" data-testid="resume-banner">
           <p class="text-gray-800 mb-3">{{ checkoutLabels.resumePaymentFound() }}</p>
           <button type="button" class="btn-primary" (click)="resumePayment()">
             {{ checkoutLabels.resumePaymentAction() }}

@@ -84,6 +84,10 @@ export const es: Translations = {
     fallback_accept: 'Sí, intentar con otro proveedor',
     fallback_cancel: 'No, cancelar',
     fallback_auto_executing: 'Intentando automáticamente con otro proveedor...',
+    fallback_in_progress_title: 'Cambiando método de pago',
+    fallback_in_progress_hint:
+      'Se está intentando otro método de pago. Puedes cancelar para detener.',
+    fallback_auto_hint: 'Se está intentando automáticamente un método de pago alternativo.',
     unknown_error: 'Error desconocido',
     payment_error: 'Error en el pago',
     payment_completed: 'Pago completado',

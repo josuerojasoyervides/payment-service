@@ -528,6 +528,87 @@ describe('CheckoutComponent', () => {
     });
   });
 
+  describe('Fallback executing banner', () => {
+    it('shows fallback-executing-banner when isFallbackExecuting is true', () => {
+      const execMock = withCheckoutCatalog(
+        createMockPaymentState({
+          fallback: { ...INITIAL_FALLBACK_STATE, status: 'executing' },
+        }),
+      );
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: execMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: execMock },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      expect(
+        fixture.nativeElement.querySelector('[data-testid="fallback-executing-banner"]'),
+      ).toBeTruthy();
+    });
+
+    it('shows fallback-executing-banner when isAutoFallbackInProgress is true', () => {
+      const autoMock = withCheckoutCatalog(
+        createMockPaymentState({
+          fallback: { ...INITIAL_FALLBACK_STATE, status: 'auto_executing' },
+        }),
+      );
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: autoMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: autoMock },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      expect(
+        fixture.nativeElement.querySelector('[data-testid="fallback-executing-banner"]'),
+      ).toBeTruthy();
+    });
+
+    it('clicking Cancel in banner calls cancelFallback', () => {
+      const cancelSpy = vi.fn();
+      const execMock = withCheckoutCatalog({
+        ...createMockPaymentState({
+          fallback: { ...INITIAL_FALLBACK_STATE, status: 'executing' },
+        }),
+        cancelFallback: cancelSpy,
+      });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: execMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: execMock },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      const banner = fixture.nativeElement.querySelector(
+        '[data-testid="fallback-executing-banner"]',
+      );
+      expect(banner).toBeTruthy();
+      const cancelBtn = banner?.querySelector('button');
+      cancelBtn?.click();
+      fixture.detectChanges();
+      expect(cancelSpy).toHaveBeenCalled();
+    });
+  });
+
   describe('Payment state', () => {
     it('should expose loading state', () => {
       const loadingMock = withCheckoutCatalog(createMockPaymentState({ isLoading: true }));
@@ -673,6 +754,7 @@ describe('CheckoutComponent', () => {
       const c = f.componentInstance;
       f.detectChanges();
       expect(c.showResumeBanner()).toBe(true);
+      expect(f.nativeElement.querySelector('[data-testid="resume-banner"]')).toBeTruthy();
       c.resumePayment();
       expect(refreshPaymentSpy).toHaveBeenCalledWith({ intentId: 'pi_123' }, 'stripe');
     });
@@ -706,6 +788,7 @@ describe('CheckoutComponent', () => {
       const c = f.componentInstance;
       f.detectChanges();
       expect(c.showProcessingPanel()).toBe(true);
+      expect(f.nativeElement.querySelector('[data-testid="processing-panel"]')).toBeTruthy();
       c.refreshProcessingStatus();
       expect(refreshPaymentSpy).toHaveBeenCalledWith({ intentId: 'pi_123' }, 'stripe');
     });

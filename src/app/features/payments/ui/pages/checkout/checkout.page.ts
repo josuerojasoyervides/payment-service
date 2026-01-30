@@ -18,6 +18,7 @@ import type {
   PaymentOptions,
 } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
+import { FallbackStatusBannerComponent } from '@payments/ui/components/fallback-status-banner/fallback-status-banner.component';
 import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';
 import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
 import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
@@ -65,6 +66,7 @@ interface CheckoutPageState {
     FlowDebugPanelComponent,
     NextActionCardComponent,
     FallbackModalComponent,
+    FallbackStatusBannerComponent,
   ],
   templateUrl: './checkout.component.html',
 })
@@ -133,6 +135,12 @@ export class CheckoutComponent {
   readonly showResumeBanner = computed(
     () => this.flowPhase() === 'editing' && this.state.canResume(),
   );
+
+  readonly showFallbackExecutingBanner = computed(
+    () => this.state.isFallbackExecuting() || this.state.isAutoFallbackInProgress(),
+  );
+  readonly isFallbackExecuting = computed(() => this.state.isFallbackExecuting());
+  readonly isAutoFallback = computed(() => this.state.isAutoFallbackInProgress());
 
   readonly debugInfo = computed(() => {
     const summary = this.state.debugSummary();

@@ -97,6 +97,9 @@ export interface Translations {
     fallback_accept: string;
     fallback_cancel: string;
     fallback_auto_executing: string;
+    fallback_in_progress_title: string;
+    fallback_in_progress_hint: string;
+    fallback_auto_hint: string;
 
     // Errores y mensajes
     unknown_error: string;

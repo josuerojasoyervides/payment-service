@@ -18,6 +18,8 @@
 - **Checkout** uses FlowPhase derived from PaymentFlowPort selectors (phase-driven UI); showResult is derived from flowPhase.
 - **Checkout** shows Resume banner from port selectors (canResume / resumeIntentId / resumeProviderId) when flowPhase === 'editing'.
 - **Checkout** shows Processing panel (phase-driven) with refresh status CTA when flowPhase === 'processing'.
+- **PaymentForm** emits PaymentOptions dynamically from FieldRequirements.fields (no hardcoded keys).
+- **Checkout** surfaces fallback execution status (auto/manual) via banner; user can cancel fallback.
 - **UI runtime:** No provider identifiers (stripe/paypal/mercadopago) and no provider-specific query keys (payment_intent, PayerID, redirect_status, etc.) in UI runtime. Return page does not parse query params by provider; uses port `getReturnReferenceFromQuery(normalized)` + `notifyRedirectReturned(normalized)`; on init calls `refreshPayment` when referenceId exists. Status/Return/Showcase: provider list and labels from catalog only.
 - **Guardrail:** `ui-provider-coupling.spec.ts` covers status/return/showcase (ts+html), bans provider names and provider-specific keys; excludes \*.spec.ts and \*.integration.spec.ts.
 - **Rule:** UI must not import infrastructure; api/testing only in \*.spec.ts.
