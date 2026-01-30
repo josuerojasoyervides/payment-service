@@ -1,19 +1,25 @@
-import { signal } from '@angular/core';
+import type { signal } from '@angular/core';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
 import { mapReturnQueryToReference } from '@app/features/payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
+import { createMockPaymentState } from '@app/features/payments/application/orchestration/store/tests/provide-mock-payment-state.harness';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
-import { PaymentFlowMachineDriver } from '@payments/application/orchestration/flow/payment-flow-machine-driver';
+import type { PaymentStorePort } from '@payments/application/api/ports/payment-store.port';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { ReturnComponent } from '@payments/ui/pages/return/return.page';
 
 describe('ReturnComponent', () => {
   let component: ReturnComponent;
   let fixture: ComponentFixture<ReturnComponent>;
-  let mockFlowFacade: any;
+  let mockState: PaymentStorePort & {
+    confirmPayment: ReturnType<typeof vi.fn>;
+    refreshPayment: ReturnType<typeof vi.fn>;
+    intent: ReturnType<typeof signal<PaymentIntent | null>>;
+  };
   let mockActivatedRoute: any;
   let mockExternalEvents: any;
 
@@ -35,12 +41,16 @@ describe('ReturnComponent', () => {
       },
     };
 
-    // Flow mock
-    mockFlowFacade = {
-      intent: signal<PaymentIntent | null>(null),
-      isLoading: signal(false),
-      confirm: vi.fn(() => true),
-      refresh: vi.fn(() => true),
+    const baseMock = createMockPaymentState();
+    mockState = {
+      ...baseMock,
+      intent: baseMock.intent as ReturnType<typeof signal<PaymentIntent | null>>,
+      confirmPayment: vi.fn(),
+      refreshPayment: vi.fn(),
+    } as PaymentStorePort & {
+      confirmPayment: ReturnType<typeof vi.fn>;
+      refreshPayment: ReturnType<typeof vi.fn>;
+      intent: ReturnType<typeof signal<PaymentIntent | null>>;
     };
 
     mockExternalEvents = {
@@ -52,7 +62,6 @@ describe('ReturnComponent', () => {
     // I18nService mock
     const mockI18n: I18nService = {
       t: vi.fn((key: string) => {
-        // Return an English translation for the test
         if (key === 'ui.flow_unknown') return 'Unknown';
         return key;
       }),
@@ -64,7 +73,7 @@ describe('ReturnComponent', () => {
     await TestBed.configureTestingModule({
       imports: [ReturnComponent, RouterLink],
       providers: [
-        { provide: PaymentFlowMachineDriver, useValue: mockFlowFacade },
+        { provide: PAYMENT_STATE, useValue: mockState },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: I18nService, useValue: mockI18n },
         { provide: ExternalEventAdapter, useValue: mockExternalEvents },
@@ -194,15 +203,19 @@ describe('ReturnComponent', () => {
         paypalToken: null,
       });
       component.confirmPayment('pi_test_123');
-      expect(mockFlowFacade.confirm).toHaveBeenCalled();
+      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
     });
 
     it('should confirm PayPal payment', () => {
+      mockActivatedRoute.snapshot.queryParams = { token: 'ORDER_FAKE_XYZ' };
       patchState(component.returnPageState, {
         paypalToken: 'ORDER_FAKE_XYZ',
       });
       component.confirmPayment('ORDER_FAKE_XYZ');
-      expect(mockFlowFacade.confirm).toHaveBeenCalled();
+      expect(mockState.confirmPayment).toHaveBeenCalledWith(
+        { intentId: 'ORDER_FAKE_XYZ' },
+        'paypal',
+      );
     });
 
     it('should refresh payment', () => {
@@ -210,7 +223,7 @@ describe('ReturnComponent', () => {
         intentId: 'pi_test_123',
       });
       component.refreshPaymentByReference('pi_test_123');
-      expect(mockFlowFacade.refresh).toHaveBeenCalledWith('stripe', 'pi_test_123');
+      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
     });
   });
 
@@ -236,7 +249,7 @@ describe('ReturnComponent', () => {
     });
 
     it('should detect success from intent status', () => {
-      mockFlowFacade.intent.set(mockIntent);
+      (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set(mockIntent);
       fixture.detectChanges();
       expect(component.isSuccess()).toBe(true);
     });
@@ -272,13 +285,33 @@ describe('ReturnComponent', () => {
 
   describe('Component state', () => {
     it('should expose currentIntent from payment state', () => {
-      mockFlowFacade.intent.set(mockIntent);
+      (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set(mockIntent);
       fixture.detectChanges();
       expect(component.flowState.currentIntent()).toEqual(mockIntent);
     });
 
     it('should expose isLoading from payment state', () => {
-      mockFlowFacade.isLoading.set(true);
+      const loadingMock = createMockPaymentState({ isLoading: true });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [ReturnComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: loadingMock },
+          { provide: ActivatedRoute, useValue: mockActivatedRoute },
+          {
+            provide: I18nService,
+            useValue: {
+              t: (k: string) => k,
+              has: () => true,
+              setLanguage: () => {},
+              getLanguage: () => 'es',
+            },
+          },
+          { provide: ExternalEventAdapter, useValue: mockExternalEvents },
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(ReturnComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.flowState.isLoading()).toBe(true);
     });

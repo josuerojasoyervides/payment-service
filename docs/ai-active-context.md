@@ -14,7 +14,7 @@
 ## 🖥️ UI surface & boundaries (current vs intended)
 
 - **Intended:** UI should inject PAYMENT_STATE (PaymentStorePort) for reactive state and actions.
-- **Current:** UI pages still use PaymentFlowMachineDriver today (migration pending).
+- **Current:** ReturnPage uses PAYMENT_STATE; other UI pages still use PaymentFlowMachineDriver (migration pending).
 - **Rule:** UI must not import PaymentsStore or selector modules directly.
 
 ---

@@ -5,7 +5,7 @@ import type { Params } from '@angular/router';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
 import { mapReturnQueryToReference } from '@app/features/payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
-import { PaymentFlowMachineDriver } from '@app/features/payments/application/orchestration/flow/payment-flow-machine-driver';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
@@ -55,7 +55,7 @@ interface ReturnPageState {
 })
 export class ReturnComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly flow = inject(PaymentFlowMachineDriver);
+  private readonly state = inject(PAYMENT_STATE);
   private readonly i18n = inject(I18nService);
   private readonly externalEvents = inject(ExternalEventAdapter);
 
@@ -75,8 +75,8 @@ export class ReturnComponent implements OnInit {
 
   // Global State
   readonly flowState = deepComputed(() => ({
-    currentIntent: this.flow.intent(),
-    isLoading: this.flow.isLoading(),
+    currentIntent: this.state.intent(),
+    isLoading: this.state.isLoading(),
   }));
 
   // Computed
@@ -125,14 +125,18 @@ export class ReturnComponent implements OnInit {
     }
   }
 
-  confirmPayment(_intentId: string): void {
-    this.flow.confirm();
+  confirmPayment(intentId: string): void {
+    const intent = this.state.intent();
+    const providerId =
+      intent?.provider ?? mapReturnQueryToReference(this.route.snapshot.queryParams).providerId;
+    this.state.confirmPayment({ intentId }, providerId);
   }
 
   refreshPaymentByReference(referenceId: string): void {
-    const reference = mapReturnQueryToReference(this.route.snapshot.queryParams);
-    const providerId = reference.providerId;
-    this.flow.refresh(providerId, referenceId);
+    const intent = this.state.intent();
+    const providerId =
+      intent?.provider ?? mapReturnQueryToReference(this.route.snapshot.queryParams).providerId;
+    this.state.refreshPayment({ intentId: referenceId }, providerId);
   }
 
   readonly i18nLabels = deepComputed(() => ({
