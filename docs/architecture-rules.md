@@ -200,7 +200,7 @@ export interface PaymentError {
 
 - Flow logic lives in XState.
 - Store is projection only (snapshot + fallback + history).
-- UI consumes facades only.
+- UI consumes UI-facing ports via tokens (PAYMENT_STATE / PAYMENT_CHECKOUT_CATALOG). Facades may exist as thin wrappers over ports.
 - Public commands are separated from internal/system events.
 
 **Current state:** integrated (flow facade + actor + bridge) with command/system event separation.

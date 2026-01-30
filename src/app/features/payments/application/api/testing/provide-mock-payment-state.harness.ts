@@ -89,6 +89,16 @@ export function createMockPaymentState(
   const isReady = computed(() => status() === 'ready');
   const hasError = computed(() => status() === 'error');
 
+  const requiresUserAction = computed(() => {
+    const i = intent();
+    const action = i?.nextAction;
+    const actionable = action ? action.kind !== 'external_wait' : false;
+    return i?.status === 'requires_action' || actionable;
+  });
+  const isSucceeded = computed(() => intent()?.status === 'succeeded');
+  const isProcessing = computed(() => intent()?.status === 'processing');
+  const isFailed = computed(() => intent()?.status === 'failed');
+
   const hasPendingFallback = computed(() => fallbackState().status === 'pending');
   const isAutoFallbackInProgress = computed(() => fallbackState().status === 'auto_executing');
   const isFallbackExecuting = computed(() => {
@@ -163,6 +173,10 @@ export function createMockPaymentState(
     hasError,
     intent,
     error,
+    requiresUserAction,
+    isSucceeded,
+    isProcessing,
+    isFailed,
     selectedProvider,
 
     hasPendingFallback,

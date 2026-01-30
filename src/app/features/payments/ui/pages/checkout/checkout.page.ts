@@ -26,6 +26,7 @@ import { PaymentButtonComponent } from '@payments/ui/components/payment-button/p
 import { PaymentFormComponent } from '@payments/ui/components/payment-form/payment-form.component';
 import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
+import { deriveFlowPhase } from '@payments/ui/shared/flow-phase';
 
 interface CheckoutPageState {
   orderId: string;
@@ -113,7 +114,19 @@ export class CheckoutComponent {
     return this.catalog.getFieldRequirements(provider, method);
   });
 
-  readonly showResult = computed(() => this.flowState.isReady() || this.flowState.hasError());
+  readonly flowPhase = deriveFlowPhase(this.state);
+
+  readonly showResult = computed(() => {
+    const phase = this.flowPhase();
+    return (
+      phase === 'action_required' ||
+      phase === 'processing' ||
+      phase === 'done' ||
+      phase === 'failed' ||
+      phase === 'fallback_pending' ||
+      phase === 'fallback_executing'
+    );
+  });
 
   readonly debugInfo = computed(() => {
     const summary = this.state.debugSummary();
