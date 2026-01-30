@@ -87,13 +87,6 @@ export class ReturnComponent implements OnInit {
       this.state.selectProvider(providerId);
     }
 
-    if (referenceId) {
-      const providerForRefresh = providerId ?? this.state.selectedProvider();
-      if (providerForRefresh) {
-        this.state.refreshPayment({ intentId: referenceId }, providerForRefresh);
-      }
-    }
-
     patchState(this.returnPageState, {
       returnReference: { providerId, referenceId, providerLabel },
       allParams: normalizedParams,

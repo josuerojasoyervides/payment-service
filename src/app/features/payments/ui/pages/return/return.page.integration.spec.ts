@@ -72,7 +72,7 @@ describe('ReturnComponent - Integration', () => {
   });
 
   describe('port assertions (mock state)', () => {
-    it('should call notifyRedirectReturned with normalized params and refreshPayment when referenceId exists', async () => {
+    it('should call notifyRedirectReturned and selectProvider on init; refresh is manual only', async () => {
       const notifySpy = vi.fn();
       const refreshSpy = vi.fn();
       const selectSpy = vi.fn();
@@ -133,12 +133,15 @@ describe('ReturnComponent - Integration', () => {
         expect.objectContaining({ payment_intent: 'pi_mock_123' }),
       );
       expect(selectSpy).toHaveBeenCalledWith('stripe');
-      expect(refreshSpy).toHaveBeenCalledWith({ intentId: 'pi_mock_123' }, 'stripe');
+      expect(refreshSpy).not.toHaveBeenCalled();
 
       const ref = comp.returnPageState.returnReference();
       expect(ref?.providerId).toBe('stripe');
       expect(ref?.referenceId).toBe('pi_mock_123');
       expect(ref?.providerLabel).toBeDefined();
+
+      comp.refreshPaymentByReference('pi_mock_123');
+      expect(refreshSpy).toHaveBeenCalledWith({ intentId: 'pi_mock_123' }, 'stripe');
     });
   });
 });

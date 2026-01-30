@@ -28,6 +28,7 @@ import { createPaymentsStoreActions } from '@payments/application/orchestration/
 import { createFallbackHandlers } from '@payments/application/orchestration/store/fallback/payment-store.fallback';
 import { setupPaymentFlowMachineBridge } from '@payments/application/orchestration/store/projection/payment-store.machine-bridge';
 import { buildPaymentsSelectors } from '@payments/application/orchestration/store/projection/payment-store.selectors';
+import { sanitizeDebugEventForUi } from '@payments/application/orchestration/store/utils/debug-sanitize.rule';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
@@ -64,7 +65,7 @@ export const PaymentsStore = signalStore(
       return Array.from(tags ?? [], (t) => String(t));
     });
     const debugLastEventType = computed(() => machine.lastSentEvent()?.type ?? null);
-    const debugLastEventPayload = computed(() => machine.lastSentEvent() ?? null);
+    const debugLastEventPayload = computed(() => sanitizeDebugEventForUi(machine.lastSentEvent()));
     return {
       resumeProviderId,
       resumeIntentId,

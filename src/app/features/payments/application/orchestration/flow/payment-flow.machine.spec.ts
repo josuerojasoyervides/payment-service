@@ -707,6 +707,39 @@ describe('PaymentFlowMachine', () => {
     expect(snap.context.error?.messageKey).toBe('errors.processing_timeout');
   });
 
+  it('processing timeout from polling: when maxAttempts reached and pollDelay fires, transitions to failed with processing_timeout', async () => {
+    vi.useFakeTimers({ now: 0 });
+    const { actor } = setup({
+      startIntent: { ...baseIntent, status: 'processing' },
+      config: {
+        polling: { baseDelayMs: 1, maxDelayMs: 1, maxAttempts: 1 },
+        statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 0 },
+        processing: { maxDurationMs: 60_000 },
+      },
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: 'o1',
+        amount: 100,
+        currency: 'MXN',
+        method: { type: 'card', token: 'tok_123' },
+      },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'polling');
+    vi.advanceTimersByTime(2);
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'failed', 200);
+    expect(snap.hasTag('error')).toBe(true);
+    expect(snap.context.error?.code).toBe('processing_timeout');
+    expect(snap.context.error?.messageKey).toBe('errors.processing_timeout');
+
+    vi.useRealTimers();
+  });
+
   it('rehydrates context and reconciles external events on re-entry', async () => {
     const flowContext: PaymentFlowContext = {
       flowId: 'flow_reentry',

@@ -120,6 +120,7 @@ export class CheckoutComponent {
 
   readonly showResult = computed(() => {
     const phase = this.flowPhase();
+    // magic strings, should this be a global guard/rule validation?
     return (
       phase === 'action_required' ||
       phase === 'processing' ||

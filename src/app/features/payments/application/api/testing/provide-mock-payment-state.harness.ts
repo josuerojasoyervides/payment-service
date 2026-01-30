@@ -128,6 +128,7 @@ export function createMockPaymentState(
     return list.length ? list[list.length - 1] : null;
   });
 
+  // Debug: defaults are safe (null); overrides can pass sanitized shapes for specs
   const debugStateNode = signal<string | null>(overrides.debugStateNode ?? null);
   const debugTags = signal<string[]>(overrides.debugTags ?? []);
   const debugLastEventType = signal<string | null>(overrides.debugLastEventType ?? null);
