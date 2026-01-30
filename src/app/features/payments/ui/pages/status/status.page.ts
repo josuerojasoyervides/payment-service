@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { PaymentFlowMachineDriver } from '@app/features/payments/application/orchestration/flow/payment-flow-machine-driver';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
@@ -41,7 +41,7 @@ interface StatusPageState {
   templateUrl: './status.component.html',
 })
 export class StatusComponent {
-  private readonly flow = inject(PaymentFlowMachineDriver);
+  private readonly state = inject(PAYMENT_STATE);
   private readonly i18n = inject(I18nService);
 
   readonly statusPageState = signalState<StatusPageState>({
@@ -52,9 +52,9 @@ export class StatusComponent {
   });
 
   readonly flowState = deepComputed(() => ({
-    intent: this.flow.intent(),
-    error: this.flow.error(),
-    isLoading: this.flow.isLoading(),
+    intent: this.state.intent(),
+    error: this.state.error(),
+    isLoading: this.state.isLoading(),
   }));
 
   readonly examples = computed(() => [
@@ -114,23 +114,32 @@ export class StatusComponent {
     if (!id) return;
 
     patchState(this.statusPageState, {
-      intentId: id, // opcional: normalizas el input
+      intentId: id,
       lastQuery: { provider: this.statusPageState.selectedProvider(), id },
     });
 
-    this.flow.refresh(this.statusPageState.selectedProvider(), id);
+    this.state.refreshPayment({ intentId: id }, this.statusPageState.selectedProvider());
   }
 
-  confirmPayment(_intentId: string): void {
-    this.flow.confirm();
+  confirmPayment(intentId: string): void {
+    this.state.confirmPayment({ intentId }, this.statusPageState.selectedProvider());
   }
 
   onNextActionRequested(action: NextAction): void {
-    this.flow.performNextAction(action);
+    if (action.kind === 'redirect' && action.url) {
+      if (typeof window !== 'undefined') window.location.href = action.url;
+      return;
+    }
+    if (action.kind === 'client_confirm') {
+      const intent = this.state.intent();
+      const intentId = intent?.id ?? this.statusPageState.lastQuery()?.id ?? null;
+      const providerId = intent?.provider ?? this.statusPageState.selectedProvider();
+      if (intentId) this.state.confirmPayment({ intentId }, providerId);
+    }
   }
 
-  cancelPayment(_intentId: string): void {
-    this.flow.cancel();
+  cancelPayment(intentId: string): void {
+    this.state.cancelPayment({ intentId }, this.statusPageState.selectedProvider());
   }
 
   refreshPayment(intentId: string): void {
@@ -138,7 +147,7 @@ export class StatusComponent {
       lastQuery: { provider: this.statusPageState.selectedProvider(), id: intentId },
     });
 
-    this.flow.refresh(this.statusPageState.selectedProvider(), intentId);
+    this.state.refreshPayment({ intentId }, this.statusPageState.selectedProvider());
   }
 
   useExample(example: { id: string; provider: PaymentProviderId }): void {
