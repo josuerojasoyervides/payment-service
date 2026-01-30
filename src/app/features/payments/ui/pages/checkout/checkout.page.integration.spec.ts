@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
-import type { PaymentStorePort } from '@payments/application/api/ports/payment-store.port';
+import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import providePayments from '@payments/config/payment.providers';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
@@ -16,7 +16,7 @@ import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
  * - error: hasError true and not loading
  */
 async function waitForPaymentComplete(
-  state: PaymentStorePort,
+  state: PaymentFlowPort,
   maxWaitMs = 2000,
   pollMs = 50,
 ): Promise<void> {
@@ -82,7 +82,7 @@ describe('CheckoutComponent - Real Integration', () => {
   let fixture: ComponentFixture<CheckoutComponent>;
   let registry: ProviderFactoryRegistry;
   let logger: LoggerService;
-  let state: PaymentStorePort;
+  let state: PaymentFlowPort;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({

@@ -1,13 +1,15 @@
 /**
  * Config layer: DI wiring for the payments feature.
  *
- * Binds PAYMENT_STATE (PaymentStorePort) to its adapter (NgRxSignalsStateAdapter).
+ * Binds PAYMENT_STATE (PaymentFlowPort) and PAYMENT_CHECKOUT_CATALOG (PaymentCheckoutCatalogPort)
+ * to the same adapter (NgRxSignalsStateAdapter) via useExisting.
  * Composition root for providers, use cases, stores, and infra.
  */
 import type { EnvironmentProviders } from '@angular/core';
 import { type Provider } from '@angular/core';
 import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
 import { NoopFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/prod-only/noop-flow-telemetry-sink';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { WEBHOOK_NORMALIZER_REGISTRY } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
@@ -66,7 +68,9 @@ const APPLICATION_PROVIDERS: Provider[] = [
   PaymentFlowActorService,
   PaymentFlowMachineDriver,
   PaymentHistoryFacade,
-  { provide: PAYMENT_STATE, useClass: NgRxSignalsStateAdapter },
+  NgRxSignalsStateAdapter,
+  { provide: PAYMENT_STATE, useExisting: NgRxSignalsStateAdapter },
+  { provide: PAYMENT_CHECKOUT_CATALOG, useExisting: NgRxSignalsStateAdapter },
   { provide: FLOW_TELEMETRY_SINK, useClass: NoopFlowTelemetrySink },
 ];
 

@@ -13,8 +13,8 @@
 
 ## 🖥️ UI surface & boundaries (current vs intended)
 
-- **Intended:** UI should inject PAYMENT_STATE (PaymentStorePort) for reactive state and actions.
-- **Current:** ReturnPage, StatusPage, and Checkout use PAYMENT_STATE. Guardrails: ESLint + depcruise forbid UI imports from orchestration/adapters/infra/config and forbid runtime imports from application/api/testing/\*_ (testing only in _.spec.ts).
+- **Intended:** UI injects PAYMENT_STATE (PaymentFlowPort) for flow state/actions and PAYMENT_CHECKOUT_CATALOG (PaymentCheckoutCatalogPort) for checkout catalog only.
+- **Current:** PAYMENT_STATE is FlowPort; CheckoutCatalog is exposed via PAYMENT_CHECKOUT_CATALOG; adapter implements both; UI consumes tokens only, never adapters. Guardrails: ESLint + depcruise forbid UI imports from orchestration/adapters/infra/config and api/testing only in \*.spec.ts.
 - **Rule:** UI must not import PaymentsStore, registry, orchestrators, adapters, or selector modules directly.
 
 ---

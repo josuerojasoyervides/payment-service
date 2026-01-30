@@ -45,158 +45,63 @@ export interface PaymentDebugSummary {
 }
 
 /**
- * UI API contract: UI couples to this port + PAYMENT_STATE token only.
- *
- * Enables swapping the implementation (e.g. NgRx, Akita) without breaking UI.
- * Components inject the token and use the port interface; they never import
- * the store or selectors directly.
- *
- * @example
- * ```ts
- * const state = inject(PAYMENT_STATE);
- * readonly loading = state.isLoading;
- * readonly intent = state.intent;
- * ```
+ * Flow port: state signals, payment/UI/fallback actions, return helpers.
+ * UI injects PAYMENT_STATE to get this contract.
  */
-export interface PaymentStorePort {
-  // ============================================================
-  // REACTIVE STATE (Signals)
-  // ============================================================
-
-  /** Full state as a signal (for advanced cases) */
+export interface PaymentFlowPort {
   readonly state: Signal<PaymentsState>;
-
-  /** Whether a payment is in progress */
   readonly isLoading: Signal<boolean>;
-
-  /** Whether a payment completed successfully */
   readonly isReady: Signal<boolean>;
-
   readonly hasError: Signal<boolean>;
-
   readonly intent: Signal<PaymentIntent | null>;
-
   readonly error: Signal<PaymentError | null>;
-
   readonly selectedProvider: Signal<PaymentProviderId | null>;
-
   readonly hasPendingFallback: Signal<boolean>;
-
   readonly isAutoFallbackInProgress: Signal<boolean>;
-
   readonly isFallbackExecuting: Signal<boolean>;
-
   readonly isAutoFallback: Signal<boolean>;
-
   readonly pendingFallbackEvent: Signal<FallbackAvailableEvent | null>;
-
   readonly fallbackState: Signal<FallbackState>;
-
   readonly historyCount: Signal<number>;
-
   readonly lastHistoryEntry: Signal<PaymentHistoryEntry | null>;
-
   readonly history: Signal<PaymentHistoryEntry[]>;
-
   readonly debugSummary: Signal<PaymentDebugSummary>;
-
-  /**
-   * Get a snapshot of the current state.
-   * Prefer using signals directly.
-   */
   getSnapshot(): Readonly<PaymentsState>;
-
-  /**
-   * Subscribe to state changes (legacy observer pattern).
-   * Prefer using signals with effect().
-   *
-   * @returns Function to cancel subscription
-   */
   subscribe(listener: () => void): Unsubscribe;
 
-  // ============================================================
-  // PAYMENT ACTIONS
-  // ============================================================
-
-  /**
-   * Start a new payment.
-   */
   startPayment(
     request: CreatePaymentRequest,
     providerId: PaymentProviderId,
     context?: StrategyContext,
   ): void;
-
-  /**
-   * Confirm an existing payment.
-   */
   confirmPayment(request: ConfirmPaymentRequest, providerId: PaymentProviderId): void;
-
-  /**
-   * Cancel an existing payment.
-   */
   cancelPayment(request: CancelPaymentRequest, providerId: PaymentProviderId): void;
-
-  /**
-   * Refresh payment status.
-   */
   refreshPayment(request: GetPaymentStatusRequest, providerId: PaymentProviderId): void;
-
-  // ============================================================
-  // UI ACTIONS
-  // ============================================================
-
-  /**
-   * Select a provider.
-   */
   selectProvider(providerId: PaymentProviderId): void;
-
-  /**
-   * Clear current error.
-   */
   clearError(): void;
-
-  /**
-   * Reset to initial state.
-   */
   reset(): void;
-
-  /**
-   * Clear history.
-   */
   clearHistory(): void;
-
-  // ============================================================
-  // FALLBACK ACTIONS
-  // ============================================================
-
-  /**
-   * Execute a fallback with the selected provider.
-   */
   executeFallback(providerId: PaymentProviderId): void;
-
-  /**
-   * Cancel pending fallback.
-   */
   cancelFallback(): void;
 
-  // ============================================================
-  // CHECKOUT CATALOG (providers, methods, form, request build)
-  // ============================================================
+  getReturnReferenceFromQuery(queryParams: Record<string, unknown>): {
+    providerId: PaymentProviderId;
+    referenceId: string | null;
+  };
+  notifyRedirectReturned(queryParams: Record<string, unknown>): void;
+}
 
-  /** List of available provider IDs. */
+/**
+ * Checkout catalog port: providers, methods, field requirements, request builder.
+ * UI injects PAYMENT_CHECKOUT_CATALOG for checkout form only.
+ */
+export interface PaymentCheckoutCatalogPort {
   availableProviders(): PaymentProviderId[];
-
-  /** Supported payment methods for a provider. */
   getSupportedMethods(providerId: PaymentProviderId): PaymentMethodType[];
-
-  /** Field requirements for provider+method (for dynamic form). */
   getFieldRequirements(
     providerId: PaymentProviderId,
     method: PaymentMethodType,
   ): FieldRequirements | null;
-
-  /** Build a CreatePaymentRequest from form data. */
   buildCreatePaymentRequest(params: {
     providerId: PaymentProviderId;
     method: PaymentMethodType;
@@ -205,13 +110,10 @@ export interface PaymentStorePort {
     currency: CurrencyCode;
     options: PaymentOptions;
   }): CreatePaymentRequest;
-
-  /** Parse return-page query params to provider + reference (no adapter import in UI). */
-  getReturnReferenceFromQuery(queryParams: Record<string, unknown>): {
-    providerId: PaymentProviderId;
-    referenceId: string | null;
-  };
-
-  /** Notify that the user returned from a redirect (3DS, PayPal). Call from return page only. */
-  notifyRedirectReturned(queryParams: Record<string, unknown>): void;
 }
+
+/**
+ * Combined port for backward compatibility. Prefer injecting PAYMENT_STATE (FlowPort)
+ * and PAYMENT_CHECKOUT_CATALOG (CatalogPort) separately in UI.
+ */
+export interface PaymentStorePort extends PaymentFlowPort, PaymentCheckoutCatalogPort {}

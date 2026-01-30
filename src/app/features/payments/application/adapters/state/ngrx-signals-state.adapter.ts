@@ -5,8 +5,9 @@ import { deepComputed } from '@ngrx/signals';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
 import { mapReturnQueryToReference } from '@payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
 import type {
+  PaymentCheckoutCatalogPort,
   PaymentDebugSummary,
-  PaymentStorePort,
+  PaymentFlowPort,
   Unsubscribe,
 } from '@payments/application/api/ports/payment-store.port';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
@@ -34,13 +35,12 @@ import type {
 } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 
 /**
- * Adapter implementing PaymentStorePort by delegating to PaymentsStore.
+ * Adapter implementing PaymentFlowPort and PaymentCheckoutCatalogPort by delegating to PaymentsStore.
  *
- * Decouples UI from the concrete store; UI depends only on the port. Config wires
- * PAYMENT_STATE to this adapter (e.g. in payment.providers).
+ * Config wires PAYMENT_STATE and PAYMENT_CHECKOUT_CATALOG to this single instance (useExisting).
  */
 @Injectable()
-export class NgRxSignalsStateAdapter implements PaymentStorePort {
+export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckoutCatalogPort {
   private readonly store = inject(PaymentsStore);
   private readonly registry = inject(ProviderFactoryRegistry);
   private readonly externalEvents = inject(ExternalEventAdapter);

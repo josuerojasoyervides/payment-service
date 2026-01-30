@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, isDevMode } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
@@ -70,6 +71,7 @@ export class CheckoutComponent {
   private readonly logger = inject(LoggerService);
   private readonly i18n = inject(I18nService);
   private readonly state = inject(PAYMENT_STATE);
+  private readonly catalog = inject(PAYMENT_CHECKOUT_CATALOG);
 
   readonly flowState = deepComputed(() => ({
     isLoading: this.state.isLoading(),
@@ -95,20 +97,20 @@ export class CheckoutComponent {
   }));
 
   readonly availableProviders = computed<PaymentProviderId[]>(() => {
-    return this.state.availableProviders();
+    return this.catalog.availableProviders();
   });
 
   readonly availableMethods = computed<PaymentMethodType[]>(() => {
     const provider = this.checkoutPageState.selectedProvider();
     if (!provider) return [];
-    return this.state.getSupportedMethods(provider);
+    return this.catalog.getSupportedMethods(provider);
   });
 
   readonly fieldRequirements = computed<FieldRequirements | null>(() => {
     const provider = this.checkoutPageState.selectedProvider();
     const method = this.checkoutPageState.selectedMethod();
     if (!provider || !method) return null;
-    return this.state.getFieldRequirements(provider, method);
+    return this.catalog.getFieldRequirements(provider, method);
   });
 
   readonly showResult = computed(() => this.flowState.isReady() || this.flowState.hasError());
@@ -206,7 +208,7 @@ export class CheckoutComponent {
 
     try {
       const options = this.checkoutPageState.formOptions();
-      const request = this.state.buildCreatePaymentRequest({
+      const request = this.catalog.buildCreatePaymentRequest({
         providerId: provider,
         method,
         orderId: this.checkoutPageState.orderId(),

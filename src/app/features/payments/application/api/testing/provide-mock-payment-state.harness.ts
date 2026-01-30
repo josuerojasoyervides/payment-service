@@ -1,6 +1,7 @@
 // src/testing/payments/mock-payment-state.ts
 import type { Provider } from '@angular/core';
 import { computed, effect, signal } from '@angular/core';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type {
   PaymentDebugSummary,
@@ -218,5 +219,9 @@ export function createMockPaymentState(
 }
 
 export function provideMockPaymentState(overrides?: MockPaymentStateOverrides): Provider[] {
-  return [{ provide: PAYMENT_STATE, useValue: createMockPaymentState(overrides) }];
+  const mock = createMockPaymentState(overrides);
+  return [
+    { provide: PAYMENT_STATE, useValue: mock },
+    { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mock },
+  ];
 }

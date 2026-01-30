@@ -3,6 +3,7 @@ import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
@@ -194,6 +195,7 @@ describe('CheckoutComponent', () => {
       imports: [CheckoutComponent, RouterLink],
       providers: [
         { provide: PAYMENT_STATE, useValue: mockState },
+        { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockState },
         { provide: LoggerService, useValue: mockLogger },
         provideRouter([]),
       ],
@@ -500,14 +502,13 @@ describe('CheckoutComponent', () => {
 
   describe('Payment state', () => {
     it('should expose loading state', () => {
+      const loadingMock = withCheckoutCatalog(createMockPaymentState({ isLoading: true }));
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         imports: [CheckoutComponent, RouterLink],
         providers: [
-          {
-            provide: PAYMENT_STATE,
-            useValue: withCheckoutCatalog(createMockPaymentState({ isLoading: true })),
-          },
+          { provide: PAYMENT_STATE, useValue: loadingMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: loadingMock },
           { provide: LoggerService, useValue: mockLogger },
           provideRouter([]),
         ],
@@ -519,14 +520,13 @@ describe('CheckoutComponent', () => {
     });
 
     it('should expose ready state', () => {
+      const readyMock = withCheckoutCatalog(createMockPaymentState({ isReady: true }));
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         imports: [CheckoutComponent, RouterLink],
         providers: [
-          {
-            provide: PAYMENT_STATE,
-            useValue: withCheckoutCatalog(createMockPaymentState({ isReady: true })),
-          },
+          { provide: PAYMENT_STATE, useValue: readyMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: readyMock },
           { provide: LoggerService, useValue: mockLogger },
           provideRouter([]),
         ],
@@ -538,16 +538,15 @@ describe('CheckoutComponent', () => {
     });
 
     it('should expose error state', () => {
+      const errorMock = withCheckoutCatalog(
+        createMockPaymentState({ hasError: true, error: mockError }),
+      );
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         imports: [CheckoutComponent, RouterLink],
         providers: [
-          {
-            provide: PAYMENT_STATE,
-            useValue: withCheckoutCatalog(
-              createMockPaymentState({ hasError: true, error: mockError }),
-            ),
-          },
+          { provide: PAYMENT_STATE, useValue: errorMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: errorMock },
           { provide: LoggerService, useValue: mockLogger },
           provideRouter([]),
         ],
@@ -566,14 +565,13 @@ describe('CheckoutComponent', () => {
     });
 
     it('should show result when ready', () => {
+      const readyMock = withCheckoutCatalog(createMockPaymentState({ isReady: true }));
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         imports: [CheckoutComponent, RouterLink],
         providers: [
-          {
-            provide: PAYMENT_STATE,
-            useValue: withCheckoutCatalog(createMockPaymentState({ isReady: true })),
-          },
+          { provide: PAYMENT_STATE, useValue: readyMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: readyMock },
           { provide: LoggerService, useValue: mockLogger },
           provideRouter([]),
         ],
@@ -585,14 +583,13 @@ describe('CheckoutComponent', () => {
     });
 
     it('should show result when there is an error', () => {
+      const errorMock = withCheckoutCatalog(createMockPaymentState({ hasError: true }));
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         imports: [CheckoutComponent, RouterLink],
         providers: [
-          {
-            provide: PAYMENT_STATE,
-            useValue: withCheckoutCatalog(createMockPaymentState({ hasError: true })),
-          },
+          { provide: PAYMENT_STATE, useValue: errorMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: errorMock },
           { provide: LoggerService, useValue: mockLogger },
           provideRouter([]),
         ],
