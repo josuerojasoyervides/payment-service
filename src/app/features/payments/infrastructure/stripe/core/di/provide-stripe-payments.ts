@@ -11,6 +11,7 @@ import {
   type PaymentProviderUiMeta,
 } from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
 import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
+import { FakeIntentStore } from '@payments/infrastructure/fake/shared/state/fake-intent.store';
 import { FakeStripeCancelIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-cancel-intent.gateway';
 import { FakeStripeConfirmIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-confirm-intent.gateway';
 import { FakeStripeCreateIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-create-intent.gateway';
@@ -65,6 +66,7 @@ const STRIPE_REAL_PROVIDERS: Provider[] = [
 ];
 
 const STRIPE_FAKE_PROVIDERS: Provider[] = [
+  FakeIntentStore,
   FakeStripeCreateIntentGateway,
   FakeStripeConfirmIntentGateway,
   FakeStripeCancelIntentGateway,

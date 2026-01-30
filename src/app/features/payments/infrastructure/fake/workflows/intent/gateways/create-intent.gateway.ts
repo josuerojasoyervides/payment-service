@@ -1,13 +1,13 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { FAKE_ERRORS } from '@app/features/payments/infrastructure/fake/shared/constants/fake-errors';
+import { buildStripeDtoFromFakeState } from '@app/features/payments/infrastructure/fake/shared/helpers/build-stripe-dto-from-fake-state.helper';
 import { createFakePaypalOrder } from '@app/features/payments/infrastructure/fake/shared/helpers/create-fake-paypal-order.helper';
 import { createFakeSpeiSource } from '@app/features/payments/infrastructure/fake/shared/helpers/create-fake-spei-source.helper';
-import { createFakeStripeIntent } from '@app/features/payments/infrastructure/fake/shared/helpers/create-fake-stripe-intent.helper';
 import { getTokenBehavior } from '@app/features/payments/infrastructure/fake/shared/helpers/get-token-behavior';
 import { simulateNetworkDelay } from '@app/features/payments/infrastructure/fake/shared/helpers/simulate-network-delay.helper';
 import { validateCreate as validateCreateHelper } from '@app/features/payments/infrastructure/fake/shared/helpers/validate-create.helper';
 import { mapIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/intent.mapper';
-import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import { FakeIntentStore } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import type {
   PaymentIntent,
@@ -25,13 +25,18 @@ function addFakeDebug(
   scenarioId: string,
   simulatedDelayMs: number,
   correlationId: string,
+  stepCount?: number,
+  createdAt?: number,
 ): void {
   dto['_fakeDebug'] = {
     scenarioId,
     simulatedDelayMs,
     correlationId,
+    ...(stepCount !== undefined && { stepCount }),
+    ...(createdAt !== undefined && { createdAt }),
   };
 }
+
 @Injectable()
 export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
   CreatePaymentRequest,
@@ -39,6 +44,8 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
   PaymentIntent
 > {
   abstract override readonly providerId: PaymentProviderId;
+
+  private readonly fakeIntentStore = inject(FakeIntentStore);
 
   protected override executeRaw(request: CreatePaymentRequest): Observable<any> {
     this.logger.warn(`[FakeGateway] Creating intent for ${this.providerId}`, this.logContext, {
@@ -77,29 +84,13 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
       return simulateNetworkDelay(dto);
     }
 
-    let status: StripePaymentIntentDto['status'] = 'requires_confirmation';
-    let nextActionKind: 'redirect' | 'client_confirm' | undefined;
-    if (behavior === 'success') {
-      status = 'succeeded';
-    } else if (behavior === '3ds') {
-      status = 'requires_action';
-      nextActionKind = 'redirect';
-    } else if (behavior === 'client_confirm') {
-      status = 'requires_action';
-      nextActionKind = 'client_confirm';
-    } else if (behavior === 'processing') {
-      status = 'processing';
-    } else {
-      if (request.method.token === 'tok_visa1234567890abcdef') {
-        status = 'succeeded';
-      }
-    }
-
-    const dto = createFakeStripeIntent(request, status, nextActionKind) as unknown as Record<
-      string,
-      unknown
-    >;
-    addFakeDebug(dto, behavior, DEFAULT_DELAY_MS, request.orderId);
+    // Stripe card: use FakeIntentStore for deterministic processing/client_confirm/refresh
+    const state = this.fakeIntentStore.createIntent({
+      token: request.method?.token,
+      providerId: this.providerId,
+      request,
+    });
+    const dto = buildStripeDtoFromFakeState(state, DEFAULT_DELAY_MS);
     return simulateNetworkDelay(dto);
   }
 

@@ -11,8 +11,9 @@ export function createFakeStripeIntent(
   req: CreatePaymentRequest,
   forcedStatus?: StripePaymentIntentDto['status'],
   nextActionKind?: FakeNextActionKind,
+  intentIdOverride?: string,
 ): StripePaymentIntentDto {
-  const intentId = generateId('pi');
+  const intentId = intentIdOverride ?? generateId('pi');
   const amountInCents = Math.round(req.amount * 100);
   const clientSecret = `${intentId}_secret_${generateId('sec')}`;
 
