@@ -290,5 +290,10 @@ export interface Translations {
     demo_tokens_cheatsheet: string;
     no_providers_available: string;
     reference_id: string;
+    resume_payment_found: string;
+    resume_payment_action: string;
+    processing_status_title: string;
+    processing_status_hint: string;
+    refresh_status: string;
   };
 }

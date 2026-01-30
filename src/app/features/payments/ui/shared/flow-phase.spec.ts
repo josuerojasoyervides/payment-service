@@ -43,7 +43,7 @@ describe('deriveFlowPhase', () => {
       currency: 'MXN',
       clientSecret: 'secret',
     };
-    const { phaseSignal } = setup({ intent });
+    const { phaseSignal } = setup({ intent, isReady: true });
     expect(phaseSignal()).toBe('processing');
   });
 
@@ -56,7 +56,7 @@ describe('deriveFlowPhase', () => {
       currency: 'MXN',
       clientSecret: 'secret',
     };
-    const { phaseSignal } = setup({ intent });
+    const { phaseSignal } = setup({ intent, isReady: true });
     expect(phaseSignal()).toBe('done');
   });
 
@@ -67,6 +67,19 @@ describe('deriveFlowPhase', () => {
 
   it('returns failed when status is error', () => {
     const { phaseSignal } = setup({ hasError: true });
+    expect(phaseSignal()).toBe('failed');
+  });
+
+  it('returns failed when intent.status is failed even if hasError is false', () => {
+    const intent: PaymentIntent = {
+      id: 'pi_1',
+      provider: 'stripe',
+      status: 'failed',
+      amount: 100,
+      currency: 'MXN',
+      clientSecret: 'secret',
+    };
+    const { phaseSignal } = setup({ intent, isReady: true, hasError: false });
     expect(phaseSignal()).toBe('failed');
   });
 
@@ -91,17 +104,20 @@ describe('deriveFlowPhase', () => {
     expect(phaseSignal()).toBe('fallback_executing');
   });
 
-  it('fallback_pending overrides other states', () => {
+  it('fallback_pending wins over hasError and requires_action', () => {
     const intent: PaymentIntent = {
       id: 'pi_1',
       provider: 'stripe',
-      status: 'succeeded',
+      status: 'requires_action',
       amount: 100,
       currency: 'MXN',
       clientSecret: 'secret',
+      nextAction: { kind: 'client_confirm', token: 'tok_test' },
     };
     const { phaseSignal } = setup({
       intent,
+      hasError: true,
+      isReady: true,
       fallback: { ...INITIAL_FALLBACK_STATE, status: 'pending' },
     });
     expect(phaseSignal()).toBe('fallback_pending');

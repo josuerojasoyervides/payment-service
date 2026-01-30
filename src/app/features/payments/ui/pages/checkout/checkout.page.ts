@@ -128,6 +128,12 @@ export class CheckoutComponent {
     );
   });
 
+  readonly showProcessingPanel = computed(() => this.flowPhase() === 'processing');
+
+  readonly showResumeBanner = computed(
+    () => this.flowPhase() === 'editing' && this.state.canResume(),
+  );
+
   readonly debugInfo = computed(() => {
     const summary = this.state.debugSummary();
 
@@ -289,6 +295,23 @@ export class CheckoutComponent {
     if (intentId) this.state.cancelPayment({ intentId });
   }
 
+  resumePayment(): void {
+    const providerId = this.state.resumeProviderId();
+    const intentId = this.state.resumeIntentId();
+    if (providerId && intentId) {
+      this.state.refreshPayment({ intentId }, providerId);
+    }
+  }
+
+  refreshProcessingStatus(): void {
+    const intent = this.state.intent();
+    const intentId = intent?.id ?? null;
+    const providerId = intent?.provider ?? this.state.selectedProvider();
+    if (intentId && providerId) {
+      this.state.refreshPayment({ intentId }, providerId);
+    }
+  }
+
   resetPayment(): void {
     this.state.reset();
 
@@ -314,6 +337,11 @@ export class CheckoutComponent {
     methodDebugLabel: this.i18n.t(I18nKeys.ui.method_debug),
     formValidLabel: this.i18n.t(I18nKeys.ui.form_valid),
     loadingDebugLabel: this.i18n.t(I18nKeys.ui.loading_debug),
+    processingStatusTitle: this.i18n.t(I18nKeys.ui.processing_status_title),
+    processingStatusHint: this.i18n.t(I18nKeys.ui.processing_status_hint),
+    refreshStatus: this.i18n.t(I18nKeys.ui.refresh_status),
+    resumePaymentFound: this.i18n.t(I18nKeys.ui.resume_payment_found),
+    resumePaymentAction: this.i18n.t(I18nKeys.ui.resume_payment_action),
   }));
 
   // TODO : This is orchestration layer responsibility, not UI layer

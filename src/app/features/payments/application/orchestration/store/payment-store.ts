@@ -5,7 +5,7 @@
  * signals (status, intent, error, fallback, history). UI must not import this store
  * directly — use PAYMENT_STATE (PaymentStorePort) instead.
  */
-import { effect, inject } from '@angular/core';
+import { computed, effect, inject } from '@angular/core';
 import {
   updateState,
   withDevtools,
@@ -39,6 +39,26 @@ export const PaymentsStore = signalStore(
     _fallbackOrchestrator: inject(FallbackOrchestratorService),
     _stateMachine: inject(PaymentFlowActorService),
   })),
+  withComputed((store) => {
+    const machine = (store as { _stateMachine: PaymentFlowActorService })._stateMachine;
+    const snapshot = machine.snapshot;
+    const resumeProviderId = computed(() => {
+      const snap = snapshot();
+      if (!snap.hasTag('idle')) return null;
+      return (snap.context.providerId as PaymentProviderId) ?? null;
+    });
+    const resumeIntentId = computed(() => {
+      const snap = snapshot();
+      if (!snap.hasTag('idle')) return null;
+      const ctx = snap.context;
+      return ctx.intent?.id ?? ctx.intentId ?? null;
+    });
+    return {
+      resumeProviderId,
+      resumeIntentId,
+      canResume: computed(() => !!(resumeProviderId() && resumeIntentId())),
+    };
+  }),
   withMethods(({ _fallbackOrchestrator, _stateMachine, ...store }) => {
     return {
       ...createPaymentsStoreActions(store, {

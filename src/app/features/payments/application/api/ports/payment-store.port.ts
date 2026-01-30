@@ -72,6 +72,9 @@ export interface PaymentFlowPort {
   readonly isSucceeded: Signal<boolean>;
   readonly isProcessing: Signal<boolean>;
   readonly isFailed: Signal<boolean>;
+  readonly canResume: Signal<boolean>;
+  readonly resumeProviderId: Signal<PaymentProviderId | null>;
+  readonly resumeIntentId: Signal<string | null>;
   readonly selectedProvider: Signal<PaymentProviderId | null>;
   readonly hasPendingFallback: Signal<boolean>;
   readonly isAutoFallbackInProgress: Signal<boolean>;

@@ -23,7 +23,7 @@ export function deriveFlowPhase(state: PaymentFlowPort): Signal<FlowPhase> {
   return computed(() => {
     if (state.hasPendingFallback()) return 'fallback_pending';
     if (state.isFallbackExecuting()) return 'fallback_executing';
-    if (state.hasError()) return 'failed';
+    if (state.hasError() || state.isFailed()) return 'failed';
     if (state.requiresUserAction()) return 'action_required';
     if (state.isProcessing()) return 'processing';
     if (state.isSucceeded() || state.isReady()) return 'done';

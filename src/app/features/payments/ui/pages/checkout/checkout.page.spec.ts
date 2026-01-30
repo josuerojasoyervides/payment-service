@@ -647,4 +647,67 @@ describe('CheckoutComponent', () => {
       expect(debugSummary.state).toBe('idle');
     });
   });
+
+  describe('Resume and processing UX', () => {
+    it('showResumeBanner is true when flowPhase is editing and canResume', () => {
+      const resumeMock = createMockPaymentState({
+        resumeProviderId: 'stripe',
+        resumeIntentId: 'pi_123',
+      });
+      const refreshPaymentSpy = vi.fn();
+      const mockWithResume = withCheckoutCatalog({
+        ...resumeMock,
+        refreshPayment: refreshPaymentSpy,
+      });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: mockWithResume },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockWithResume },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      const f = TestBed.createComponent(CheckoutComponent);
+      const c = f.componentInstance;
+      f.detectChanges();
+      expect(c.showResumeBanner()).toBe(true);
+      c.resumePayment();
+      expect(refreshPaymentSpy).toHaveBeenCalledWith({ intentId: 'pi_123' }, 'stripe');
+    });
+
+    it('showProcessingPanel is true when flowPhase is processing; refreshProcessingStatus calls refreshPayment', () => {
+      const processingIntent: PaymentIntent = {
+        id: 'pi_123',
+        provider: 'stripe',
+        status: 'processing',
+        amount: 499.99,
+        currency: 'MXN',
+        clientSecret: 'secret',
+      };
+      const processingMock = createMockPaymentState({ intent: processingIntent });
+      const refreshPaymentSpy = vi.fn();
+      const mockWithProcessing = withCheckoutCatalog({
+        ...processingMock,
+        refreshPayment: refreshPaymentSpy,
+      });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: mockWithProcessing },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockWithProcessing },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      const f = TestBed.createComponent(CheckoutComponent);
+      const c = f.componentInstance;
+      f.detectChanges();
+      expect(c.showProcessingPanel()).toBe(true);
+      c.refreshProcessingStatus();
+      expect(refreshPaymentSpy).toHaveBeenCalledWith({ intentId: 'pi_123' }, 'stripe');
+    });
+  });
 });

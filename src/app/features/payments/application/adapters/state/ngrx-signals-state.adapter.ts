@@ -77,6 +77,10 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
   readonly isProcessing: Signal<boolean> = this.store.isProcessing;
   readonly isFailed: Signal<boolean> = this.store.isFailed;
 
+  readonly canResume: Signal<boolean> = this.store.canResume;
+  readonly resumeProviderId: Signal<PaymentProviderId | null> = this.store.resumeProviderId;
+  readonly resumeIntentId: Signal<string | null> = this.store.resumeIntentId;
+
   // ============================================================
   // FALLBACK STATE
   // ============================================================

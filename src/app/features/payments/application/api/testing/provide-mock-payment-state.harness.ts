@@ -47,6 +47,9 @@ export interface MockPaymentStateOverrides {
   isLoading?: boolean;
   isReady?: boolean;
   hasError?: boolean;
+  // resume selectors (mockeable for UI tests)
+  resumeProviderId?: PaymentProviderId | null;
+  resumeIntentId?: string | null;
 }
 
 export function createMockPaymentState(
@@ -98,6 +101,10 @@ export function createMockPaymentState(
   const isSucceeded = computed(() => intent()?.status === 'succeeded');
   const isProcessing = computed(() => intent()?.status === 'processing');
   const isFailed = computed(() => intent()?.status === 'failed');
+
+  const resumeProviderId = signal<PaymentProviderId | null>(overrides.resumeProviderId ?? null);
+  const resumeIntentId = signal<string | null>(overrides.resumeIntentId ?? null);
+  const canResume = computed(() => !!(resumeProviderId() && resumeIntentId()));
 
   const hasPendingFallback = computed(() => fallbackState().status === 'pending');
   const isAutoFallbackInProgress = computed(() => fallbackState().status === 'auto_executing');
@@ -177,6 +184,9 @@ export function createMockPaymentState(
     isSucceeded,
     isProcessing,
     isFailed,
+    canResume,
+    resumeProviderId,
+    resumeIntentId,
     selectedProvider,
 
     hasPendingFallback,

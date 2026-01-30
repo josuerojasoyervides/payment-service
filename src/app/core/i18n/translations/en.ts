@@ -264,5 +264,10 @@ export const en: Translations = {
       'In fake mode, use these card tokens: tok_success (immediate success), tok_3ds (redirect), tok_client_confirm (client confirm), tok_processing (then refresh), tok_decline, tok_timeout, tok_insufficient, tok_expired.',
     no_providers_available: 'No providers available',
     reference_id: 'Reference ID',
+    resume_payment_found: 'We found a payment in progress',
+    resume_payment_action: 'Resume',
+    processing_status_title: 'Processing…',
+    processing_status_hint: 'This may take a bit…',
+    refresh_status: 'Refresh status',
   },
 };
