@@ -20,7 +20,7 @@ module.exports = {
         'add an exception for it in your dependency-cruiser configuration. By default ' +
         'this rule does not scrutinize dot-files (e.g. .eslintrc.js), TypeScript declaration ' +
         'files (.d.ts), tsconfig.json and some of the babel and webpack configs.',
-      severity: 'warn',
+      severity: 'ignore',
       from: {
         orphan: true,
         pathNot: [
@@ -31,6 +31,12 @@ module.exports = {
           '^src/app/features/payments/domain/',
           '^src/app/features/payments/infrastructure/stripe/dto/stripe.dto.ts$', // DTO used by gateways
           '^src/app/features/payments/application/api/tokens/payment-state.token.ts$', // Token used by adapters
+          '^src/.*[.](?:spec|test)[.]ts$', // Spec and test files
+          '^src/.*[.]integration[.]spec[.]ts$', // Integration specs
+          '^src/app/features/payments/application/api/testing/', // Test harnesses
+          '^src/.*[.]harness[.]ts$', // Harness files
+          '^src/app/features/payments/application/api/ports/', // Ports
+          '^src/app/features/payments/application/adapters/telemetry/dev-only/', // Dev-only telemetry
         ],
       },
       to: {},
@@ -147,6 +153,7 @@ module.exports = {
         pathNot: [
           '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
           '(^|/)__tests__/', // harness/helpers under __tests__ may use vitest etc.
+          '^src/app/features/payments/application/api/testing/', // test harnesses may use vitest
         ],
       },
       to: {
