@@ -3,6 +3,7 @@ import { StripeProviderFactory } from '@app/features/payments/infrastructure/str
 import { StripeProviderMethodPolicy } from '@app/features/payments/infrastructure/stripe/shared/policies/stripe-provider-method.policy';
 import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
 import { I18nKeys } from '@core/i18n';
+import { PAYMENT_PROVIDER_DESCRIPTORS } from '@payments/application/api/tokens/provider/payment-provider-descriptors.token';
 import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
 import {
@@ -35,8 +36,20 @@ const STRIPE_UI_META = {
   buttonClasses: 'bg-stripe-primary hover:opacity-90 text-white focus:ring-stripe-primary',
 } as const satisfies PaymentProviderUiMeta;
 
+const STRIPE_DESCRIPTOR = {
+  id: 'stripe' as const,
+  labelKey: I18nKeys.ui.provider_stripe,
+  descriptionKey: I18nKeys.ui.provider_stripe_description,
+  icon: '💳',
+  supportedMethods: ['card', 'spei'] as const,
+};
+
 const STRIPE_UI_META_PROVIDERS: Provider[] = [
   { provide: PAYMENT_PROVIDER_UI_META, useValue: STRIPE_UI_META, multi: true },
+];
+
+const STRIPE_DESCRIPTOR_PROVIDERS: Provider[] = [
+  { provide: PAYMENT_PROVIDER_DESCRIPTORS, useValue: STRIPE_DESCRIPTOR, multi: true },
 ];
 
 const STRIPE_REAL_PROVIDERS: Provider[] = [
@@ -48,6 +61,7 @@ const STRIPE_REAL_PROVIDERS: Provider[] = [
   ...STRIPE_FACTORY_PROVIDERS,
   ...STRIPE_POLICY_PROVIDERS,
   ...STRIPE_UI_META_PROVIDERS,
+  ...STRIPE_DESCRIPTOR_PROVIDERS,
 ];
 
 const STRIPE_FAKE_PROVIDERS: Provider[] = [
@@ -66,6 +80,7 @@ const STRIPE_FAKE_PROVIDERS: Provider[] = [
   ...STRIPE_FACTORY_PROVIDERS,
   ...STRIPE_POLICY_PROVIDERS,
   ...STRIPE_UI_META_PROVIDERS,
+  ...STRIPE_DESCRIPTOR_PROVIDERS,
 ];
 
 export function provideStripePayments(mode: PaymentsProvidersMode): Provider[] {

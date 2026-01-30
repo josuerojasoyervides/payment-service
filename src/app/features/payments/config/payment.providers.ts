@@ -14,6 +14,7 @@ import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/sto
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { WEBHOOK_NORMALIZER_REGISTRY } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
 import { PaymentFlowMachineDriver } from '@app/features/payments/application/orchestration/flow/payment-flow-machine-driver';
+import { ProviderDescriptorRegistry } from '@app/features/payments/application/orchestration/registry/provider-descriptor/provider-descriptor.registry';
 import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { ProviderMethodPolicyRegistry } from '@app/features/payments/application/orchestration/registry/provider-method-policy/provider-method-policy.registry';
 import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
@@ -59,6 +60,7 @@ const ACTION_PORT_PROVIDERS: Provider[] = [
 ];
 
 const APPLICATION_PROVIDERS: Provider[] = [
+  ProviderDescriptorRegistry,
   ProviderFactoryRegistry,
   ProviderMethodPolicyRegistry,
   ExternalEventAdapter,

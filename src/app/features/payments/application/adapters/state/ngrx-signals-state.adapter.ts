@@ -9,9 +9,11 @@ import type {
   PaymentCheckoutCatalogPort,
   PaymentDebugSummary,
   PaymentFlowPort,
+  ProviderDescriptor,
   Unsubscribe,
 } from '@payments/application/api/ports/payment-store.port';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import { ProviderDescriptorRegistry } from '@payments/application/orchestration/registry/provider-descriptor/provider-descriptor.registry';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
@@ -44,6 +46,7 @@ import type {
 export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckoutCatalogPort {
   private readonly store = inject(PaymentsStore);
   private readonly registry = inject(ProviderFactoryRegistry);
+  private readonly descriptorRegistry = inject(ProviderDescriptorRegistry);
   private readonly externalEvents = inject(ExternalEventAdapter);
 
   // ============================================================
@@ -201,6 +204,14 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
 
   availableProviders(): PaymentProviderId[] {
     return this.registry.getAvailableProviders();
+  }
+
+  getProviderDescriptors(): ProviderDescriptor[] {
+    return this.descriptorRegistry.getProviderDescriptors();
+  }
+
+  getProviderDescriptor(providerId: PaymentProviderId): ProviderDescriptor | null {
+    return this.descriptorRegistry.getProviderDescriptor(providerId);
   }
 
   getSupportedMethods(providerId: PaymentProviderId): PaymentMethodType[] {

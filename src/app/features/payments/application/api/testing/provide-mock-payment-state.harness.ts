@@ -6,6 +6,7 @@ import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/sto
 import type {
   PaymentDebugSummary,
   PaymentStorePort,
+  ProviderDescriptor,
 } from '@payments/application/api/ports/payment-store.port';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
@@ -133,6 +134,8 @@ export function createMockPaymentState(
   const cancelFallback = () => {};
 
   const availableProviders = (): PaymentProviderId[] => [];
+  const getProviderDescriptors = (): ProviderDescriptor[] => [];
+  const getProviderDescriptor = (_providerId: PaymentProviderId): ProviderDescriptor | null => null;
   const getSupportedMethods = (_providerId: PaymentProviderId): PaymentMethodType[] => [];
   const getFieldRequirements = (
     _providerId: PaymentProviderId,
@@ -199,6 +202,8 @@ export function createMockPaymentState(
     cancelFallback,
 
     availableProviders,
+    getProviderDescriptors,
+    getProviderDescriptor,
     getSupportedMethods,
     getFieldRequirements,
     buildCreatePaymentRequest,

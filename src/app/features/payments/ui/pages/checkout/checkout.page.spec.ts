@@ -32,6 +32,8 @@ function withCheckoutCatalog<T extends PaymentFlowPort & PaymentCheckoutCatalogP
   return {
     ...base,
     availableProviders: () => ['stripe', 'paypal'],
+    getProviderDescriptors: () => [],
+    getProviderDescriptor: () => null,
     getSupportedMethods: () => ['card', 'spei'] as PaymentMethodType[],
     getFieldRequirements: () => null,
     buildCreatePaymentRequest: (): CreatePaymentRequest => ({

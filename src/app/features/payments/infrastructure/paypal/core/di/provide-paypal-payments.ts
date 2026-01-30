@@ -6,6 +6,7 @@ import { PaypalConfirmIntentGateway } from '@app/features/payments/infrastructur
 import { PaypalGetIntentGateway } from '@app/features/payments/infrastructure/paypal/workflows/order/gateways/get-intent.gateway';
 import { PaypalIntentFacade } from '@app/features/payments/infrastructure/paypal/workflows/order/order.facade';
 import { I18nKeys } from '@core/i18n';
+import { PAYMENT_PROVIDER_DESCRIPTORS } from '@payments/application/api/tokens/provider/payment-provider-descriptors.token';
 import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
 import {
@@ -36,8 +37,20 @@ const PAYPAL_UI_META = {
   buttonClasses: 'bg-paypal-primary hover:opacity-90 text-white focus:ring-paypal-primary',
 } as const satisfies PaymentProviderUiMeta;
 
+const PAYPAL_DESCRIPTOR = {
+  id: 'paypal' as const,
+  labelKey: I18nKeys.ui.provider_paypal,
+  descriptionKey: I18nKeys.ui.provider_paypal_description,
+  icon: '🅿️',
+  supportedMethods: ['card', 'spei'] as const,
+};
+
 const PAYPAL_UI_META_PROVIDERS: Provider[] = [
   { provide: PAYMENT_PROVIDER_UI_META, useValue: PAYPAL_UI_META, multi: true },
+];
+
+const PAYPAL_DESCRIPTOR_PROVIDERS: Provider[] = [
+  { provide: PAYMENT_PROVIDER_DESCRIPTORS, useValue: PAYPAL_DESCRIPTOR, multi: true },
 ];
 
 const PAYPAL_REAL_PROVIDERS: Provider[] = [
@@ -50,6 +63,7 @@ const PAYPAL_REAL_PROVIDERS: Provider[] = [
   ...PAYPAL_FACTORY_PROVIDERS,
   ...PAYPAL_POLICY_PROVIDERS,
   ...PAYPAL_UI_META_PROVIDERS,
+  ...PAYPAL_DESCRIPTOR_PROVIDERS,
 ];
 
 const PAYPAL_FAKE_PROVIDERS: Provider[] = [
@@ -69,6 +83,7 @@ const PAYPAL_FAKE_PROVIDERS: Provider[] = [
   ...PAYPAL_FACTORY_PROVIDERS,
   ...PAYPAL_POLICY_PROVIDERS,
   ...PAYPAL_UI_META_PROVIDERS,
+  ...PAYPAL_DESCRIPTOR_PROVIDERS,
 ];
 
 export function providePaypalPayments(mode: PaymentsProvidersMode): Provider[] {

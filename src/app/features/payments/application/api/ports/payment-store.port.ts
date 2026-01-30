@@ -28,6 +28,19 @@ import type {
 } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 
 /**
+ * Provider metadata for checkout UI (techless: i18n keys are plain strings).
+ * Config/infra register one per provider; UI uses labelKey/descriptionKey for translation.
+ */
+export interface ProviderDescriptor {
+  id: PaymentProviderId;
+  labelKey: string;
+  descriptionKey?: string;
+  icon?: string;
+  badges?: string[];
+  supportedMethods?: PaymentMethodType[];
+}
+
+/**
  * Unsubscribe function.
  */
 export type Unsubscribe = () => void;
@@ -97,6 +110,8 @@ export interface PaymentFlowPort {
  */
 export interface PaymentCheckoutCatalogPort {
   availableProviders(): PaymentProviderId[];
+  getProviderDescriptors(): ProviderDescriptor[];
+  getProviderDescriptor(providerId: PaymentProviderId): ProviderDescriptor | null;
   getSupportedMethods(providerId: PaymentProviderId): PaymentMethodType[];
   getFieldRequirements(
     providerId: PaymentProviderId,
