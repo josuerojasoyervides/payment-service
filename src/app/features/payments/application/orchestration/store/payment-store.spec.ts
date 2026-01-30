@@ -1,6 +1,5 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { I18nKeys } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
@@ -43,7 +42,7 @@ describe('PaymentsStore', () => {
 
   const paymentError: PaymentError = {
     code: 'provider_error',
-    messageKey: I18nKeys.errors.provider_error,
+    messageKey: 'errors.provider_error',
     raw: {},
   };
 

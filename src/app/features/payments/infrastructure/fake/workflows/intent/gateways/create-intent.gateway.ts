@@ -9,6 +9,8 @@ import { validateCreate as validateCreateHelper } from '@app/features/payments/i
 import { mapIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/intent.mapper';
 import { FakeIntentStore } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
+import { isPaymentError } from '@payments/application/orchestration/store/projection/payment-store.errors';
+import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   PaymentIntent,
   PaymentProviderId,
@@ -18,7 +20,8 @@ import type { Observable } from 'rxjs';
 import { delay, mergeMap, of, throwError } from 'rxjs';
 
 const DEFAULT_DELAY_MS = 200;
-const TIMEOUT_DELAY_MS = 500;
+/** Short delay in fake so integration tests get timeout error deterministically without long waits. */
+const TIMEOUT_DELAY_MS = 1;
 
 function addFakeDebug(
   dto: Record<string, unknown>,
@@ -100,5 +103,11 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
 
   protected override validateRequest(request: CreatePaymentRequest): void {
     validateCreateHelper(request, this.providerId);
+  }
+
+  /** Preserve FAKE_ERRORS (timeout, decline, etc.) so integration tests see correct code/messageKey. */
+  protected override handleError(err: unknown): PaymentError {
+    if (isPaymentError(err)) return err;
+    return super.handleError(err);
   }
 }

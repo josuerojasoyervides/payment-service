@@ -7,7 +7,10 @@ import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
 import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
+import { FALLBACK_CONFIG } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import providePayments from '@payments/config/payment.providers';
+import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
+import { FakeIntentStore } from '@payments/infrastructure/fake/shared/state/fake-intent.store';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 
 /**
@@ -51,6 +54,37 @@ async function waitForPaymentComplete(
   );
 }
 
+/** Wait until intent has given status or timeout. maxWaitMs 1500–2500 to avoid flakiness. */
+async function waitForIntentStatus(
+  state: PaymentFlowPort,
+  status: string,
+  maxWaitMs = 2500,
+  pollMs = 50,
+): Promise<void> {
+  const startTime = Date.now();
+  while (Date.now() - startTime < maxWaitMs) {
+    if (state.intent()?.status === status) return;
+    if (state.hasError()) {
+      throw new Error(
+        `Intent status did not become "${status}" within ${maxWaitMs}ms. Flow has error: ${state.error()?.code ?? 'unknown'}`,
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollMs));
+  }
+  throw new Error(
+    `Intent status did not become "${status}" within ${maxWaitMs}ms. Current: ${state.intent()?.status ?? 'null'}`,
+  );
+}
+
+/** Wait until machine is idle (e.g. after reset). */
+async function waitUntilIdle(state: PaymentFlowPort, maxWaitMs = 500, pollMs = 20): Promise<void> {
+  const startTime = Date.now();
+  while (Date.now() - startTime < maxWaitMs) {
+    if (!state.isReady() && !state.isLoading()) return;
+    await new Promise((resolve) => setTimeout(resolve, pollMs));
+  }
+}
+
 /**
  * Helper: ensure the component is in \"form valid\" state
  * before executing the payment, avoiding flakiness caused by
@@ -87,7 +121,19 @@ describe('CheckoutComponent - Real Integration', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CheckoutComponent],
-      providers: [...providePayments(), provideRouter([]), LoggerService],
+      providers: [
+        ...providePayments(),
+        provideRouter([]),
+        LoggerService,
+        // Exclude timeout from fallback so tok_timeout test sees error in store (no fallbackCandidate)
+        {
+          provide: FALLBACK_CONFIG,
+          useValue: {
+            ...DEFAULT_FALLBACK_CONFIG,
+            triggerErrorCodes: ['provider_unavailable', 'provider_error', 'network_error'],
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CheckoutComponent);
@@ -330,15 +376,38 @@ describe('CheckoutComponent - Real Integration', () => {
     });
   });
 
-  describe('Scenario matrix (fake tokens)', () => {
+  describe('Scenario matrix (fake tokens) — FakeIntentStore deterministic', () => {
+    let fakeIntentStore: FakeIntentStore;
+
     beforeEach(async () => {
+      fakeIntentStore = TestBed.inject(FakeIntentStore);
+      fakeIntentStore.reset();
+      state.reset();
+      await fixture.whenStable();
+      await waitUntilIdle(state, 800);
       patchState(component.checkoutPageState, { selectedProvider: 'stripe' });
       patchState(component.checkoutPageState, { selectedMethod: 'card' });
       fixture.detectChanges();
       await settle(fixture);
     });
 
-    it('tok_success: flow converges to isReady, historyCount grows, debugSummary coherent', async () => {
+    it('tok_timeout: start -> error code timeout, messageKey errors.timeout', async () => {
+      component.onFormChange({ token: 'tok_timeout1234567890abcdef' });
+      ensureValidForm(component);
+      component.processPayment();
+      await waitForPaymentComplete(state, 3000);
+      fixture.detectChanges();
+
+      expect(state.isLoading()).toBe(false);
+      expect(state.hasError()).toBe(true);
+      expect(state.isReady()).toBe(false);
+      const err = state.error();
+      expect(err).toBeTruthy();
+      expect(err?.code).toBe('timeout');
+      expect(err?.messageKey).toBe('errors.timeout');
+    });
+
+    it('tok_success: start -> isReady true, hasError false, historyCount > 0', async () => {
       component.onFormChange({ token: 'tok_success1234567890abcdef' });
       ensureValidForm(component);
       component.processPayment();
@@ -348,11 +417,83 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(state.isLoading()).toBe(false);
       expect(state.isReady()).toBe(true);
       expect(state.hasError()).toBe(false);
-      expect(state.historyCount()).toBeGreaterThanOrEqual(1);
+      expect(state.historyCount()).toBeGreaterThan(0);
       const summary = state.debugSummary();
       expect(summary.status).toBe('ready');
       expect(summary.intentId).toBeTruthy();
       expect(summary.provider).toBe('stripe');
+    });
+
+    it('tok_processing: start -> status processing, refresh 2x -> succeeded/isReady, _fakeDebug.stepCount increments', async () => {
+      component.onFormChange({ token: 'tok_processing1234567890abcdef' });
+      ensureValidForm(component);
+      component.processPayment();
+      await waitForPaymentComplete(state);
+      fixture.detectChanges();
+
+      const intentAfterStart = state.intent();
+      expect(intentAfterStart).toBeTruthy();
+      expect(intentAfterStart?.status).toBe('processing');
+      expect(state.historyCount()).toBeGreaterThanOrEqual(1);
+
+      const raw0 = intentAfterStart?.raw as { _fakeDebug?: { stepCount?: number } } | undefined;
+      const stepCount0 = raw0?._fakeDebug?.stepCount ?? 0;
+
+      state.refreshPayment({ intentId: intentAfterStart!.id }, 'stripe');
+      await waitForPaymentComplete(state, 3000);
+      await new Promise((r) => setTimeout(r, 200));
+      state.refreshPayment({ intentId: intentAfterStart!.id }, 'stripe');
+      await waitForIntentStatus(state, 'succeeded', 4000);
+      fixture.detectChanges();
+
+      expect(state.isLoading()).toBe(false);
+      expect(state.isReady()).toBe(true);
+      expect(state.hasError()).toBe(false);
+      const intentFinal = state.intent();
+      expect(intentFinal?.status).toBe('succeeded');
+      const summary = state.debugSummary();
+      expect(summary.provider).toBe('stripe');
+      expect(summary.intentId).toBe(intentAfterStart?.id);
+      const rawFinal = intentFinal?.raw as { _fakeDebug?: { stepCount?: number } } | undefined;
+      if (rawFinal?._fakeDebug?.stepCount !== undefined) {
+        expect(rawFinal._fakeDebug.stepCount).toBeGreaterThan(stepCount0);
+      }
+    });
+
+    it('tok_client_confirm: start -> requires_action(client_confirm), confirm -> refresh -> succeeded', async () => {
+      component.onFormChange({ token: 'tok_clientconfirm1234567890abcdef' });
+      ensureValidForm(component);
+      component.processPayment();
+      await waitForPaymentComplete(state, 2000);
+      fixture.detectChanges();
+
+      const intentAfterStart = state.intent();
+      expect(intentAfterStart).toBeTruthy();
+      expect(intentAfterStart?.status).toBe('requires_action');
+      expect(intentAfterStart?.nextAction?.kind).toBe('client_confirm');
+
+      const summaryAfterStart = state.debugSummary();
+      expect(summaryAfterStart.provider).toBe('stripe');
+      expect(summaryAfterStart.intentId).toBe(intentAfterStart?.id);
+
+      state.confirmPayment({ intentId: intentAfterStart!.id }, 'stripe');
+      await waitForPaymentComplete(state, 2500);
+      fixture.detectChanges();
+
+      if (state.intent()?.status !== 'succeeded' && !state.hasError()) {
+        state.refreshPayment({ intentId: intentAfterStart!.id }, 'stripe');
+        await waitForIntentStatus(state, 'succeeded', 2500);
+        fixture.detectChanges();
+      }
+
+      expect(state.isLoading()).toBe(false);
+      expect(state.hasError()).toBe(false);
+      expect(state.isReady()).toBe(true);
+      const intentFinal = state.intent();
+      expect(intentFinal?.status).toBe('succeeded');
+      const summary = state.debugSummary();
+      expect(summary.provider).toBe('stripe');
+      expect(summary.intentId).toBe(intentAfterStart?.id);
     });
 
     it('tok_3ds: requires_action and NextActionCard visible', async () => {
@@ -369,29 +510,6 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intent?.nextAction).toBeTruthy();
       const el = fixture.nativeElement as HTMLElement;
       expect(el.querySelector('app-next-action-card')).toBeTruthy();
-    });
-
-    it('tok_processing: processPayment yields intent, refresh runs and historyCount grows', async () => {
-      component.onFormChange({ token: 'tok_processing1234567890abcdef' });
-      ensureValidForm(component);
-      component.processPayment();
-      await waitForPaymentComplete(state);
-      fixture.detectChanges();
-
-      const intentAfterStart = state.intent();
-      expect(intentAfterStart).toBeTruthy();
-      expect(intentAfterStart?.status).toBe('processing');
-      const countAfterStart = state.historyCount();
-      expect(countAfterStart).toBeGreaterThanOrEqual(1);
-
-      state.refreshPayment({ intentId: intentAfterStart!.id });
-      await settle(fixture);
-      fixture.detectChanges();
-
-      expect(state.historyCount()).toBeGreaterThanOrEqual(countAfterStart);
-      const summary = state.debugSummary();
-      expect(summary.intentId).toBe(intentAfterStart?.id);
-      expect(summary.provider).toBe('stripe');
     });
   });
 

@@ -1,6 +1,5 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { I18nKeys } from '@core/i18n';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
 import { ProviderDescriptorRegistry } from '@payments/application/orchestration/registry/provider-descriptor/provider-descriptor.registry';
@@ -290,7 +289,7 @@ describe('NgRxSignalsStateAdapter', () => {
       expect(storeMock.refreshPayment).not.toHaveBeenCalled();
       expect(storeMock.setError).toHaveBeenCalledWith({
         code: 'missing_provider',
-        messageKey: I18nKeys.errors.missing_provider,
+        messageKey: 'errors.missing_provider',
       });
     });
   });

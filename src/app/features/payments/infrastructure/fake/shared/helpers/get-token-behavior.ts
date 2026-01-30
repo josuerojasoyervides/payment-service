@@ -36,6 +36,8 @@ export function getTokenBehavior(token?: string): TokenBehavior {
   if (token.startsWith(SPECIAL_TOKENS.SUCCESS)) return 'success';
   if (token.startsWith(SPECIAL_TOKENS.THREE_DS)) return '3ds';
   if (token.startsWith(SPECIAL_TOKENS.CLIENT_CONFIRM)) return 'client_confirm';
+  // Alphanumeric-only variant for integration tests (Stripe validator: tok_[a-zA-Z0-9]{14,})
+  if (token.startsWith('tok_clientconfirm')) return 'client_confirm';
   if (token.startsWith(SPECIAL_TOKENS.FAIL)) return 'fail';
   if (token.startsWith(SPECIAL_TOKENS.TIMEOUT)) return 'timeout';
   if (token.startsWith(SPECIAL_TOKENS.DECLINE)) return 'decline';

@@ -1,7 +1,6 @@
 import type { Signal } from '@angular/core';
 import { computed, effect, inject, Injectable } from '@angular/core';
 import type { PaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
-import { I18nKeys } from '@core/i18n';
 import { deepComputed } from '@ngrx/signals';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
 import { mapReturnQueryToReference } from '@payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
@@ -142,7 +141,7 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
   private setMissingProviderError(): void {
     this.store.setError({
       code: 'missing_provider',
-      messageKey: I18nKeys.errors.missing_provider,
+      messageKey: 'errors.missing_provider',
       raw: undefined,
     });
   }

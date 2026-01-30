@@ -1,6 +1,5 @@
 import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
@@ -40,7 +39,7 @@ export abstract class PaymentOperationPort<
   protected handleError(err: unknown): PaymentError {
     return {
       code: 'provider_error',
-      messageKey: I18nKeys.errors.provider_error,
+      messageKey: 'errors.provider_error',
       raw: err,
     };
   }

@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { I18nKeys } from '@core/i18n';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import {
   FALLBACK_CONFIG,
@@ -27,13 +26,13 @@ describe('FallbackOrchestratorService', () => {
 
   const providerUnavailableError: PaymentError = {
     code: 'provider_unavailable',
-    messageKey: I18nKeys.errors.stripe_unavailable,
+    messageKey: 'errors.stripe_unavailable',
     raw: undefined,
   };
 
   const cardDeclinedError: PaymentError = {
     code: 'card_declined',
-    messageKey: I18nKeys.errors.card_declined,
+    messageKey: 'errors.card_declined',
     raw: undefined,
   };
 
@@ -707,7 +706,7 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
 
   const providerUnavailableError: PaymentError = {
     code: 'provider_unavailable',
-    messageKey: I18nKeys.errors.stripe_unavailable,
+    messageKey: 'errors.stripe_unavailable',
     raw: undefined,
   };
 

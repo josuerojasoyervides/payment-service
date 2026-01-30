@@ -13,9 +13,11 @@ import {
 import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
 import { FakeIntentStore } from '@payments/infrastructure/fake/shared/state/fake-intent.store';
 import { FakeStripeCancelIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-cancel-intent.gateway';
+import { FakeStripeClientConfirmPort } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-client-confirm.port';
 import { FakeStripeConfirmIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-confirm-intent.gateway';
 import { FakeStripeCreateIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-create-intent.gateway';
 import { FakeStripeGetIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-get-intent.gateway';
+import { FakeStripeProviderFactory } from '@payments/infrastructure/stripe/testing/fake-stripe-provider.factory';
 import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/cancel-intent.gateway';
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
@@ -65,8 +67,13 @@ const STRIPE_REAL_PROVIDERS: Provider[] = [
   ...STRIPE_DESCRIPTOR_PROVIDERS,
 ];
 
+const STRIPE_FAKE_FACTORY_PROVIDERS: Provider[] = [
+  { provide: PAYMENT_PROVIDER_FACTORIES, useClass: FakeStripeProviderFactory, multi: true },
+];
+
 const STRIPE_FAKE_PROVIDERS: Provider[] = [
   FakeIntentStore,
+  FakeStripeClientConfirmPort,
   FakeStripeCreateIntentGateway,
   FakeStripeConfirmIntentGateway,
   FakeStripeCancelIntentGateway,
@@ -79,7 +86,7 @@ const STRIPE_FAKE_PROVIDERS: Provider[] = [
     FakeStripeCancelIntentGateway,
     FakeStripeGetIntentGateway,
   ),
-  ...STRIPE_FACTORY_PROVIDERS,
+  ...STRIPE_FAKE_FACTORY_PROVIDERS,
   ...STRIPE_POLICY_PROVIDERS,
   ...STRIPE_UI_META_PROVIDERS,
   ...STRIPE_DESCRIPTOR_PROVIDERS,

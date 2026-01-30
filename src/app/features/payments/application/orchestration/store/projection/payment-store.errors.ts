@@ -1,4 +1,3 @@
-import { I18nKeys } from '@core/i18n';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 
 export function looksLikeI18nKey(value: unknown): value is string {
@@ -23,14 +22,14 @@ export function normalizePaymentError(e: unknown): PaymentError {
     // NOTE: MessageKey must already be an i18n key at this point.
     return {
       ...e,
-      messageKey: looksLikeI18nKey(e.messageKey) ? e.messageKey : I18nKeys.errors.unknown_error,
+      messageKey: looksLikeI18nKey(e.messageKey) ? e.messageKey : 'errors.unknown_error',
       raw: e.raw ?? null,
     };
   }
 
   return {
     code: 'unknown_error',
-    messageKey: I18nKeys.errors.unknown_error,
+    messageKey: 'errors.unknown_error',
     raw: e,
   };
 }

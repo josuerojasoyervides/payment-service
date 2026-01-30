@@ -68,6 +68,7 @@ export const PaymentsStore = signalStore(
 
       reset() {
         _fallbackOrchestrator.reset();
+        _stateMachine.send({ type: 'RESET' });
         updateState(store, 'reset', { ...initialPaymentsState });
       },
     };
