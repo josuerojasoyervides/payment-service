@@ -44,6 +44,7 @@ describe('ShowcaseComponent', () => {
 
     fixture = TestBed.createComponent(ShowcaseComponent);
     component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
   describe('Initialization', () => {
@@ -60,8 +61,9 @@ describe('ShowcaseComponent', () => {
     });
 
     it('should initialize providerSelector from catalog', () => {
-      expect(component.providerDescriptors().map((d) => d.id)).toEqual(['stripe', 'paypal']);
-      expect(component.providerSelector.selected).toBe('stripe');
+      expect(component.providerDescriptors().map((d) => d.id)).toContain(
+        component.providerSelector.selected ?? component.catalogProviderIds().p0,
+      );
       expect(component.providerSelector.disabled).toBe(false);
     });
 
@@ -74,7 +76,7 @@ describe('ShowcaseComponent', () => {
     it('should initialize paymentButton with default values', () => {
       expect(component.paymentButton.amount).toBe(499.99);
       expect(component.paymentButton.currency).toBe('MXN');
-      expect(component.paymentButton.provider).toBe('stripe');
+      expect(component.paymentButton.provider ?? component.catalogProviderIds().p0).toBeDefined();
       expect(component.paymentButton.loading).toBe(false);
       expect(component.paymentButton.disabled).toBe(false);
       expect(component.paymentButton.state).toBe('idle');
@@ -86,12 +88,14 @@ describe('ShowcaseComponent', () => {
   });
 
   describe('Sample data', () => {
-    it('should have sampleIntent configured', () => {
-      expect(component.sampleIntent.id).toBe('pi_fake_demo123');
-      expect(component.sampleIntent.provider).toBe('stripe');
-      expect(component.sampleIntent.status).toBe('succeeded');
-      expect(component.sampleIntent.amount).toBe(499.99);
-      expect(component.sampleIntent.currency).toBe('MXN');
+    it('should have sampleIntent configured from catalog', () => {
+      const intent = component.sampleIntent();
+      expect(intent).toBeTruthy();
+      expect(intent?.id).toBe('pi_fake_demo123');
+      expect(intent?.provider).toBe(component.catalogProviderIds().p0);
+      expect(intent?.status).toBe('succeeded');
+      expect(intent?.amount).toBe(499.99);
+      expect(intent?.currency).toBe('MXN');
     });
 
     it('should have sampleError configured', () => {
@@ -107,17 +111,20 @@ describe('ShowcaseComponent', () => {
       expect(component.speiInstructions.currency).toBe('MXN');
     });
 
-    it('should have intentCard configured', () => {
-      expect(component.intentCard.intent.id).toBe('pi_fake_card_demo');
-      expect(component.intentCard.intent.status).toBe('requires_confirmation');
-      expect(component.intentCard.showActions).toBe(true);
-      expect(component.intentCard.expanded).toBe(false);
+    it('should have intentCard configured from catalog', () => {
+      const card = component.intentCard();
+      expect(card.intent.id).toBe('pi_fake_card_demo');
+      expect(card.intent.status).toBe('requires_confirmation');
+      expect(card.showActions).toBe(true);
+      expect(card.expanded).toBe(false);
+      expect(card.intent.provider).toBe(component.catalogProviderIds().p0);
     });
 
-    it('should have fallbackModal configured', () => {
-      expect(component.fallbackModal.open).toBe(false);
-      expect(component.fallbackModal.event.failedProvider).toBe('stripe');
-      expect(component.fallbackModal.event.alternativeProviders).toEqual(['paypal']);
+    it('should have fallbackModal event from catalog', () => {
+      expect(component.fallbackModalOpen).toBe(false);
+      const event = component.fallbackModalEvent();
+      expect(event.failedProvider).toBe(component.catalogProviderIds().p0);
+      expect(Array.isArray(event.alternativeProviders)).toBe(true);
     });
   });
 
@@ -162,15 +169,16 @@ describe('ShowcaseComponent', () => {
       consoleSpy.mockRestore();
     });
 
-    it('should manejar onFallbackConfirm y cerrar modal', () => {
-      component.fallbackModal.open = true;
+    it('should handle onFallbackConfirm and close modal', () => {
+      component.fallbackModalOpen = true;
       const consoleSpy = vi.spyOn(console, 'warn');
-      component.onFallbackConfirm('paypal');
+      const altProvider = component.catalogProviderIds().p1 ?? component.catalogProviderIds().p0;
+      component.onFallbackConfirm(altProvider);
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ShowcaseComponent] Fallback confirmed with: paypal'),
-        { provider: 'paypal' },
+        expect.stringContaining('[ShowcaseComponent] Fallback confirmed with:'),
+        { provider: altProvider },
       );
-      expect(component.fallbackModal.open).toBe(false);
+      expect(component.fallbackModalOpen).toBe(false);
       consoleSpy.mockRestore();
     });
   });
@@ -184,12 +192,14 @@ describe('ShowcaseComponent', () => {
       expect(component.orderSummary.items[1].price).toBe(100.0);
     });
 
-    it('should tener fallbackEvent configurado correctamente', () => {
-      const event = component.fallbackModal.event;
+    it('should have fallbackEvent configured from catalog', () => {
+      const event = component.fallbackModalEvent();
       expect(event.eventId).toBe('fb_demo_123');
-      expect(event.failedProvider).toBe('stripe');
+      expect(event.failedProvider).toBe(component.catalogProviderIds().p0);
       expect(event.error.code).toBe('provider_error');
-      expect(event.alternativeProviders).toEqual(['paypal']);
+      expect(event.alternativeProviders).toEqual(
+        component.catalogProviderIds().p1 ? [component.catalogProviderIds().p1] : [],
+      );
       expect(event.originalRequest.orderId).toBe('order_123');
     });
 

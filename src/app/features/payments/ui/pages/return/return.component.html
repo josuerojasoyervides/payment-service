@@ -73,35 +73,27 @@
       </div>
     }
 
-    <!-- Query Params Info -->
+    <!-- Return info (provider + reference from port) -->
     <div class="card mb-6">
       <h2 class="text-lg font-semibold mb-4">{{ i18nLabels.returnInformation() }}</h2>
 
       <dl class="space-y-3 text-sm">
-        @if (returnPageState.intentId()) {
+        @if (returnPageState.returnReference(); as ref) {
           <div class="flex justify-between">
-            <dt class="text-gray-500">{{ i18nLabels.intentIdLabel() }}</dt>
-            <dd class="font-mono text-gray-900">{{ returnPageState.intentId() }}</dd>
+            <dt class="text-gray-500">{{ i18nLabels.providerLabel() }}</dt>
+            <dd class="text-gray-900">{{ ref.providerLabel }}</dd>
           </div>
-        }
-
-        @if (returnPageState.paypalToken()) {
-          <div class="flex justify-between">
-            <dt class="text-gray-500">{{ i18nLabels.paypalTokenLabel() }}</dt>
-            <dd class="font-mono text-gray-900">{{ returnPageState.paypalToken() }}</dd>
-          </div>
-        }
-
-        @if (returnPageState.paypalPayerId()) {
-          <div class="flex justify-between">
-            <dt class="text-gray-500">{{ i18nLabels.paypalPayerIdLabel() }}</dt>
-            <dd class="font-mono text-gray-900">{{ returnPageState.paypalPayerId() }}</dd>
-          </div>
+          @if (ref.referenceId) {
+            <div class="flex justify-between">
+              <dt class="text-gray-500">{{ i18nLabels.intentIdLabel() }}</dt>
+              <dd class="font-mono text-gray-900">{{ ref.referenceId }}</dd>
+            </div>
+          }
         }
 
         <div class="flex justify-between">
           <dt class="text-gray-500">{{ i18nLabels.flowTypeLabel() }}</dt>
-          <dd class="text-gray-900">{{ flowType() }}</dd>
+          <dd class="text-gray-900">{{ returnFlowTypeLabel() }}</dd>
         </div>
 
         <div class="flex justify-between">

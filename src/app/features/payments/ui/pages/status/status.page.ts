@@ -15,18 +15,19 @@ import { PaymentIntentCardComponent } from '@payments/ui/components/payment-inte
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
+/** Demo intent IDs for quick examples (one per catalog index). No provider names in source. */
+const DEMO_INTENT_IDS = ['pi_fake_abc123', 'ORDER_FAKE_XYZ789'];
+
 interface StatusPageState {
   intentId: string;
-  selectedProvider: PaymentProviderId;
-  lastQuery: { provider: PaymentProviderId; id: string } | null;
+  lastQueryId: string | null;
 }
 
 /**
  * Page to query payment status by ID.
  *
- * Allows entering an Intent ID (from Stripe or PayPal) and
- * querying its current status, with options to confirm,
- * cancel or refresh.
+ * Provider-agnostic: reads provider list from catalog, selected provider from state port.
+ * On search/refresh, passes providerId explicitly to the port.
  */
 @Component({
   selector: 'app-status',
@@ -51,9 +52,11 @@ export class StatusComponent {
 
   readonly statusPageState = signalState<StatusPageState>({
     intentId: '',
-    selectedProvider: null as unknown as PaymentProviderId,
-    lastQuery: null,
+    lastQueryId: null,
   });
+
+  /** Selected provider from global port; UI calls state.selectProvider on change. */
+  readonly selectedProvider = computed(() => this.state.selectedProvider());
 
   readonly flowState = deepComputed(() => ({
     intent: this.state.intent(),
@@ -61,28 +64,22 @@ export class StatusComponent {
     isLoading: this.state.isLoading(),
   }));
 
-  readonly examples = computed(() => [
-    {
-      id: 'pi_fake_abc123',
-      label: this.i18n.t(I18nKeys.ui.stripe_intent),
-      provider: 'stripe' as const,
-    },
-    {
-      id: 'ORDER_FAKE_XYZ789',
-      label: this.i18n.t(I18nKeys.ui.paypal_order),
-      provider: 'paypal' as const,
-    },
-  ]);
+  /** Quick examples derived from catalog (label from descriptor, id from demo list). */
+  readonly examples = computed(() => {
+    const descriptors = this.providerDescriptors();
+    return descriptors.map((d, i) => ({
+      id: DEMO_INTENT_IDS[i] ?? `demo_${i}`,
+      label: this.i18n.t(d.labelKey),
+      provider: d.id,
+    }));
+  });
 
+  /** Result: show intent only when it matches the last queried intentId (match by id only). */
   readonly result = computed(() => {
-    const q = this.statusPageState.lastQuery();
+    const lastId = this.statusPageState.lastQueryId();
     const intent = this.flowState.intent();
-    if (!q) return null;
-    if (!intent) return null;
-
-    const sameId = intent.id === q.id;
-    const sameProvider = intent.provider === q.provider;
-    return sameId && sameProvider ? intent : null;
+    if (!lastId || !intent || intent.id !== lastId) return null;
+    return intent;
   });
 
   private didPrefill = false;
@@ -90,48 +87,41 @@ export class StatusComponent {
   constructor() {
     effect(() => {
       const descriptors = this.providerDescriptors();
-      const current = this.statusPageState.selectedProvider();
+      const current = this.state.selectedProvider();
       if (descriptors.length === 0) return;
       if (!current || !descriptors.some((d) => d.id === current)) {
-        patchState(this.statusPageState, { selectedProvider: descriptors[0].id });
+        this.state.selectProvider(descriptors[0].id);
       }
     });
 
     effect(() => {
       if (this.didPrefill) return;
-
       const intent = this.flowState.intent();
       if (!intent) return;
-
-      // Do not overwrite if user already typed or already queried
       const userTypedSomething = this.statusPageState.intentId().trim().length > 0;
-      const alreadyHasQuery = this.statusPageState.lastQuery() !== null;
-
+      const alreadyHasQuery = this.statusPageState.lastQueryId() !== null;
       if (userTypedSomething || alreadyHasQuery) {
         this.didPrefill = true;
         return;
       }
-
       this.didPrefill = true;
-
-      patchState(this.statusPageState, {
-        intentId: intent.id,
-        selectedProvider: intent.provider,
-        lastQuery: { provider: intent.provider, id: intent.id },
-      });
+      patchState(this.statusPageState, { intentId: intent.id, lastQueryId: intent.id });
+      this.state.selectProvider(intent.provider);
     });
   }
 
   searchIntent(): void {
     const id = this.statusPageState.intentId().trim();
     if (!id) return;
-
-    patchState(this.statusPageState, {
-      intentId: id,
-      lastQuery: { provider: this.statusPageState.selectedProvider(), id },
-    });
-
-    this.state.refreshPayment({ intentId: id });
+    const descriptors = this.providerDescriptors();
+    let providerId = this.state.selectedProvider();
+    if (!providerId && descriptors.length > 0) {
+      this.state.selectProvider(descriptors[0].id);
+      providerId = descriptors[0].id;
+    }
+    if (!providerId) return;
+    patchState(this.statusPageState, { lastQueryId: id });
+    this.state.refreshPayment({ intentId: id }, providerId);
   }
 
   confirmPayment(intentId: string): void {
@@ -145,7 +135,7 @@ export class StatusComponent {
     }
     if (action.kind === 'client_confirm') {
       const intent = this.state.intent();
-      const intentId = intent?.id ?? this.statusPageState.lastQuery()?.id ?? null;
+      const intentId = intent?.id ?? this.statusPageState.lastQueryId() ?? null;
       if (intentId) this.state.confirmPayment({ intentId });
     }
   }
@@ -155,24 +145,21 @@ export class StatusComponent {
   }
 
   refreshPayment(intentId: string): void {
-    patchState(this.statusPageState, {
-      lastQuery: { provider: this.statusPageState.selectedProvider(), id: intentId },
-    });
-
-    this.state.refreshPayment({ intentId });
+    const providerId = this.state.selectedProvider();
+    if (providerId) {
+      patchState(this.statusPageState, { lastQueryId: intentId });
+      this.state.refreshPayment({ intentId }, providerId);
+    }
   }
 
   useExample(example: { id: string; provider: PaymentProviderId }): void {
-    patchState(this.statusPageState, {
-      intentId: example.id,
-      selectedProvider: example.provider,
-    });
-
+    patchState(this.statusPageState, { intentId: example.id });
+    this.state.selectProvider(example.provider);
     this.searchIntent();
   }
 
-  selectProvider(provider: PaymentProviderId): void {
-    patchState(this.statusPageState, { selectedProvider: provider });
+  onSelectProvider(provider: PaymentProviderId): void {
+    this.state.selectProvider(provider);
   }
 
   getErrorMessage(error: unknown): string {
@@ -195,7 +182,7 @@ export class StatusComponent {
     enterPaymentIdText: this.i18n.t(I18nKeys.ui.enter_payment_id),
     intentIdLabel: this.i18n.t(I18nKeys.ui.intent_id),
     intentIdPlaceholder: this.i18n.t(I18nKeys.ui.intent_id_placeholder),
-    exampleStripeText: this.i18n.t(I18nKeys.ui.example_stripe),
+    exampleIntentHint: this.i18n.t(I18nKeys.ui.example_intent_placeholder),
     consultingLabel: this.i18n.t(I18nKeys.ui.consulting),
     checkStatusLabel: this.i18n.t(I18nKeys.ui.check_status),
     errorConsultingLabel: this.i18n.t(I18nKeys.ui.error_consulting),

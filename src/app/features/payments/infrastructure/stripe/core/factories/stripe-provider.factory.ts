@@ -119,6 +119,7 @@ export class StripeProviderFactory implements ProviderFactory {
               labelKey: 'ui.card_token',
               required: true,
               type: 'hidden',
+              defaultValue: 'tok_visa1234567890abcdef',
             },
             {
               name: 'saveForFuture',

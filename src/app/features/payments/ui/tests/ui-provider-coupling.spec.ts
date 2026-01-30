@@ -7,15 +7,17 @@ const FILES_NO_PROVIDER_IDENTIFIERS = [
   'src/app/features/payments/ui/components/next-action-card/next-action-card.component.html',
   'src/app/features/payments/ui/pages/checkout/checkout.page.ts',
   'src/app/features/payments/ui/pages/checkout/checkout.component.html',
-];
-
-/** All UI entry points covered by guardrail (4.3.x: status, return, payment-intent-card). No infrastructure imports. */
-const FILES_NO_INFRASTRUCTURE_IMPORT = [
-  ...FILES_NO_PROVIDER_IDENTIFIERS,
   'src/app/features/payments/ui/pages/status/status.page.ts',
   'src/app/features/payments/ui/pages/status/status.component.html',
   'src/app/features/payments/ui/pages/return/return.page.ts',
   'src/app/features/payments/ui/pages/return/return.component.html',
+  'src/app/features/payments/ui/pages/showcase/showcase.page.ts',
+  'src/app/features/payments/ui/pages/showcase/showcase.component.html',
+];
+
+/** All UI entry points covered by guardrail. No infrastructure imports. */
+const FILES_NO_INFRASTRUCTURE_IMPORT = [
+  ...FILES_NO_PROVIDER_IDENTIFIERS,
   'src/app/features/payments/ui/components/payment-intent-card/payment-intent-card.component.ts',
   'src/app/features/payments/ui/components/payment-intent-card/payment-intent-card.component.html',
 ];

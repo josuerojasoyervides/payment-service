@@ -167,6 +167,7 @@ export interface Translations {
     enter_payment_id: string;
     intent_id_placeholder: string;
     example_stripe: string;
+    example_intent_placeholder: string;
     consulting: string;
     error_consulting: string;
     result: string;

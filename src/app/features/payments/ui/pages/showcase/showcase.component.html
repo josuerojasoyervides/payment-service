@@ -58,7 +58,7 @@
             <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
             <app-provider-selector
               [descriptors]="providerDescriptors()"
-              [selected]="providerSelector.selected"
+              [selected]="providerSelector.selected ?? catalogProviderIds().p0"
               [disabled]="providerSelector.disabled"
               (providerChange)="providerSelector.selected = $event" />
           </div>
@@ -67,7 +67,9 @@
             <div class="space-y-3 text-sm">
               <p>
                 {{ labels.selectedLabel() }}:
-                <code class="bg-gray-100 px-2 py-1 rounded">{{ providerSelector.selected }}</code>
+                <code class="bg-gray-100 px-2 py-1 rounded">{{
+                  providerSelector.selected ?? catalogProviderIds().p0
+                }}</code>
               </p>
               <label class="flex items-center gap-2">
                 <input type="checkbox" [(ngModel)]="providerSelector.disabled" />
@@ -115,7 +117,7 @@
             <app-payment-button
               [amount]="paymentButton.amount"
               [currency]="paymentButton.currency"
-              [provider]="paymentButton.provider"
+              [provider]="paymentButton.provider ?? catalogProviderIds().p0"
               [loading]="paymentButton.loading"
               [disabled]="paymentButton.disabled"
               [buttonState]="paymentButton.state"
@@ -156,9 +158,9 @@
         <div class="grid md:grid-cols-2 gap-6">
           <div>
             <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
-            @if (paymentResult.showSuccess) {
+            @if (paymentResult.showSuccess && sampleIntent(); as intent) {
               <app-payment-result
-                [intent]="sampleIntent"
+                [intent]="intent"
                 [error]="null"
                 (retry)="onRetry()"
                 (newPayment)="onNewPayment()" />
@@ -228,9 +230,9 @@
           <div>
             <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
             <app-payment-intent-card
-              [intent]="intentCard.intent"
-              [showActions]="intentCard.showActions"
-              [expanded]="intentCard.expanded"
+              [intent]="intentCard().intent"
+              [showActions]="intentCard().showActions"
+              [expanded]="intentCard().expanded"
               (confirm)="onIntentAction('confirm', $event)"
               (canceled)="onIntentAction('cancel', $event)"
               (refresh)="onIntentAction('refresh', $event)" />
@@ -240,7 +242,7 @@
             <div class="space-y-3 text-sm">
               <div>
                 <label class="label" for="status">{{ labels.statusLabelShort() }}</label>
-                <select id="status" class="input" [(ngModel)]="intentCard.intent.status">
+                <select id="status" class="input" [(ngModel)]="intentCardStatus">
                   <option value="requires_confirmation">
                     {{ labels.statusRequiresConfirmationLabel() }}
                   </option>
@@ -252,11 +254,11 @@
                 </select>
               </div>
               <label class="flex items-center gap-2">
-                <input type="checkbox" [(ngModel)]="intentCard.showActions" />
+                <input type="checkbox" [(ngModel)]="intentCardShowActions" />
                 {{ labels.showActionsLabel() }}
               </label>
               <label class="flex items-center gap-2">
-                <input type="checkbox" [(ngModel)]="intentCard.expanded" />
+                <input type="checkbox" [(ngModel)]="intentCardExpanded" />
                 {{ labels.expandedLabel() }}
               </label>
             </div>
@@ -294,14 +296,14 @@
         <div class="grid md:grid-cols-2 gap-6">
           <div>
             <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
-            <button class="btn-primary" (click)="fallbackModal.open = true">
+            <button class="btn-primary" (click)="fallbackModalOpen = true">
               {{ labels.openFallbackModalLabel() }}
             </button>
             <app-fallback-modal
-              [event]="fallbackModal.event"
-              [open]="fallbackModal.open"
+              [event]="fallbackModalEvent()"
+              [open]="fallbackModalOpen"
               (confirm)="onFallbackConfirm($event)"
-              (canceled)="fallbackModal.open = false" />
+              (canceled)="fallbackModalOpen = false" />
           </div>
           <div>
             <h3 class="font-medium mb-3">{{ labels.infoLabel() }}</h3>

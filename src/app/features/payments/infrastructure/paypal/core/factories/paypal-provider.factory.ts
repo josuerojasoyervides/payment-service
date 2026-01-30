@@ -90,7 +90,7 @@ export class PaypalProviderFactory implements ProviderFactory {
   /**
    * Returns field requirements for PayPal.
    *
-   * PayPal always needs redirect URLs.
+   * returnUrl/cancelUrl are supplied by StrategyContext (checkout); no hidden fields required.
    */
   getFieldRequirements(type: PaymentMethodType): FieldRequirements {
     this.assertSupported(type);
@@ -98,22 +98,7 @@ export class PaypalProviderFactory implements ProviderFactory {
     return {
       descriptionKey: I18nKeys.ui.pay_with_paypal,
       instructionsKey: I18nKeys.ui.paypal_redirect_secure_message,
-      fields: [
-        {
-          name: 'returnUrl',
-          labelKey: I18nKeys.ui.return_url_label,
-          required: true,
-          type: 'hidden',
-          autoComplete: 'current-url',
-        },
-        {
-          name: 'cancelUrl',
-          labelKey: I18nKeys.ui.cancel_url_label,
-          required: false,
-          type: 'hidden',
-          autoComplete: 'current-url',
-        },
-      ],
+      fields: [],
     };
   }
 

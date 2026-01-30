@@ -14,8 +14,8 @@
 ## 🖥️ UI surface & boundaries
 
 - **Tokens:** PAYMENT_STATE (FlowPort), PAYMENT_CHECKOUT_CATALOG (CatalogPort). Config wires both via useExisting to one adapter.
-- **UI:** Return/Status/Checkout use ports only; error surface (renderPaymentError + Try again / Clear error); confirm/cancel/refresh use optional providerId (adapter resolves). FlowDebugPanel (dev) on checkout, status, return shows debugSummary, history, actions (reset, clearError, clearHistory).
-- **Rule:** UI must not import orchestration/adapters/infra/config; api/testing only in \*.spec.ts.
+- **UI:** Return/Status/Checkout/Showcase use ports only; no provider identifiers (stripe/paypal/mercadopago) in UI runtime. Status: selected provider from state.selectedProvider(), refreshPayment(\_, providerId); examples from catalog. Return: normalize query params via shared util, notifyRedirectReturned + getReturnReferenceFromQuery, selectProvider(providerId), show provider label (catalog) + referenceId. Showcase: provider IDs from catalog.getProviderDescriptors().
+- **Rule:** UI must not import infrastructure; api/testing only in \*.spec.ts.
 
 ## 🧩 Application layer (clean layering)
 

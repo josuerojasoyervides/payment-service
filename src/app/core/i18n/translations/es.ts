@@ -143,6 +143,7 @@ export const es: Translations = {
     enter_payment_id: 'Ingresa el ID del pago para ver su estado actual',
     intent_id_placeholder: 'pi_xxxxx o ORDER-xxxxx',
     example_stripe: 'Ej: pi_fake_xxxxx (Stripe) o ORDER_FAKE_XXXXX (PayPal)',
+    example_intent_placeholder: 'ej. ID de pago de tu proveedor',
     consulting: 'Consultando...',
     error_consulting: 'Error al consultar',
     result: 'Resultado',

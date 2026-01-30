@@ -24,16 +24,16 @@
             [(ngModel)]="intentIdModel"
             (keyup.enter)="searchIntent()" />
           <p class="text-xs text-gray-500 mt-1">
-            {{ labels.exampleStripeText() }}
+            {{ labels.exampleIntentHint() }}
           </p>
         </div>
 
         <!-- Provider selection (from catalog) -->
         <app-provider-selector
           [descriptors]="providerDescriptors()"
-          [selected]="statusPageState.selectedProvider()"
+          [selected]="selectedProvider()"
           [disabled]="flowState.isLoading()"
-          (providerChange)="selectProvider($event)" />
+          (providerChange)="onSelectProvider($event)" />
 
         <!-- Search Button -->
         <button class="btn-primary w-full" [disabled]="isSearchDisabled()" (click)="searchIntent()">

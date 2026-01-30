@@ -46,9 +46,11 @@ describe('StatusComponent', () => {
     confirmPayment: ReturnType<typeof vi.fn>;
     cancelPayment: ReturnType<typeof vi.fn>;
     refreshPayment: ReturnType<typeof vi.fn>;
+    selectProvider: ReturnType<typeof vi.fn>;
     intent: ReturnType<typeof signal<PaymentIntent | null>>;
     error: ReturnType<typeof signal<PaymentError | null>>;
     isLoading: ReturnType<typeof signal<boolean>>;
+    selectedProvider: ReturnType<typeof signal<PaymentProviderId | null>>;
   };
 
   const mockIntent: PaymentIntent = {
@@ -67,22 +69,28 @@ describe('StatusComponent', () => {
   };
 
   beforeEach(async () => {
-    const baseMock = createMockPaymentState();
+    const baseMock = createMockPaymentState({ selectedProvider: 'stripe' });
     mockState = {
       ...baseMock,
       intent: baseMock.intent as ReturnType<typeof signal<PaymentIntent | null>>,
       error: baseMock.error as ReturnType<typeof signal<PaymentError | null>>,
       isLoading: baseMock.isLoading as ReturnType<typeof signal<boolean>>,
+      selectedProvider: baseMock.selectedProvider as ReturnType<
+        typeof signal<PaymentProviderId | null>
+      >,
       confirmPayment: vi.fn(),
       cancelPayment: vi.fn(),
       refreshPayment: vi.fn(),
+      selectProvider: vi.fn(),
     } as PaymentFlowPort & {
       confirmPayment: ReturnType<typeof vi.fn>;
       cancelPayment: ReturnType<typeof vi.fn>;
       refreshPayment: ReturnType<typeof vi.fn>;
+      selectProvider: ReturnType<typeof vi.fn>;
       intent: ReturnType<typeof signal<PaymentIntent | null>>;
       error: ReturnType<typeof signal<PaymentError | null>>;
       isLoading: ReturnType<typeof signal<boolean>>;
+      selectedProvider: ReturnType<typeof signal<PaymentProviderId | null>>;
     };
 
     await TestBed.configureTestingModule({
@@ -109,14 +117,14 @@ describe('StatusComponent', () => {
 
     it('should initialize with default values', () => {
       expect(component.intentIdModel).toBe('');
-      expect(component.statusPageState.selectedProvider()).toBe('stripe');
+      expect(component.selectedProvider()).toBe('stripe');
       expect(component.result()).toBeNull();
     });
 
-    it('should have predefined examples', () => {
-      expect(component.examples()).toHaveLength(2);
-      expect(component.examples()[0].provider).toBe('stripe');
-      expect(component.examples()[1].provider).toBe('paypal');
+    it('should have examples from catalog', () => {
+      expect(component.examples().length).toBeGreaterThanOrEqual(1);
+      expect(component.examples()[0].provider).toBeDefined();
+      expect(component.examples()[0].id).toBeDefined();
     });
   });
 
@@ -133,40 +141,40 @@ describe('StatusComponent', () => {
       expect(mockState.refreshPayment).not.toHaveBeenCalled();
     });
 
-    it('should search intent and reset result', () => {
+    it('should search intent and call refreshPayment with providerId', () => {
       patchState(component.statusPageState, { intentId: 'pi_test_123' });
       component.searchIntent();
 
-      expect(component.result()).toBeNull();
-      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
+      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
     });
 
-    it('should prefill lastQuery and show result when flow already has an intent', () => {
+    it('should show result when intent matches lastQueryId', () => {
+      patchState(component.statusPageState, { lastQueryId: mockIntent.id });
       (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set(mockIntent);
       fixture.detectChanges();
 
       expect(component.result()).toEqual(mockIntent);
     });
 
-    it('should not show result when intent does not match lastQuery', () => {
-      patchState(component.statusPageState, {
-        intentId: 'pi_other',
-        selectedProvider: 'stripe',
-        lastQuery: { provider: 'stripe', id: 'pi_other' },
-      });
-
+    it('should not show result when intent does not match lastQueryId', () => {
+      patchState(component.statusPageState, { lastQueryId: 'pi_other' });
       (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set(mockIntent);
       fixture.detectChanges();
 
       expect(component.result()).toBeNull();
     });
 
-    it('should use the selected provider', () => {
-      patchState(component.statusPageState, { selectedProvider: 'paypal' });
+    it('should pass selected provider to refreshPayment', () => {
+      (mockState.selectedProvider as ReturnType<typeof signal<PaymentProviderId | null>>).set(
+        'paypal' as PaymentProviderId,
+      );
       patchState(component.statusPageState, { intentId: 'ORDER_FAKE_XYZ' });
       component.searchIntent();
 
-      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'ORDER_FAKE_XYZ' });
+      expect(mockState.refreshPayment).toHaveBeenCalledWith(
+        { intentId: 'ORDER_FAKE_XYZ' },
+        'paypal',
+      );
     });
 
     it('should trim whitespace from intentId', () => {
@@ -188,21 +196,21 @@ describe('StatusComponent', () => {
       expect(mockState.cancelPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
 
-    it('should refresh payment', () => {
+    it('should refresh payment with providerId', () => {
       component.refreshPayment('pi_test_123');
-      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
+      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
     });
 
     it('should call confirmPayment with intentId (adapter resolves provider)', () => {
-      patchState(component.statusPageState, { selectedProvider: 'paypal' });
+      (mockState.selectedProvider as ReturnType<typeof signal<PaymentProviderId | null>>).set(
+        'paypal' as PaymentProviderId,
+      );
       component.confirmPayment('ORDER_FAKE_XYZ');
       expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'ORDER_FAKE_XYZ' });
     });
 
     it('should call confirmPayment when next-action client_confirm is requested', () => {
-      patchState(component.statusPageState, {
-        lastQuery: { provider: 'stripe', id: 'pi_test_123' },
-      });
+      patchState(component.statusPageState, { lastQueryId: 'pi_test_123' });
       const action = { kind: 'client_confirm' as const, token: 'tok_runtime' };
       component.onNextActionRequested(action);
       expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
@@ -210,18 +218,15 @@ describe('StatusComponent', () => {
   });
 
   describe('Examples', () => {
-    it('should use an example and update intentId and provider', () => {
+    it('should use an example and call selectProvider + searchIntent', () => {
       const example = component.examples()[0];
       component.useExample(example);
       expect(component.statusPageState.intentId()).toBe(example.id);
-      expect(component.statusPageState.selectedProvider()).toBe(example.provider);
-    });
-
-    it('should work with PayPal examples', () => {
-      const example = component.examples()[1];
-      component.useExample(example);
-      expect(component.statusPageState.intentId()).toBe(example.id);
-      expect(component.statusPageState.selectedProvider()).toBe('paypal');
+      expect(mockState.selectProvider).toHaveBeenCalledWith(example.provider);
+      expect(mockState.refreshPayment).toHaveBeenCalledWith(
+        { intentId: example.id },
+        example.provider,
+      );
     });
   });
 

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import type { OnDestroy } from '@angular/core';
-import { Component, computed, effect, inject, input, isDevMode, output } from '@angular/core';
+import { Component, computed, effect, inject, input, output } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
 import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
 import type {
@@ -122,10 +122,6 @@ export class PaymentFormComponent implements OnDestroy {
         defaultValue = typeof window !== 'undefined' ? window.location.href : '';
       }
 
-      if (isDevMode() && field.name === 'token' && field.required && !defaultValue) {
-        defaultValue = 'tok_visa1234567890abcdef';
-      }
-
       let controlValue: string | boolean = defaultValue;
       if (field.name === 'saveForFuture') {
         if (defaultValue === 'false' || defaultValue === '' || !defaultValue) {
@@ -137,8 +133,7 @@ export class PaymentFormComponent implements OnDestroy {
         }
       }
 
-      const isRequired =
-        field.required && !(isDevMode() && field.type === 'hidden' && field.name === 'token');
+      const isRequired = field.required;
       const validators = isRequired ? [Validators.required] : [];
 
       if (field.type === 'email') {
