@@ -11,42 +11,109 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
-    name: ci / all
+  quality:
+    name: quality / format+lint+depcruise
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      - name: Cache Bun
+      - name: Cache deps + angular
         uses: actions/cache@v4
         with:
           path: |
+            node_modules
+            .angular/cache
             ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          key: ${{ runner.os }}-deps-${{ hashFiles('bun.lock', 'package.json') }}
           restore-keys: |
-            ${{ runner.os }}-bun-
+            ${{ runner.os }}-deps-
 
       - name: Install deps
         run: bun install --frozen-lockfile
 
-      - name: Format
-        run: bun run format
-
       - name: Format check
         run: bun run format:check
 
-      - name: Lint fix
-        run: bun run lint:fix
-
-      - name: Tests
-        run: bun run test:ci
+      - name: Lint
+        run: bun run lint
 
       - name: DepCruise
         run: bun run dep:check
+
+  test_unit:
+    name: test / unit
+    runs-on: ubuntu-latest
+    needs: [quality]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Cache deps + angular
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            .angular/cache
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-deps-${{ hashFiles('bun.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Unit tests
+        run: bun run test:ci:unit
+
+  test_integration:
+    name: test / integration
+    runs-on: ubuntu-latest
+    needs: [quality]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Cache deps + angular
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            .angular/cache
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-deps-${{ hashFiles('bun.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Integration tests
+        run: bun run test:ci:integration
+
+  build:
+    name: build / prod
+    runs-on: ubuntu-latest
+    needs: [test_unit, test_integration]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Cache deps + angular
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            .angular/cache
+            ~/.bun/install/cache
+          key: ${{ runner.os }}-deps-${{ hashFiles('bun.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
 
       - name: Build (prod)
         run: bun run build -- --configuration production

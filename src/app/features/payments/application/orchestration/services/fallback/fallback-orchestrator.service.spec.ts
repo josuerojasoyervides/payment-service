@@ -67,9 +67,8 @@ describe('FallbackOrchestratorService', () => {
   });
 
   afterEach(() => {
-    if (service) {
-      service.reset();
-    }
+    service?.reset();
+    vi.useRealTimers();
   });
 
   describe('initial state', () => {

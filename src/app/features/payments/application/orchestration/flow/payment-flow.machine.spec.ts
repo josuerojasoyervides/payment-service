@@ -65,6 +65,7 @@ describe('PaymentFlowMachine', () => {
     activeActors.forEach((actor) => actor.stop());
     activeActors = [];
     vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   const setup = (overrides?: any) => {
