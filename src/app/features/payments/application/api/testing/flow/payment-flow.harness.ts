@@ -110,7 +110,7 @@ export function createScenarioHarness(options?: ScenarioHarnessOptions): Scenari
     countEvents(
       kindOrPredicate?: FlowTelemetryEvent['kind'] | ((e: FlowTelemetryEvent) => boolean),
     ): number {
-      return sink.count(kindOrPredicate);
+      return sink.countEvents(kindOrPredicate);
     },
     findLastEvent(predicate: (e: FlowTelemetryEvent) => boolean): FlowTelemetryEvent | undefined {
       return sink.findLast(predicate);
