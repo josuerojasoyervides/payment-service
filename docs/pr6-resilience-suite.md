@@ -41,3 +41,10 @@ Events emitted by the flow (observability sink):
 ## Payload sanitization
 
 Telemetry payloads are passed through `sanitizeTelemetryPayloadForSink` (or built allowlisted). Allowed keys: `providerId`, `referenceId`, `eventId`, `returnNonce`, `operation`, `attempt`, `reason`, `status`, `code`, `messageKey`. Forbidden: `raw`, `headers`, `clientSecret`, `token`, `email`, `authorization`, `request`, `response`.
+
+## Evidence checks (report hygiene)
+
+When generating or verifying reports:
+
+- **Chaos fakes:** Grep for `scheduleDelayedWebhook|createFlakyStatusUseCaseFake` (these are the actual helper/fake names in code), not `DelayedWebhookFake|FlakyStatus`.
+- **Resilience suite doc:** The string `pr6-resilience-suite` appears in the filename, not in the file body. Use `ls docs | grep pr6-resilience-suite` or grep a heading inside the doc (e.g. `Resilience / stress suite` or `Invariants covered`).

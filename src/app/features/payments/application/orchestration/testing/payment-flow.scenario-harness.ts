@@ -66,6 +66,8 @@ export interface PaymentFlowScenarioHarness {
   drain(): Promise<void>;
   /** Optional: current debug state node from port */
   debugStateNode(): string | null;
+  /** Restore real timers and reset TestBed; call in afterEach to avoid leaking fake timers between tests. */
+  dispose(): void;
 }
 
 /**
@@ -137,6 +139,10 @@ export function createPaymentFlowScenarioHarness(
     },
     debugStateNode(): string | null {
       return state.debugStateNode() ?? null;
+    },
+    dispose(): void {
+      vi.useRealTimers();
+      TestBed.resetTestingModule();
     },
   };
 }

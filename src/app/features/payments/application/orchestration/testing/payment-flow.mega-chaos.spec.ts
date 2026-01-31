@@ -96,7 +96,14 @@ describe('Payment flow mega chaos (PR6 Phase D)', () => {
     expect(withRef.length).toBeGreaterThanOrEqual(1);
 
     const pollAttempted = harness.telemetry.ofType('POLL_ATTEMPTED');
-    expect(pollAttempted.length).toBeGreaterThanOrEqual(0);
+    for (const event of pollAttempted) {
+      const payload = event.payload;
+      if (payload && typeof payload === 'object') {
+        for (const key of FORBIDDEN_PAYLOAD_KEYS) {
+          expect(payload).not.toHaveProperty(key);
+        }
+      }
+    }
 
     for (const event of harness.telemetry.all()) {
       const payload = event.payload;

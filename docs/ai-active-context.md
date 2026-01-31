@@ -34,7 +34,7 @@
 - **Sinks:** NullTelemetrySink, InMemoryTelemetrySink (all/ofType/last/clear), optional ConsoleTelemetrySink. Token `PAYMENTS_FLOW_TELEMETRY_SINK`; default Null sink in config.
 - **Phase B:** Flow instrumented with minimal telemetry events (FLOW_STARTED, COMMAND_RECEIVED, SYSTEM_EVENT_RECEIVED, POLL_ATTEMPTED, FLOW_SUCCEEDED/FLOW_FAILED); default Null sink wired; tests use InMemory sink.
 - **Phase C:** Deterministic scenario harness (orchestration/testing) + stress specs for idempotency and correlation mismatch; asserts invariants + telemetry.
-- **Phase D:** Chaos fakes (DelayedWebhook, FlakyStatus, OutOfOrder) + mega scenario + docs for resilience suite.
+- **Phase D:** Chaos fakes (scheduleDelayedWebhook, createFlakyStatusUseCaseFake, OutOfOrder) + mega scenario + docs for resilience suite.
 
 ## 🧩 Fake mode (demo)
 
