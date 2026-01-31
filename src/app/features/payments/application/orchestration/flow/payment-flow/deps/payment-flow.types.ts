@@ -4,10 +4,10 @@ import type {
   WebhookReceivedPayload,
 } from '@app/features/payments/application/adapters/events/flow/payment-flow.events';
 // ✅ IMPORTANT: type-only import to avoid runtime circular dependency
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type { FallbackMode } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { NextActionClientConfirm } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import type {
   PaymentIntent,

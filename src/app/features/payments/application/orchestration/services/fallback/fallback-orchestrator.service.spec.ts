@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import {
   FALLBACK_CONFIG,
@@ -6,7 +7,6 @@ import {
 } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
 import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 

@@ -3,6 +3,7 @@ import type { Provider } from '@angular/core';
 import { computed, effect, signal } from '@angular/core';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type {
   PaymentDebugSummary,
   PaymentStorePort,
@@ -17,7 +18,6 @@ import type {
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   CurrencyCode,
   PaymentIntent,

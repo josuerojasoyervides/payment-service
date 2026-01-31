@@ -1,6 +1,7 @@
 import type { Signal } from '@angular/core';
 import { computed, effect, inject, Injectable } from '@angular/core';
 import type { PaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import { deepComputed } from '@ngrx/signals';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
 import { mapReturnQueryToReference } from '@payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
@@ -18,7 +19,6 @@ import type { PaymentHistoryEntry } from '@payments/application/orchestration/st
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   CurrencyCode,
   PaymentIntent,

@@ -1,5 +1,5 @@
+import type { PaymentErrorCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type { FallbackMode } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentErrorCode } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 /**

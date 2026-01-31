@@ -47,7 +47,11 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
     // Builder/strategy must guarantee returnUrl is present
     // If missing => clear error (do not invent URLs)
     if (!req.returnUrl) {
-      throw invalidRequestError(I18nKeys.errors.invalid_request, { returnUrl: req.returnUrl }, req);
+      throw invalidRequestError(
+        I18nKeys.errors.invalid_request,
+        { returnUrl: req.returnUrl ?? '' },
+        req,
+      );
     }
 
     const returnUrl = req.returnUrl;

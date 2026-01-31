@@ -15,6 +15,7 @@ import {
 import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import type { PaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
 import { initialPaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import {
   signalStore,
   withComputed,
@@ -29,7 +30,6 @@ import { createFallbackHandlers } from '@payments/application/orchestration/stor
 import { setupPaymentFlowMachineBridge } from '@payments/application/orchestration/store/projection/payment-store.machine-bridge';
 import { buildPaymentsSelectors } from '@payments/application/orchestration/store/projection/payment-store.selectors';
 import { sanitizeDebugEventForUi } from '@payments/application/orchestration/store/utils/debug-sanitize.rule';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export const PaymentsStore = signalStore(

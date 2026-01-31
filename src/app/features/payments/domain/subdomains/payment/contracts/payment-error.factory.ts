@@ -1,22 +1,28 @@
 import type {
   PaymentError,
   PaymentErrorCode,
+  PaymentErrorMessageKey,
   PaymentErrorParams,
-} from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 
-export function createPaymentError(
+export function createPaymentError<TKey extends PaymentErrorMessageKey = PaymentErrorMessageKey>(
   code: PaymentErrorCode,
-  messageKey: string,
+  messageKey: TKey,
   params?: PaymentErrorParams,
-  raw: unknown = null,
-): PaymentError {
-  return { code, messageKey, params, raw };
+  raw?: unknown,
+): PaymentError<TKey> {
+  return {
+    code,
+    messageKey,
+    ...(params ? { params } : {}),
+    ...(raw !== undefined ? { raw } : { raw: undefined }),
+  };
 }
 
-export function invalidRequestError(
-  messageKey: string,
+export function invalidRequestError<TKey extends PaymentErrorMessageKey = PaymentErrorMessageKey>(
+  messageKey: TKey,
   params?: PaymentErrorParams,
-  raw: unknown = null,
-): PaymentError {
+  raw?: unknown,
+): PaymentError<TKey> {
   return createPaymentError('invalid_request', messageKey, params, raw);
 }

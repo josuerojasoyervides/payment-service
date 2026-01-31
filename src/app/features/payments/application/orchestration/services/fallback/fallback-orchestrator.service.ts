@@ -7,6 +7,7 @@ import type {
   FinishStatus,
   ReportFailurePayload,
 } from '@app/features/payments/application/orchestration/services/fallback/helpers/fallback-orchestrator.types';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import { LoggerService } from '@core/logging/logger.service';
 import {
   hasDifferentEventId,
@@ -48,7 +49,6 @@ import type {
   FallbackUserResponse,
 } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { Subject } from 'rxjs';

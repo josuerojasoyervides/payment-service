@@ -5,13 +5,17 @@ import { provideRouter, RouterLink } from '@angular/router';
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
-import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
-import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type {
+  PaymentFlowPort,
+  ProviderDescriptor,
+} from '@payments/application/api/ports/payment-store.port';
+import type {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { StatusComponent } from '@payments/ui/pages/status/status.page';
 
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
