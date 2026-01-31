@@ -14,7 +14,7 @@ export const pollingStates = {
           target: 'fetchingStatus',
         },
         {
-          guard: 'isProcessingTimedOut',
+          guard: 'isPollingExhausted',
           target: 'failed',
           actions: 'setProcessingTimeoutError',
         },

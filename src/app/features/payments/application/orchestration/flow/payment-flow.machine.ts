@@ -25,6 +25,7 @@ import {
   hasProcessingTimedOutPolicy,
   hasRefreshKeysPolicy,
   isFinalIntentPolicy,
+  isPollingExhaustedPolicy,
   needsClientConfirmPolicy,
   needsFinalizePolicy,
   needsUserActionPolicy,
@@ -371,7 +372,11 @@ export const createPaymentFlowMachine = (
           error: createPaymentError(
             'processing_timeout',
             'errors.processing_timeout',
-            flowId ? { flowId } : undefined,
+            {
+              ...(flowId ? { flowId } : {}),
+              attempt: context.polling.attempt,
+              maxAttempts: config.polling.maxAttempts,
+            },
             null,
           ),
         };
@@ -431,6 +436,9 @@ export const createPaymentFlowMachine = (
       },
       isProcessingTimedOut: ({ context }) => {
         return hasProcessingTimedOutPolicy(config, context);
+      },
+      isPollingExhausted: ({ context }) => {
+        return isPollingExhaustedPolicy(config, context);
       },
     },
   }).createMachine({

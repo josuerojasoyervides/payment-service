@@ -730,7 +730,7 @@ describe('PaymentFlowMachine', () => {
     });
 
     await waitForSnapshot(actor, (s) => s.value === 'polling');
-    vi.advanceTimersByTime(2);
+    vi.advanceTimersToNextTimer();
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'failed', 200);
     expect(snap.hasTag('error')).toBe(true);
