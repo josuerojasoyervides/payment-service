@@ -17,7 +17,7 @@
 ### 1.2 Files touched / core ownership
 
 - Return page: `return.page.ts` — maps query → referenceId, calls `externalEvents.redirectReturned(...)` (no confirm/capture).
-- Flow facade: `payment-flow.facade.ts` (commands: start, confirm, cancel, refresh, reset).
+- Flow facade: `payment-flow-machine-driver.ts` (commands: start, confirm, cancel, refresh, reset).
 - External events: `application/adapters/events/external-event.adapter.ts` (redirectReturned, externalStatusUpdated, webhookReceived).
 - Machine: owns REDIRECT_RETURNED → finalizing/reconciling.
 - Fakes/tests: infrastructure fake gateways; return.page.spec.ts, checkout/status specs as needed.

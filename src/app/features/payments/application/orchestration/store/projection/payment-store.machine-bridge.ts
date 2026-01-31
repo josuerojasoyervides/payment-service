@@ -9,6 +9,7 @@ import {
   applyLoadingState,
   applyReadyState,
   applySilentFailureState,
+  resetState,
 } from '@payments/application/orchestration/store/projection/payment-store.transitions';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
@@ -103,6 +104,18 @@ export function setupPaymentFlowMachineBridge(
     if (machineIntent()) return;
 
     applySilentFailureState(store);
+  });
+
+  /**
+   * ============================================================
+   * Effect #2c: machine idle -> clear store so tests/UI see consistent idle
+   * ============================================================
+   */
+  effect(() => {
+    const snapshot = machineSnapshot();
+    if (!snapshot.hasTag('idle')) return;
+
+    resetState(store);
   });
 
   /**

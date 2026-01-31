@@ -83,25 +83,19 @@ describe('PaypalProviderFactory', () => {
       const requirements = factory.getFieldRequirements('card');
 
       expect(requirements.fields).toBeDefined();
-      expect(requirements.fields.length).toBeGreaterThan(0);
+      expect(Array.isArray(requirements.fields)).toBe(true);
       expect(requirements.descriptionKey).toBeDefined();
       expect(requirements.instructionsKey).toBeDefined();
-
-      const returnUrlField = requirements.fields.find((f) => f.name === 'returnUrl');
-      expect(returnUrlField).toBeDefined();
-      expect(returnUrlField?.required).toBe(true);
-      expect(returnUrlField?.type).toBe('hidden');
-      // autoFill can be set, but PaymentFormComponent ignores it for returnUrl/cancelUrl
-      // These URLs come from StrategyContext, not from the form
+      // returnUrl/cancelUrl come from StrategyContext (flow), not from UI fields
+      expect(requirements.fields.find((f) => f.name === 'returnUrl')).toBeUndefined();
+      expect(requirements.fields.find((f) => f.name === 'cancelUrl')).toBeUndefined();
     });
 
-    it('includes cancelUrl as optional field', () => {
+    it('does not expose returnUrl or cancelUrl as form fields (they come from flow context)', () => {
       const requirements = factory.getFieldRequirements('card');
 
-      const cancelUrlField = requirements.fields.find((f) => f.name === 'cancelUrl');
-      expect(cancelUrlField).toBeDefined();
-      expect(cancelUrlField?.required).toBe(false);
-      expect(cancelUrlField?.type).toBe('hidden');
+      expect(requirements.fields.find((f) => f.name === 'returnUrl')).toBeUndefined();
+      expect(requirements.fields.find((f) => f.name === 'cancelUrl')).toBeUndefined();
     });
 
     it('throws for unsupported payment method type', () => {

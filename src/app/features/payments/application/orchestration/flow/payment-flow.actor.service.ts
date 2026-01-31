@@ -38,6 +38,7 @@ import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/con
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
 
+// TODO : extract to a separate file
 function createFlowContextStore(): FlowContextStore | null {
   try {
     if (typeof globalThis === 'undefined') return null;
@@ -47,7 +48,7 @@ function createFlowContextStore(): FlowContextStore | null {
     return null;
   }
 }
-
+// TODO : extract to a separate file
 function buildInitialMachineContext(
   store: FlowContextStore | null,
 ): Partial<PaymentFlowMachineContext> | undefined {
@@ -65,16 +66,19 @@ function buildInitialMachineContext(
   };
 }
 
+// TODO : extract to a separate file
 function redactNextAction(action?: NextAction): NextAction | undefined {
   if (!action) return action;
   if (action.kind !== 'client_confirm') return action;
   return { ...action, token: '[redacted]' };
 }
 
+// TODO : extract to a separate file
 function redactFlowContext(context: PaymentFlowContext | null): PaymentFlowContext | null {
   return context ?? null;
 }
 
+// TODO : extract to a separate file
 function redactIntent(
   intent: PaymentFlowSnapshot['context']['intent'],
 ): PaymentFlowSnapshot['context']['intent'] {
@@ -87,6 +91,7 @@ function redactIntent(
   };
 }
 
+// TODO : Are these states global? Do these states already exist? What type are these states?
 const EFFECT_STATES = new Set([
   'starting',
   'fetchingStatusInvoke',
@@ -95,6 +100,7 @@ const EFFECT_STATES = new Set([
   'clientConfirming',
 ]);
 
+// TODO : extract to a separate file
 function flowContextToRefs(
   flowContext: PaymentFlowContext | null,
   providerId: string | null,
@@ -105,6 +111,7 @@ function flowContextToRefs(
   return refs as FlowTelemetryRefs;
 }
 
+// TODO : extract to a separate file
 function snapshotTelemetryBase(snapshot: PaymentFlowSnapshot): {
   flowId?: string;
   providerId?: string;

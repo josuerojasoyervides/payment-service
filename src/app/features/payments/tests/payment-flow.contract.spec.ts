@@ -269,19 +269,20 @@ describe('PaymentFlow contract tests', () => {
     actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
     await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
 
+    // referenceId must match stored ref (intent id from start) to avoid correlation mismatch
     actor.send({
       type: 'REDIRECT_RETURNED',
-      payload: { providerId: 'stripe', referenceId: 'pi_return' },
+      payload: { providerId: 'stripe', referenceId: baseIntent.id },
     });
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'reconcilingInvoke');
     expect(snap.value).toBe('reconcilingInvoke');
     expect(deps.finalize).toHaveBeenCalledTimes(1);
 
-    statusDeferred.resolve({ ...baseIntent, id: 'pi_return', status: 'succeeded' });
+    statusDeferred.resolve({ ...baseIntent, id: baseIntent.id, status: 'succeeded' });
     await waitForSnapshot(actor, (s) => s.value === 'done');
 
-    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_return' });
+    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: baseIntent.id });
   });
 
   it('two identical REDIRECT_RETURNED events invoke finalize once (dedupe)', async () => {
@@ -294,7 +295,7 @@ describe('PaymentFlow contract tests', () => {
     actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
     await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
 
-    const payload = { providerId: 'stripe' as const, referenceId: 'pi_return' };
+    const payload = { providerId: 'stripe' as const, referenceId: baseIntent.id };
     actor.send({ type: 'REDIRECT_RETURNED', payload });
     actor.send({ type: 'REDIRECT_RETURNED', payload });
 
@@ -302,7 +303,7 @@ describe('PaymentFlow contract tests', () => {
     expect(snap.value).toBe('reconcilingInvoke');
     expect(deps.finalize).toHaveBeenCalledTimes(1);
 
-    statusDeferred.resolve({ ...baseIntent, id: 'pi_return', status: 'succeeded' });
+    statusDeferred.resolve({ ...baseIntent, id: baseIntent.id, status: 'succeeded' });
     await waitForSnapshot(actor, (s) => s.value === 'done');
   });
 

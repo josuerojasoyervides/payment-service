@@ -1,8 +1,10 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import { buildStripeDtoFromFakeState } from '@app/features/payments/infrastructure/fake/shared/helpers/build-stripe-dto-from-fake-state.helper';
 import { createFakePaypalOrderStatus } from '@app/features/payments/infrastructure/fake/shared/helpers/create-fake-paypal-order-status.helper';
 import { createFakeStripeIntentStatus } from '@app/features/payments/infrastructure/fake/shared/helpers/create-fake-stripe-intent-status.helper';
 import { simulateNetworkDelay } from '@app/features/payments/infrastructure/fake/shared/helpers/simulate-network-delay.helper';
 import { mapIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/intent.mapper';
+import { FakeIntentStore } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import type {
   PaymentIntent,
@@ -19,12 +21,23 @@ export abstract class FakeGetIntentGateway extends PaymentOperationPort<
 > {
   abstract override readonly providerId: PaymentProviderId;
 
+  private readonly fakeIntentStore = inject(FakeIntentStore);
+
   protected override executeRaw(request: GetPaymentStatusRequest): Observable<any> {
     this.logger.warn(`[FakeGateway] Getting status for ${request.intentId}`, this.logContext, {
       request,
     });
     if (this.providerId === 'paypal') {
       return simulateNetworkDelay(createFakePaypalOrderStatus(request.intentId));
+    }
+
+    const state = this.fakeIntentStore.get(request.intentId);
+    if (state) {
+      const updated = this.fakeIntentStore.refresh(request.intentId);
+      const dto = updated
+        ? buildStripeDtoFromFakeState(updated)
+        : buildStripeDtoFromFakeState(state);
+      return simulateNetworkDelay(dto);
     }
 
     return simulateNetworkDelay(createFakeStripeIntentStatus(request.intentId));

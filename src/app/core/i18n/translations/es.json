@@ -116,6 +116,7 @@
     "enter_payment_id": "Ingresa el ID del pago para ver su estado actual",
     "intent_id_placeholder": "pi_xxxxx o ORDER-xxxxx",
     "example_stripe": "Ej: pi_fake_xxxxx (Stripe) o ORDER_FAKE_XXXXX (PayPal)",
+    "example_intent_placeholder": "ej. ID de pago de tu proveedor",
     "consulting": "Consultando...",
     "error_consulting": "Error al consultar",
     "result": "Resultado",
@@ -129,6 +130,8 @@
     "method_card": "Tarjeta",
     "method_card_description": "Crédito o débito",
     "method_spei": "SPEI",
-    "method_spei_description": "Transferencia bancaria"
+    "method_spei_description": "Transferencia bancaria",
+    "no_providers_available": "No hay proveedores disponibles",
+    "reference_id": "ID de referencia"
   }
 }

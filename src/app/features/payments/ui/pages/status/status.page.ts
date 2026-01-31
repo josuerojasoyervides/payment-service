@@ -2,30 +2,32 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import type { PaymentCheckoutCatalogPort } from '@app/features/payments/application/api/ports/payment-store.port';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import { PAYMENT_PROVIDER_IDS } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';
 import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
 import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
+/** Demo intent IDs for quick examples (one per catalog index). No provider names in source. */
+const DEMO_INTENT_IDS = ['pi_fake_abc123', 'ORDER_FAKE_XYZ789'];
+
 interface StatusPageState {
   intentId: string;
-  providerIds: PaymentProviderId[];
-  selectedProvider: PaymentProviderId;
-  lastQuery: { provider: PaymentProviderId; id: string } | null;
+  lastQueryId: string | null;
 }
 
 /**
  * Page to query payment status by ID.
  *
- * Allows entering an Intent ID (from Stripe or PayPal) and
- * querying its current status, with options to confirm,
- * cancel or refresh.
+ * Provider-agnostic: reads provider list from catalog, selected provider from state port.
+ * On search/refresh, passes providerId explicitly to the port.
  */
 @Component({
   selector: 'app-status',
@@ -34,6 +36,7 @@ interface StatusPageState {
     CommonModule,
     FormsModule,
     RouterLink,
+    FlowDebugPanelComponent,
     PaymentIntentCardComponent,
     NextActionCardComponent,
     ProviderSelectorComponent,
@@ -41,117 +44,122 @@ interface StatusPageState {
   templateUrl: './status.component.html',
 })
 export class StatusComponent {
-  private readonly flow = inject(PaymentFlowFacade);
+  private readonly state = inject(PAYMENT_STATE);
   private readonly i18n = inject(I18nService);
+  private readonly catalog = inject(PAYMENT_CHECKOUT_CATALOG) as PaymentCheckoutCatalogPort;
+
+  readonly providerDescriptors = computed(() => this.catalog.getProviderDescriptors());
 
   readonly statusPageState = signalState<StatusPageState>({
     intentId: '',
-    providerIds: [...PAYMENT_PROVIDER_IDS],
-    selectedProvider: PAYMENT_PROVIDER_IDS[0],
-    lastQuery: null,
+    lastQueryId: null,
   });
 
+  /** Selected provider from global port; UI calls state.selectProvider on change. */
+  readonly selectedProvider = computed(() => this.state.selectedProvider());
+
   readonly flowState = deepComputed(() => ({
-    intent: this.flow.intent(),
-    error: this.flow.error(),
-    isLoading: this.flow.isLoading(),
+    intent: this.state.intent(),
+    error: this.state.error(),
+    isLoading: this.state.isLoading(),
   }));
 
-  readonly examples = computed(() => [
-    {
-      id: 'pi_fake_abc123',
-      label: this.i18n.t(I18nKeys.ui.stripe_intent),
-      provider: 'stripe' as const,
-    },
-    {
-      id: 'ORDER_FAKE_XYZ789',
-      label: this.i18n.t(I18nKeys.ui.paypal_order),
-      provider: 'paypal' as const,
-    },
-  ]);
+  /** Quick examples derived from catalog (label from descriptor, id from demo list). */
+  readonly examples = computed(() => {
+    const descriptors = this.providerDescriptors();
+    return descriptors.map((d, i) => ({
+      id: DEMO_INTENT_IDS[i] ?? `demo_${i}`,
+      label: this.i18n.t(d.labelKey),
+      provider: d.id,
+    }));
+  });
 
+  /** Result: show intent only when it matches the last queried intentId (match by id only). */
   readonly result = computed(() => {
-    const q = this.statusPageState.lastQuery();
+    const lastId = this.statusPageState.lastQueryId();
     const intent = this.flowState.intent();
-    if (!q) return null;
-    if (!intent) return null;
-
-    const sameId = intent.id === q.id;
-    const sameProvider = intent.provider === q.provider;
-    return sameId && sameProvider ? intent : null;
+    if (!lastId || !intent || intent.id !== lastId) return null;
+    return intent;
   });
 
   private didPrefill = false;
 
   constructor() {
     effect(() => {
-      if (this.didPrefill) return;
+      const descriptors = this.providerDescriptors();
+      const current = this.state.selectedProvider();
+      if (descriptors.length === 0) return;
+      if (!current || !descriptors.some((d) => d.id === current)) {
+        this.state.selectProvider(descriptors[0].id);
+      }
+    });
 
+    effect(() => {
+      if (this.didPrefill) return;
       const intent = this.flowState.intent();
       if (!intent) return;
-
-      // ✅ No pises si el usuario ya escribió algo o ya buscó algo
       const userTypedSomething = this.statusPageState.intentId().trim().length > 0;
-      const alreadyHasQuery = this.statusPageState.lastQuery() !== null;
-
+      const alreadyHasQuery = this.statusPageState.lastQueryId() !== null;
       if (userTypedSomething || alreadyHasQuery) {
-        this.didPrefill = true; // "ya no vuelvas a intentar"
+        this.didPrefill = true;
         return;
       }
-
       this.didPrefill = true;
-
-      patchState(this.statusPageState, {
-        intentId: intent.id,
-        selectedProvider: intent.provider,
-        lastQuery: { provider: intent.provider, id: intent.id },
-      });
+      patchState(this.statusPageState, { intentId: intent.id, lastQueryId: intent.id });
+      this.state.selectProvider(intent.provider);
     });
   }
 
   searchIntent(): void {
     const id = this.statusPageState.intentId().trim();
     if (!id) return;
-
-    patchState(this.statusPageState, {
-      intentId: id, // opcional: normalizas el input
-      lastQuery: { provider: this.statusPageState.selectedProvider(), id },
-    });
-
-    this.flow.refresh(this.statusPageState.selectedProvider(), id);
+    const descriptors = this.providerDescriptors();
+    let providerId = this.state.selectedProvider();
+    if (!providerId && descriptors.length > 0) {
+      this.state.selectProvider(descriptors[0].id);
+      providerId = descriptors[0].id;
+    }
+    if (!providerId) return;
+    patchState(this.statusPageState, { lastQueryId: id });
+    this.state.refreshPayment({ intentId: id }, providerId);
   }
 
-  confirmPayment(_intentId: string): void {
-    this.flow.confirm();
+  confirmPayment(intentId: string): void {
+    this.state.confirmPayment({ intentId });
   }
 
   onNextActionRequested(action: NextAction): void {
-    this.flow.performNextAction(action);
+    if (action.kind === 'redirect' && action.url) {
+      if (typeof window !== 'undefined') window.location.href = action.url;
+      return;
+    }
+    if (action.kind === 'client_confirm') {
+      const intent = this.state.intent();
+      const intentId = intent?.id ?? this.statusPageState.lastQueryId() ?? null;
+      if (intentId) this.state.confirmPayment({ intentId });
+    }
   }
 
-  cancelPayment(_intentId: string): void {
-    this.flow.cancel();
+  cancelPayment(intentId: string): void {
+    this.state.cancelPayment({ intentId });
   }
 
   refreshPayment(intentId: string): void {
-    patchState(this.statusPageState, {
-      lastQuery: { provider: this.statusPageState.selectedProvider(), id: intentId },
-    });
-
-    this.flow.refresh(this.statusPageState.selectedProvider(), intentId);
+    const providerId = this.state.selectedProvider();
+    if (providerId) {
+      patchState(this.statusPageState, { lastQueryId: intentId });
+      this.state.refreshPayment({ intentId }, providerId);
+    }
   }
 
   useExample(example: { id: string; provider: PaymentProviderId }): void {
-    patchState(this.statusPageState, {
-      intentId: example.id,
-      selectedProvider: example.provider,
-    });
-
+    patchState(this.statusPageState, { intentId: example.id });
+    this.state.selectProvider(example.provider);
     this.searchIntent();
   }
 
-  selectProvider(provider: PaymentProviderId): void {
-    patchState(this.statusPageState, { selectedProvider: provider });
+  onSelectProvider(provider: PaymentProviderId): void {
+    this.state.selectProvider(provider);
   }
 
   getErrorMessage(error: unknown): string {
@@ -165,10 +173,8 @@ export class StatusComponent {
     patchState(this.statusPageState, { intentId: value });
   }
 
-  // Guards
-  //Suggest a name for this guard
-  readonly canSearch = computed(
-    () => !this.statusPageState.intentId() || this.flowState.isLoading(),
+  readonly isSearchDisabled = computed(
+    () => !this.statusPageState.intentId()?.trim() || this.flowState.isLoading(),
   );
 
   readonly labels = deepComputed(() => ({
@@ -176,7 +182,7 @@ export class StatusComponent {
     enterPaymentIdText: this.i18n.t(I18nKeys.ui.enter_payment_id),
     intentIdLabel: this.i18n.t(I18nKeys.ui.intent_id),
     intentIdPlaceholder: this.i18n.t(I18nKeys.ui.intent_id_placeholder),
-    exampleStripeText: this.i18n.t(I18nKeys.ui.example_stripe),
+    exampleIntentHint: this.i18n.t(I18nKeys.ui.example_intent_placeholder),
     consultingLabel: this.i18n.t(I18nKeys.ui.consulting),
     checkStatusLabel: this.i18n.t(I18nKeys.ui.check_status),
     errorConsultingLabel: this.i18n.t(I18nKeys.ui.error_consulting),

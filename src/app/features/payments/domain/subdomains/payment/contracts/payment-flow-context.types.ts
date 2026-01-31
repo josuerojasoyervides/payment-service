@@ -1,8 +1,10 @@
 /**
- * Payment flow context.
+ * PaymentFlowContext contract (Domain). Tech-agnostic.
  *
- * Contains additional information passed during the flow,
- * such as return URLs, device data, and metadata.
+ * Belongs here: urls (returnUrl, cancelUrl), metadata, deviceData, externalReference,
+ * providerRefs, flowId, TTL (createdAt/expiresAt), lastExternalEventId, return params, etc.
+ *
+ * Does NOT belong: UI state, render flags, translated copy, framework-specific types.
  */
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 

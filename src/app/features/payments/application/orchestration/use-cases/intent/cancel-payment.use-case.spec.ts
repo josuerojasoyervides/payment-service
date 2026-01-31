@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { I18nKeys } from '@core/i18n';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
@@ -88,14 +87,14 @@ describe('CancelPaymentUseCase', () => {
     it('propagates observable errors from gateway.cancelIntent()', async () => {
       const error: PaymentError = {
         code: 'provider_error',
-        messageKey: I18nKeys.errors.provider_error,
+        messageKey: 'errors.provider_error',
         raw: {},
       };
       (gatewayMock.cancelIntent as any).mockReturnValueOnce(throwError(() => error));
 
       await expect(firstValueFrom(useCase.execute(req, 'stripe'))).rejects.toMatchObject({
         code: 'provider_error',
-        messageKey: I18nKeys.errors.provider_error,
+        messageKey: 'errors.provider_error',
       });
     });
   });

@@ -14,6 +14,7 @@ export interface Translations {
     currency_not_supported: string;
     unknown_error: string;
     provider_error: string;
+    missing_provider: string;
     invalid_request: string;
     network_error: string;
     timeout: string;
@@ -96,6 +97,9 @@ export interface Translations {
     fallback_accept: string;
     fallback_cancel: string;
     fallback_auto_executing: string;
+    fallback_in_progress_title: string;
+    fallback_in_progress_hint: string;
+    fallback_auto_hint: string;
 
     // Errores y mensajes
     unknown_error: string;
@@ -166,6 +170,7 @@ export interface Translations {
     enter_payment_id: string;
     intent_id_placeholder: string;
     example_stripe: string;
+    example_intent_placeholder: string;
     consulting: string;
     error_consulting: string;
     result: string;
@@ -251,6 +256,10 @@ export interface Translations {
     completed: string;
 
     debug_info: string;
+    debug_state_node: string;
+    debug_tags: string;
+    debug_last_event_type: string;
+    debug_last_event_payload: string;
     provider_debug: string;
     method_debug: string;
     form_valid: string;
@@ -284,5 +293,14 @@ export interface Translations {
     return_url_label: string;
     cancel_url_label: string;
     paypal_redirect_secure_message: string;
+    demo_tokens_title: string;
+    demo_tokens_cheatsheet: string;
+    no_providers_available: string;
+    reference_id: string;
+    resume_payment_found: string;
+    resume_payment_action: string;
+    processing_status_title: string;
+    processing_status_hint: string;
+    refresh_status: string;
   };
 }

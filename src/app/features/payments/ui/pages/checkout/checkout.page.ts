@@ -1,13 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, isDevMode } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
-import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
 import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type {
   CurrencyCode,
@@ -19,6 +18,8 @@ import type {
   PaymentOptions,
 } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
+import { FallbackStatusBannerComponent } from '@payments/ui/components/fallback-status-banner/fallback-status-banner.component';
+import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';
 import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
 import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
 import { OrderSummaryComponent } from '@payments/ui/components/order-summary/order-summary.component';
@@ -26,6 +27,7 @@ import { PaymentButtonComponent } from '@payments/ui/components/payment-button/p
 import { PaymentFormComponent } from '@payments/ui/components/payment-form/payment-form.component';
 import { PaymentResultComponent } from '@payments/ui/components/payment-result/payment-result.component';
 import { ProviderSelectorComponent } from '@payments/ui/components/provider-selector/provider-selector.component';
+import { deriveFlowPhase } from '@payments/ui/shared/flow-phase';
 
 interface CheckoutPageState {
   orderId: string;
@@ -61,26 +63,27 @@ interface CheckoutPageState {
     PaymentFormComponent,
     PaymentButtonComponent,
     PaymentResultComponent,
+    FlowDebugPanelComponent,
     NextActionCardComponent,
     FallbackModalComponent,
+    FallbackStatusBannerComponent,
   ],
   templateUrl: './checkout.component.html',
 })
 export class CheckoutComponent {
   readonly isDevMode = isDevMode();
 
-  private readonly registry = inject(ProviderFactoryRegistry);
   private readonly logger = inject(LoggerService);
   private readonly i18n = inject(I18nService);
-  private readonly fallback = inject(FallbackOrchestratorService);
-  private readonly flow = inject(PaymentFlowFacade);
+  private readonly state = inject(PAYMENT_STATE);
+  private readonly catalog = inject(PAYMENT_CHECKOUT_CATALOG);
 
   readonly flowState = deepComputed(() => ({
-    isLoading: this.flow.isLoading(),
-    isReady: this.flow.isReady(),
-    hasError: this.flow.hasError(),
-    currentIntent: this.flow.intent(),
-    currentError: this.flow.error(),
+    isLoading: this.state.isLoading(),
+    isReady: this.state.isReady(),
+    hasError: this.state.hasError(),
+    currentIntent: this.state.intent(),
+    currentError: this.state.error(),
   }));
 
   readonly checkoutPageState = signalState<CheckoutPageState>({
@@ -93,74 +96,78 @@ export class CheckoutComponent {
     isFormValid: false,
   });
 
-  // TODO : Should this be a global state or should be handled by the state machine?
   readonly fallbackState = deepComputed(() => ({
-    isPending: this.fallback.isPending(),
-    pendingEvent: this.fallback.pendingEvent(),
+    isPending: this.state.hasPendingFallback(),
+    pendingEvent: this.state.pendingFallbackEvent(),
   }));
 
-  readonly availableProviders = computed<PaymentProviderId[]>(() => {
-    return this.registry.getAvailableProviders();
-  });
+  readonly providerDescriptors = computed(() => this.catalog.getProviderDescriptors());
 
   readonly availableMethods = computed<PaymentMethodType[]>(() => {
     const provider = this.checkoutPageState.selectedProvider();
     if (!provider) return [];
-
-    try {
-      return this.registry.get(provider).getSupportedMethods();
-    } catch (e) {
-      if (this.isDevMode)
-        this.logger.warn('Failed to resolve methods', 'CheckoutPage', { provider, e });
-      return [];
-    }
+    return this.catalog.getSupportedMethods(provider);
   });
 
   readonly fieldRequirements = computed<FieldRequirements | null>(() => {
     const provider = this.checkoutPageState.selectedProvider();
     const method = this.checkoutPageState.selectedMethod();
     if (!provider || !method) return null;
-    try {
-      const factory = this.registry.get(provider);
-      return factory.getFieldRequirements(method);
-    } catch (e) {
-      if (this.isDevMode) {
-        this.logger.warn('Failed to resolve field requirements', 'CheckoutPage', {
-          provider,
-          method,
-          e,
-        });
-      }
-      return null;
-    }
+    return this.catalog.getFieldRequirements(provider, method);
   });
 
-  readonly showResult = computed(() => this.flowState.isReady() || this.flowState.hasError());
+  readonly flowPhase = deriveFlowPhase(this.state);
+
+  readonly showResult = computed(() => {
+    const phase = this.flowPhase();
+    // magic strings, should this be a global guard/rule validation?
+    return (
+      phase === 'action_required' ||
+      phase === 'processing' ||
+      phase === 'done' ||
+      phase === 'failed' ||
+      phase === 'fallback_pending' ||
+      phase === 'fallback_executing'
+    );
+  });
+
+  readonly showProcessingPanel = computed(() => this.flowPhase() === 'processing');
+
+  readonly showResumeBanner = computed(
+    () => this.flowPhase() === 'editing' && this.state.canResume(),
+  );
+
+  readonly showFallbackExecutingBanner = computed(
+    () => this.state.isFallbackExecuting() || this.state.isAutoFallbackInProgress(),
+  );
+  readonly isFallbackExecuting = computed(() => this.state.isFallbackExecuting());
+  readonly isAutoFallback = computed(() => this.state.isAutoFallbackInProgress());
 
   readonly debugInfo = computed(() => {
-    const snap = this.flow.snapshot();
+    const summary = this.state.debugSummary();
 
     return {
-      state: snap.value,
-      providerId: snap.context.providerId,
-      intentId: snap.context.intentId ?? snap.context.intent?.id ?? null,
-      tags: snap.tags ? Array.from(snap.tags) : [],
-      lastEvent: this.flow.lastSentEvent(),
+      state: summary.status,
+      providerId: summary.provider,
+      intentId: summary.intentId,
+      tags: [] as string[],
     };
   });
 
   constructor() {
     effect(() => {
-      const providers = this.availableProviders();
+      const descriptors = this.providerDescriptors();
       const current = this.checkoutPageState.selectedProvider();
 
-      if (providers.length === 0) {
+      if (descriptors.length === 0) {
         if (current !== null) patchState(this.checkoutPageState, { selectedProvider: null });
         return;
       }
 
-      if (!current || !providers.includes(current)) {
-        patchState(this.checkoutPageState, { selectedProvider: providers[0] });
+      if (!current || !descriptors.some((d) => d.id === current)) {
+        const first = descriptors[0].id;
+        patchState(this.checkoutPageState, { selectedProvider: first });
+        this.state.selectProvider(first);
       }
     });
 
@@ -186,9 +193,8 @@ export class CheckoutComponent {
   }
 
   selectProvider(provider: PaymentProviderId): void {
-    patchState(this.checkoutPageState, {
-      selectedProvider: provider,
-    });
+    patchState(this.checkoutPageState, { selectedProvider: provider });
+    this.state.selectProvider(provider);
     this.logger.info('Provider selected', 'CheckoutPage', { provider });
   }
 
@@ -229,16 +235,15 @@ export class CheckoutComponent {
     });
 
     try {
-      const factory = this.registry.get(provider);
-      const builder = factory.createRequestBuilder(method);
-
       const options = this.checkoutPageState.formOptions();
-
-      const request = builder
-        .forOrder(this.checkoutPageState.orderId())
-        .withAmount(this.checkoutPageState.amount(), this.checkoutPageState.currency())
-        .withOptions(options)
-        .build();
+      const request = this.catalog.buildCreatePaymentRequest({
+        providerId: provider,
+        method,
+        orderId: this.checkoutPageState.orderId(),
+        amount: this.checkoutPageState.amount(),
+        currency: this.checkoutPageState.currency(),
+        options,
+      });
 
       this.logger.info('Payment request built', 'CheckoutPage', {
         orderId: request.orderId,
@@ -246,7 +251,6 @@ export class CheckoutComponent {
         method: request.method.type,
       });
 
-      // Construir PaymentFlowContext
       const context: StrategyContext = {
         returnUrl: this.buildReturnUrl(),
         cancelUrl: this.buildCancelUrl(),
@@ -258,14 +262,7 @@ export class CheckoutComponent {
         },
       };
 
-      const ok = this.flow.start(provider, request, context);
-
-      if (!ok) {
-        this.logger.warn('START event ignored by machine', 'CheckoutPage', {
-          provider,
-          method,
-        });
-      }
+      this.state.startPayment(request, provider, context);
     } catch (error) {
       this.logger.error('Failed to build payment request', 'CheckoutPage', error);
     }
@@ -273,53 +270,59 @@ export class CheckoutComponent {
     this.logger.endCorrelation(correlationCtx);
   }
 
-  // === Fallback handlers ===
   confirmFallback(provider: PaymentProviderId): void {
     this.logger.info('Fallback confirmed', 'CheckoutPage', { provider });
-    const event = this.fallbackState.pendingEvent();
-    if (!event) return;
-
-    this.fallback.respondToFallback({
-      eventId: event.eventId,
-      accepted: true,
-      selectedProvider: provider,
-      timestamp: Date.now(),
-    });
+    this.state.executeFallback(provider);
   }
 
   cancelFallback(): void {
     this.logger.info('Fallback cancelled', 'CheckoutPage');
-    const event = this.fallbackState.pendingEvent();
-    if (event) {
-      this.fallback.respondToFallback({
-        eventId: event.eventId,
-        accepted: false,
-        timestamp: Date.now(),
-      });
-      return;
-    }
-
-    this.fallback.reset();
+    this.state.cancelFallback();
   }
 
   onNextActionRequested(action: NextAction): void {
-    const ok = this.flow.performNextAction(action);
-    if (!ok) {
-      this.logger.warn('NEXT_ACTION ignored', 'CheckoutPage', { kind: action.kind });
+    if (action.kind === 'redirect' && action.url) {
+      if (typeof window !== 'undefined') window.location.href = action.url;
+      return;
+    }
+    if (action.kind === 'client_confirm') {
+      const intent = this.state.intent();
+      const intentId = intent?.id ?? null;
+      if (intentId) this.state.confirmPayment({ intentId });
     }
   }
+
   confirmPayment(): void {
-    const ok = this.flow.confirm();
-    if (!ok) this.logger.warn('CONFIRM ignored', 'CheckoutPage');
+    const intent = this.state.intent();
+    const intentId = intent?.id ?? null;
+    if (intentId) this.state.confirmPayment({ intentId });
   }
 
   cancelPayment(): void {
-    const ok = this.flow.cancel();
-    if (!ok) this.logger.warn('CANCEL ignored', 'CheckoutPage');
+    const intent = this.state.intent();
+    const intentId = intent?.id ?? null;
+    if (intentId) this.state.cancelPayment({ intentId });
+  }
+
+  resumePayment(): void {
+    const providerId = this.state.resumeProviderId();
+    const intentId = this.state.resumeIntentId();
+    if (providerId && intentId) {
+      this.state.refreshPayment({ intentId }, providerId);
+    }
+  }
+
+  refreshProcessingStatus(): void {
+    const intent = this.state.intent();
+    const intentId = intent?.id ?? null;
+    const providerId = intent?.provider ?? this.state.selectedProvider();
+    if (intentId && providerId) {
+      this.state.refreshPayment({ intentId }, providerId);
+    }
   }
 
   resetPayment(): void {
-    this.flow.reset();
+    this.state.reset();
 
     patchState(this.checkoutPageState, {
       orderId: 'order_' + Math.random().toString(36).substring(7),
@@ -343,6 +346,11 @@ export class CheckoutComponent {
     methodDebugLabel: this.i18n.t(I18nKeys.ui.method_debug),
     formValidLabel: this.i18n.t(I18nKeys.ui.form_valid),
     loadingDebugLabel: this.i18n.t(I18nKeys.ui.loading_debug),
+    processingStatusTitle: this.i18n.t(I18nKeys.ui.processing_status_title),
+    processingStatusHint: this.i18n.t(I18nKeys.ui.processing_status_hint),
+    refreshStatus: this.i18n.t(I18nKeys.ui.refresh_status),
+    resumePaymentFound: this.i18n.t(I18nKeys.ui.resume_payment_found),
+    resumePaymentAction: this.i18n.t(I18nKeys.ui.resume_payment_action),
   }));
 
   // TODO : This is orchestration layer responsibility, not UI layer

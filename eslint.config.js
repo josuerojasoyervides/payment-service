@@ -105,9 +105,62 @@ module.exports = defineConfig([
     },
   },
 
+  // ✅ Runtime only: api/testing/** allowed only in specs (order: UI override must come after so it wins for UI files)
+  {
+    files: ['src/**/!(*.spec|*.test|*.harness).ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['../**'], message: 'Use aliases @core/*, @shared/*, @payments/*.' },
+            {
+              group: ['**/application/api/testing/**'],
+              message: 'application/api/testing/** may only be imported from *.spec.ts or *.test.ts.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // ✅ Payments UI: no orchestration, adapters, infra, config; no driver/registry/orchestrator (specs excluded so tests can import mocks/setup)
+  {
+    files: ['src/app/features/payments/ui/**/!(*.spec|*.test|*.harness).ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['../**'], message: 'Use aliases @core/*, @shared/*, @payments/*.' },
+            {
+              group: [
+                '**/application/orchestration/**',
+                '**/application/adapters/**',
+                '**/infrastructure/**',
+                '**/config/**',
+              ],
+              message:
+                'UI must not import orchestration, adapters, infrastructure, or config. Use PAYMENT_STATE (port) only.',
+            },
+            {
+              group: [
+                '**/payment-flow-machine-driver*',
+                '**/provider-factory.registry*',
+                '**/fallback-orchestrator.service*',
+              ],
+              message:
+                'UI must not import PaymentFlowMachineDriver, ProviderFactoryRegistry, or FallbackOrchestratorService.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // ✅ TESTS relajados
   {
-    files: ['**/*.spec.ts', '**/*.integration.spec.ts'],
+    files: ['**/*.spec.ts', '**/*.integration.spec.ts', '**/*.harness.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-empty-function': 'off',

@@ -1,3 +1,10 @@
+/**
+ * Flow context plumbing: create, merge, update, and resolve PaymentFlowContext.
+ *
+ * Responsibilities: flowId, TTL/expiration, externalReference correlation; providerRefs
+ * merge per provider for reconciliation (each provider uses different IDs — intentId,
+ * orderId, preferenceId, paymentId — so we keep a provider-keyed map and merge on updates).
+ */
 import type {
   PaymentFlowContext,
   ProviderReferences,

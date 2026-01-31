@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { I18nKeys, I18nService } from '@core/i18n';
+import type { PaymentCheckoutCatalogPort } from '@payments/application/api/ports/payment-store.port';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
-import { getDefaultProviders } from '@payments/ui/shared/ui.types';
 
 /**
  * Modal that displays fallback options when a provider fails.
@@ -30,6 +31,7 @@ import { getDefaultProviders } from '@payments/ui/shared/ui.types';
 })
 export class FallbackModalComponent {
   private readonly i18n = inject(I18nService);
+  private readonly catalog = inject(PAYMENT_CHECKOUT_CATALOG) as PaymentCheckoutCatalogPort;
 
   /** Pending fallback event */
   readonly event = input<FallbackAvailableEvent | null>(null);
@@ -78,24 +80,27 @@ export class FallbackModalComponent {
     return renderPaymentError(this.i18n, e?.error);
   });
 
-  /** Alternative providers with metadata */
+  /** Alternative providers with label/description from catalog */
   readonly alternativeProviders = computed(() => {
     const e = this.event();
     if (!e) return [];
-    const providers = getDefaultProviders(this.i18n);
-
     return e.alternativeProviders
-      .map((id) => providers.find((p) => p.id === id))
-      .filter((p): p is NonNullable<typeof p> => p !== undefined);
+      .map((id) => this.catalog.getProviderDescriptor(id))
+      .filter((d): d is NonNullable<typeof d> => d != null)
+      .map((d) => ({
+        id: d.id,
+        label: this.i18n.t(d.labelKey),
+        description: d.descriptionKey ? this.i18n.t(d.descriptionKey) : undefined,
+        icon: d.icon,
+      }));
   });
 
-  /** Selected provider name */
+  /** Selected provider label from catalog */
   readonly selectedProviderName = computed(() => {
     const id = this.selectedProvider();
     if (!id) return null;
-    const providers = getDefaultProviders(this.i18n);
-    const provider = providers.find((p) => p.id === id);
-    return provider?.name ?? id;
+    const d = this.catalog.getProviderDescriptor(id);
+    return d ? this.i18n.t(d.labelKey) : id;
   });
 
   // ===== Textos para el template =====

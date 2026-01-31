@@ -19,16 +19,31 @@
       </div>
     </div>
 
-    <!-- Show result on success or error -->
+    <!-- Show result on success or error (phase-driven) -->
     @if (showResult()) {
       <div class="mb-6">
+        @if (showFallbackExecutingBanner()) {
+          <app-fallback-status-banner
+            [isExecuting]="isFallbackExecuting()"
+            [isAuto]="isAutoFallback()"
+            (canceled)="cancelFallback()" />
+        }
+        @if (showProcessingPanel()) {
+          <div class="card mb-6" data-testid="processing-panel">
+            <h2 class="text-lg font-semibold mb-2">{{ checkoutLabels.processingStatusTitle() }}</h2>
+            <p class="text-gray-600 text-sm mb-4">{{ checkoutLabels.processingStatusHint() }}</p>
+            <button type="button" class="btn-primary" (click)="refreshProcessingStatus()">
+              {{ checkoutLabels.refreshStatus() }}
+            </button>
+          </div>
+        }
         <app-payment-result
           [intent]="flowState.currentIntent()"
           [error]="flowState.currentError()"
           (retry)="resetPayment()"
           (newPayment)="resetPayment()" />
 
-        <!-- Next Action si existe -->
+        <!-- Next action when present -->
         @if (flowState.currentIntent()?.nextAction) {
           <app-next-action-card
             [nextAction]="flowState.currentIntent()!.nextAction!"
@@ -36,7 +51,15 @@
         }
       </div>
     } @else {
-      <!-- Flujo de checkout -->
+      @if (showResumeBanner()) {
+        <div class="card mb-6 bg-amber-50 border border-amber-200" data-testid="resume-banner">
+          <p class="text-gray-800 mb-3">{{ checkoutLabels.resumePaymentFound() }}</p>
+          <button type="button" class="btn-primary" (click)="resumePayment()">
+            {{ checkoutLabels.resumePaymentAction() }}
+          </button>
+        </div>
+      }
+      <!-- Checkout form -->
       <div class="space-y-6">
         <!-- Order Summary -->
         <app-order-summary
@@ -51,7 +74,7 @@
             <h2 class="text-lg font-semibold">{{ checkoutLabels.paymentProviderLabel() }}</h2>
           </div>
           <app-provider-selector
-            [providers]="availableProviders()"
+            [descriptors]="providerDescriptors()"
             [selected]="checkoutPageState.selectedProvider()"
             [disabled]="flowState.isLoading()"
             (providerChange)="selectProvider($event)" />
@@ -138,5 +161,8 @@
       [open]="fallbackState.isPending()"
       (confirm)="confirmFallback($event)"
       (canceled)="cancelFallback()" />
+
+    <!-- Flow debug panel (dev) -->
+    <app-flow-debug-panel />
   </div>
 </div>

@@ -1,38 +1,83 @@
-import { computed, signal } from '@angular/core';
+import type { signal } from '@angular/core';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
+import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
-import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
-import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
-import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/cancel-payment.use-case';
-import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/confirm-payment.use-case';
-import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
-import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
+import type {
+  PaymentCheckoutCatalogPort,
+  PaymentFlowPort,
+  ProviderDescriptor,
+} from '@payments/application/api/ports/payment-store.port';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
+import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type {
   FieldRequirements,
   PaymentOptions,
 } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
-import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
+
+const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
+  {
+    id: 'stripe',
+    labelKey: 'ui.provider_stripe',
+    descriptionKey: 'ui.provider_stripe_description',
+    icon: '💳',
+    supportedMethods: ['card', 'spei'],
+  },
+  {
+    id: 'paypal',
+    labelKey: 'ui.provider_paypal',
+    descriptionKey: 'ui.provider_paypal_description',
+    icon: '🅿️',
+    supportedMethods: ['card', 'spei'],
+  },
+];
+
+/** Extends port mock with checkout catalog API so component does not throw. */
+function withCheckoutCatalog<T extends PaymentFlowPort & PaymentCheckoutCatalogPort>(base: T): T {
+  return {
+    ...base,
+    availableProviders: () => ['stripe', 'paypal'],
+    getProviderDescriptors: () => MOCK_DESCRIPTORS,
+    getProviderDescriptor: (id: PaymentProviderId) =>
+      MOCK_DESCRIPTORS.find((d) => d.id === id) ?? null,
+    getSupportedMethods: () => ['card', 'spei'] as PaymentMethodType[],
+    getFieldRequirements: () => null,
+    buildCreatePaymentRequest: (): CreatePaymentRequest => ({
+      orderId: 'order_test',
+      amount: 499.99,
+      currency: 'MXN',
+      method: { type: 'card', token: 'tok_test' },
+    }),
+  };
+}
 
 describe('CheckoutComponent', () => {
   let component: CheckoutComponent;
   let fixture: ComponentFixture<CheckoutComponent>;
-  let mockFlowFacade: any;
-  let mockRegistry: any;
+  let mockState: (PaymentFlowPort & PaymentCheckoutCatalogPort) & {
+    startPayment: ReturnType<typeof vi.fn>;
+    confirmPayment: ReturnType<typeof vi.fn>;
+    cancelPayment: ReturnType<typeof vi.fn>;
+    reset: ReturnType<typeof vi.fn>;
+    executeFallback: ReturnType<typeof vi.fn>;
+    cancelFallback: ReturnType<typeof vi.fn>;
+    intent: ReturnType<typeof signal<PaymentIntent | null>>;
+    error: ReturnType<typeof signal<PaymentError | null>>;
+  };
   let mockLogger: any;
-  let mockFallbackOrchestrator: any;
   let mockFactory: any;
   let mockBuilder: any;
 
@@ -110,44 +155,56 @@ describe('CheckoutComponent', () => {
       createRequestBuilder: vi.fn(() => mockBuilder),
     };
 
-    // Mock del registry
-    mockRegistry = {
-      get: vi.fn((providerId: PaymentProviderId) => {
-        if (providerId === 'stripe' || providerId === 'paypal') {
-          return mockFactory;
+    const baseMock = createMockPaymentState();
+    mockState = {
+      ...baseMock,
+      intent: baseMock.intent as ReturnType<typeof signal<PaymentIntent | null>>,
+      error: baseMock.error as ReturnType<typeof signal<PaymentError | null>>,
+      startPayment: vi.fn(),
+      confirmPayment: vi.fn(),
+      cancelPayment: vi.fn(),
+      reset: vi.fn(),
+      executeFallback: vi.fn(),
+      cancelFallback: vi.fn(),
+      availableProviders: () => ['stripe', 'paypal'],
+      getProviderDescriptors: () => MOCK_DESCRIPTORS,
+      getProviderDescriptor: (id: PaymentProviderId) =>
+        MOCK_DESCRIPTORS.find((d) => d.id === id) ?? null,
+      getSupportedMethods: (_providerId: PaymentProviderId) => {
+        try {
+          return mockFactory.getSupportedMethods();
+        } catch {
+          return [];
         }
-        throw new Error(`Provider not found: ${providerId}`);
-      }),
-      getAvailableProviders: vi.fn(() => ['stripe', 'paypal']),
-    };
-
-    // Mock del payment state
-    mockFlowFacade = {
-      isLoading: signal(false),
-      isReady: signal(false),
-      hasError: signal(false),
-      intent: signal<PaymentIntent | null>(null),
-      error: signal<PaymentError | null>(null),
-      snapshot: signal({
-        value: 'idle',
-        context: { providerId: null, intentId: null, intent: null },
-        tags: new Set<string>(),
-      }),
-      lastSentEvent: signal(null),
-      redirectUrl: computed(() => null),
-      performNextAction: vi.fn(() => true),
-      start: vi.fn(() => true),
-      confirm: vi.fn(() => true),
-      cancel: vi.fn(() => true),
-      refresh: vi.fn(() => true),
-      reset: vi.fn(),
-    };
-
-    mockFallbackOrchestrator = {
-      isPending: signal(false),
-      pendingEvent: signal<FallbackAvailableEvent | null>(null),
-      respondToFallback: vi.fn(),
-      reset: vi.fn(),
+      },
+      getFieldRequirements: (_providerId: PaymentProviderId, method: PaymentMethodType) => {
+        try {
+          return mockFactory.getFieldRequirements(method);
+        } catch {
+          return null;
+        }
+      },
+      buildCreatePaymentRequest: (params: {
+        orderId: string;
+        amount: number;
+        currency: string;
+        options: PaymentOptions;
+      }) => {
+        mockBuilder
+          .forOrder(params.orderId)
+          .withAmount(params.amount, params.currency)
+          .withOptions(params.options);
+        return mockBuilder.build();
+      },
+    } as (PaymentFlowPort & PaymentCheckoutCatalogPort) & {
+      startPayment: ReturnType<typeof vi.fn>;
+      confirmPayment: ReturnType<typeof vi.fn>;
+      cancelPayment: ReturnType<typeof vi.fn>;
+      reset: ReturnType<typeof vi.fn>;
+      executeFallback: ReturnType<typeof vi.fn>;
+      cancelFallback: ReturnType<typeof vi.fn>;
+      intent: ReturnType<typeof signal<PaymentIntent | null>>;
+      error: ReturnType<typeof signal<PaymentError | null>>;
     };
 
     // Mock del logger
@@ -164,14 +221,8 @@ describe('CheckoutComponent', () => {
     await TestBed.configureTestingModule({
       imports: [CheckoutComponent, RouterLink],
       providers: [
-        StartPaymentUseCase,
-        ConfirmPaymentUseCase,
-        CancelPaymentUseCase,
-        GetPaymentStatusUseCase,
-        IdempotencyKeyFactory,
-        { provide: FallbackOrchestratorService, useValue: mockFallbackOrchestrator },
-        { provide: PaymentFlowFacade, useValue: mockFlowFacade },
-        { provide: ProviderFactoryRegistry, useValue: mockRegistry },
+        { provide: PAYMENT_STATE, useValue: mockState },
+        { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockState },
         { provide: LoggerService, useValue: mockLogger },
         provideRouter([]),
       ],
@@ -210,11 +261,11 @@ describe('CheckoutComponent', () => {
   });
 
   describe('Available providers and methods', () => {
-    it('should get available providers from the registry', () => {
+    it('should get provider descriptors from catalog', () => {
       fixture.detectChanges();
-      const providers = component.availableProviders();
-      expect(providers).toEqual(['stripe', 'paypal']);
-      expect(mockRegistry.getAvailableProviders).toHaveBeenCalled();
+      const descriptors = component.providerDescriptors();
+      expect(descriptors.map((d) => d.id)).toEqual(['stripe', 'paypal']);
+      expect(descriptors[0].labelKey).toBe('ui.provider_stripe');
     });
 
     it('should get available methods for the selected provider', () => {
@@ -224,7 +275,6 @@ describe('CheckoutComponent', () => {
       fixture.detectChanges();
       const methods = component.availableMethods();
       expect(methods).toEqual(['card', 'spei']);
-      expect(mockRegistry.get).toHaveBeenCalledWith('stripe');
       expect(mockFactory.getSupportedMethods).toHaveBeenCalled();
     });
 
@@ -234,7 +284,7 @@ describe('CheckoutComponent', () => {
     });
 
     it('should handle errors when fetching methods', () => {
-      mockRegistry.get.mockImplementationOnce(() => {
+      mockFactory.getSupportedMethods.mockImplementationOnce(() => {
         throw new Error('Provider not found');
       });
       patchState(component.checkoutPageState, {
@@ -339,14 +389,12 @@ describe('CheckoutComponent', () => {
       component.onFormChange({ token: 'tok_test' });
       component.processPayment();
 
-      expect(mockRegistry.get).toHaveBeenCalledWith('stripe');
-      expect(mockFactory.createRequestBuilder).toHaveBeenCalledWith('card');
       expect(mockBuilder.forOrder).toHaveBeenCalledWith(orderId);
       expect(mockBuilder.withAmount).toHaveBeenCalledWith(499.99, 'MXN');
       expect(mockBuilder.build).toHaveBeenCalled();
-      expect(mockFlowFacade.start).toHaveBeenCalledWith(
+      expect(mockState.startPayment).toHaveBeenCalledWith(
+        expect.any(Object),
         'stripe',
-        expect.any(Object), // request
         expect.objectContaining({
           returnUrl: expect.any(String),
           cancelUrl: expect.any(String),
@@ -366,7 +414,7 @@ describe('CheckoutComponent', () => {
         selectedProvider: null,
       });
       component.processPayment();
-      expect(mockFlowFacade.start).not.toHaveBeenCalled();
+      expect(mockState.startPayment).not.toHaveBeenCalled();
     });
 
     it('should not process payment when method is missing', () => {
@@ -374,7 +422,7 @@ describe('CheckoutComponent', () => {
         selectedMethod: null,
       });
       component.processPayment();
-      expect(mockFlowFacade.start).not.toHaveBeenCalled();
+      expect(mockState.startPayment).not.toHaveBeenCalled();
     });
 
     it('should not process payment when the form is invalid', () => {
@@ -382,7 +430,7 @@ describe('CheckoutComponent', () => {
         isFormValid: false,
       });
       component.processPayment();
-      expect(mockFlowFacade.start).not.toHaveBeenCalled();
+      expect(mockState.startPayment).not.toHaveBeenCalled();
     });
 
     it('should process payment when isFormValid is true', () => {
@@ -392,17 +440,16 @@ describe('CheckoutComponent', () => {
       component.onFormChange({ token: 'tok_test' });
       component.processPayment();
 
-      // Should process payment (start should be called)
-      expect(mockFlowFacade.start).toHaveBeenCalledWith(
+      expect(mockState.startPayment).toHaveBeenCalledWith(
+        expect.any(Object),
         'stripe',
-        expect.any(Object), // request
         expect.objectContaining({
           returnUrl: expect.any(String),
           cancelUrl: expect.any(String),
           isTest: expect.any(Boolean),
           deviceData: expect.any(Object),
         }),
-      ); // Should not log "Form invalid, payment blocked"
+      );
       const blockedCalls = mockLogger.info.mock.calls.filter(
         (call: any[]) => call[0] === 'Form invalid, payment blocked',
       );
@@ -451,7 +498,7 @@ describe('CheckoutComponent', () => {
   describe('Fallback', () => {
     it('should confirm fallback', () => {
       component.confirmFallback('paypal');
-      expect(mockFallbackOrchestrator.respondToFallback).not.toHaveBeenCalled();
+      expect(mockState.executeFallback).toHaveBeenCalledWith('paypal');
       expect(mockLogger.info).toHaveBeenCalledWith('Fallback confirmed', 'CheckoutPage', {
         provider: 'paypal',
       });
@@ -459,53 +506,205 @@ describe('CheckoutComponent', () => {
 
     it('should cancel fallback', () => {
       component.cancelFallback();
-      expect(mockFallbackOrchestrator.reset).toHaveBeenCalled();
+      expect(mockState.cancelFallback).toHaveBeenCalled();
       expect(mockLogger.info).toHaveBeenCalledWith('Fallback cancelled', 'CheckoutPage');
     });
 
     it('should detect when fallback is pending', () => {
-      mockFallbackOrchestrator.isPending.set(true);
-      mockFallbackOrchestrator.pendingEvent.set(mockFallbackEvent);
+      const fallbackMock = createMockPaymentState({
+        fallback: {
+          ...INITIAL_FALLBACK_STATE,
+          status: 'pending',
+          pendingEvent: mockFallbackEvent,
+        },
+      });
+      Object.assign(mockState, {
+        hasPendingFallback: fallbackMock.hasPendingFallback,
+        pendingFallbackEvent: fallbackMock.pendingFallbackEvent,
+      });
       fixture.detectChanges();
       expect(component.fallbackState.isPending()).toBe(true);
       expect(component.fallbackState.pendingEvent()).toEqual(mockFallbackEvent);
     });
   });
 
+  describe('Fallback executing banner', () => {
+    it('shows fallback-executing-banner when isFallbackExecuting is true', () => {
+      const execMock = withCheckoutCatalog(
+        createMockPaymentState({
+          fallback: { ...INITIAL_FALLBACK_STATE, status: 'executing' },
+        }),
+      );
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: execMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: execMock },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      expect(
+        fixture.nativeElement.querySelector('[data-testid="fallback-executing-banner"]'),
+      ).toBeTruthy();
+    });
+
+    it('shows fallback-executing-banner when isAutoFallbackInProgress is true', () => {
+      const autoMock = withCheckoutCatalog(
+        createMockPaymentState({
+          fallback: { ...INITIAL_FALLBACK_STATE, status: 'auto_executing' },
+        }),
+      );
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: autoMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: autoMock },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      expect(
+        fixture.nativeElement.querySelector('[data-testid="fallback-executing-banner"]'),
+      ).toBeTruthy();
+    });
+
+    it('clicking Cancel in banner calls cancelFallback', () => {
+      const cancelSpy = vi.fn();
+      const execMock = withCheckoutCatalog({
+        ...createMockPaymentState({
+          fallback: { ...INITIAL_FALLBACK_STATE, status: 'executing' },
+        }),
+        cancelFallback: cancelSpy,
+      });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: execMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: execMock },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      const banner = fixture.nativeElement.querySelector(
+        '[data-testid="fallback-executing-banner"]',
+      );
+      expect(banner).toBeTruthy();
+      const cancelBtn = banner?.querySelector('button');
+      cancelBtn?.click();
+      fixture.detectChanges();
+      expect(cancelSpy).toHaveBeenCalled();
+    });
+  });
+
   describe('Payment state', () => {
     it('should expose loading state', () => {
-      mockFlowFacade.isLoading.set(true);
+      const loadingMock = withCheckoutCatalog(createMockPaymentState({ isLoading: true }));
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: loadingMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: loadingMock },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.flowState.isLoading()).toBe(true);
     });
 
     it('should expose ready state', () => {
-      mockFlowFacade.isReady.set(true);
+      const readyMock = withCheckoutCatalog(createMockPaymentState({ isReady: true }));
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: readyMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: readyMock },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.flowState.isReady()).toBe(true);
     });
 
     it('should expose error state', () => {
-      mockFlowFacade.hasError.set(true);
-      mockFlowFacade.error.set(mockError);
+      const errorMock = withCheckoutCatalog(
+        createMockPaymentState({ hasError: true, error: mockError }),
+      );
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: errorMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: errorMock },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.flowState.hasError()).toBe(true);
       expect(component.flowState.currentError()).toEqual(mockError);
     });
 
     it('should expose current intent', () => {
-      mockFlowFacade.intent.set(mockIntent);
+      (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set(mockIntent);
       fixture.detectChanges();
       expect(component.flowState.currentIntent()).toEqual(mockIntent);
     });
 
-    it('should show result when ready or when there is an error', () => {
-      mockFlowFacade.isReady.set(true);
+    it('should show result when ready', () => {
+      const readyMock = withCheckoutCatalog(createMockPaymentState({ isReady: true }));
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: readyMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: readyMock },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.showResult()).toBe(true);
+    });
 
-      mockFlowFacade.isReady.set(false);
-      mockFlowFacade.hasError.set(true);
+    it('should show result when there is an error', () => {
+      const errorMock = withCheckoutCatalog(createMockPaymentState({ hasError: true }));
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: errorMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: errorMock },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(CheckoutComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.showResult()).toBe(true);
     });
@@ -514,10 +713,9 @@ describe('CheckoutComponent', () => {
   describe('Reset', () => {
     it('should reset the payment', () => {
       component.resetPayment();
-      expect(mockFlowFacade.reset).toHaveBeenCalled();
+      expect(mockState.reset).toHaveBeenCalled();
       expect(component.checkoutPageState.isFormValid()).toBe(false);
       expect(mockLogger.info).toHaveBeenCalledWith('Payment reset', 'CheckoutPage');
-      // The orderId should change
       const newOrderId = component.checkoutPageState.orderId();
       expect(newOrderId).toBeTruthy();
     });
@@ -528,6 +726,71 @@ describe('CheckoutComponent', () => {
       const debugSummary = component.debugInfo();
       expect(debugSummary).toBeTruthy();
       expect(debugSummary.state).toBe('idle');
+    });
+  });
+
+  describe('Resume and processing UX', () => {
+    it('showResumeBanner is true when flowPhase is editing and canResume', () => {
+      const resumeMock = createMockPaymentState({
+        resumeProviderId: 'stripe',
+        resumeIntentId: 'pi_123',
+      });
+      const refreshPaymentSpy = vi.fn();
+      const mockWithResume = withCheckoutCatalog({
+        ...resumeMock,
+        refreshPayment: refreshPaymentSpy,
+      });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: mockWithResume },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockWithResume },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      const f = TestBed.createComponent(CheckoutComponent);
+      const c = f.componentInstance;
+      f.detectChanges();
+      expect(c.showResumeBanner()).toBe(true);
+      expect(f.nativeElement.querySelector('[data-testid="resume-banner"]')).toBeTruthy();
+      c.resumePayment();
+      expect(refreshPaymentSpy).toHaveBeenCalledWith({ intentId: 'pi_123' }, 'stripe');
+    });
+
+    it('showProcessingPanel is true when flowPhase is processing; refreshProcessingStatus calls refreshPayment', () => {
+      const processingIntent: PaymentIntent = {
+        id: 'pi_123',
+        provider: 'stripe',
+        status: 'processing',
+        amount: 499.99,
+        currency: 'MXN',
+        clientSecret: 'secret',
+      };
+      const processingMock = createMockPaymentState({ intent: processingIntent });
+      const refreshPaymentSpy = vi.fn();
+      const mockWithProcessing = withCheckoutCatalog({
+        ...processingMock,
+        refreshPayment: refreshPaymentSpy,
+      });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [CheckoutComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: mockWithProcessing },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockWithProcessing },
+          { provide: LoggerService, useValue: mockLogger },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      const f = TestBed.createComponent(CheckoutComponent);
+      const c = f.componentInstance;
+      f.detectChanges();
+      expect(c.showProcessingPanel()).toBe(true);
+      expect(f.nativeElement.querySelector('[data-testid="processing-panel"]')).toBeTruthy();
+      c.refreshProcessingStatus();
+      expect(refreshPaymentSpy).toHaveBeenCalledWith({ intentId: 'pi_123' }, 'stripe');
     });
   });
 });

@@ -11,6 +11,9 @@
           {{ labels.goToCheckoutLabel() }}
         </a>
       </div>
+      @if (!hasProviders()) {
+        <p class="mt-4 text-amber-600 text-sm">{{ labels.noProvidersAvailable() }}</p>
+      }
     </div>
 
     <!-- Components Grid -->
@@ -57,8 +60,8 @@
           <div>
             <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
             <app-provider-selector
-              [providers]="providerSelector.providers"
-              [selected]="providerSelector.selected"
+              [descriptors]="providerDescriptors()"
+              [selected]="providerSelector.selected ?? catalogProviderIds().p0"
               [disabled]="providerSelector.disabled"
               (providerChange)="providerSelector.selected = $event" />
           </div>
@@ -67,7 +70,9 @@
             <div class="space-y-3 text-sm">
               <p>
                 {{ labels.selectedLabel() }}:
-                <code class="bg-gray-100 px-2 py-1 rounded">{{ providerSelector.selected }}</code>
+                <code class="bg-gray-100 px-2 py-1 rounded">{{
+                  providerSelector.selected ?? catalogProviderIds().p0
+                }}</code>
               </p>
               <label class="flex items-center gap-2">
                 <input type="checkbox" [(ngModel)]="providerSelector.disabled" />
@@ -115,7 +120,7 @@
             <app-payment-button
               [amount]="paymentButton.amount"
               [currency]="paymentButton.currency"
-              [provider]="paymentButton.provider"
+              [provider]="paymentButton.provider ?? catalogProviderIds().p0"
               [loading]="paymentButton.loading"
               [disabled]="paymentButton.disabled"
               [buttonState]="paymentButton.state"
@@ -127,8 +132,9 @@
               <div>
                 <label class="label" for="provider">{{ labels.providerLabel() }}</label>
                 <select id="provider" class="input" [(ngModel)]="paymentButton.provider">
-                  <option value="stripe">{{ labels.stripeProviderLabel() }}</option>
-                  <option value="paypal">{{ labels.paypalProviderLabel() }}</option>
+                  @for (opt of catalogProviderOptions(); track opt.id) {
+                    <option [value]="opt.id">{{ opt.label }}</option>
+                  }
                 </select>
               </div>
               <div>
@@ -155,9 +161,9 @@
         <div class="grid md:grid-cols-2 gap-6">
           <div>
             <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
-            @if (paymentResult.showSuccess) {
+            @if (paymentResult.showSuccess && sampleIntent(); as intent) {
               <app-payment-result
-                [intent]="sampleIntent"
+                [intent]="intent"
                 [error]="null"
                 (retry)="onRetry()"
                 (newPayment)="onNewPayment()" />
@@ -226,20 +232,24 @@
         <div class="grid md:grid-cols-2 gap-6">
           <div>
             <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
-            <app-payment-intent-card
-              [intent]="intentCard.intent"
-              [showActions]="intentCard.showActions"
-              [expanded]="intentCard.expanded"
-              (confirm)="onIntentAction('confirm', $event)"
-              (canceled)="onIntentAction('cancel', $event)"
-              (refresh)="onIntentAction('refresh', $event)" />
+            @if (intentCard().intent; as intent) {
+              <app-payment-intent-card
+                [intent]="intent"
+                [showActions]="intentCard().showActions"
+                [expanded]="intentCard().expanded"
+                (confirm)="onIntentAction('confirm', $event)"
+                (canceled)="onIntentAction('cancel', $event)"
+                (refresh)="onIntentAction('refresh', $event)" />
+            } @else {
+              <p class="text-sm text-gray-500">{{ labels.noProvidersAvailable() }}</p>
+            }
           </div>
           <div>
             <h3 class="font-medium mb-3">{{ labels.controlsLabel() }}</h3>
             <div class="space-y-3 text-sm">
               <div>
                 <label class="label" for="status">{{ labels.statusLabelShort() }}</label>
-                <select id="status" class="input" [(ngModel)]="intentCard.intent.status">
+                <select id="status" class="input" [(ngModel)]="intentCardStatus">
                   <option value="requires_confirmation">
                     {{ labels.statusRequiresConfirmationLabel() }}
                   </option>
@@ -251,16 +261,40 @@
                 </select>
               </div>
               <label class="flex items-center gap-2">
-                <input type="checkbox" [(ngModel)]="intentCard.showActions" />
+                <input type="checkbox" [(ngModel)]="intentCardShowActions" />
                 {{ labels.showActionsLabel() }}
               </label>
               <label class="flex items-center gap-2">
-                <input type="checkbox" [(ngModel)]="intentCard.expanded" />
+                <input type="checkbox" [(ngModel)]="intentCardExpanded" />
                 {{ labels.expandedLabel() }}
               </label>
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Catalog (real providers from port) -->
+      <section class="card">
+        <h2 class="text-xl font-bold mb-4 pb-4 border-b">Catalog (getProviderDescriptors)</h2>
+        <ul class="space-y-2 text-sm">
+          @for (entry of catalogDisplay(); track entry.id) {
+            <li class="flex items-center gap-2">
+              @if (entry.icon) {
+                <span>{{ entry.icon }}</span>
+              }
+              <span class="font-medium">{{ entry.label }}</span>
+              @if (entry.description) {
+                <span class="text-gray-500">— {{ entry.description }}</span>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+
+      <!-- Demo tokens cheat sheet (fake mode) -->
+      <section class="card">
+        <h2 class="text-xl font-bold mb-4 pb-4 border-b">{{ labels.demoTokensTitle() }}</h2>
+        <p class="text-sm text-gray-600 whitespace-pre-line">{{ labels.demoTokensCheatsheet() }}</p>
       </section>
 
       <!-- Fallback Modal -->
@@ -269,14 +303,18 @@
         <div class="grid md:grid-cols-2 gap-6">
           <div>
             <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
-            <button class="btn-primary" (click)="fallbackModal.open = true">
-              {{ labels.openFallbackModalLabel() }}
-            </button>
-            <app-fallback-modal
-              [event]="fallbackModal.event"
-              [open]="fallbackModal.open"
-              (confirm)="onFallbackConfirm($event)"
-              (canceled)="fallbackModal.open = false" />
+            @if (fallbackModalEvent(); as event) {
+              <button class="btn-primary" (click)="fallbackModalOpen = true">
+                {{ labels.openFallbackModalLabel() }}
+              </button>
+              <app-fallback-modal
+                [event]="event"
+                [open]="fallbackModalOpen"
+                (confirm)="onFallbackConfirm($event)"
+                (canceled)="fallbackModalOpen = false" />
+            } @else {
+              <p class="text-sm text-gray-500">{{ labels.noProvidersAvailable() }}</p>
+            }
           </div>
           <div>
             <h3 class="font-medium mb-3">{{ labels.infoLabel() }}</h3>

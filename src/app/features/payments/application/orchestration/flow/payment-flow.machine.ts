@@ -25,6 +25,7 @@ import {
   hasProcessingTimedOutPolicy,
   hasRefreshKeysPolicy,
   isFinalIntentPolicy,
+  isPollingExhaustedPolicy,
   needsClientConfirmPolicy,
   needsFinalizePolicy,
   needsUserActionPolicy,
@@ -218,14 +219,12 @@ export const createPaymentFlowMachine = (
       setIntent: assign(({ event, context }) => {
         if (!('output' in event)) return {};
 
-        const providerRefs = event.output.providerRefs;
-        const flowContext = providerRefs
-          ? updateFlowContextProviderRefs({
-              context: context.flowContext,
-              providerId: event.output.provider,
-              refs: providerRefs,
-            })
-          : context.flowContext;
+        const providerRefs = event.output.providerRefs ?? { intentId: event.output.id };
+        const flowContext = updateFlowContextProviderRefs({
+          context: context.flowContext,
+          providerId: event.output.provider,
+          refs: providerRefs,
+        });
 
         const resolvedIntentId = providerRefs?.intentId ?? event.output.id;
         return {
@@ -373,7 +372,11 @@ export const createPaymentFlowMachine = (
           error: createPaymentError(
             'processing_timeout',
             'errors.processing_timeout',
-            flowId ? { flowId } : undefined,
+            {
+              ...(flowId ? { flowId } : {}),
+              attempt: context.polling.attempt,
+              maxAttempts: config.polling.maxAttempts,
+            },
             null,
           ),
         };
@@ -433,6 +436,9 @@ export const createPaymentFlowMachine = (
       },
       isProcessingTimedOut: ({ context }) => {
         return hasProcessingTimedOutPolicy(config, context);
+      },
+      isPollingExhausted: ({ context }) => {
+        return isPollingExhaustedPolicy(config, context);
       },
     },
   }).createMachine({

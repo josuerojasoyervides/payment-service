@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { ProviderMethodPolicyRegistry } from '@app/features/payments/application/orchestration/registry/provider-method-policy/provider-method-policy.registry';
-import { I18nKeys } from '@core/i18n';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import type {
@@ -30,7 +29,7 @@ export class StartPaymentUseCase {
       const policy = this.policyRegistry.getPolicy(providerId, request.method.type);
 
       if (policy.requires.token && !request.method.token) {
-        throw invalidRequestError(I18nKeys.errors.card_token_required, {
+        throw invalidRequestError('errors.card_token_required', {
           field: 'token',
           provider: providerId,
           method: request.method.type,
@@ -38,7 +37,7 @@ export class StartPaymentUseCase {
       }
 
       if (policy.requires.returnUrl && !context?.returnUrl) {
-        throw invalidRequestError(I18nKeys.errors.return_url_required, {
+        throw invalidRequestError('errors.return_url_required', {
           field: 'returnUrl',
           provider: providerId,
           method: request.method.type,
@@ -46,7 +45,7 @@ export class StartPaymentUseCase {
       }
 
       if (policy.requires.cancelUrl && !context?.cancelUrl) {
-        throw invalidRequestError(I18nKeys.errors.cancel_url_invalid, {
+        throw invalidRequestError('errors.cancel_url_invalid', {
           field: 'cancelUrl',
           provider: providerId,
           method: request.method.type,

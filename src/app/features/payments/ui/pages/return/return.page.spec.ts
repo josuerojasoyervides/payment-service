@@ -1,21 +1,31 @@
-import { signal } from '@angular/core';
+import type { signal } from '@angular/core';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
-import { mapReturnQueryToReference } from '@app/features/payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
+import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys, I18nService } from '@core/i18n';
-import { patchState } from '@ngrx/signals';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { ReturnComponent } from '@payments/ui/pages/return/return.page';
 
 describe('ReturnComponent', () => {
   let component: ReturnComponent;
   let fixture: ComponentFixture<ReturnComponent>;
-  let mockFlowFacade: any;
-  let mockActivatedRoute: any;
-  let mockExternalEvents: any;
+  let mockState: PaymentFlowPort & {
+    confirmPayment: ReturnType<typeof vi.fn>;
+    refreshPayment: ReturnType<typeof vi.fn>;
+    selectProvider: ReturnType<typeof vi.fn>;
+    intent: ReturnType<typeof signal<PaymentIntent | null>>;
+  };
+  let mockActivatedRoute: {
+    snapshot: { data: Record<string, unknown>; queryParams: Record<string, string> };
+  };
+  const mockCatalog = {
+    getProviderDescriptor: (id: PaymentProviderId) => ({ id, labelKey: `ui.provider_${id}` }),
+  };
 
   const mockIntent: PaymentIntent = {
     id: 'pi_test_123',
@@ -27,32 +37,27 @@ describe('ReturnComponent', () => {
   };
 
   beforeEach(async () => {
-    // ActivatedRoute mock
     mockActivatedRoute = {
-      snapshot: {
-        data: {},
-        queryParams: {},
-      },
+      snapshot: { data: {}, queryParams: {} },
     };
 
-    // Flow mock
-    mockFlowFacade = {
-      intent: signal<PaymentIntent | null>(null),
-      isLoading: signal(false),
-      confirm: vi.fn(() => true),
-      refresh: vi.fn(() => true),
+    const baseMock = createMockPaymentState();
+    mockState = {
+      ...baseMock,
+      intent: baseMock.intent as ReturnType<typeof signal<PaymentIntent | null>>,
+      confirmPayment: vi.fn(),
+      refreshPayment: vi.fn(),
+      notifyRedirectReturned: vi.fn(),
+      selectProvider: vi.fn(),
+    } as PaymentFlowPort & {
+      confirmPayment: ReturnType<typeof vi.fn>;
+      refreshPayment: ReturnType<typeof vi.fn>;
+      selectProvider: ReturnType<typeof vi.fn>;
+      intent: ReturnType<typeof signal<PaymentIntent | null>>;
     };
 
-    mockExternalEvents = {
-      redirectReturned: vi.fn(),
-      externalStatusUpdated: vi.fn(),
-      webhookReceived: vi.fn(),
-    };
-
-    // I18nService mock
     const mockI18n: I18nService = {
       t: vi.fn((key: string) => {
-        // Return an English translation for the test
         if (key === 'ui.flow_unknown') return 'Unknown';
         return key;
       }),
@@ -64,10 +69,10 @@ describe('ReturnComponent', () => {
     await TestBed.configureTestingModule({
       imports: [ReturnComponent, RouterLink],
       providers: [
-        { provide: PaymentFlowFacade, useValue: mockFlowFacade },
+        { provide: PAYMENT_STATE, useValue: mockState },
+        { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: I18nService, useValue: mockI18n },
-        { provide: ExternalEventAdapter, useValue: mockExternalEvents },
       ],
     }).compileComponents();
 
@@ -80,70 +85,60 @@ describe('ReturnComponent', () => {
       expect(component).toBeTruthy();
     });
 
-    it('should initialize with empty values', () => {
-      expect(component.returnPageState.intentId()).toBeNull();
-      expect(component.returnPageState.paypalToken()).toBeNull();
-      expect(component.returnPageState.paypalPayerId()).toBeNull();
-      expect(component.returnPageState.redirectStatus()).toBeNull();
+    it('should initialize with empty route data and set returnReference from port', () => {
+      component.ngOnInit();
       expect(component.returnPageState.isReturnFlow()).toBe(false);
       expect(component.returnPageState.isCancelFlow()).toBe(false);
+      expect(component.returnPageState.returnReference()).toBeDefined();
     });
   });
 
-  describe('ngOnInit - Stripe return flow', () => {
+  describe('ngOnInit - return flow', () => {
     it('should detect return flow from route data', () => {
       mockActivatedRoute.snapshot.data = { returnFlow: true };
       component.ngOnInit();
       expect(component.returnPageState.isReturnFlow()).toBe(true);
     });
 
-    it('should read payment_intent from query params', () => {
+    it('should set returnReference from port when payment_intent in params', () => {
       mockActivatedRoute.snapshot.queryParams = {
         payment_intent: 'pi_test_123',
         redirect_status: 'succeeded',
       };
       component.ngOnInit();
-      expect(component.returnPageState.intentId()).toBe('pi_test_123');
-      expect(component.returnPageState.redirectStatus()).toBe('succeeded');
+      const ref = component.returnPageState.returnReference();
+      expect(ref?.referenceId).toBe('pi_test_123');
+      expect(ref?.providerId).toBeDefined();
     });
 
-    it('should read setup_intent from query params', () => {
-      mockActivatedRoute.snapshot.queryParams = {
-        setup_intent: 'seti_test_123',
-      };
+    it('should call notifyRedirectReturned with normalized params', () => {
+      mockActivatedRoute.snapshot.queryParams = { payment_intent: 'pi_test_123' };
       component.ngOnInit();
-      expect(component.returnPageState.intentId()).toBe('seti_test_123');
-    });
-
-    it('should emit redirect return when intentId exists', () => {
-      mockActivatedRoute.snapshot.queryParams = {
-        payment_intent: 'pi_test_123',
-      };
-      component.ngOnInit();
-      expect(mockExternalEvents.redirectReturned).toHaveBeenCalledWith(
-        expect.objectContaining({ providerId: 'stripe', referenceId: 'pi_test_123' }),
+      expect(mockState.notifyRedirectReturned).toHaveBeenCalledWith(
+        expect.objectContaining({ payment_intent: 'pi_test_123' }),
       );
+    });
+
+    it('should call selectProvider when port returns providerId', () => {
+      mockActivatedRoute.snapshot.queryParams = { payment_intent: 'pi_test_123' };
+      component.ngOnInit();
+      expect(mockState.selectProvider).toHaveBeenCalled();
     });
   });
 
-  describe('ngOnInit - PayPal return flow', () => {
-    it('should read PayPal token and PayerID', () => {
-      mockActivatedRoute.snapshot.queryParams = {
-        token: 'ORDER_FAKE_XYZ',
-        PayerID: 'PAYER123456',
-      };
+  describe('ngOnInit - redirect return', () => {
+    it('should set returnReference from port when token in params', () => {
+      mockActivatedRoute.snapshot.queryParams = { token: 'ORDER_FAKE_XYZ' };
       component.ngOnInit();
-      expect(component.returnPageState.paypalToken()).toBe('ORDER_FAKE_XYZ');
-      expect(component.returnPageState.paypalPayerId()).toBe('PAYER123456');
+      const ref = component.returnPageState.returnReference();
+      expect(ref?.referenceId).toBe('ORDER_FAKE_XYZ');
     });
 
-    it('should emit redirect return when PayPal token exists', () => {
-      mockActivatedRoute.snapshot.queryParams = {
-        token: 'ORDER_FAKE_XYZ',
-      };
+    it('should call notifyRedirectReturned with normalized params', () => {
+      mockActivatedRoute.snapshot.queryParams = { token: 'ORDER_FAKE_XYZ' };
       component.ngOnInit();
-      expect(mockExternalEvents.redirectReturned).toHaveBeenCalledWith(
-        expect.objectContaining({ providerId: 'paypal', referenceId: 'ORDER_FAKE_XYZ' }),
+      expect(mockState.notifyRedirectReturned).toHaveBeenCalledWith(
+        expect.objectContaining({ token: 'ORDER_FAKE_XYZ' }),
       );
     });
   });
@@ -155,62 +150,38 @@ describe('ReturnComponent', () => {
       expect(component.returnPageState.isCancelFlow()).toBe(true);
     });
 
-    it('should still emit redirect return when cancel flow', () => {
+    it('should still call notifyRedirectReturned when cancel flow', () => {
       mockActivatedRoute.snapshot.data = { cancelFlow: true };
-      mockActivatedRoute.snapshot.queryParams = {
-        payment_intent: 'pi_test_123',
-      };
+      mockActivatedRoute.snapshot.queryParams = { payment_intent: 'pi_test_123' };
       component.ngOnInit();
-      expect(mockExternalEvents.redirectReturned).toHaveBeenCalledWith(
-        expect.objectContaining({ providerId: 'stripe', referenceId: 'pi_test_123' }),
+      expect(mockState.notifyRedirectReturned).toHaveBeenCalledWith(
+        expect.objectContaining({ payment_intent: 'pi_test_123' }),
       );
     });
 
-    it('should detect cancellation from redirect_status', () => {
-      mockActivatedRoute.snapshot.queryParams = {
-        redirect_status: 'canceled',
-      };
+    it('should set isCancel from route data only', () => {
+      mockActivatedRoute.snapshot.data = { cancelFlow: true };
       component.ngOnInit();
       expect(component.isCancel()).toBe(true);
     });
   });
 
-  describe('Return mapper', () => {
-    it('should detect PayPal when PayPal token exists', () => {
-      const reference = mapReturnQueryToReference({ token: 'ORDER_FAKE_XYZ' });
-      expect(reference.providerId).toBe('paypal');
-    });
-
-    it('should detect Stripe by default', () => {
-      const reference = mapReturnQueryToReference({});
-      expect(reference.providerId).toBe('stripe');
-    });
-  });
-
   describe('Payment actions', () => {
     it('should confirm payment', () => {
-      patchState(component.returnPageState, {
-        intentId: 'pi_test_123',
-        paypalToken: null,
-      });
+      mockActivatedRoute.snapshot.queryParams = { payment_intent: 'pi_test_123' };
+      component.ngOnInit();
       component.confirmPayment('pi_test_123');
-      expect(mockFlowFacade.confirm).toHaveBeenCalled();
+      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
 
-    it('should confirm PayPal payment', () => {
-      patchState(component.returnPageState, {
-        paypalToken: 'ORDER_FAKE_XYZ',
-      });
-      component.confirmPayment('ORDER_FAKE_XYZ');
-      expect(mockFlowFacade.confirm).toHaveBeenCalled();
-    });
-
-    it('should refresh payment', () => {
-      patchState(component.returnPageState, {
-        intentId: 'pi_test_123',
-      });
+    it('should refresh payment with providerId from returnReference', () => {
+      mockActivatedRoute.snapshot.queryParams = { payment_intent: 'pi_test_123' };
+      component.ngOnInit();
       component.refreshPaymentByReference('pi_test_123');
-      expect(mockFlowFacade.refresh).toHaveBeenCalledWith('stripe', 'pi_test_123');
+      expect(mockState.refreshPayment).toHaveBeenCalledWith(
+        { intentId: 'pi_test_123' },
+        expect.any(String),
+      );
     });
   });
 
@@ -219,66 +190,97 @@ describe('ReturnComponent', () => {
       fixture.detectChanges();
     });
 
-    it('should detect cancellation from isCancelFlow', () => {
-      patchState(component.returnPageState, {
-        isCancelFlow: true,
-      });
-      // Signals computed values update immediately
-      expect(component.isCancel()).toBe(true);
-    });
-
-    it('should detect cancellation from redirectStatus', () => {
-      patchState(component.returnPageState, {
-        redirectStatus: 'canceled',
-      });
-      // Signals computed values update immediately
+    it('should detect cancellation from isCancelFlow only', () => {
+      mockActivatedRoute.snapshot.data = { cancelFlow: true };
+      component.ngOnInit();
       expect(component.isCancel()).toBe(true);
     });
 
     it('should detect success from intent status', () => {
-      mockFlowFacade.intent.set(mockIntent);
+      mockActivatedRoute.snapshot.queryParams = { payment_intent: 'pi_test_123' };
+      component.ngOnInit();
+      (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set(mockIntent);
       fixture.detectChanges();
       expect(component.isSuccess()).toBe(true);
     });
 
-    it('should detect success from redirectStatus', () => {
-      patchState(component.returnPageState, {
-        redirectStatus: 'succeeded',
-      });
-      // Signals computed values update immediately
-      expect(component.isSuccess()).toBe(true);
+    it('should show flow type label from returnReference provider', () => {
+      mockActivatedRoute.snapshot.queryParams = { payment_intent: 'pi_test_123' };
+      component.ngOnInit();
+      expect(component.returnFlowTypeLabel()).toBeDefined();
     });
+  });
 
-    it('should detect PayPal flow type', () => {
-      patchState(component.returnPageState, {
-        paypalToken: 'ORDER_FAKE_XYZ',
-      });
-      // Signals computed values update immediately
-      expect(component.flowType()).toBe(I18nKeys.ui.flow_paypal_redirect);
-    });
-
-    it('should detect 3DS flow type', () => {
-      patchState(component.returnPageState, {
-        intentId: 'pi_test_123',
-      });
-      // Signals computed values update immediately
-      expect(component.flowType()).toBe(I18nKeys.ui.flow_3ds);
-    });
-
-    it('should return unknown when there are no params', () => {
-      expect(component.flowType()).toBe('Unknown');
+  describe('Error surface', () => {
+    it('should render flow error and Try again CTA when state has error', () => {
+      const flowError = {
+        code: 'missing_provider' as const,
+        messageKey: I18nKeys.errors.missing_provider,
+        raw: undefined,
+      };
+      const baseMock = createMockPaymentState({ hasError: true, error: flowError });
+      const clearErrorSpy = vi.fn();
+      const errorMock = { ...baseMock, clearError: clearErrorSpy };
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [ReturnComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: errorMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog },
+          { provide: ActivatedRoute, useValue: mockActivatedRoute },
+          {
+            provide: I18nService,
+            useValue: {
+              t: (k: string) =>
+                k === I18nKeys.errors.missing_provider ? 'Payment provider is required.' : k,
+              has: () => true,
+              setLanguage: () => {},
+              getLanguage: () => 'es',
+            },
+          },
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(ReturnComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.textContent).toContain('Payment provider is required.');
+      const tryAgainBtn = el.querySelector('button.btn-primary');
+      expect(tryAgainBtn).toBeTruthy();
+      (tryAgainBtn as HTMLButtonElement).click();
+      expect(clearErrorSpy).toHaveBeenCalled();
     });
   });
 
   describe('Component state', () => {
     it('should expose currentIntent from payment state', () => {
-      mockFlowFacade.intent.set(mockIntent);
+      (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set(mockIntent);
       fixture.detectChanges();
       expect(component.flowState.currentIntent()).toEqual(mockIntent);
     });
 
     it('should expose isLoading from payment state', () => {
-      mockFlowFacade.isLoading.set(true);
+      const loadingMock = createMockPaymentState({ isLoading: true });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [ReturnComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: loadingMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog },
+          { provide: ActivatedRoute, useValue: mockActivatedRoute },
+          {
+            provide: I18nService,
+            useValue: {
+              t: (k: string) => k,
+              has: () => true,
+              setLanguage: () => {},
+              getLanguage: () => 'es',
+            },
+          },
+        ],
+      }).compileComponents();
+      fixture = TestBed.createComponent(ReturnComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.flowState.isLoading()).toBe(true);
     });

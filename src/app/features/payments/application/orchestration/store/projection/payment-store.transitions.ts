@@ -1,4 +1,4 @@
-import { patchState } from '@ngrx/signals';
+import { updateState } from '@angular-architects/ngrx-toolkit';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
 import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
@@ -28,7 +28,7 @@ export function applyLoadingState(
   providerId?: PaymentProviderId,
   request?: CreatePaymentRequest,
 ): void {
-  patchState(store, {
+  updateState(store, 'applyLoadingState', {
     status: 'loading',
     error: null,
 
@@ -52,7 +52,7 @@ export function applyLoadingState(
  * - currentRequest === null
  */
 export function applyReadyState(store: PaymentsStoreContext, intent: PaymentIntent): void {
-  patchState(store, {
+  updateState(store, 'applyReadyState', {
     status: 'ready',
     intent,
     error: null,
@@ -72,7 +72,7 @@ export function applyReadyState(store: PaymentsStoreContext, intent: PaymentInte
  * - error !== null
  */
 export function applyFailureState(store: PaymentsStoreContext, error: PaymentError): void {
-  patchState(store, {
+  updateState(store, 'applyFailureState', {
     status: 'error',
     intent: null,
     error,
@@ -93,7 +93,7 @@ export function applyFailureState(store: PaymentsStoreContext, error: PaymentErr
  * - error === null
  */
 export function applySilentFailureState(store: PaymentsStoreContext): void {
-  patchState(store, {
+  updateState(store, 'applySilentFailureState', {
     status: 'ready',
     intent: null,
     error: null,
@@ -119,7 +119,7 @@ export function applySelectedProviderState(
   store: PaymentsStoreContext,
   providerId: PaymentProviderId,
 ): void {
-  patchState(store, {
+  updateState(store, 'applySelectedProviderState', {
     selectedProvider: providerId,
     intent: null,
     error: null,
@@ -142,7 +142,7 @@ export function applySelectedProviderState(
  * - Does NOT reset provider/history/fallback
  */
 export function clearErrorState(store: PaymentsStoreContext): void {
-  patchState(store, {
+  updateState(store, 'clearErrorState', {
     status: 'idle',
     error: null,
   });
@@ -156,7 +156,7 @@ export function clearErrorState(store: PaymentsStoreContext): void {
  * - Does not affect current flow, provider or fallback.
  */
 export function clearHistoryState(store: PaymentsStoreContext): void {
-  patchState(store, {
+  updateState(store, 'clearHistoryState', {
     history: [],
   });
 }
@@ -172,7 +172,7 @@ export function clearHistoryState(store: PaymentsStoreContext): void {
  * - UI wants to restart checkout but keep user context.
  */
 export function resetState(store: PaymentsStoreContext): void {
-  patchState(store, {
+  updateState(store, 'resetState', {
     status: 'idle',
     intent: null,
     error: null,
@@ -193,7 +193,7 @@ export function resetState(store: PaymentsStoreContext): void {
  * - hard reset from UI (rare)
  */
 export function resetAllState(store: PaymentsStoreContext): void {
-  patchState(store, {
+  updateState(store, 'resetAllState', {
     status: 'idle',
     intent: null,
     error: null,

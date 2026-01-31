@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { PAYMENT_STATE } from '@payments/application/api/tokens/flow/payment-state.token';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 @Injectable({ providedIn: 'root' })

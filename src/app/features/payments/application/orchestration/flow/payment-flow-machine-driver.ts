@@ -1,18 +1,27 @@
 import { computed, inject, Injectable } from '@angular/core';
-import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type { PaymentFlowPublicEvent } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
-// If you already have a formal flowContext type in your project, use it here.
-// Otherwise, this is a minimal version to avoid `any`.
-// TODO : Check if this is still needed
-export type PaymentFlowContext = StrategyContext;
-
+/**
+ * PaymentFlowMachineDriver
+ *
+ * Imperative driver for the XState payment-flow actor.
+ *
+ * Purpose:
+ * - Send machine commands (START, CONFIRM, CANCEL, REFRESH, RESET)
+ * - Provide snapshot/flags for debugging, demos, and test harnesses
+ * - Perform inherently imperative "next actions" (e.g. browser redirects)
+ *
+ * Not the UI API:
+ * - UI should inject PAYMENT_STATE (PaymentStorePort) for reactive state + actions.
+ * - Keeping UI on the port avoids coupling to XState internals and keeps the wiring swappable.
+ */
 @Injectable()
-export class PaymentFlowFacade {
+export class PaymentFlowMachineDriver {
   private readonly flow = inject(PaymentFlowActorService);
 
   readonly snapshot = this.flow.snapshot;
@@ -28,7 +37,7 @@ export class PaymentFlowFacade {
   readonly isReady = this.flow.isReady;
   readonly hasError = this.flow.hasError;
 
-  // helpers UI
+  // helpers UI (debug/demo only — UI should prefer the port)
   readonly redirectUrl = computed(() => this.intent()?.redirectUrl ?? null);
   readonly nextAction = computed(() => this.intent()?.nextAction ?? null);
 

@@ -125,6 +125,20 @@ export function canPollPolicy(
   return context.polling.attempt < config.polling.maxAttempts;
 }
 
+/**
+ * True when polling limit is reached and intent is still processing.
+ * Used from the polling state so we only transition to failed when we're
+ * exhausted by attempts and haven't been resolved by an external event.
+ */
+export function isPollingExhaustedPolicy(
+  config: PaymentFlowConfig,
+  context: PaymentFlowMachineContext,
+): boolean {
+  const exhausted = context.polling.attempt >= config.polling.maxAttempts;
+  const stillProcessing = context.intent?.status === 'processing';
+  return exhausted && !!stillProcessing;
+}
+
 export function canRetryStatusPolicy(
   config: PaymentFlowConfig,
   context: PaymentFlowMachineContext,

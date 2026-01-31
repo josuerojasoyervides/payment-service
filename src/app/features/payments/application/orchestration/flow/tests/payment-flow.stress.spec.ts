@@ -3,6 +3,7 @@
  * finalize idempotency, correlation mismatch, processing timeout, out-of-order.
  * Uses scenario harness + telemetry; asserts providerId/refs and no duplicate side-effects.
  */
+import { createScenarioHarness } from '@app/features/payments/application/api/testing/flow/payment-flow.harness';
 import {
   PAYMENT_FLOW_CONFIG_OVERRIDES,
   PAYMENT_FLOW_INITIAL_CONTEXT,
@@ -13,8 +14,6 @@ import { StartPaymentUseCase } from '@payments/application/orchestration/use-cas
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
-
-import { createScenarioHarness } from './payment-flow.scenario-harness';
 
 const baseRequest: CreatePaymentRequest = {
   orderId: 'o1',

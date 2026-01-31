@@ -13,8 +13,11 @@ export const pollingStates = {
           guard: 'canPoll',
           target: 'fetchingStatus',
         },
-        // If we cannot poll anymore according to policy, let afterStatus
-        // handle the terminal transition on the next status resolution.
+        {
+          guard: 'isPollingExhausted',
+          target: 'failed',
+          actions: 'setProcessingTimeoutError',
+        },
       ],
     },
     on: {

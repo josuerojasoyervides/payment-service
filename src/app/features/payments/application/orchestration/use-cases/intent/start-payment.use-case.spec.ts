@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { ProviderMethodPolicyRegistry } from '@app/features/payments/application/orchestration/registry/provider-method-policy/provider-method-policy.registry';
-import { I18nKeys } from '@core/i18n';
 import type {
   PaymentStrategy,
   StrategyContext,
@@ -145,7 +144,7 @@ describe('StartPaymentUseCase', () => {
         firstValueFrom(useCase.execute(reqMissingToken, 'stripe')),
       ).rejects.toMatchObject({
         code: 'invalid_request',
-        messageKey: I18nKeys.errors.card_token_required,
+        messageKey: 'errors.card_token_required',
       });
     });
 
@@ -172,7 +171,7 @@ describe('StartPaymentUseCase', () => {
     it('propagates the error when strategy.start() fails (fallback is handled by the Store)', async () => {
       const error: PaymentError = {
         code: 'provider_error',
-        messageKey: I18nKeys.errors.provider_error,
+        messageKey: 'errors.provider_error',
         raw: {},
       };
 

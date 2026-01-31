@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import type { OnDestroy } from '@angular/core';
-import { Component, computed, effect, inject, input, isDevMode, output } from '@angular/core';
+import { Component, computed, effect, inject, input, output } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
 import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
 import type {
@@ -10,6 +10,14 @@ import type {
 } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { AutofocusDirective } from '@shared/directives/autofocus.directive';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
+
+function setOpt<K extends keyof PaymentOptions>(
+  opts: PaymentOptions,
+  key: K,
+  value: PaymentOptions[K],
+): void {
+  opts[key] = value;
+}
 
 type DynamicControl = FormControl<string | boolean>;
 type DynamicForm = FormRecord<DynamicControl>;
@@ -122,10 +130,6 @@ export class PaymentFormComponent implements OnDestroy {
         defaultValue = typeof window !== 'undefined' ? window.location.href : '';
       }
 
-      if (isDevMode() && field.name === 'token' && field.required && !defaultValue) {
-        defaultValue = 'tok_visa1234567890abcdef';
-      }
-
       let controlValue: string | boolean = defaultValue;
       if (field.name === 'saveForFuture') {
         if (defaultValue === 'false' || defaultValue === '' || !defaultValue) {
@@ -137,8 +141,7 @@ export class PaymentFormComponent implements OnDestroy {
         }
       }
 
-      const isRequired =
-        field.required && !(isDevMode() && field.type === 'hidden' && field.name === 'token');
+      const isRequired = field.required;
       const validators = isRequired ? [Validators.required] : [];
 
       if (field.type === 'email') {
@@ -159,21 +162,49 @@ export class PaymentFormComponent implements OnDestroy {
   }
 
   private emitFormState(): void {
-    const values = this.form.value;
+    const reqs = this.requirements();
     const options: PaymentOptions = {};
 
-    if (typeof values['token'] === 'string' && values['token']) options.token = values['token'];
-    if (typeof values['returnUrl'] === 'string' && values['returnUrl'])
-      options.returnUrl = values['returnUrl'];
-    if (typeof values['cancelUrl'] === 'string' && values['cancelUrl'])
-      options.cancelUrl = values['cancelUrl'];
-    if (typeof values['customerEmail'] === 'string' && values['customerEmail'])
-      options.customerEmail = values['customerEmail'];
+    if (!reqs) {
+      this.formChange.emit(options);
+      this.formValidChange.emit(this.form.valid);
+      return;
+    }
 
-    if (typeof values['saveForFuture'] === 'boolean') {
-      options.saveForFuture = values['saveForFuture'];
-    } else if (typeof values['saveForFuture'] === 'string') {
-      options.saveForFuture = values['saveForFuture'] === 'true';
+    for (const field of reqs.fields) {
+      const control = this.form.get(field.name);
+      if (!control) continue;
+
+      const value = control.value;
+
+      if (field.name === 'saveForFuture') {
+        if (typeof value === 'boolean') {
+          setOpt(options, 'saveForFuture', value);
+        } else if (typeof value === 'string') {
+          setOpt(options, 'saveForFuture', value.trim() === 'true');
+        }
+        continue;
+      }
+
+      if (typeof value === 'boolean') {
+        setOpt(
+          options,
+          field.name as keyof PaymentOptions,
+          value as PaymentOptions[keyof PaymentOptions],
+        );
+        continue;
+      }
+
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed) {
+          setOpt(
+            options,
+            field.name as Exclude<keyof PaymentOptions, 'saveForFuture'>,
+            trimmed as PaymentOptions[Exclude<keyof PaymentOptions, 'saveForFuture'>],
+          );
+        }
+      }
     }
 
     this.formChange.emit(options);

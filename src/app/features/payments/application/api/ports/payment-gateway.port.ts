@@ -1,6 +1,5 @@
 import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
@@ -193,7 +192,7 @@ export abstract class BasePaymentGateway<
     }
 
     if (!req.method?.type) {
-      throw invalidRequestError(I18nKeys.errors.method_type_required, { field: 'method.type' });
+      throw invalidRequestError('errors.method_type_required', { field: 'method.type' });
     }
 
     // Base rule: card requires token
@@ -227,7 +226,7 @@ export abstract class BasePaymentGateway<
 
     return {
       code: 'provider_error',
-      messageKey: I18nKeys.errors.provider_error,
+      messageKey: 'errors.provider_error',
       raw: err,
     };
   }

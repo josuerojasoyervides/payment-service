@@ -1,19 +1,19 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
+import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { ProviderOption } from '@payments/ui/shared/ui.types';
-import { getDefaultProviders } from '@payments/ui/shared/ui.types';
 
 /**
  * Payment provider selector component.
  *
- * Displays visual buttons to select between Stripe, PayPal, etc.
+ * Displays visual buttons from catalog descriptors (labelKey, descriptionKey, icon).
+ * No provider branching; render is descriptor-driven.
  *
  * @example
  * ```html
  * <app-provider-selector
- *   [providers]="['stripe', 'paypal']"
+ *   [descriptors]="catalog.getProviderDescriptors()"
  *   [selected]="selectedProvider()"
  *   [disabled]="isLoading()"
  *   (providerChange)="onProviderChange($event)"
@@ -29,10 +29,10 @@ import { getDefaultProviders } from '@payments/ui/shared/ui.types';
 export class ProviderSelectorComponent {
   private readonly i18n = inject(I18nService);
 
-  /** List of available provider IDs */
-  readonly providers = input.required<PaymentProviderId[]>();
+  /** Provider descriptors from catalog (labelKey, descriptionKey, icon). */
+  readonly descriptors = input.required<ProviderDescriptor[]>();
 
-  /** Currently selected provider */
+  /** Currently selected provider ID */
   readonly selected = input<PaymentProviderId | null>(null);
 
   /** Whether selector is disabled */
@@ -41,13 +41,15 @@ export class ProviderSelectorComponent {
   /** Emits when a provider is selected */
   readonly providerChange = output<PaymentProviderId>();
 
-  /** Provider options with metadata */
-  readonly providerOptions = computed(() => {
-    const defaultProviders = getDefaultProviders(this.i18n);
-    return this.providers()
-      .map((id) => defaultProviders.find((p) => p.id === id))
-      .filter((p): p is ProviderOption => p !== undefined);
-  });
+  /** Resolved label/description/icon for template */
+  readonly providerOptions = computed(() =>
+    this.descriptors().map((d) => ({
+      id: d.id,
+      label: this.i18n.t(d.labelKey),
+      description: d.descriptionKey ? this.i18n.t(d.descriptionKey) : undefined,
+      icon: d.icon ?? '',
+    })),
+  );
 
   selectProvider(providerId: PaymentProviderId): void {
     if (!this.disabled() && providerId !== this.selected()) {

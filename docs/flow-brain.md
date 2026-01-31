@@ -77,10 +77,10 @@ System events (external inputs)
 - STATUS_CONFIRMED (ExternalEventAdapter)
 
 idle
-- START (UI → PaymentFlowFacade.start)
-- CONFIRM (UI → PaymentFlowFacade.confirm)
-- CANCEL (UI → PaymentFlowFacade.cancel)
-- REFRESH (UI → PaymentFlowFacade.refresh)
+- START (UI → PaymentFlowMachineDriver.start)
+- CONFIRM (UI → PaymentFlowMachineDriver.confirm)
+- CANCEL (UI → PaymentFlowMachineDriver.cancel)
+- REFRESH (UI → PaymentFlowMachineDriver.refresh)
 
 starting
 - done(start) (machine invoke)
@@ -176,7 +176,7 @@ done
 - Machine: `src/app/features/payments/application/orchestration/flow/payment-flow.machine.ts`
 - Policy + config: `src/app/features/payments/application/orchestration/flow/payment-flow.policy.ts`
 - Actor: `src/app/features/payments/application/orchestration/flow/payment-flow.actor.service.ts`
-- Facade: `src/app/features/payments/application/orchestration/flow/payment-flow.facade.ts`
+- Facade: `src/app/features/payments/application/orchestration/flow/payment-flow-machine-driver.ts`
 - External events: `src/app/features/payments/application/adapters/external-event.adapter.ts`
 - Event map: `src/app/features/payments/application/adapters/events/payment-flow.events.ts`
 - Fallback: `src/app/features/payments/application/orchestration/services/fallback-orchestrator.service.ts`

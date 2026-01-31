@@ -1,0 +1,66 @@
+@if (isDevMode) {
+  <details class="mt-6 p-4 bg-gray-100 rounded-lg border border-gray-200">
+    <summary class="cursor-pointer text-sm font-medium text-gray-700">
+      {{ labels().title }}
+    </summary>
+    <div class="mt-4 space-y-3 text-xs font-mono">
+      <section class="space-y-1">
+        <p class="font-semibold text-gray-600">Machine</p>
+        <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+          <dt class="text-gray-500">{{ labels().debugStateNode }}:</dt>
+          <dd data-testid="debug-state-node">{{ debugStateNode() ?? '—' }}</dd>
+          <dt class="text-gray-500">{{ labels().debugTags }}:</dt>
+          <dd data-testid="debug-tags">{{ debugTags().length ? debugTags().join(', ') : '—' }}</dd>
+          <dt class="text-gray-500">{{ labels().debugLastEventType }}:</dt>
+          <dd data-testid="debug-last-event-type">{{ debugLastEventType() ?? '—' }}</dd>
+          @if (debugLastEventPayload(); as payload) {
+            <dt class="text-gray-500">{{ labels().debugLastEventPayload }}:</dt>
+            <dd data-testid="debug-last-event-payload">
+              <pre class="mt-1 p-1 bg-white rounded overflow-auto text-[10px]">{{
+                payload | json
+              }}</pre>
+            </dd>
+          }
+        </dl>
+      </section>
+      @let summary = debugSummary();
+      <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+        <dt class="text-gray-500">{{ labels().status }}:</dt>
+        <dd>{{ summary.status }}</dd>
+        <dt class="text-gray-500">{{ labels().provider }}:</dt>
+        <dd>{{ summary.provider ?? '—' }}</dd>
+        <dt class="text-gray-500">{{ labels().intentId }}:</dt>
+        <dd>{{ summary.intentId ?? '—' }}</dd>
+        <dt class="text-gray-500">fallback:</dt>
+        <dd>{{ summary.fallbackStatus }} (auto: {{ summary.isAutoFallback }})</dd>
+        <dt class="text-gray-500">{{ labels().historyCount }}:</dt>
+        <dd>{{ summary.historyCount }}</dd>
+        <dt class="text-gray-500">loading/ready/error:</dt>
+        <dd>{{ isLoading() }}/{{ isReady() }}/{{ hasError() }}</dd>
+      </dl>
+
+      @if (recentHistory().length > 0) {
+        <div>
+          <p class="font-semibold text-gray-600 mb-1">{{ labels().recentHistory }}:</p>
+          <ul class="list-disc list-inside space-y-0.5 text-gray-700">
+            @for (entry of recentHistory(); track entry.intentId + entry.timestamp) {
+              <li>{{ formatEntry(entry) }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      <div class="flex flex-wrap gap-2 pt-2">
+        <button type="button" class="btn-secondary text-xs" (click)="onReset()">
+          {{ labels().reset }}
+        </button>
+        <button type="button" class="btn-secondary text-xs" (click)="onClearError()">
+          {{ labels().clearError }}
+        </button>
+        <button type="button" class="btn-secondary text-xs" (click)="onClearHistory()">
+          {{ labels().clearHistory }}
+        </button>
+      </div>
+    </div>
+  </details>
+}

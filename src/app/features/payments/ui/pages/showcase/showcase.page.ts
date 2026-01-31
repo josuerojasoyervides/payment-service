@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import type { PaymentCheckoutCatalogPort } from '@app/features/payments/application/api/ports/payment-store.port';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
@@ -49,6 +51,7 @@ import type { OrderItem, PaymentButtonState } from '@payments/ui/shared/ui.types
 export class ShowcaseComponent {
   private readonly i18n = inject(I18nService);
   private readonly logger = inject(LoggerService);
+  private readonly catalog = inject(PAYMENT_CHECKOUT_CATALOG) as PaymentCheckoutCatalogPort;
 
   // Order Summary state
   orderSummary = {
@@ -62,12 +65,48 @@ export class ShowcaseComponent {
     ] as OrderItem[],
   };
 
-  // Provider Selector state
+  /** Provider descriptors from catalog (no hardcoded ids). */
+  readonly providerDescriptors = computed(() => this.catalog.getProviderDescriptors());
+
+  /** Resolved options for Payment Button provider dropdown (label from catalog). */
+  readonly catalogProviderOptions = computed(() =>
+    this.providerDescriptors().map((d) => ({
+      id: d.id,
+      label: this.i18n.t(d.labelKey),
+    })),
+  );
+
+  /** Catalog entries for display (label, description, icon from descriptors). */
+  readonly catalogDisplay = computed(() =>
+    this.providerDescriptors().map((d) => ({
+      id: d.id,
+      label: this.i18n.t(d.labelKey),
+      description: d.descriptionKey ? this.i18n.t(d.descriptionKey) : undefined,
+      icon: d.icon,
+    })),
+  );
+
+  /** First and second provider IDs from catalog (for demo state); fallback to p0 if only one. */
+  readonly catalogProviderIds = computed(() => {
+    const descriptors = this.providerDescriptors();
+    const p0 = descriptors[0]?.id ?? null;
+    const p1 = descriptors[1]?.id ?? descriptors[0]?.id ?? null;
+    return { p0, p1 };
+  });
+
+  // Provider Selector state (selected from catalog when null)
   providerSelector = {
-    providers: ['stripe', 'paypal'] as PaymentProviderId[],
-    selected: 'stripe' as PaymentProviderId,
+    selected: null as PaymentProviderId | null,
     disabled: false,
   };
+
+  constructor() {
+    effect(() => {
+      const { p0 } = this.catalogProviderIds();
+      if (p0 && this.providerSelector.selected == null) this.providerSelector.selected = p0;
+      if (p0 && this.paymentButton.provider == null) this.paymentButton.provider = p0;
+    });
+  }
 
   // Method Selector state
   methodSelector = {
@@ -80,7 +119,7 @@ export class ShowcaseComponent {
   paymentButton = {
     amount: 499.99,
     currency: 'MXN' as CurrencyCode,
-    provider: 'stripe' as PaymentProviderId,
+    provider: null as PaymentProviderId | null,
     loading: false,
     disabled: false,
     state: 'idle' as PaymentButtonState,
@@ -91,15 +130,19 @@ export class ShowcaseComponent {
     showSuccess: true,
   };
 
-  // Sample data
-  sampleIntent: PaymentIntent = {
-    id: 'pi_fake_demo123',
-    provider: 'stripe',
-    status: 'succeeded',
-    amount: 499.99,
-    currency: 'MXN',
-    clientSecret: 'pi_fake_demo123_secret_xxx',
-  };
+  // Sample data (provider from catalog; intent built in computed)
+  readonly sampleIntent = computed((): PaymentIntent | null => {
+    const { p0 } = this.catalogProviderIds();
+    if (!p0) return null;
+    return {
+      id: 'pi_fake_demo123',
+      provider: p0,
+      status: 'succeeded',
+      amount: 499.99,
+      currency: 'MXN',
+      clientSecret: 'pi_fake_demo123_secret_xxx',
+    };
+  });
 
   sampleError: PaymentError = {
     code: 'card_declined',
@@ -118,30 +161,44 @@ export class ShowcaseComponent {
     expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
   };
 
-  // Intent Card state
-  intentCard = {
-    intent: {
-      id: 'pi_fake_card_demo',
-      provider: 'stripe' as PaymentProviderId,
-      status: 'requires_confirmation' as const,
-      amount: 299.99,
-      currency: 'MXN' as CurrencyCode,
-    } as PaymentIntent,
-    showActions: true,
-    expanded: false,
-  };
+  /** True when catalog has at least one provider (for conditional rendering). */
+  readonly hasProviders = computed(() => this.catalogProviderIds().p0 != null);
 
-  // Fallback Modal state
-  fallbackModal = {
-    open: false,
-    event: {
-      failedProvider: 'stripe',
+  // Intent Card state (provider from catalog; status/actions mutable for demo)
+  intentCardShowActions = true;
+  intentCardExpanded = false;
+  intentCardStatus: PaymentIntent['status'] = 'requires_confirmation';
+  readonly intentCard = computed(() => {
+    const { p0 } = this.catalogProviderIds();
+    const intent: PaymentIntent | null = p0
+      ? {
+          id: 'pi_fake_card_demo',
+          provider: p0,
+          status: this.intentCardStatus,
+          amount: 299.99,
+          currency: 'MXN' as CurrencyCode,
+        }
+      : null;
+    return {
+      intent,
+      showActions: this.intentCardShowActions,
+      expanded: this.intentCardExpanded,
+    };
+  });
+
+  // Fallback Modal (open mutable; event from catalog; null when no providers)
+  fallbackModalOpen = false;
+  readonly fallbackModalEvent = computed((): FallbackAvailableEvent | null => {
+    const { p0, p1 } = this.catalogProviderIds();
+    if (!p0) return null;
+    return {
+      failedProvider: p0,
       error: {
         code: 'provider_error',
         messageKey: I18nKeys.errors.provider_error,
         raw: { source: 'showcase' },
       },
-      alternativeProviders: ['paypal'],
+      alternativeProviders: p1 ? [p1] : [],
       originalRequest: {
         orderId: 'order_123',
         amount: 499.99,
@@ -150,8 +207,8 @@ export class ShowcaseComponent {
       },
       timestamp: Date.now(),
       eventId: 'fb_demo_123',
-    } as FallbackAvailableEvent,
-  };
+    };
+  });
 
   // Handlers
   onPayClick(): void {
@@ -175,7 +232,7 @@ export class ShowcaseComponent {
 
   onFallbackConfirm(provider: PaymentProviderId): void {
     this.logger.warn(`Fallback confirmed with: ${provider}`, 'ShowcaseComponent', { provider });
-    this.fallbackModal.open = false;
+    this.fallbackModalOpen = false;
   }
 
   // ===== Textos para el template =====
@@ -193,8 +250,6 @@ export class ShowcaseComponent {
     selectedLabel: computed(() => this.i18n.t(I18nKeys.ui.selected)),
     disabledLabel: computed(() => this.i18n.t(I18nKeys.ui.disabled)),
     providerLabel: computed(() => this.i18n.t(I18nKeys.ui.provider)),
-    stripeProviderLabel: computed(() => this.i18n.t(I18nKeys.ui.provider_stripe)),
-    paypalProviderLabel: computed(() => this.i18n.t(I18nKeys.ui.provider_paypal)),
     statusLabelShort: computed(() => this.i18n.t(I18nKeys.ui.status_label_short)),
     loadingLabel: computed(() => this.i18n.t(I18nKeys.ui.loading)),
     successLabel: computed(() => this.i18n.t(I18nKeys.ui.success)),
@@ -216,5 +271,8 @@ export class ShowcaseComponent {
     openFallbackModalLabel: computed(() => this.i18n.t(I18nKeys.ui.open_fallback_modal)),
     infoLabel: computed(() => this.i18n.t(I18nKeys.ui.info)),
     fallbackModalInfoLabel: computed(() => this.i18n.t(I18nKeys.ui.fallback_modal_info)),
+    demoTokensTitle: computed(() => this.i18n.t(I18nKeys.ui.demo_tokens_title)),
+    demoTokensCheatsheet: computed(() => this.i18n.t(I18nKeys.ui.demo_tokens_cheatsheet)),
+    noProvidersAvailable: computed(() => this.i18n.t(I18nKeys.ui.no_providers_available)),
   };
 }

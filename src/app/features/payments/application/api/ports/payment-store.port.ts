@@ -1,15 +1,19 @@
 import type { Signal } from '@angular/core';
-import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
-import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import type {
   PaymentFlowStatus,
   PaymentsState,
-} from '@payments/application/orchestration/store/payment-store.state';
+} from '@app/features/payments/application/orchestration/store/types/payment-store-state';
+import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
+
+export type { PaymentHistoryEntry };
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type {
+  CurrencyCode,
   PaymentIntent,
+  PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
@@ -18,6 +22,23 @@ import type {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type {
+  FieldRequirements,
+  PaymentOptions,
+} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+
+/**
+ * Provider metadata for checkout UI (techless: i18n keys are plain strings).
+ * Config/infra register one per provider; UI uses labelKey/descriptionKey for translation.
+ */
+export interface ProviderDescriptor {
+  id: PaymentProviderId;
+  labelKey: string;
+  descriptionKey?: string;
+  icon?: string;
+  badges?: string[];
+  supportedMethods?: PaymentMethodType[];
+}
 
 /**
  * Unsubscribe function.
@@ -37,149 +58,91 @@ export interface PaymentDebugSummary {
 }
 
 /**
- * Payments state port.
- *
- * This interface defines the contract that any state implementation
- * must satisfy. It decouples components from the concrete implementation
- * (NgRx Signals, Akita, NGXS, etc.).
- *
- * Principles:
- * - Components only know this port
- * - Concrete implementation is injected via token
- * - Eases testing and technology changes
- *
- * @example
- * ```typescript
- * // In a component
- * private readonly state = inject(PAYMENT_STATE);
- *
- * readonly isLoading = this.state.isLoading;
- * readonly intent = this.state.intent;
- *
- * pay() {
- *   this.state.startPayment(request, 'stripe');
- * }
- * ```
+ * Flow port: state signals, payment/UI/fallback actions, return helpers.
+ * UI injects PAYMENT_STATE to get this contract.
  */
-export interface PaymentStorePort {
-  // ============================================================
-  // REACTIVE STATE (Signals)
-  // ============================================================
-
-  /** Full state as a signal (for advanced cases) */
+export interface PaymentFlowPort {
   readonly state: Signal<PaymentsState>;
-
-  /** Whether a payment is in progress */
   readonly isLoading: Signal<boolean>;
-
-  /** Whether a payment completed successfully */
   readonly isReady: Signal<boolean>;
-
   readonly hasError: Signal<boolean>;
-
   readonly intent: Signal<PaymentIntent | null>;
-
   readonly error: Signal<PaymentError | null>;
-
+  readonly requiresUserAction: Signal<boolean>;
+  readonly isSucceeded: Signal<boolean>;
+  readonly isProcessing: Signal<boolean>;
+  readonly isFailed: Signal<boolean>;
+  readonly canResume: Signal<boolean>;
+  readonly resumeProviderId: Signal<PaymentProviderId | null>;
+  readonly resumeIntentId: Signal<string | null>;
   readonly selectedProvider: Signal<PaymentProviderId | null>;
-
   readonly hasPendingFallback: Signal<boolean>;
-
   readonly isAutoFallbackInProgress: Signal<boolean>;
-
   readonly isFallbackExecuting: Signal<boolean>;
-
   readonly isAutoFallback: Signal<boolean>;
-
   readonly pendingFallbackEvent: Signal<FallbackAvailableEvent | null>;
-
   readonly fallbackState: Signal<FallbackState>;
-
   readonly historyCount: Signal<number>;
-
   readonly lastHistoryEntry: Signal<PaymentHistoryEntry | null>;
-
   readonly history: Signal<PaymentHistoryEntry[]>;
-
   readonly debugSummary: Signal<PaymentDebugSummary>;
 
-  /**
-   * Get a snapshot of the current state.
-   * Prefer using signals directly.
-   */
-  getSnapshot(): Readonly<PaymentsState>;
+  // Debug (dev-only UI)
+  readonly debugStateNode: Signal<string | null>;
+  readonly debugTags: Signal<string[]>;
+  readonly debugLastEventType: Signal<string | null>;
+  readonly debugLastEventPayload: Signal<unknown | null>;
 
-  /**
-   * Subscribe to state changes (legacy observer pattern).
-   * Prefer using signals with effect().
-   *
-   * @returns Function to cancel subscription
-   */
+  getSnapshot(): Readonly<PaymentsState>;
   subscribe(listener: () => void): Unsubscribe;
 
-  // ============================================================
-  // PAYMENT ACTIONS
-  // ============================================================
-
-  /**
-   * Start a new payment.
-   */
   startPayment(
     request: CreatePaymentRequest,
     providerId: PaymentProviderId,
     context?: StrategyContext,
   ): void;
-
-  /**
-   * Confirm an existing payment.
-   */
-  confirmPayment(request: ConfirmPaymentRequest, providerId: PaymentProviderId): void;
-
-  /**
-   * Cancel an existing payment.
-   */
-  cancelPayment(request: CancelPaymentRequest, providerId: PaymentProviderId): void;
-
-  /**
-   * Refresh payment status.
-   */
-  refreshPayment(request: GetPaymentStatusRequest, providerId: PaymentProviderId): void;
-
-  // ============================================================
-  // UI ACTIONS
-  // ============================================================
-
-  /**
-   * Select a provider.
-   */
+  confirmPayment(request: ConfirmPaymentRequest, providerId?: PaymentProviderId): void;
+  cancelPayment(request: CancelPaymentRequest, providerId?: PaymentProviderId): void;
+  refreshPayment(request: GetPaymentStatusRequest, providerId?: PaymentProviderId): void;
   selectProvider(providerId: PaymentProviderId): void;
-
-  /**
-   * Clear current error.
-   */
   clearError(): void;
-
-  /**
-   * Reset to initial state.
-   */
   reset(): void;
-
-  /**
-   * Clear history.
-   */
   clearHistory(): void;
-
-  // ============================================================
-  // FALLBACK ACTIONS
-  // ============================================================
-
-  /**
-   * Execute a fallback with the selected provider.
-   */
   executeFallback(providerId: PaymentProviderId): void;
-
-  /**
-   * Cancel pending fallback.
-   */
   cancelFallback(): void;
+
+  getReturnReferenceFromQuery(queryParams: Record<string, unknown>): {
+    providerId: PaymentProviderId;
+    referenceId: string | null;
+  };
+  notifyRedirectReturned(queryParams: Record<string, unknown>): void;
 }
+
+/**
+ * Checkout catalog port: providers, methods, field requirements, request builder.
+ * UI injects PAYMENT_CHECKOUT_CATALOG for checkout form only.
+ */
+export interface PaymentCheckoutCatalogPort {
+  availableProviders(): PaymentProviderId[];
+  getProviderDescriptors(): ProviderDescriptor[];
+  getProviderDescriptor(providerId: PaymentProviderId): ProviderDescriptor | null;
+  getSupportedMethods(providerId: PaymentProviderId): PaymentMethodType[];
+  getFieldRequirements(
+    providerId: PaymentProviderId,
+    method: PaymentMethodType,
+  ): FieldRequirements | null;
+  buildCreatePaymentRequest(params: {
+    providerId: PaymentProviderId;
+    method: PaymentMethodType;
+    orderId: string;
+    amount: number;
+    currency: CurrencyCode;
+    options: PaymentOptions;
+  }): CreatePaymentRequest;
+}
+
+/**
+ * Combined port for backward compatibility. Prefer injecting PAYMENT_STATE (FlowPort)
+ * and PAYMENT_CHECKOUT_CATALOG (CatalogPort) separately in UI.
+ */
+export interface PaymentStorePort extends PaymentFlowPort, PaymentCheckoutCatalogPort {}

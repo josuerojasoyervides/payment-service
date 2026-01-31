@@ -1,12 +1,12 @@
+/**
+ * Internal store helpers: selector builders for projected state.
+ *
+ * UI consumes selectors via the port/adapter (PAYMENT_STATE), not by importing this file.
+ * Keep this module side-effect free.
+ */
 import { computed } from '@angular/core';
 import type { PaymentsSelectorsSource } from '@payments/application/orchestration/store/types/payment-store.types';
 
-/**
- * Store selectors / derived state.
- *
- * Keep this file free of side-effects.
- * These computed signals are "grow-safe" and will map 1:1 to XState later.
- */
 export function buildPaymentsSelectors(state: PaymentsSelectorsSource) {
   return {
     // Basic flow status

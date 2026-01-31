@@ -1,18 +1,57 @@
-import { signal } from '@angular/core';
+import type { signal } from '@angular/core';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
+import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
+import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
-import { PaymentFlowFacade } from '@payments/application/orchestration/flow/payment-flow.facade';
+import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
+import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { StatusComponent } from '@payments/ui/pages/status/status.page';
+
+const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
+  {
+    id: 'stripe',
+    labelKey: 'ui.provider_stripe',
+    descriptionKey: 'ui.provider_stripe_description',
+    icon: '💳',
+  },
+  {
+    id: 'paypal',
+    labelKey: 'ui.provider_paypal',
+    descriptionKey: 'ui.provider_paypal_description',
+    icon: '🅿️',
+  },
+];
+
+const mockCatalog = {
+  getProviderDescriptors: () => MOCK_DESCRIPTORS,
+  getProviderDescriptor: (id: PaymentProviderId) =>
+    MOCK_DESCRIPTORS.find((d) => d.id === id) ?? null,
+  availableProviders: () => ['stripe', 'paypal'] as PaymentProviderId[],
+  getSupportedMethods: () => ['card', 'spei'] as const,
+  getFieldRequirements: () => null,
+  buildCreatePaymentRequest: () => ({}) as any,
+};
 
 describe('StatusComponent', () => {
   let component: StatusComponent;
   let fixture: ComponentFixture<StatusComponent>;
-  let mockFlowFacade: any;
+  let mockState: PaymentFlowPort & {
+    confirmPayment: ReturnType<typeof vi.fn>;
+    cancelPayment: ReturnType<typeof vi.fn>;
+    refreshPayment: ReturnType<typeof vi.fn>;
+    selectProvider: ReturnType<typeof vi.fn>;
+    intent: ReturnType<typeof signal<PaymentIntent | null>>;
+    error: ReturnType<typeof signal<PaymentError | null>>;
+    isLoading: ReturnType<typeof signal<boolean>>;
+    selectedProvider: ReturnType<typeof signal<PaymentProviderId | null>>;
+  };
 
   const mockIntent: PaymentIntent = {
     id: 'pi_test_123',
@@ -30,20 +69,37 @@ describe('StatusComponent', () => {
   };
 
   beforeEach(async () => {
-    // Flow mock
-    mockFlowFacade = {
-      intent: signal<PaymentIntent | null>(null),
-      error: signal<PaymentError | null>(null),
-      isLoading: signal(false),
-      refresh: vi.fn(() => true),
-      confirm: vi.fn(() => true),
-      cancel: vi.fn(() => true),
-      performNextAction: vi.fn(() => true),
+    const baseMock = createMockPaymentState({ selectedProvider: 'stripe' });
+    mockState = {
+      ...baseMock,
+      intent: baseMock.intent as ReturnType<typeof signal<PaymentIntent | null>>,
+      error: baseMock.error as ReturnType<typeof signal<PaymentError | null>>,
+      isLoading: baseMock.isLoading as ReturnType<typeof signal<boolean>>,
+      selectedProvider: baseMock.selectedProvider as ReturnType<
+        typeof signal<PaymentProviderId | null>
+      >,
+      confirmPayment: vi.fn(),
+      cancelPayment: vi.fn(),
+      refreshPayment: vi.fn(),
+      selectProvider: vi.fn(),
+    } as PaymentFlowPort & {
+      confirmPayment: ReturnType<typeof vi.fn>;
+      cancelPayment: ReturnType<typeof vi.fn>;
+      refreshPayment: ReturnType<typeof vi.fn>;
+      selectProvider: ReturnType<typeof vi.fn>;
+      intent: ReturnType<typeof signal<PaymentIntent | null>>;
+      error: ReturnType<typeof signal<PaymentError | null>>;
+      isLoading: ReturnType<typeof signal<boolean>>;
+      selectedProvider: ReturnType<typeof signal<PaymentProviderId | null>>;
     };
 
     await TestBed.configureTestingModule({
       imports: [StatusComponent, RouterLink],
-      providers: [{ provide: PaymentFlowFacade, useValue: mockFlowFacade }, provideRouter([])],
+      providers: [
+        { provide: PAYMENT_STATE, useValue: mockState },
+        { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog },
+        provideRouter([]),
+      ],
     }).compileComponents();
 
     const i18n = TestBed.inject(I18nService);
@@ -51,6 +107,7 @@ describe('StatusComponent', () => {
 
     fixture = TestBed.createComponent(StatusComponent);
     component = fixture.componentInstance;
+    fixture.detectChanges();
   });
 
   describe('Initialization', () => {
@@ -60,14 +117,14 @@ describe('StatusComponent', () => {
 
     it('should initialize with default values', () => {
       expect(component.intentIdModel).toBe('');
-      expect(component.statusPageState.selectedProvider()).toBe('stripe');
+      expect(component.selectedProvider()).toBe('stripe');
       expect(component.result()).toBeNull();
     });
 
-    it('should have predefined examples', () => {
-      expect(component.examples()).toHaveLength(2);
-      expect(component.examples()[0].provider).toBe('stripe');
-      expect(component.examples()[1].provider).toBe('paypal');
+    it('should have examples from catalog', () => {
+      expect(component.examples().length).toBeGreaterThanOrEqual(1);
+      expect(component.examples()[0].provider).toBeDefined();
+      expect(component.examples()[0].id).toBeDefined();
     });
   });
 
@@ -75,102 +132,104 @@ describe('StatusComponent', () => {
     it('should not search when intentId is empty', () => {
       patchState(component.statusPageState, { intentId: '' });
       component.searchIntent();
-      expect(mockFlowFacade.refresh).not.toHaveBeenCalled();
+      expect(mockState.refreshPayment).not.toHaveBeenCalled();
     });
 
     it('should not search when intentId is only whitespace', () => {
       patchState(component.statusPageState, { intentId: '   ' });
       component.searchIntent();
-      expect(mockFlowFacade.refresh).not.toHaveBeenCalled();
+      expect(mockState.refreshPayment).not.toHaveBeenCalled();
     });
 
-    it('should search intent and reset result', () => {
+    it('should search intent and call refreshPayment with providerId', () => {
       patchState(component.statusPageState, { intentId: 'pi_test_123' });
       component.searchIntent();
 
-      expect(component.result()).toBeNull(); // Reset
-      expect(mockFlowFacade.refresh).toHaveBeenCalledWith('stripe', 'pi_test_123');
+      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
     });
 
-    it('should prefill lastQuery and show result when flow already has an intent', () => {
-      // effect() in the constructor listens to intent() changes
-      mockFlowFacade.intent.set(mockIntent);
+    it('should show result when intent matches lastQueryId', () => {
+      patchState(component.statusPageState, { lastQueryId: mockIntent.id });
+      (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set(mockIntent);
       fixture.detectChanges();
 
       expect(component.result()).toEqual(mockIntent);
     });
 
-    it('should not show result when intent does not match lastQuery', () => {
-      patchState(component.statusPageState, {
-        intentId: 'pi_other',
-        selectedProvider: 'stripe',
-        lastQuery: { provider: 'stripe', id: 'pi_other' },
-      });
-
-      mockFlowFacade.intent.set(mockIntent); // pi_test_123
+    it('should not show result when intent does not match lastQueryId', () => {
+      patchState(component.statusPageState, { lastQueryId: 'pi_other' });
+      (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set(mockIntent);
       fixture.detectChanges();
 
       expect(component.result()).toBeNull();
     });
 
-    it('should use the selected provider', () => {
-      patchState(component.statusPageState, { selectedProvider: 'paypal' });
+    it('should pass selected provider to refreshPayment', () => {
+      (mockState.selectedProvider as ReturnType<typeof signal<PaymentProviderId | null>>).set(
+        'paypal' as PaymentProviderId,
+      );
       patchState(component.statusPageState, { intentId: 'ORDER_FAKE_XYZ' });
       component.searchIntent();
 
-      expect(mockFlowFacade.refresh).toHaveBeenCalledWith('paypal', 'ORDER_FAKE_XYZ');
+      expect(mockState.refreshPayment).toHaveBeenCalledWith(
+        { intentId: 'ORDER_FAKE_XYZ' },
+        'paypal',
+      );
     });
 
     it('should trim whitespace from intentId', () => {
       patchState(component.statusPageState, { intentId: '  pi_test_123  ' });
       component.searchIntent();
 
-      expect(mockFlowFacade.refresh).toHaveBeenCalledWith('stripe', 'pi_test_123');
+      expect(mockState.refreshPayment).toHaveBeenCalledWith(
+        { intentId: 'pi_test_123' },
+        expect.any(String),
+      );
     });
   });
 
   describe('Payment actions', () => {
     it('should confirm payment', () => {
       component.confirmPayment('pi_test_123');
-      expect(mockFlowFacade.confirm).toHaveBeenCalled();
+      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
 
     it('should cancel payment', () => {
       component.cancelPayment('pi_test_123');
-      expect(mockFlowFacade.cancel).toHaveBeenCalled();
+      expect(mockState.cancelPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
 
-    it('should refresh payment', () => {
+    it('should refresh payment with providerId', () => {
       component.refreshPayment('pi_test_123');
-      expect(mockFlowFacade.refresh).toHaveBeenCalledWith('stripe', 'pi_test_123');
+      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
     });
 
-    it('should use the selected provider for actions', () => {
-      patchState(component.statusPageState, { selectedProvider: 'paypal' });
+    it('should call confirmPayment with intentId (adapter resolves provider)', () => {
+      (mockState.selectedProvider as ReturnType<typeof signal<PaymentProviderId | null>>).set(
+        'paypal' as PaymentProviderId,
+      );
       component.confirmPayment('ORDER_FAKE_XYZ');
-      expect(mockFlowFacade.confirm).toHaveBeenCalled();
+      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'ORDER_FAKE_XYZ' });
     });
 
-    it('should call performNextAction when next-action is requested', () => {
+    it('should call confirmPayment when next-action client_confirm is requested', () => {
+      patchState(component.statusPageState, { lastQueryId: 'pi_test_123' });
       const action = { kind: 'client_confirm' as const, token: 'tok_runtime' };
       component.onNextActionRequested(action);
-      expect(mockFlowFacade.performNextAction).toHaveBeenCalledWith(action);
+      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
     });
   });
 
   describe('Examples', () => {
-    it('should use an example and update intentId and provider', () => {
+    it('should use an example and call selectProvider + searchIntent', () => {
       const example = component.examples()[0];
       component.useExample(example);
       expect(component.statusPageState.intentId()).toBe(example.id);
-      expect(component.statusPageState.selectedProvider()).toBe(example.provider);
-    });
-
-    it('should work with PayPal examples', () => {
-      const example = component.examples()[1];
-      component.useExample(example);
-      expect(component.statusPageState.intentId()).toBe(example.id);
-      expect(component.statusPageState.selectedProvider()).toBe('paypal');
+      expect(mockState.selectProvider).toHaveBeenCalledWith(example.provider);
+      expect(mockState.refreshPayment).toHaveBeenCalledWith(
+        { intentId: example.id },
+        example.provider,
+      );
     });
   });
 
@@ -191,7 +250,7 @@ describe('StatusComponent', () => {
     });
 
     it('should expose error from payment state', () => {
-      mockFlowFacade.error.set(mockError);
+      (mockState.error as ReturnType<typeof signal<PaymentError | null>>).set(mockError);
       fixture.detectChanges();
       expect(component.flowState.error()).toEqual(mockError);
     });
@@ -199,13 +258,26 @@ describe('StatusComponent', () => {
 
   describe('Component state', () => {
     it('should expose isLoading from payment state', () => {
-      mockFlowFacade.isLoading.set(true);
+      const loadingMock = createMockPaymentState({ isLoading: true });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [StatusComponent, RouterLink],
+        providers: [
+          { provide: PAYMENT_STATE, useValue: loadingMock },
+          { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog },
+          provideRouter([]),
+        ],
+      }).compileComponents();
+      const i18n = TestBed.inject(I18nService);
+      vi.spyOn(i18n, 't').mockImplementation((key: string) => key);
+      fixture = TestBed.createComponent(StatusComponent);
+      component = fixture.componentInstance;
       fixture.detectChanges();
       expect(component.flowState.isLoading()).toBe(true);
     });
 
     it('should expose error from payment state', () => {
-      mockFlowFacade.error.set(mockError);
+      (mockState.error as ReturnType<typeof signal<PaymentError | null>>).set(mockError);
       fixture.detectChanges();
       expect(component.flowState.error()).toEqual(mockError);
     });

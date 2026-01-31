@@ -8,23 +8,24 @@ import { SPECIAL_TOKENS } from '@app/features/payments/infrastructure/fake/share
  * - With underscore: tok_3ds_abc
  * - Without underscore: tok_3ds123 (for backward compatibility)
  */
-export function getTokenBehavior(
-  token?: string,
-):
+export type TokenBehavior =
   | 'success'
   | '3ds'
+  | 'client_confirm'
   | 'fail'
   | 'timeout'
   | 'decline'
   | 'insufficient'
   | 'expired'
   | 'processing'
-  | 'normal' {
+  | 'normal';
+
+export function getTokenBehavior(token?: string): TokenBehavior {
   if (!token) return 'normal';
 
-  // Check exact match first
   if (token === SPECIAL_TOKENS.SUCCESS) return 'success';
   if (token === SPECIAL_TOKENS.THREE_DS) return '3ds';
+  if (token === SPECIAL_TOKENS.CLIENT_CONFIRM) return 'client_confirm';
   if (token === SPECIAL_TOKENS.FAIL) return 'fail';
   if (token === SPECIAL_TOKENS.TIMEOUT) return 'timeout';
   if (token === SPECIAL_TOKENS.DECLINE) return 'decline';
@@ -32,9 +33,11 @@ export function getTokenBehavior(
   if (token === SPECIAL_TOKENS.EXPIRED) return 'expired';
   if (token === SPECIAL_TOKENS.PROCESSING) return 'processing';
 
-  // Check prefix match (with or without underscore)
   if (token.startsWith(SPECIAL_TOKENS.SUCCESS)) return 'success';
   if (token.startsWith(SPECIAL_TOKENS.THREE_DS)) return '3ds';
+  if (token.startsWith(SPECIAL_TOKENS.CLIENT_CONFIRM)) return 'client_confirm';
+  // Alphanumeric-only variant for integration tests (Stripe validator: tok_[a-zA-Z0-9]{14,})
+  if (token.startsWith('tok_clientconfirm')) return 'client_confirm';
   if (token.startsWith(SPECIAL_TOKENS.FAIL)) return 'fail';
   if (token.startsWith(SPECIAL_TOKENS.TIMEOUT)) return 'timeout';
   if (token.startsWith(SPECIAL_TOKENS.DECLINE)) return 'decline';
