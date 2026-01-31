@@ -5,7 +5,7 @@ import type { PaymentError } from '@app/features/payments/domain/subdomains/paym
 import { I18nKeys, I18nService } from '@core/i18n';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [

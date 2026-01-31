@@ -7,8 +7,10 @@ import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { I18nKeys, I18nService } from '@core/i18n';
 import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { ReturnComponent } from '@payments/ui/pages/return/return.page';
 
 describe('ReturnComponent', () => {

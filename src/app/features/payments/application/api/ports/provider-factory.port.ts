@@ -18,14 +18,14 @@
  * others return null.
  */
 
+import type {
+  PaymentMethodType,
+  PaymentProviderId,
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { ClientConfirmPort } from '@payments/application/api/ports/client-confirm.port';
 import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
-import type {
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
   FieldRequirements,
   PaymentRequestBuilder,

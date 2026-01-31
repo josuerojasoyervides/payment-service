@@ -1,3 +1,7 @@
+import type {
+  PaymentIntent,
+  PaymentMethodType,
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import { I18nKeys } from '@core/i18n';
 import type { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
@@ -8,10 +12,6 @@ import type {
 } from '@payments/application/api/ports/payment-strategy.port';
 import type { NextActionManualStep } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type {
-  PaymentIntent,
-  PaymentMethodType,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';

@@ -1,5 +1,6 @@
 import type { Signal } from '@angular/core';
 import { computed, effect } from '@angular/core';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type { PaymentFlowSnapshot } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import { addToHistory } from '@payments/application/orchestration/store/history/payment-store.history';
@@ -12,7 +13,6 @@ import {
   resetState,
 } from '@payments/application/orchestration/store/projection/payment-store.transitions';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 /**
  * Bridge: connects the XState machine to PaymentsStore.

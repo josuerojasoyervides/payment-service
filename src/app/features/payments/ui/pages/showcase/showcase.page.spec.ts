@@ -4,7 +4,7 @@ import { provideRouter, RouterLink } from '@angular/router';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { I18nKeys } from '@core/i18n';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { ShowcaseComponent } from '@payments/ui/pages/showcase/showcase.page';
 
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [

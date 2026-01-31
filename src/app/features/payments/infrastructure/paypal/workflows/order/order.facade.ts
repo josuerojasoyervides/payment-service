@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import { PaypalCancelIntentGateway } from '@app/features/payments/infrastructure/paypal/workflows/order/gateways/cancel-intent.gateway';
 import { PaypalConfirmIntentGateway } from '@app/features/payments/infrastructure/paypal/workflows/order/gateways/confirm-intent.gateway';
 import { PaypalGetIntentGateway } from '@app/features/payments/infrastructure/paypal/workflows/order/gateways/get-intent.gateway';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,

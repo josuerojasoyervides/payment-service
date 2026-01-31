@@ -1,4 +1,4 @@
-import type { PaymentMethodType } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 
 export interface PaymentMethod {
   id: string;

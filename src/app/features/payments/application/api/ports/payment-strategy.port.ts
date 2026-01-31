@@ -1,8 +1,8 @@
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import type {
   PaymentIntent,
   PaymentMethodType,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { Observable } from 'rxjs';
 

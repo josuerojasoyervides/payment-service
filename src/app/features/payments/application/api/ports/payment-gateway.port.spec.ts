@@ -4,16 +4,16 @@ import { TestBed } from '@angular/core/testing';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import { BasePaymentGateway } from '@payments/application/api/ports/payment-gateway.port';
 import type {
-  PaymentIntent,
-  PaymentIntentStatus,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type {
+  PaymentIntent,
+  PaymentIntentStatus,
+  PaymentProviderId,
+} from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { Observable } from 'rxjs';
 import { firstValueFrom, of, throwError } from 'rxjs';
 

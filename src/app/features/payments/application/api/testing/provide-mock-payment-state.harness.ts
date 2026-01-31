@@ -5,6 +5,12 @@ import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type {
+  CurrencyCode,
+  PaymentIntent,
+  PaymentMethodType,
+  PaymentProviderId,
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type {
   PaymentDebugSummary,
   PaymentStorePort,
   ProviderDescriptor,
@@ -18,12 +24,6 @@ import type {
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type {
-  CurrencyCode,
-  PaymentIntent,
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,

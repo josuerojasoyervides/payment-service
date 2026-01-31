@@ -3,7 +3,7 @@ import { ProviderFactoryRegistry } from '@app/features/payments/application/orch
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { GetPaymentStatusRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { safeDefer } from '@shared/rxjs/safe-defer';

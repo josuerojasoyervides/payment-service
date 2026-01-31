@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import { FakeCreateIntentGateway } from '@app/features/payments/infrastructure/fake/workflows/intent/gateways/create-intent.gateway';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 @Injectable()
 export class FakeStripeCreateIntentGateway extends FakeCreateIntentGateway {

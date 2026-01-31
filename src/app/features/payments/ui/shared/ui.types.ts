@@ -1,13 +1,13 @@
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
-import { I18nKeys } from '@core/i18n';
-import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type {
   CurrencyCode,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import { I18nKeys } from '@core/i18n';
+import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
+import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type {
   FieldRequirements,
   FieldType,

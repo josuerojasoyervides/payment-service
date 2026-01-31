@@ -7,7 +7,7 @@ import type {
   PaymentIntent,
   PaymentIntentStatus,
   PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { GetPaymentStatusRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { Observable } from 'rxjs';
 import { of, switchMap, timer } from 'rxjs';

@@ -1,3 +1,8 @@
+import type {
+  CurrencyCode,
+  PaymentIntent,
+  PaymentMethodType,
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { findPaypalLink } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { I18nKeys } from '@core/i18n';
@@ -9,11 +14,6 @@ import type {
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type {
-  CurrencyCode,
-  PaymentIntent,
-  PaymentMethodType,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';

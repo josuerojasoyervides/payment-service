@@ -1,4 +1,8 @@
 import { inject, Injectable } from '@angular/core';
+import type {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import { buildStripeDtoFromFakeState } from '@app/features/payments/infrastructure/fake/shared/helpers/build-stripe-dto-from-fake-state.helper';
 import { createFakePaypalOrderStatus } from '@app/features/payments/infrastructure/fake/shared/helpers/create-fake-paypal-order-status.helper';
 import { createFakeStripeIntentStatus } from '@app/features/payments/infrastructure/fake/shared/helpers/create-fake-stripe-intent-status.helper';
@@ -6,10 +10,6 @@ import { simulateNetworkDelay } from '@app/features/payments/infrastructure/fake
 import { mapIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/intent.mapper';
 import { FakeIntentStore } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { GetPaymentStatusRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { Observable } from 'rxjs';
 

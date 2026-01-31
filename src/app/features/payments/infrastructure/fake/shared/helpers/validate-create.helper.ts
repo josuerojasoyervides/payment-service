@@ -1,6 +1,6 @@
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import { I18nKeys } from '@core/i18n';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 export function validateCreate(req: CreatePaymentRequest, providerId: PaymentProviderId) {

@@ -1,9 +1,9 @@
-import type { AutoCompleteHint } from '@payments/domain/subdomains/payment/contracts/autocomplete-hint.types';
-import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type {
   CurrencyCode,
   PaymentMethodType,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { AutoCompleteHint } from '@payments/domain/subdomains/payment/contracts/autocomplete-hint.types';
+import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 /**

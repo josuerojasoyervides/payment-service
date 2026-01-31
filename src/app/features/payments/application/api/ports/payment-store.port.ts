@@ -4,16 +4,16 @@ import type {
   PaymentsState,
 } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
-import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
-import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
-import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type {
   CurrencyCode,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
+import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
+import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,

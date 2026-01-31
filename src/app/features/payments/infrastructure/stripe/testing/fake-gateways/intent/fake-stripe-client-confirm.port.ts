@@ -1,13 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import type {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type {
   ClientConfirmPort,
   ClientConfirmRequest,
 } from '@payments/application/api/ports/client-confirm.port';
 import { resolveStatusReference } from '@payments/application/orchestration/flow/payment-flow/context/payment-flow.context';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { buildStripeDtoFromFakeState } from '@payments/infrastructure/fake/shared/helpers/build-stripe-dto-from-fake-state.helper';
 import { mapIntent } from '@payments/infrastructure/fake/shared/mappers/intent.mapper';
 import { FakeIntentStore } from '@payments/infrastructure/fake/shared/state/fake-intent.store';

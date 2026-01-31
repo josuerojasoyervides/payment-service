@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import { LoggerService, TraceOperation } from '@core/logging';
 import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 export type IdempotencyOperation = 'start' | 'confirm' | 'cancel' | 'get';

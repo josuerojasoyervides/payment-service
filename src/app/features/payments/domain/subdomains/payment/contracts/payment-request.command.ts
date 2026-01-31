@@ -1,7 +1,7 @@
 import type {
   CurrencyCode,
   PaymentMethodType,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 
 /**
  * Provider-agnostic command to create a payment intent.

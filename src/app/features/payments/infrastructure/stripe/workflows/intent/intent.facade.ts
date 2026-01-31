@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,

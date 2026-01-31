@@ -1,7 +1,7 @@
 import type { PipeTransform } from '@angular/core';
 import { inject, Pipe } from '@angular/core';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import { I18nService } from '@core/i18n';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { getStatusText } from '@payments/ui/shared/ui.types';
 
 @Pipe({

@@ -15,7 +15,7 @@ import type {
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { StatusComponent } from '@payments/ui/pages/status/status.page';
 
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [

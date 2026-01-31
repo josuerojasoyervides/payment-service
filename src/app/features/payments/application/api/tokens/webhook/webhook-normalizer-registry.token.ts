@@ -1,5 +1,5 @@
 import { InjectionToken } from '@angular/core';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { WebhookNormalizer } from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
 
 export type WebhookNormalizerRegistry = Partial<

@@ -1,5 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import type {
+  PaymentIntent,
+  PaymentProviderId,
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type {
   PaypalCreateOrderRequest,
   PaypalOrderDto,
 } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
@@ -7,10 +11,6 @@ import { PAYPAL_API_BASE } from '@app/features/payments/infrastructure/paypal/sh
 import { I18nKeys } from '@core/i18n';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { mapOrder } from '@payments/infrastructure/paypal/workflows/order/mappers/map-order.mapper';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';

@@ -5,15 +5,15 @@ import { RouterLink } from '@angular/router';
 import type { PaymentCheckoutCatalogPort } from '@app/features/payments/application/api/ports/payment-store.port';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
-import { I18nKeys, I18nService } from '@core/i18n';
-import { LoggerService } from '@core/logging';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type {
   CurrencyCode,
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import { I18nKeys, I18nService } from '@core/i18n';
+import { LoggerService } from '@core/logging';
+import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
 import { OrderSummaryComponent } from '@payments/ui/components/order-summary/order-summary.component';

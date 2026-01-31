@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 
 // TODO : Check what this facade is used for and if it's still needed
 @Injectable({ providedIn: 'root' })

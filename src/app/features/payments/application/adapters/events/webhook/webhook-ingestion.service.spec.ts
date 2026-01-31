@@ -16,7 +16,7 @@ import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/con
 import type {
   PaymentIntent,
   PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { NormalizedWebhookEvent } from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
 import {
   type StripePaymentIntentWebhookEvent,

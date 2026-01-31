@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import { StripeTokenValidatorPolicy } from '@app/features/payments/infrastructure/stripe/shared/policies/stripe-token-validator.policy';
 import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
 import { I18nKeys } from '@core/i18n';
@@ -7,7 +8,6 @@ import type { PaymentGatewayPort } from '@payments/application/api/ports/payment
 import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type { PaymentMethodType } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type {
   FieldRequirements,
   PaymentRequestBuilder,

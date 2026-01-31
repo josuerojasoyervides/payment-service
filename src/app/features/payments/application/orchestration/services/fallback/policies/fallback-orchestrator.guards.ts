@@ -1,3 +1,4 @@
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
 import type {
   FallbackAvailableEvent,
@@ -7,7 +8,6 @@ import type {
   FallbackState,
   FallbackStatus,
 } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 /**

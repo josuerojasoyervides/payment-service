@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
 import { PAYMENT_PROVIDER_DESCRIPTORS } from '@payments/application/api/tokens/provider/payment-provider-descriptors.token';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 /**
  * Registry of provider descriptors (labelKey, descriptionKey, icon, badges).

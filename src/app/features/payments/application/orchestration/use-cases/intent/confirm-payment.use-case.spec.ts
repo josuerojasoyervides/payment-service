@@ -4,12 +4,12 @@ import type { PaymentGatewayPort } from '@payments/application/api/ports/payment
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/confirm-payment.use-case';
+import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type {
   PaymentIntent,
   PaymentMethodType,
   PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+} from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { firstValueFrom, of, throwError } from 'rxjs';
 
