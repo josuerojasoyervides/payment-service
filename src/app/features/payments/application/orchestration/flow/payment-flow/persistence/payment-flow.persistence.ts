@@ -2,7 +2,7 @@ import type {
   PaymentFlowContext,
   ProviderReferences,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { FLOW_CONTEXT_TTL_MS } from '@payments/application/orchestration/flow/payment-flow/context/payment-flow.context';
 
 export const FLOW_CONTEXT_SCHEMA_VERSION = 1;

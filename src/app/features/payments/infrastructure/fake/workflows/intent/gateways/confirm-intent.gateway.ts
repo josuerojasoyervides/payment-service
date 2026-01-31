@@ -1,8 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { buildStripeDtoFromFakeState } from '@app/features/payments/infrastructure/fake/shared/helpers/build-stripe-dto-from-fake-state.helper';
 import { createConfirmedPaypalOrder } from '@app/features/payments/infrastructure/fake/shared/helpers/create-confirmed-paypal-order.helper';
 import { createConfirmedStripeIntent } from '@app/features/payments/infrastructure/fake/shared/helpers/create-confirmed-stripe-intent.helper';

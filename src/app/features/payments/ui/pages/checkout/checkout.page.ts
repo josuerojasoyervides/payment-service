@@ -4,11 +4,9 @@ import { RouterLink } from '@angular/router';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.types';
-import type {
-  CurrencyCode,
-  PaymentProviderId,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';

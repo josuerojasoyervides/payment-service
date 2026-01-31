@@ -1,7 +1,5 @@
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import { STATUS_MAP } from '@payments/infrastructure/stripe/workflows/intent/mappers/internal-status.mapper';
 import { mapStripeNextAction } from '@payments/infrastructure/stripe/workflows/intent/mappers/next-action.mapper';

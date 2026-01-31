@@ -1,10 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { LoggerService } from '@core/logging';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type {

@@ -1,9 +1,7 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
-import type {
-  CurrencyCode,
-  PaymentProviderId,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import type { PaymentProviderUiMeta } from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
 import { PAYMENT_PROVIDER_UI_META } from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';

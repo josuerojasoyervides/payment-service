@@ -1,7 +1,5 @@
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { mapGeneric } from '@app/features/payments/infrastructure/fake/shared/mappers/generic.mapper';
 import { mapPaypalOrder } from '@app/features/payments/infrastructure/fake/shared/mappers/paypal-order.mapper';
 import { mapStripeIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/stripe-intent.mapper';

@@ -1,8 +1,6 @@
 import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.types';
 import type { ProviderRefs } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
-
-export const PAYMENT_PROVIDER_IDS = ['stripe', 'paypal'] as const;
-export type PaymentProviderId = (typeof PAYMENT_PROVIDER_IDS)[number];
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 
 export const PAYMENT_INTENT_STATUSES = [
   'requires_payment_method',

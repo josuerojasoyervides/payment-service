@@ -4,10 +4,10 @@ import { ActivatedRoute, provideRouter } from '@angular/router';
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nService } from '@core/i18n';
 import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
 import providePayments from '@payments/config/payment.providers';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { ReturnComponent } from '@payments/ui/pages/return/return.page';
 import { vi } from 'vitest';
 

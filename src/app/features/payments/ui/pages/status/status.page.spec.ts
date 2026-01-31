@@ -6,16 +6,14 @@ import { createMockPaymentState } from '@app/features/payments/application/api/t
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
 import type {
   PaymentFlowPort,
   ProviderDescriptor,
 } from '@payments/application/api/ports/payment-store.port';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { StatusComponent } from '@payments/ui/pages/status/status.page';
 
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [

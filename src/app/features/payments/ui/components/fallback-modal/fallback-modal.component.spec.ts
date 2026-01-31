@@ -2,10 +2,10 @@ import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [

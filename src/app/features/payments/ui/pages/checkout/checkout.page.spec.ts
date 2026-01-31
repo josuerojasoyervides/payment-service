@@ -7,6 +7,7 @@ import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
@@ -18,10 +19,7 @@ import type {
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type {
   FieldRequirements,
   PaymentOptions,

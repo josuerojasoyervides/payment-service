@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { LoggerService } from '@core/logging';
 import type { Observable } from 'rxjs';
 import { catchError, map, throwError } from 'rxjs';

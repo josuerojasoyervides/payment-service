@@ -2,10 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { ProviderMethodPolicyRegistry } from '@app/features/payments/application/orchestration/registry/provider-method-policy/provider-method-policy.registry';
 import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';

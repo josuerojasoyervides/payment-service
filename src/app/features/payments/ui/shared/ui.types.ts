@@ -2,9 +2,9 @@ import type { PaymentError } from '@app/features/payments/domain/subdomains/paym
 import type {
   CurrencyCode,
   PaymentIntent,
-  PaymentProviderId,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys } from '@core/i18n';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';

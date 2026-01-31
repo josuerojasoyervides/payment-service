@@ -1,15 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/cancel-payment.use-case';
 import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { firstValueFrom, of, throwError } from 'rxjs';
 

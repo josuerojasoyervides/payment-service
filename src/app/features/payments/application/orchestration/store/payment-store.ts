@@ -16,7 +16,7 @@ import { FallbackOrchestratorService } from '@app/features/payments/application/
 import type { PaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
 import { initialPaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import {
   signalStore,
   withComputed,

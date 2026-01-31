@@ -1,4 +1,4 @@
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 
 export type ProviderReferenceKey = 'intentId' | 'orderId' | 'preferenceId' | 'paymentId';
 

@@ -14,7 +14,7 @@ import { InMemoryFlowTelemetrySink } from '@app/features/payments/application/ad
 import type { PaymentFlowPort } from '@app/features/payments/application/api/ports/payment-store.port';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type {
   PaymentFlowCommandEvent,

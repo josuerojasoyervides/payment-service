@@ -1,7 +1,5 @@
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { findPaypalLink } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { STATUS_MAP } from '@payments/infrastructure/paypal/workflows/order/mappers/status.mapper';

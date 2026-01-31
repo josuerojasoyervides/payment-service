@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
 import { PAYMENT_PROVIDER_DESCRIPTORS } from '@payments/application/api/tokens/provider/payment-provider-descriptors.token';
 

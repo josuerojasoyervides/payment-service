@@ -1,6 +1,6 @@
 import type { Signal } from '@angular/core';
 import { computed, effect } from '@angular/core';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type { PaymentFlowSnapshot } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import { addToHistory } from '@payments/application/orchestration/store/history/payment-store.history';

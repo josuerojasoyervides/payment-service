@@ -8,7 +8,7 @@ import type {
   ReportFailurePayload,
 } from '@app/features/payments/application/orchestration/services/fallback/helpers/fallback-orchestrator.types';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { LoggerService } from '@core/logging/logger.service';
 import {
   hasDifferentEventId,

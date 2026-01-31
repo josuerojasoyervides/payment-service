@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { patchState } from '@ngrx/signals';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
@@ -8,10 +9,7 @@ import { HISTORY_MAX_ENTRIES } from '@payments/application/orchestration/store/h
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
 import { initialPaymentsState } from '@payments/application/orchestration/store/types/payment-store-state';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { Subject } from 'rxjs';
 
 describe('PaymentsStore', () => {

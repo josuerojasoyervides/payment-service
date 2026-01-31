@@ -7,10 +7,8 @@ import type {
 import type { NextActionClientConfirm } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.types';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type { FallbackMode } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';

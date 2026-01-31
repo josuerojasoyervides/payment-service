@@ -1,8 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { PaypalIntentFacade } from '@app/features/payments/infrastructure/paypal/workflows/order/order.facade';
 import type { FinalizePort, FinalizeRequest } from '@payments/application/api/ports/finalize.port';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';

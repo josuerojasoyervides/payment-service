@@ -1,6 +1,6 @@
 import type { Provider, ProviderToken, Type } from '@angular/core';
 import { inject } from '@angular/core';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { FakePaymentGateway } from '@app/features/payments/infrastructure/fake/workflows/intent/fake-intent.facade';
 import type { FakeCancelIntentGateway } from '@app/features/payments/infrastructure/fake/workflows/intent/gateways/cancel-intent.gateway';
 import type { FakeConfirmIntentGateway } from '@app/features/payments/infrastructure/fake/workflows/intent/gateways/confirm-intent.gateway';

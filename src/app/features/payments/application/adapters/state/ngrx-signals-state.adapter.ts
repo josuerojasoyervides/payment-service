@@ -5,9 +5,9 @@ import type { PaymentError } from '@app/features/payments/domain/subdomains/paym
 import type {
   CurrencyCode,
   PaymentIntent,
-  PaymentProviderId,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { deepComputed } from '@ngrx/signals';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
 import { mapReturnQueryToReference } from '@payments/application/adapters/events/external/mappers/payment-flow-return.mapper';

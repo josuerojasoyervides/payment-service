@@ -1,9 +1,7 @@
 import { updateState } from '@angular-architects/ngrx-toolkit';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { HISTORY_MAX_ENTRIES } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
