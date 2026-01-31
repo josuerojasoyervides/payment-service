@@ -71,6 +71,9 @@
         },
         "test": {
           "builder": "@angular/build:unit-test",
+          "options": {
+            "setupFiles": ["src/vitest.setup.ts"]
+          },
           "configurations": {
             "ci": {
               "watch": false,
