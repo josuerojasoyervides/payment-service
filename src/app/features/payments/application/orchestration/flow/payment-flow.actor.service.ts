@@ -10,6 +10,12 @@ import { ConfirmPaymentUseCase } from '@app/features/payments/application/orches
 import { GetPaymentStatusUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/start-payment.use-case';
 import { LoggerService } from '@core/logging';
+import type {
+  FlowTelemetryEvent,
+  FlowTelemetryEventType,
+} from '@payments/application/observability/telemetry/flow-telemetry.event';
+import { sanitizeTelemetryPayloadForSink } from '@payments/application/observability/telemetry/flow-telemetry.sanitize.rule';
+import { PAYMENTS_FLOW_TELEMETRY_SINK } from '@payments/application/observability/telemetry/flow-telemetry.sink';
 import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type {
   PaymentFlowActorRef,
@@ -35,6 +41,7 @@ import {
 import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
 import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
+import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
 
@@ -128,6 +135,44 @@ function snapshotTelemetryBase(snapshot: PaymentFlowSnapshot): {
   };
 }
 
+function flowIdFromSnapshot(snapshot: PaymentFlowSnapshot): string {
+  return snapshot.context.flowContext?.flowId ?? '';
+}
+
+function referenceIdFromSnapshot(snapshot: PaymentFlowSnapshot): string | null {
+  const intentId = snapshot.context.intentId ?? null;
+  if (intentId) return intentId;
+  const providerId = snapshot.context.providerId;
+  const refs = providerId && snapshot.context.flowContext?.providerRefs?.[providerId];
+  return (refs && typeof refs === 'object' && 'intentId' in refs ? refs.intentId : null) ?? null;
+}
+
+function buildFlowTelemetryEvent(
+  snapshot: PaymentFlowSnapshot,
+  overrides: {
+    type: FlowTelemetryEventType;
+    attempt?: number | null;
+    payload?: Record<string, unknown> | null;
+  },
+): FlowTelemetryEvent {
+  const flowId = flowIdFromSnapshot(snapshot);
+  const referenceId = referenceIdFromSnapshot(snapshot);
+  const providerId = (snapshot.context.providerId ?? null) as PaymentProviderId | null;
+  const stateNode = String(snapshot.value);
+  const tags = Array.from(snapshot.tags ?? []);
+  return {
+    type: overrides.type,
+    timestampMs: Date.now(),
+    flowId,
+    referenceId,
+    providerId,
+    stateNode,
+    tags,
+    attempt: overrides.attempt ?? null,
+    payload: overrides.payload ?? null,
+  };
+}
+
 @Injectable()
 export class PaymentFlowActorService {
   private readonly start = inject(StartPaymentUseCase);
@@ -139,6 +184,7 @@ export class PaymentFlowActorService {
   private readonly logger = inject(LoggerService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly telemetry = inject(FLOW_TELEMETRY_SINK);
+  private readonly flowTelemetrySink = inject(PAYMENTS_FLOW_TELEMETRY_SINK, { optional: true });
   private readonly configOverrides = inject(PAYMENT_FLOW_CONFIG_OVERRIDES, { optional: true });
   private readonly initialContextOverride = inject(PAYMENT_FLOW_INITIAL_CONTEXT, {
     optional: true,
@@ -269,6 +315,29 @@ export class PaymentFlowActorService {
         atMs,
         ...base,
       });
+      if (this.flowTelemetrySink) {
+        if (stateStr === 'polling') {
+          const prevAttempt = prev?.context?.polling?.attempt ?? -1;
+          const attempt = snapshot.context.polling?.attempt ?? 0;
+          if (prevState !== 'polling' || attempt !== prevAttempt) {
+            this.flowTelemetrySink.emit(
+              buildFlowTelemetryEvent(snapshot, {
+                type: 'POLL_ATTEMPTED',
+                attempt,
+                payload: { attempt, reason: 'poll_delay' },
+              }),
+            );
+          }
+        }
+        if (stateStr === 'done' && prevState !== 'done') {
+          this.flowTelemetrySink.emit(
+            buildFlowTelemetryEvent(snapshot, { type: 'FLOW_SUCCEEDED' }),
+          );
+        }
+        if (stateStr === 'failed' && prevState !== 'failed') {
+          this.flowTelemetrySink.emit(buildFlowTelemetryEvent(snapshot, { type: 'FLOW_FAILED' }));
+        }
+      }
       this.prevSnapshot = snapshot;
       this.persistFlowContext(snapshot);
       this.maybeReportFallback(snapshot);
@@ -326,6 +395,14 @@ export class PaymentFlowActorService {
       atMs: Date.now(),
       ...snapshotTelemetryBase(snap),
     });
+    if (this.flowTelemetrySink) {
+      if (event.type === 'START') {
+        this.flowTelemetrySink.emit(buildFlowTelemetryEvent(snap, { type: 'FLOW_STARTED' }));
+        this.flowTelemetrySink.emit(buildFlowTelemetryEvent(snap, { type: 'COMMAND_RECEIVED' }));
+      } else if (event.type === 'REFRESH') {
+        this.flowTelemetrySink.emit(buildFlowTelemetryEvent(snap, { type: 'COMMAND_RECEIVED' }));
+      }
+    }
     this.actor.send(event);
     return true;
   }
@@ -348,6 +425,19 @@ export class PaymentFlowActorService {
       ...base,
       refs: payloadRefs ?? base.refs,
     });
+    if (
+      this.flowTelemetrySink &&
+      (event.type === 'REDIRECT_RETURNED' || event.type === 'WEBHOOK_RECEIVED')
+    ) {
+      const raw =
+        'payload' in event && event.payload && typeof event.payload === 'object'
+          ? event.payload
+          : null;
+      const payload = sanitizeTelemetryPayloadForSink(raw);
+      this.flowTelemetrySink.emit(
+        buildFlowTelemetryEvent(snap, { type: 'SYSTEM_EVENT_RECEIVED', payload }),
+      );
+    }
     this.actor.send(event);
   }
 

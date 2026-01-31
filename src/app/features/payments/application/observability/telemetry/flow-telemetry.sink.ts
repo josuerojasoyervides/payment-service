@@ -10,4 +10,6 @@ export interface FlowTelemetrySink {
   emit(event: FlowTelemetryEvent): void;
 }
 
-export const FLOW_TELEMETRY_SINK = new InjectionToken<FlowTelemetrySink>('FLOW_TELEMETRY_SINK');
+export const PAYMENTS_FLOW_TELEMETRY_SINK = new InjectionToken<FlowTelemetrySink>(
+  'PAYMENTS_FLOW_TELEMETRY_SINK',
+);

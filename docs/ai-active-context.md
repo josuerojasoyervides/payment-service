@@ -31,7 +31,8 @@
 - **Contract:** `FlowTelemetryEvent` + `FlowTelemetrySink` (emit) + strict sanitizer in `application/observability/telemetry/`.
 - **Event types:** FLOW_STARTED, COMMAND_RECEIVED, SYSTEM_EVENT_RECEIVED, INTENT_UPDATED, POLL_ATTEMPTED, FINALIZE_REQUESTED, FINALIZE_SKIPPED, FALLBACK_STATUS, FLOW_SUCCEEDED, FLOW_FAILED. JSON-serializable; provider-agnostic.
 - **Sanitizer:** `sanitizeTelemetryPayloadForSink` — shallow allowlist (providerId, referenceId, eventId, returnNonce, operation, attempt, reason, status, code, messageKey). Never: raw, headers, clientSecret, token, email, authorization, request, response.
-- **Sinks:** NullTelemetrySink, InMemoryTelemetrySink (all/ofType/last/clear), optional ConsoleTelemetrySink. Token `FLOW_TELEMETRY_SINK` in observability; wiring in Phase B.
+- **Sinks:** NullTelemetrySink, InMemoryTelemetrySink (all/ofType/last/clear), optional ConsoleTelemetrySink. Token `PAYMENTS_FLOW_TELEMETRY_SINK`; default Null sink in config.
+- **Phase B:** Flow instrumented with minimal telemetry events (FLOW_STARTED, COMMAND_RECEIVED, SYSTEM_EVENT_RECEIVED, POLL_ATTEMPTED, FLOW_SUCCEEDED/FLOW_FAILED); default Null sink wired; tests use InMemory sink.
 
 ## 🧩 Fake mode (demo)
 
@@ -48,4 +49,4 @@
 
 ## ⏭️ Next
 
-- Phase B: wire observability sink and instrument flow/machine. Resume product work; add providers/methods per architecture rules.
+- Resume product work; add providers/methods per architecture rules.
