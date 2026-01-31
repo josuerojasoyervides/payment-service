@@ -7,9 +7,9 @@ import type { PaymentError } from '@app/features/payments/domain/subdomains/paym
 import type {
   CurrencyCode,
   PaymentIntent,
-  PaymentMethodType,
   PaymentProviderId,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type {
   PaymentDebugSummary,
   PaymentStorePort,

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ProviderMethodPolicyRegistry } from '@app/features/payments/application/orchestration/registry/provider-method-policy/provider-method-policy.registry';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type {
   PaymentStrategy,
   StrategyContext,
@@ -10,7 +11,6 @@ import { StartPaymentUseCase } from '@payments/application/orchestration/use-cas
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type {
   PaymentIntent,
-  PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';

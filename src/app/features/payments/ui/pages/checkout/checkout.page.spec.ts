@@ -6,6 +6,7 @@ import { createMockPaymentState } from '@app/features/payments/application/api/t
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
@@ -19,7 +20,6 @@ import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/con
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type {
   PaymentIntent,
-  PaymentMethodType,
   PaymentProviderId,
 } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type {

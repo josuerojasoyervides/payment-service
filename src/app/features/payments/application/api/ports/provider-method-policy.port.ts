@@ -1,7 +1,5 @@
-import type {
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 
 export interface ProviderMethodPolicy {
   providerId: PaymentProviderId;

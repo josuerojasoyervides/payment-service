@@ -4,9 +4,6 @@ import type { ProviderRefs } from '@app/features/payments/domain/subdomains/paym
 export const PAYMENT_PROVIDER_IDS = ['stripe', 'paypal'] as const;
 export type PaymentProviderId = (typeof PAYMENT_PROVIDER_IDS)[number];
 
-export const PAYMENT_METHOD_TYPES = ['card', 'spei'] as const;
-export type PaymentMethodType = (typeof PAYMENT_METHOD_TYPES)[number];
-
 export const PAYMENT_INTENT_STATUSES = [
   'requires_payment_method',
   'requires_confirmation',

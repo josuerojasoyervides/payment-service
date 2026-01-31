@@ -1,4 +1,5 @@
-import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+export const PAYMENT_METHOD_TYPES = ['card', 'spei'] as const;
+export type PaymentMethodType = (typeof PAYMENT_METHOD_TYPES)[number];
 
 export interface PaymentCardSummary {
   brand: string;

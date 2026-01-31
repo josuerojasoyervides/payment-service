@@ -7,9 +7,9 @@ import type { PaymentError } from '@app/features/payments/domain/subdomains/paym
 import type {
   CurrencyCode,
   PaymentIntent,
-  PaymentMethodType,
   PaymentProviderId,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';

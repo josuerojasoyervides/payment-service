@@ -6,9 +6,9 @@ import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/sto
 import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.types';
 import type {
   CurrencyCode,
-  PaymentMethodType,
   PaymentProviderId,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
