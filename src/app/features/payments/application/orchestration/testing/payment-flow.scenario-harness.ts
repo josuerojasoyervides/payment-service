@@ -46,6 +46,8 @@ function buildCommandEvent(
 
 export interface PaymentFlowScenarioHarnessOptions {
   extraProviders?: Provider[];
+  /** Default true. If true, vi.useFakeTimers() is called during setup; advance(ms) then works. If false, advance(ms) throws. */
+  useFakeTimers?: boolean;
 }
 
 export interface PaymentFlowScenarioHarness {
@@ -73,6 +75,11 @@ export function createPaymentFlowScenarioHarness(
   options?: PaymentFlowScenarioHarnessOptions,
 ): PaymentFlowScenarioHarness {
   TestBed.resetTestingModule();
+  const useFakeTimers = options?.useFakeTimers !== false;
+  if (useFakeTimers) {
+    vi.useFakeTimers();
+  }
+
   const sink = new InMemoryTelemetrySink();
 
   TestBed.configureTestingModule({
@@ -116,11 +123,12 @@ export function createPaymentFlowScenarioHarness(
       for (let i = 0; i < times; i++) await Promise.resolve();
     },
     advance(ms: number): void {
-      try {
-        vi.advanceTimersByTime(ms);
-      } catch {
-        // No-op when fake timers are not active
+      if (!useFakeTimers) {
+        throw new Error(
+          'advance(ms) requires useFakeTimers: true. Pass useFakeTimers: true in createPaymentFlowScenarioHarness options.',
+        );
       }
+      vi.advanceTimersByTime(ms);
     },
     async drain(): Promise<void> {
       await this.flushMicrotasks(3);

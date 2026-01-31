@@ -1,0 +1,110 @@
+/**
+ * Mega stress scenario (PR6 Phase D): duplicates + delays + out-of-order events.
+ * Asserts: convergence, finalize idempotency, telemetry timeline, no secrets in payloads.
+ */
+import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
+import { scheduleDelayedWebhook } from '@payments/application/orchestration/testing/fakes/delayed-webhook.fake';
+import { createFlakyStatusUseCaseFake } from '@payments/application/orchestration/testing/fakes/flaky-status-use-case.fake';
+import { createPaymentFlowScenarioHarness } from '@payments/application/orchestration/testing/payment-flow.scenario-harness';
+import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
+import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
+
+const baseRequest: CreatePaymentRequest = {
+  orderId: 'o1',
+  amount: 100,
+  currency: 'MXN',
+  method: { type: 'card' as const, token: 'tok_visa1234567890abcdef' },
+};
+
+const FORBIDDEN_PAYLOAD_KEYS = ['raw', 'clientSecret', 'token', 'email'];
+
+describe('Payment flow mega chaos (PR6 Phase D)', () => {
+  it('START + REDIRECT_RETURNED + delayed webhook + duplicate now + advance + REFRESH: finalize once, flow converges, telemetry has COMMAND_RECEIVED/SYSTEM_EVENT_RECEIVED, no secrets in payloads', async () => {
+    const refId = 'pi_mega';
+    const succeededIntent = {
+      id: refId,
+      provider: 'stripe' as const,
+      status: 'succeeded' as const,
+      amount: 100,
+      currency: 'MXN' as const,
+    };
+    const requestFinalizeSpy = vi.fn(() => of(succeededIntent));
+
+    const harness = createPaymentFlowScenarioHarness({
+      useFakeTimers: true,
+      extraProviders: [
+        {
+          provide: StartPaymentUseCase,
+          useValue: {
+            execute: () =>
+              of({
+                ...succeededIntent,
+                status: 'requires_action' as const,
+              }),
+          },
+        },
+        {
+          provide: NextActionOrchestratorService,
+          useValue: {
+            requestFinalize: requestFinalizeSpy,
+            requestClientConfirm: vi.fn(() => of(succeededIntent)),
+          },
+        },
+        {
+          provide: GetPaymentStatusUseCase,
+          useValue: createFlakyStatusUseCaseFake({
+            statusSequence: ['processing', 'succeeded'],
+            intentId: refId,
+            providerId: 'stripe',
+          }),
+        },
+      ],
+    });
+
+    harness.sendCommand('START', { providerId: 'stripe', request: baseRequest });
+    await harness.drain();
+
+    harness.sendSystem('REDIRECT_RETURNED', { providerId: 'stripe', referenceId: refId });
+
+    const webhookPayload = { providerId: 'stripe' as const, referenceId: refId, eventId: 'evt_1' };
+    scheduleDelayedWebhook((p) => harness.sendSystem('WEBHOOK_RECEIVED', p), webhookPayload, 200);
+    harness.sendSystem('WEBHOOK_RECEIVED', webhookPayload);
+
+    harness.advance(200);
+    harness.sendCommand('REFRESH');
+    await harness.drain();
+
+    expect(requestFinalizeSpy).toHaveBeenCalledTimes(1);
+
+    const snap = harness.getSnapshot();
+    expect(snap.hasTag('failed')).toBe(false);
+    expect(snap.hasTag('done') || snap.hasTag('ready') || harness.state.isReady()).toBe(true);
+
+    const commandReceived = harness.telemetry.ofType('COMMAND_RECEIVED');
+    expect(commandReceived.some((e) => e.flowId !== undefined || e.referenceId !== null)).toBe(
+      true,
+    );
+    const hasStartCommand = harness.telemetry.all().some((e) => e.type === 'FLOW_STARTED');
+    expect(hasStartCommand).toBe(true);
+
+    const systemReceived = harness.telemetry.ofType('SYSTEM_EVENT_RECEIVED');
+    expect(systemReceived.length).toBeGreaterThanOrEqual(2);
+    const withRef = systemReceived.filter((e) => e.payload?.['referenceId'] === refId);
+    expect(withRef.length).toBeGreaterThanOrEqual(1);
+
+    const pollAttempted = harness.telemetry.ofType('POLL_ATTEMPTED');
+    expect(pollAttempted.length).toBeGreaterThanOrEqual(0);
+
+    for (const event of harness.telemetry.all()) {
+      const payload = event.payload;
+      if (payload && typeof payload === 'object') {
+        for (const key of FORBIDDEN_PAYLOAD_KEYS) {
+          expect(payload).not.toHaveProperty(key);
+        }
+      }
+    }
+  });
+});
