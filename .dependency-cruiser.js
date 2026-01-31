@@ -1,4 +1,15 @@
 /** @type {import('dependency-cruiser').IConfiguration} */
+
+const TEST_FILES = [
+  '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
+  '^src/.*[.]integration[.]spec[.]ts$',
+];
+
+const TEST_SUPPORT = [
+  '[.]harness[.]ts$',
+  '(^|/)(testing|__tests__)/',
+];
+
 module.exports = {
   forbidden: [
     {
@@ -143,23 +154,16 @@ module.exports = {
       name: 'not-to-dev-dep',
       severity: 'error',
       comment:
-        "This module depends on an npm package from the 'devDependencies' section of your " +
-        'package.json. It looks like something that ships to production, though. To prevent problems ' +
-        "with npm packages that aren't there on production declare it (only!) in the 'dependencies'" +
-        'section of your package.json. If this module is development only - add it to the ' +
-        'from.pathNot re of the not-to-dev-dep rule in the dependency-cruiser configuration',
+        "Runtime must not depend on devDependencies. Tests/test-support are exempt.",
       from: {
         path: '^(src)',
         pathNot: [
-          '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
-          '(^|/)__tests__/', // harness/helpers under __tests__ may use vitest etc.
-          '^src/app/features/payments/application/api/testing/', // test harnesses may use vitest
+          ...TEST_FILES,
+          ...TEST_SUPPORT,
         ],
       },
       to: {
         dependencyTypes: ['npm-dev'],
-        // type only dependencies are not a problem as they don't end up in the
-        // production code or are ignored by the runtime.
         dependencyTypesNot: ['type-only'],
         pathNot: ['node_modules/@types/'],
       },
@@ -241,8 +245,11 @@ module.exports = {
     {
       name: 'ui-no-orchestration',
       severity: 'error',
-      comment: 'UI must not import orchestration. Use PAYMENT_STATE (port) only.',
-      from: { path: '^src/app/features/payments/ui' },
+      comment: 'UI runtime must not import orchestration. Use PAYMENT_STATE (port) only.',
+      from: {
+        path: '^src/app/features/payments/ui',
+        pathNot: TEST_SUPPORT,
+      },
       to: { path: '^src/app/features/payments/application/orchestration' },
     },
     {
@@ -255,8 +262,11 @@ module.exports = {
     {
       name: 'ui-no-config',
       severity: 'error',
-      comment: 'UI must not import config. Config wires DI; UI only consumes tokens.',
-      from: { path: '^src/app/features/payments/ui' },
+      comment: 'UI runtime must not import config. Config wires DI; UI only consumes tokens.',
+      from: {
+        path: '^src/app/features/payments/ui',
+        pathNot: TEST_SUPPORT,
+      },
       to: { path: '^src/app/features/payments/config' },
     },
     {
