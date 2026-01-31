@@ -28,13 +28,6 @@ async function setupCheckoutTestBed(): Promise<void> {
   }).compileComponents();
 }
 
-/**
- * Real integration tests for CheckoutComponent.
- * - Real flow
- * - Real registry
- * - Real providers
- * - Real FakeGateway (configured in payment.providers.ts)
- */
 describe('CheckoutComponent - Real Integration', () => {
   let component: CheckoutComponent;
   let fixture: ComponentFixture<CheckoutComponent>;

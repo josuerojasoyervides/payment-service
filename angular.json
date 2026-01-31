@@ -72,7 +72,7 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "setupFiles": ["src/vitest.setup.ts"]
+            "setupFiles": ["src/tests/vitest/timer.rule.ts"]
           },
           "configurations": {
             "ci": {
