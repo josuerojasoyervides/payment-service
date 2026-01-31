@@ -37,6 +37,7 @@ import {
   provideStripePayments,
   StripeWebhookNormalizer,
 } from '@app/features/payments/infrastructure/stripe/core/di/provide-stripe-payments';
+import { UI_PROVIDERS } from '@app/features/payments/ui/config/ui-providers';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
 import { CLIENT_CONFIRM_PORTS } from '@payments/application/api/tokens/operations/client-confirm.token';
@@ -119,6 +120,7 @@ function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provide
     ...ACTION_PORT_PROVIDERS,
     ...APPLICATION_PROVIDERS,
     ...SHARED_PROVIDERS,
+    ...UI_PROVIDERS,
     {
       provide: WEBHOOK_NORMALIZER_REGISTRY,
       useValue: {

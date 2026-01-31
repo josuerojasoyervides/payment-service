@@ -1,6 +1,7 @@
 import { Component, input } from '@angular/core';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
+import type { FieldTree } from '@angular/forms/signals';
 import { By } from '@angular/platform-browser';
 import { I18nService } from '@core/i18n';
 import type {
@@ -28,14 +29,34 @@ class TestHostComponent {
   }
 }
 
+function getTextFieldOrThrow(component: PaymentFormComponent, name: string): FieldTree<string> {
+  const field = component.textField(name);
+  if (!field) throw new Error(`Text field not found: ${name}`);
+  return field;
+}
+
+function getFlagFieldOrThrow(component: PaymentFormComponent, name: string): FieldTree<boolean> {
+  const field = component.flagField(name);
+  if (!field) throw new Error(`Flag field not found: ${name}`);
+  return field;
+}
+
+/**
+ * Determinista y sin timers. Útil si el effect de outputs
+ * se ejecuta en microtask (depende del scheduler interno).
+ */
+async function flushMicrotasks(times = 2): Promise<void> {
+  for (let i = 0; i < times; i++) {
+    await Promise.resolve();
+  }
+}
+
 describe('PaymentFormComponent', () => {
   let hostFixture: ComponentFixture<TestHostComponent>;
   let host: TestHostComponent;
   let component: PaymentFormComponent;
 
   beforeEach(async () => {
-    vi.useRealTimers();
-
     await TestBed.configureTestingModule({
       imports: [TestHostComponent],
       providers: [{ provide: I18nService, useValue: mockI18n }],
@@ -49,9 +70,7 @@ describe('PaymentFormComponent', () => {
   });
 
   afterEach(() => {
-    // Avoid leaking anything to other specs.
     hostFixture?.destroy();
-    vi.useRealTimers();
   });
 
   describe('dynamic PaymentOptions from FieldRequirements.fields', () => {
@@ -62,12 +81,15 @@ describe('PaymentFormComponent', () => {
           { name: 'customerEmail', type: 'email', required: false, labelKey: 'ui.email' },
         ],
       };
+
       hostFixture.componentRef.setInput('reqs', reqs);
       hostFixture.detectChanges();
 
-      component.form.get('description')?.setValue('hello');
+      const descriptionField = getTextFieldOrThrow(component, 'description');
+      descriptionField().value.set('hello');
+
       hostFixture.detectChanges();
-      await new Promise((r) => setTimeout(r, 200));
+      await flushMicrotasks();
 
       expect(host.lastOptions.description).toBe('hello');
     });
@@ -78,12 +100,15 @@ describe('PaymentFormComponent', () => {
           { name: 'description', type: 'text', required: false, labelKey: 'ui.description' },
         ],
       };
+
       hostFixture.componentRef.setInput('reqs', reqs);
       hostFixture.detectChanges();
 
-      component.form.get('description')?.setValue('   ');
+      const descriptionField = getTextFieldOrThrow(component, 'description');
+      descriptionField().value.set('   ');
+
       hostFixture.detectChanges();
-      await new Promise((r) => setTimeout(r, 200));
+      await flushMicrotasks();
 
       expect(host.lastOptions.description).toBeUndefined();
     });
@@ -99,11 +124,15 @@ describe('PaymentFormComponent', () => {
           },
         ],
       };
+
       hostFixture.componentRef.setInput('reqs', reqs);
       hostFixture.detectChanges();
 
-      component.form.get('saveForFuture')?.setValue(true);
-      await new Promise((r) => setTimeout(r, 200));
+      const saveForFutureField = getFlagFieldOrThrow(component, 'saveForFuture');
+      saveForFutureField().value.set(true);
+
+      hostFixture.detectChanges();
+      await flushMicrotasks();
 
       expect(host.lastOptions.saveForFuture).toBe(true);
     });

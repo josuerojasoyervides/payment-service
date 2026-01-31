@@ -13,42 +13,50 @@
       </div>
     }
 
-    <form [formGroup]="form" class="space-y-4">
+    <form class="space-y-4">
       @for (field of visibleFields(); track field.name; let index = $index) {
         <div class="space-y-1">
           @if (field.name === 'saveForFuture') {
-            <!-- Checkbox para saveForFuture -->
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                [formControlName]="field.name"
-                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-              <span class="label cursor-pointer">
-                {{ field.labelKey | i18n }}
-              </span>
-            </label>
+            @let node = flagField(field.name);
+
+            @if (node) {
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  [formField]="node"
+                  class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                <span class="label cursor-pointer">
+                  {{ field.labelKey | i18n }}
+                </span>
+              </label>
+            }
           } @else {
-            <!-- Input normal para otros campos -->
-            <label [for]="field.name" class="label">
-              {{ field.labelKey | i18n }}
-              @if (field.required) {
-                <span class="text-red-500 ml-0.5">*</span>
+            @let node = textField(field.name);
+            @let invalid = isFieldInvalid(field.name);
+
+            @if (node) {
+              <label [for]="field.name" class="label">
+                {{ field.labelKey | i18n }}
+                @if (field.required) {
+                  <span class="text-red-500 ml-0.5">*</span>
+                }
+              </label>
+
+              <input
+                [id]="field.name"
+                [type]="field.type"
+                [formField]="node"
+                [placeholder]="field.placeholderKey | i18n"
+                class="input"
+                [appAutofocus]="index === 0"
+                [class.input-error]="invalid"
+                (blur)="markTextFieldTouched(field.name)" />
+
+              @if (invalid) {
+                <p class="text-sm text-red-500">
+                  {{ fieldRequiredText() }}
+                </p>
               }
-            </label>
-
-            <input
-              [id]="field.name"
-              [type]="field.type"
-              [formControlName]="field.name"
-              [placeholder]="field.placeholderKey | i18n"
-              class="input"
-              [appAutofocus]="index === 0"
-              [class.input-error]="isFieldInvalid(field.name)" />
-
-            @if (isFieldInvalid(field.name)) {
-              <p class="text-sm text-red-500">
-                {{ fieldRequiredText() }}
-              </p>
             }
           }
         </div>
@@ -60,7 +68,7 @@
             <div class="flex items-center gap-2">
               <span>{{ field.labelKey | i18n }}:</span>
               <code class="bg-gray-100 px-1 rounded">
-                {{ form.get(field.name)?.value || '(auto)' }}
+                {{ hiddenFieldDisplayValue(field.name) }}
               </code>
             </div>
           }
