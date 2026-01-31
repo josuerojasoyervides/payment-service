@@ -135,7 +135,7 @@ describe('FallbackOrchestratorService', () => {
 
       const attempts = service.failedAttempts();
       expect(attempts).toHaveLength(1);
-      expect(attempts[0].provider).toBe('stripe');
+      expect(attempts[0].providerId).toBe('stripe');
       expect(attempts[0].error).toEqual(providerUnavailableError);
       expect(attempts[0].wasAutoFallback).toBe(false);
     });

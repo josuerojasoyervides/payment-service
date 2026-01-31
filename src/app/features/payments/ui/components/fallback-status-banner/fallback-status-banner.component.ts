@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
+import type { FallbackStatus } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.types';
 import { I18nKeys, I18nService } from '@core/i18n';
-import type { FallbackStatus } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 
 /**
  * Non-modal banner shown when fallback is executing or auto-executing.

@@ -1,8 +1,8 @@
 import type { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
+import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.types';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
-import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 /**
@@ -42,7 +42,7 @@ export function getAlternativeProvidersPolicy(
   request: CreatePaymentRequest,
 ): PaymentProviderId[] {
   const allProviders = registry.getAvailableProviders();
-  const failedProviderIds = state.failedAttempts.map((a) => a.provider);
+  const failedProviderIds = state.failedAttempts.map((a) => a.providerId);
 
   const priority = Array.from(new Set([...config.providerPriority, ...allProviders]));
 

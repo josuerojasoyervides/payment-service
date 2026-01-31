@@ -1,13 +1,13 @@
 import type { WritableSignal } from '@angular/core';
 import type { FinishStatus } from '@app/features/payments/application/orchestration/services/fallback/helpers/fallback-orchestrator.types';
-import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type {
   FailedAttempt,
   FallbackState,
-} from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
+} from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.types';
+import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.types';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 /**
@@ -73,7 +73,7 @@ export function registerFailureTransition(
   wasAutoFallback: boolean,
 ): void {
   const attempt: FailedAttempt = {
-    provider: providerId,
+    providerId: providerId,
     error,
     timestamp: Date.now(),
     wasAutoFallback,
