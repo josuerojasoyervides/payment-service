@@ -34,6 +34,8 @@ describe('PaymentFormComponent', () => {
   let component: PaymentFormComponent;
 
   beforeEach(async () => {
+    vi.useRealTimers();
+
     await TestBed.configureTestingModule({
       imports: [TestHostComponent],
       providers: [{ provide: I18nService, useValue: mockI18n }],
@@ -44,6 +46,12 @@ describe('PaymentFormComponent', () => {
     component = hostFixture.debugElement.query(
       By.directive(PaymentFormComponent),
     ).componentInstance;
+  });
+
+  afterEach(() => {
+    // Avoid leaking anything to other specs.
+    hostFixture?.destroy();
+    vi.useRealTimers();
   });
 
   describe('dynamic PaymentOptions from FieldRequirements.fields', () => {

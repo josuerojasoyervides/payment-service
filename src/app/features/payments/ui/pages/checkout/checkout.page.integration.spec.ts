@@ -1,107 +1,31 @@
-//file: checkout.page.integration.spec.ts
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
 import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
-import { FALLBACK_CONFIG } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
-import providePayments from '@payments/config/payment.providers';
-import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
 import { FakeIntentStore } from '@payments/infrastructure/fake/shared/state/fake-intent.store';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 
-/**
- * Wait for the flow to complete:
- * - success: intent exists and not loading
- * - error: hasError true and not loading
- */
-async function waitForPaymentComplete(
-  state: PaymentFlowPort,
-  maxWaitMs = 2000,
-  pollMs = 50,
-): Promise<void> {
-  const startTime = Date.now();
+import {
+  BASE_PROVIDERS,
+  settle,
+  waitForIntentStatus,
+  waitForPaymentComplete,
+  waitUntilIdle,
+} from './checkout.page.harness';
 
-  while (Date.now() - startTime < maxWaitMs) {
-    const intent = state.intent();
-    const isLoading = state.isLoading();
-    const hasError = state.hasError();
-
-    if ((intent && !isLoading) || (hasError && !isLoading)) return;
-
-    await new Promise((resolve) => setTimeout(resolve, pollMs));
-  }
-
-  const snap = state.getSnapshot();
-  const summary = state.debugSummary();
-
-  throw new Error(
-    `Payment did not complete within ${maxWaitMs}ms.\n` +
-      `Final state: ${JSON.stringify(
-        {
-          intent: !!snap.intent,
-          isLoading: summary.status === 'loading',
-          isReady: summary.status === 'ready',
-          hasError: summary.status === 'error',
-          status: summary.status,
-        },
-        null,
-        2,
-      )}`,
-  );
-}
-
-/** Wait until intent has given status or timeout. maxWaitMs 1500–2500 to avoid flakiness. */
-async function waitForIntentStatus(
-  state: PaymentFlowPort,
-  status: string,
-  maxWaitMs = 2500,
-  pollMs = 50,
-): Promise<void> {
-  const startTime = Date.now();
-  while (Date.now() - startTime < maxWaitMs) {
-    if (state.intent()?.status === status) return;
-    if (state.hasError()) {
-      throw new Error(
-        `Intent status did not become "${status}" within ${maxWaitMs}ms. Flow has error: ${state.error()?.code ?? 'unknown'}`,
-      );
-    }
-    await new Promise((resolve) => setTimeout(resolve, pollMs));
-  }
-  throw new Error(
-    `Intent status did not become "${status}" within ${maxWaitMs}ms. Current: ${state.intent()?.status ?? 'null'}`,
-  );
-}
-
-/** Wait until machine is idle (e.g. after reset). */
-async function waitUntilIdle(state: PaymentFlowPort, maxWaitMs = 500, pollMs = 20): Promise<void> {
-  const startTime = Date.now();
-  while (Date.now() - startTime < maxWaitMs) {
-    if (!state.isReady() && !state.isLoading()) return;
-    await new Promise((resolve) => setTimeout(resolve, pollMs));
-  }
-}
-
-/**
- * Helper: ensure the component is in \"form valid\" state
- * before executing the payment, avoiding flakiness caused by
- * form rebuilds / effects / whenStable.
- */
-function ensureValidForm(component: CheckoutComponent): void {
+export function ensureValidForm(component: CheckoutComponent): void {
   if (!component.checkoutPageState.isFormValid()) component.onFormValidChange(true);
   expect(component.checkoutPageState.isFormValid()).toBe(true);
 }
 
-/**
- * Helper: micro-wait to allow effects/render to finish.
- * Useful when changing signals + detectChanges.
- */
-async function settle(fixture: ComponentFixture<any>): Promise<void> {
-  await fixture.whenStable();
-  fixture.detectChanges();
+async function setupCheckoutTestBed(): Promise<void> {
+  await TestBed.configureTestingModule({
+    imports: [CheckoutComponent],
+    providers: BASE_PROVIDERS,
+  }).compileComponents();
 }
 
 /**
@@ -119,22 +43,10 @@ describe('CheckoutComponent - Real Integration', () => {
   let state: PaymentFlowPort;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [CheckoutComponent],
-      providers: [
-        ...providePayments(),
-        provideRouter([]),
-        LoggerService,
-        // Exclude timeout from fallback so tok_timeout test sees error in store (no fallbackCandidate)
-        {
-          provide: FALLBACK_CONFIG,
-          useValue: {
-            ...DEFAULT_FALLBACK_CONFIG,
-            triggerErrorCodes: ['provider_unavailable', 'provider_error', 'network_error'],
-          },
-        },
-      ],
-    }).compileComponents();
+    // Si quieres real timers por estabilidad del whenStable / timeouts reales:
+    vi.useRealTimers();
+
+    await setupCheckoutTestBed();
 
     fixture = TestBed.createComponent(CheckoutComponent);
     component = fixture.componentInstance;
@@ -147,6 +59,17 @@ describe('CheckoutComponent - Real Integration', () => {
 
     fixture.detectChanges();
     await settle(fixture);
+  });
+
+  afterEach(() => {
+    fixture?.destroy();
+    vi.useRealTimers();
+  });
+
+  afterAll(() => {
+    // Avoid leaking providers/TestBed state to other files
+    TestBed.resetTestingModule();
+    vi.useRealTimers();
   });
 
   describe('Initialization', () => {
@@ -441,9 +364,10 @@ describe('CheckoutComponent - Real Integration', () => {
 
       state.refreshPayment({ intentId: intentAfterStart!.id }, 'stripe');
       await waitForPaymentComplete(state, 3000);
-      await new Promise((r) => setTimeout(r, 200));
+
       state.refreshPayment({ intentId: intentAfterStart!.id }, 'stripe');
       await waitForIntentStatus(state, 'succeeded', 4000);
+
       fixture.detectChanges();
 
       expect(state.isLoading()).toBe(false);
@@ -568,10 +492,7 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(component.checkoutPageState.isFormValid()).toBe(false);
 
       component.processPayment();
-
-      // Should bloquearse inmediatamente, sin loading y sin intent
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      fixture.detectChanges();
+      await settle(fixture);
 
       expect(state.isLoading()).toBe(false);
       expect(state.intent()).toBeNull();

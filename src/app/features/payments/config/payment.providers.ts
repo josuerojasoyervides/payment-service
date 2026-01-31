@@ -6,12 +6,18 @@
  * Composition root for providers, use cases, stores, and infra.
  */
 import type { EnvironmentProviders } from '@angular/core';
-import { type Provider } from '@angular/core';
+import { isDevMode, type Provider } from '@angular/core';
 import { ExternalEventAdapter } from '@app/features/payments/application/adapters/events/external/external-event.adapter';
+import { CompositeFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/composite-flow-telemetry-sink';
+import { ConsoleFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/dev-only/console-flow-telemetry-sink';
+import { InMemoryFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/dev-only/in-memory-flow-telemetry-sink';
 import { NoopFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/prod-only/noop-flow-telemetry-sink';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
-import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
+import {
+  FLOW_TELEMETRY_SINK,
+  FLOW_TELEMETRY_SINKS,
+} from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { WEBHOOK_NORMALIZER_REGISTRY } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
 import { PaymentFlowMachineDriver } from '@app/features/payments/application/orchestration/flow/payment-flow-machine-driver';
 import { ProviderDescriptorRegistry } from '@app/features/payments/application/orchestration/registry/provider-descriptor/provider-descriptor.registry';
@@ -47,6 +53,26 @@ function selectProviderConfigs(mode: PaymentsProvidersMode): Provider[] {
   return [...provideStripePayments(mode), ...providePaypalPayments(mode)];
 }
 
+function selectTelemetryProviders(): Provider[] {
+  const sinks: Provider[] = [
+    // composite concrete
+    CompositeFlowTelemetrySink,
+    // single sink consumed by the flow
+    { provide: FLOW_TELEMETRY_SINK, useExisting: CompositeFlowTelemetrySink },
+  ];
+
+  if (isDevMode()) {
+    sinks.push(
+      { provide: FLOW_TELEMETRY_SINKS, useClass: InMemoryFlowTelemetrySink, multi: true },
+      { provide: FLOW_TELEMETRY_SINKS, useClass: ConsoleFlowTelemetrySink, multi: true },
+    );
+  } else {
+    sinks.push({ provide: FLOW_TELEMETRY_SINKS, useClass: NoopFlowTelemetrySink, multi: true });
+  }
+
+  return [...sinks];
+}
+
 const USE_CASE_PROVIDERS: Provider[] = [
   StartPaymentUseCase,
   ConfirmPaymentUseCase,
@@ -60,20 +86,26 @@ const ACTION_PORT_PROVIDERS: Provider[] = [
 ];
 
 const APPLICATION_PROVIDERS: Provider[] = [
+  // Adapters
+  ExternalEventAdapter,
+  // Registry
   ProviderDescriptorRegistry,
   ProviderFactoryRegistry,
   ProviderMethodPolicyRegistry,
-  ExternalEventAdapter,
+  // Orchestration
   FallbackOrchestratorService,
   NextActionOrchestratorService,
-  PaymentsStore,
+  // Flow machine
   PaymentFlowActorService,
   PaymentFlowMachineDriver,
   PaymentHistoryFacade,
+  // Store
+  PaymentsStore,
   NgRxSignalsStateAdapter,
   { provide: PAYMENT_STATE, useExisting: NgRxSignalsStateAdapter },
   { provide: PAYMENT_CHECKOUT_CATALOG, useExisting: NgRxSignalsStateAdapter },
-  { provide: FLOW_TELEMETRY_SINK, useClass: NoopFlowTelemetrySink },
+  // Telemetry providers
+  ...selectTelemetryProviders(),
 ];
 
 const SHARED_PROVIDERS: Provider[] = [IdempotencyKeyFactory];

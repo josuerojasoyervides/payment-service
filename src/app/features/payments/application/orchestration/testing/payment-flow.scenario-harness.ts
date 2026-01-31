@@ -1,7 +1,7 @@
 /**
- * Tests-only scenario harness for payment flow stress tests (PR6.2).
- * Boots the flow actor with InMemory telemetry; exposes sendCommand, sendSystem,
- * getSnapshot, telemetry helpers, and flush/fake-timer utilities.
+ * Deterministic scenario harness for payment flow stress tests (PR6 Phase C).
+ * Uses FLOW_TELEMETRY_SINK with InMemoryFlowTelemetrySink; exposes state (port), telemetry, sendCommand, sendSystem, flush, advance, drain.
+ * Harness does not import @payments/infrastructure.
  */
 import type { Provider } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -11,7 +11,8 @@ import type {
   WebhookReceivedPayload,
 } from '@app/features/payments/application/adapters/events/flow/payment-flow.events';
 import { InMemoryFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/dev-only/in-memory-flow-telemetry-sink';
-import type { FlowTelemetryEvent } from '@app/features/payments/application/adapters/telemetry/types/flow-telemetry.types';
+import type { PaymentFlowPort } from '@app/features/payments/application/api/ports/payment-store.port';
+import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type {
@@ -22,24 +23,6 @@ import providePayments from '@payments/config/payment.providers';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { vi } from 'vitest';
-
-export interface ScenarioHarness {
-  sendCommand(type: string, payload?: Record<string, unknown>): boolean;
-  sendSystem(
-    type: 'REDIRECT_RETURNED' | 'WEBHOOK_RECEIVED' | 'EXTERNAL_STATUS_UPDATED',
-    payload: RedirectReturnedPayload | WebhookReceivedPayload | ExternalStatusUpdatedPayload,
-  ): void;
-  getSnapshot(): PaymentFlowSnapshot;
-  getTelemetryEvents(): readonly FlowTelemetryEvent[];
-  countEvents(
-    kindOrPredicate?: FlowTelemetryEvent['kind'] | ((e: FlowTelemetryEvent) => boolean),
-  ): number;
-  findLastEvent(predicate: (e: FlowTelemetryEvent) => boolean): FlowTelemetryEvent | undefined;
-  flushMicrotasks(times?: number): Promise<void>;
-  useFakeTimers(): void;
-  tick(ms: number): void;
-  useRealTimers(): void;
-}
 
 function buildCommandEvent(
   type: string,
@@ -61,13 +44,45 @@ function buildCommandEvent(
   throw new Error(`Unsupported command type: ${type}`);
 }
 
-export interface ScenarioHarnessOptions {
+export interface PaymentFlowScenarioHarnessOptions {
   extraProviders?: Provider[];
+  /** Default true. If true, vi.useFakeTimers() is called during setup; advance(ms) then works. If false, advance(ms) throws. */
+  useFakeTimers?: boolean;
 }
 
-export function createScenarioHarness(options?: ScenarioHarnessOptions): ScenarioHarness {
+export interface PaymentFlowScenarioHarness {
+  /** InMemoryFlowTelemetrySink (PR6 observability) for timeline assertions */
+  telemetry: InMemoryFlowTelemetrySink;
+  /** PaymentFlowPort (PAYMENT_STATE) for store/UI-facing state */
+  state: PaymentFlowPort;
+  sendCommand(type: string, payload?: Record<string, unknown>): boolean;
+  sendSystem(
+    type: 'REDIRECT_RETURNED' | 'WEBHOOK_RECEIVED' | 'EXTERNAL_STATUS_UPDATED',
+    payload: RedirectReturnedPayload | WebhookReceivedPayload | ExternalStatusUpdatedPayload,
+  ): void;
+  getSnapshot(): PaymentFlowSnapshot;
+  flushMicrotasks(times?: number): Promise<void>;
+  advance(ms: number): void;
+  drain(): Promise<void>;
+  /** Optional: current debug state node from port */
+  debugStateNode(): string | null;
+  /** Restore real timers and reset TestBed; call in afterEach to avoid leaking fake timers between tests. */
+  dispose(): void;
+}
+
+/**
+ * Creates a scenario harness with TestBed, FLOW_TELEMETRY_SINK (InMemoryFlowTelemetrySink), and optional overrides.
+ */
+export function createPaymentFlowScenarioHarness(
+  options?: PaymentFlowScenarioHarnessOptions,
+): PaymentFlowScenarioHarness {
   TestBed.resetTestingModule();
-  const sink = new InMemoryFlowTelemetrySink(500);
+  const useFakeTimers = options?.useFakeTimers !== false;
+  if (useFakeTimers) {
+    vi.useFakeTimers();
+  }
+
+  const sink = new InMemoryFlowTelemetrySink();
 
   TestBed.configureTestingModule({
     providers: [
@@ -78,11 +93,13 @@ export function createScenarioHarness(options?: ScenarioHarnessOptions): Scenari
   });
 
   const actor = TestBed.inject(PaymentFlowActorService);
+  const state = TestBed.inject(PAYMENT_STATE);
 
   return {
+    telemetry: sink,
+    state,
     sendCommand(type: string, payload?: Record<string, unknown>): boolean {
-      const event = buildCommandEvent(type, payload);
-      return actor.send(event);
+      return actor.send(buildCommandEvent(type, payload));
     },
     sendSystem(
       type: 'REDIRECT_RETURNED' | 'WEBHOOK_RECEIVED' | 'EXTERNAL_STATUS_UPDATED',
@@ -104,28 +121,28 @@ export function createScenarioHarness(options?: ScenarioHarnessOptions): Scenari
     getSnapshot(): PaymentFlowSnapshot {
       return actor.snapshot() as PaymentFlowSnapshot;
     },
-    getTelemetryEvents(): readonly FlowTelemetryEvent[] {
-      return sink.getEvents();
-    },
-    countEvents(
-      kindOrPredicate?: FlowTelemetryEvent['kind'] | ((e: FlowTelemetryEvent) => boolean),
-    ): number {
-      return sink.countEvents(kindOrPredicate);
-    },
-    findLastEvent(predicate: (e: FlowTelemetryEvent) => boolean): FlowTelemetryEvent | undefined {
-      return sink.findLast(predicate);
-    },
     async flushMicrotasks(times = 3): Promise<void> {
       for (let i = 0; i < times; i++) await Promise.resolve();
     },
-    useFakeTimers(): void {
-      vi.useFakeTimers();
-    },
-    tick(ms: number): void {
+    advance(ms: number): void {
+      if (!useFakeTimers) {
+        throw new Error(
+          'advance(ms) requires useFakeTimers: true. Pass useFakeTimers: true in createPaymentFlowScenarioHarness options.',
+        );
+      }
       vi.advanceTimersByTime(ms);
     },
-    useRealTimers(): void {
+    async drain(): Promise<void> {
+      await this.flushMicrotasks(3);
+      this.advance(0);
+      await this.flushMicrotasks(3);
+    },
+    debugStateNode(): string | null {
+      return state.debugStateNode() ?? null;
+    },
+    dispose(): void {
       vi.useRealTimers();
+      TestBed.resetTestingModule();
     },
   };
 }

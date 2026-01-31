@@ -75,6 +75,25 @@
             "ci": {
               "watch": false,
               "reporters": ["default", "github-actions"]
+            },
+            "unit": {
+              "include": ["src/**/*.spec.ts"],
+              "exclude": ["src/**/*.integration.spec.ts"]
+            },
+            "integration": {
+              "watch": false,
+              "include": ["src/**/*.integration.spec.ts"]
+            },
+            "ci-unit": {
+              "watch": false,
+              "reporters": ["default", "github-actions"],
+              "include": ["src/**/*.spec.ts"],
+              "exclude": ["src/**/*.integration.spec.ts"]
+            },
+            "ci-integration": {
+              "watch": false,
+              "reporters": ["default", "github-actions"],
+              "include": ["src/**/*.integration.spec.ts"]
             }
           }
         },
