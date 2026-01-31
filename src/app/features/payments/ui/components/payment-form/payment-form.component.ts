@@ -1,26 +1,14 @@
 import { CommonModule } from '@angular/common';
-import type { OnDestroy } from '@angular/core';
 import { Component, computed, effect, inject, input, output } from '@angular/core';
-import { FormControl, FormRecord, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormField } from '@angular/forms/signals';
 import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
 import type {
   FieldRequirement,
   FieldRequirements,
   PaymentOptions,
 } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import { PaymentOptionsForm } from '@payments/ui/forms/payment-options/payment-options-form';
 import { AutofocusDirective } from '@shared/directives/autofocus.directive';
-import { debounceTime, Subject, takeUntil } from 'rxjs';
-
-function setOpt<K extends keyof PaymentOptions>(
-  opts: PaymentOptions,
-  key: K,
-  value: PaymentOptions[K],
-): void {
-  opts[key] = value;
-}
-
-type DynamicControl = FormControl<string | boolean>;
-type DynamicForm = FormRecord<DynamicControl>;
 
 /**
  * Dynamic payment form component.
@@ -41,11 +29,13 @@ type DynamicForm = FormRecord<DynamicControl>;
 @Component({
   selector: 'app-payment-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AutofocusDirective, I18nPipe],
+  imports: [CommonModule, FormField, AutofocusDirective, I18nPipe],
+  providers: [PaymentOptionsForm],
   templateUrl: './payment-form.component.html',
 })
-export class PaymentFormComponent implements OnDestroy {
+export class PaymentFormComponent {
   private readonly i18n = inject(I18nService);
+  private readonly formEngine = inject(PaymentOptionsForm);
 
   /** Form field requirements */
   readonly requirements = input<FieldRequirements | null>(null);
@@ -59,29 +49,19 @@ export class PaymentFormComponent implements OnDestroy {
   /** Emits when form validity changes */
   readonly formValidChange = output<boolean>();
 
-  /** Reactive form */
-  readonly form: DynamicForm = new FormRecord<DynamicControl>({});
-
-  private readonly destroy$ = new Subject<void>();
-
   constructor() {
     effect(() => {
-      const reqs = this.requirements();
-      this.rebuildForm(reqs);
+      this.formEngine.setRequirements(this.requirements());
     });
 
     effect(() => {
-      if (this.disabled()) {
-        this.form.disable({ emitEvent: false });
-      } else {
-        this.form.enable({ emitEvent: false });
-      }
+      this.formEngine.setDisabled(this.disabled());
     });
-  }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    effect(() => {
+      this.formChange.emit(this.formEngine.paymentOptions());
+      this.formValidChange.emit(this.formEngine.isValid());
+    });
   }
 
   /** Visible fields (not hidden) */
@@ -98,117 +78,39 @@ export class PaymentFormComponent implements OnDestroy {
     return reqs.fields.filter((f) => f.type === 'hidden');
   }
 
-  /** Checks if a field has an error */
+  textField(name: string) {
+    return this.formEngine.textField(name);
+  }
+
+  flagField(name: string) {
+    return this.formEngine.flagField(name);
+  }
+
   isFieldInvalid(fieldName: string): boolean {
-    const control = this.form.get(fieldName);
-    return control ? control.invalid && control.touched : false;
+    const field = this.formEngine.textField(fieldName);
+    if (!field) return false;
+
+    const state = field();
+    return state.invalid() && state.touched();
   }
 
-  private rebuildForm(requirements: FieldRequirements | null): void {
-    this.destroy$.next();
-
-    this.form.reset();
-
-    const keys = Object.keys(this.form.controls);
-    keys.forEach((key) => this.form.removeControl(key));
-
-    if (!requirements) return;
-
-    for (const field of requirements.fields) {
-      let defaultValue = field.defaultValue ?? '';
-
-      // Do not auto-fill returnUrl/cancelUrl from currentUrl
-      // These URLs must come from StrategyContext (CheckoutComponent)
-      // The form focuses on real user inputs (token, customerEmail, saveForFuture)
-      if (
-        field.autoComplete === 'current-url' &&
-        (field.name === 'returnUrl' || field.name === 'cancelUrl')
-      ) {
-        // Keep empty - these URLs come from context, not from the form
-        defaultValue = '';
-      } else if (field.autoComplete === 'current-url') {
-        defaultValue = typeof window !== 'undefined' ? window.location.href : '';
-      }
-
-      let controlValue: string | boolean = defaultValue;
-      if (field.name === 'saveForFuture') {
-        if (defaultValue === 'false' || defaultValue === '' || !defaultValue) {
-          controlValue = false;
-        } else if (defaultValue === 'true') {
-          controlValue = true;
-        } else {
-          controlValue = !!defaultValue;
-        }
-      }
-
-      const isRequired = field.required;
-      const validators = isRequired ? [Validators.required] : [];
-
-      if (field.type === 'email') {
-        validators.push(Validators.email);
-      }
-
-      this.form.addControl(
-        field.name,
-        new FormControl(controlValue, { validators, nonNullable: true }),
-      );
-    }
-
-    this.emitFormState();
-
-    this.form.valueChanges.pipe(debounceTime(150), takeUntil(this.destroy$)).subscribe(() => {
-      this.emitFormState();
-    });
+  markTextFieldTouched(fieldName: string): void {
+    const field = this.formEngine.textField(fieldName);
+    if (!field) return;
+    field().markAsTouched();
   }
 
-  private emitFormState(): void {
-    const reqs = this.requirements();
-    const options: PaymentOptions = {};
+  hiddenFieldDisplayValue(fieldName: string): string {
+    const model = this.formEngine.model();
 
-    if (!reqs) {
-      this.formChange.emit(options);
-      this.formValidChange.emit(this.form.valid);
-      return;
+    const flagValue = model.flags[fieldName];
+    if (typeof flagValue === 'boolean') {
+      return String(flagValue);
     }
 
-    for (const field of reqs.fields) {
-      const control = this.form.get(field.name);
-      if (!control) continue;
-
-      const value = control.value;
-
-      if (field.name === 'saveForFuture') {
-        if (typeof value === 'boolean') {
-          setOpt(options, 'saveForFuture', value);
-        } else if (typeof value === 'string') {
-          setOpt(options, 'saveForFuture', value.trim() === 'true');
-        }
-        continue;
-      }
-
-      if (typeof value === 'boolean') {
-        setOpt(
-          options,
-          field.name as keyof PaymentOptions,
-          value as PaymentOptions[keyof PaymentOptions],
-        );
-        continue;
-      }
-
-      if (typeof value === 'string') {
-        const trimmed = value.trim();
-        if (trimmed) {
-          setOpt(
-            options,
-            field.name as Exclude<keyof PaymentOptions, 'saveForFuture'>,
-            trimmed as PaymentOptions[Exclude<keyof PaymentOptions, 'saveForFuture'>],
-          );
-        }
-      }
-    }
-
-    this.formChange.emit(options);
-    this.formValidChange.emit(this.form.valid);
+    const raw = model.values[fieldName] ?? '';
+    const trimmed = raw.trim();
+    return trimmed ? trimmed : '(auto)';
   }
 
   readonly fieldRequiredText = computed(() => this.i18n.t(I18nKeys.ui.field_required));
