@@ -9,6 +9,7 @@ import { CancelPaymentUseCase } from '@app/features/payments/application/orchest
 import { ConfirmPaymentUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/start-payment.use-case';
+import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.types';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import { LoggerService } from '@core/logging';
@@ -34,7 +35,6 @@ import {
   isPaymentFlowSnapshot,
   isSnapshotInspectionEventWithSnapshot,
 } from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.guards';
-import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
 

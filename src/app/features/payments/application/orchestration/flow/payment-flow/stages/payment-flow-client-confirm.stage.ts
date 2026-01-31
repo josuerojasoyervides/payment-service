@@ -1,8 +1,8 @@
+import type { NextActionClientConfirm } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.types';
 import type {
   PaymentFlowMachineContext,
   PaymentFlowStatesConfig,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
-import type { NextActionClientConfirm } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 
 /**
  * clientConfirming invokes application orchestration (ClientConfirmPort via NextActionOrchestrator).

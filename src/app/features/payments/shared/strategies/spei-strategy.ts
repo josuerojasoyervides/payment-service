@@ -1,3 +1,4 @@
+import type { NextActionManualStep } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.types';
 import type {
   PaymentIntent,
   PaymentMethodType,
@@ -10,7 +11,6 @@ import type {
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
-import type { NextActionManualStep } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
 import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { Observable } from 'rxjs';
