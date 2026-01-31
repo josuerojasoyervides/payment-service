@@ -33,6 +33,7 @@
 - **Sanitizer:** `sanitizeTelemetryPayloadForSink` — shallow allowlist (providerId, referenceId, eventId, returnNonce, operation, attempt, reason, status, code, messageKey). Never: raw, headers, clientSecret, token, email, authorization, request, response.
 - **Sinks:** NullTelemetrySink, InMemoryTelemetrySink (all/ofType/last/clear), optional ConsoleTelemetrySink. Token `PAYMENTS_FLOW_TELEMETRY_SINK`; default Null sink in config.
 - **Phase B:** Flow instrumented with minimal telemetry events (FLOW_STARTED, COMMAND_RECEIVED, SYSTEM_EVENT_RECEIVED, POLL_ATTEMPTED, FLOW_SUCCEEDED/FLOW_FAILED); default Null sink wired; tests use InMemory sink.
+- **Phase C:** Deterministic scenario harness (orchestration/testing) + stress specs for idempotency and correlation mismatch; asserts invariants + telemetry.
 
 ## 🧩 Fake mode (demo)
 
