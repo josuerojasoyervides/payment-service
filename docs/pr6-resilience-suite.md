@@ -21,26 +21,26 @@ bun run test:ci -- --testPathPattern="stress|mega-chaos"
 - **Finalize idempotency:** REDIRECT_RETURNED + WEBHOOK_RECEIVED (including duplicates) → `requestFinalize` called exactly once; flow converges to done/ready.
 - **Correlation mismatch:** WEBHOOK_RECEIVED with a different `referenceId` than the current flow → event ignored; state unchanged for current intent; no finalize triggered.
 - **Convergence:** Flow does not end in `failed` when duplicates/delays/out-of-order events are applied; telemetry timeline is consistent.
-- **No secrets in telemetry:** Payloads are sanitized (allowlist); no `raw`, `clientSecret`, `token`, `email`, `headers`, `authorization` in any event payload.
+- **No secrets in telemetry:** New envelope uses `refs`/`meta` only; no `raw`, `clientSecret`, `token`, `email`, `headers`, `authorization` in any event.
 
-## Telemetry events (Phase B list)
+## Telemetry events (FLOW_TELEMETRY_SINK)
 
-Events emitted by the flow (observability sink):
+Events emitted by the flow (new envelope: `kind`, `eventType`, `refs`, `meta`; no raw payloads):
 
-| Type                  | When                                                           |
-| --------------------- | -------------------------------------------------------------- |
-| FLOW_STARTED          | START command sent                                             |
-| COMMAND_RECEIVED      | START or REFRESH command sent                                  |
-| SYSTEM_EVENT_RECEIVED | REDIRECT_RETURNED or WEBHOOK_RECEIVED sent (payload sanitized) |
-| POLL_ATTEMPTED        | Polling state, each attempt                                    |
-| FLOW_SUCCEEDED        | State transitions to done                                      |
-| FLOW_FAILED           | State transitions to failed                                    |
+| Kind              | When                                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| COMMAND_SENT      | START or REFRESH command sent (`eventType` === 'START'/'REFRESH')                               |
+| SYSTEM_EVENT_SENT | REDIRECT_RETURNED or WEBHOOK_RECEIVED sent; correlation via `refs.referenceId` / `refs.eventId` |
+| STATE_CHANGED     | Machine state transition (state, tags, errorCode, status)                                       |
+| EFFECT_START      | Effect state entered (e.g. starting, fetchingStatusInvoke)                                      |
+| EFFECT_FINISH     | Effect state left                                                                               |
+| ERROR_RAISED      | Error code set on context                                                                       |
 
-**Interpreting the timeline:** Use `InMemoryTelemetrySink` in tests; assert `telemetry.ofType('SYSTEM_EVENT_RECEIVED')`, `telemetry.last('FLOW_SUCCEEDED')`, etc. Payload is always allowlisted (e.g. `providerId`, `referenceId`, `eventId`, `status`, `code`, `messageKey`); never log raw or secrets.
+**Interpreting the timeline:** Use `InMemoryFlowTelemetrySink` in tests: `telemetry.ofKind(...)`, `telemetry.lastKind(...)`, `telemetry.getEvents()`, `telemetry.count(...)`. Correlation is via `event.refs?.referenceId` and `event.refs?.eventId`; no secrets by design (refs/meta only).
 
-## Payload sanitization
+## No secrets in telemetry
 
-Telemetry payloads are passed through `sanitizeTelemetryPayloadForSink` (or built allowlisted). Allowed keys: `providerId`, `referenceId`, `eventId`, `returnNonce`, `operation`, `attempt`, `reason`, `status`, `code`, `messageKey`. Forbidden: `raw`, `headers`, `clientSecret`, `token`, `email`, `authorization`, `request`, `response`.
+The new telemetry envelope does not carry raw payloads: only `refs` (allowlisted correlation: referenceId, eventId, etc.) and optional `meta`. Secrets (clientSecret, token, email, authorization, etc.) are never recorded.
 
 ## Evidence checks (report hygiene)
 

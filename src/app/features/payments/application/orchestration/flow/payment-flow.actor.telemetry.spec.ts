@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { PAYMENTS_FLOW_TELEMETRY_SINK } from '@payments/application/observability/telemetry/flow-telemetry.sink';
-import { InMemoryTelemetrySink } from '@payments/application/observability/telemetry/sinks/in-memory-telemetry.sink';
+import { InMemoryFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/dev-only/in-memory-flow-telemetry-sink';
+import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import providePayments from '@payments/config/payment.providers';
 
@@ -12,11 +12,13 @@ async function waitForPolling(actor: PaymentFlowActorService, timeoutMs = 3000):
   }
 }
 
-describe('PaymentFlowActorService (PR6 Phase B telemetry)', () => {
-  it('emits FLOW_STARTED, COMMAND_RECEIVED, and POLL_ATTEMPTED for START -> processing -> polling', async () => {
-    const sink = new InMemoryTelemetrySink();
+const FORBIDDEN_KEYS = ['raw', 'clientSecret', 'token', 'email'];
+
+describe('PaymentFlowActorService (PR6 flow telemetry)', () => {
+  it('emits COMMAND_SENT (eventType START) and STATE_CHANGED (state polling) for START -> processing -> polling', async () => {
+    const sink = new InMemoryFlowTelemetrySink();
     TestBed.configureTestingModule({
-      providers: [...providePayments(), { provide: PAYMENTS_FLOW_TELEMETRY_SINK, useValue: sink }],
+      providers: [...providePayments(), { provide: FLOW_TELEMETRY_SINK, useValue: sink }],
     });
     const actor = TestBed.inject(PaymentFlowActorService);
 
@@ -33,19 +35,21 @@ describe('PaymentFlowActorService (PR6 Phase B telemetry)', () => {
 
     await waitForPolling(actor);
 
-    const flowStarted = sink.ofType('FLOW_STARTED');
-    const commandReceived = sink.ofType('COMMAND_RECEIVED');
-    const pollAttempted = sink.ofType('POLL_ATTEMPTED');
+    const commandSent = sink.ofKind('COMMAND_SENT');
+    const hasStart = commandSent.some((e) => e.kind === 'COMMAND_SENT' && e.eventType === 'START');
+    expect(hasStart).toBe(true);
 
-    expect(flowStarted.length).toBeGreaterThanOrEqual(1);
-    expect(commandReceived.length).toBeGreaterThanOrEqual(1);
-    expect(pollAttempted.length).toBeGreaterThanOrEqual(1);
+    const stateChanged = sink.ofKind('STATE_CHANGED');
+    const hasPolling = stateChanged.some(
+      (e) => e.kind === 'STATE_CHANGED' && e.state === 'polling',
+    );
+    expect(hasPolling).toBe(true);
   });
 
-  it('emits SYSTEM_EVENT_RECEIVED with allowlisted payload for WEBHOOK_RECEIVED', async () => {
-    const sink = new InMemoryTelemetrySink();
+  it('emits SYSTEM_EVENT_SENT with refs for WEBHOOK_RECEIVED; no secrets in meta or refs', async () => {
+    const sink = new InMemoryFlowTelemetrySink();
     TestBed.configureTestingModule({
-      providers: [...providePayments(), { provide: PAYMENTS_FLOW_TELEMETRY_SINK, useValue: sink }],
+      providers: [...providePayments(), { provide: FLOW_TELEMETRY_SINK, useValue: sink }],
     });
     const actor = TestBed.inject(PaymentFlowActorService);
 
@@ -59,11 +63,27 @@ describe('PaymentFlowActorService (PR6 Phase B telemetry)', () => {
       },
     });
 
-    const last = sink.last('SYSTEM_EVENT_RECEIVED');
-    expect(last).not.toBeNull();
-    expect(last?.payload).not.toHaveProperty('raw');
-    expect(last?.payload).toHaveProperty('providerId', 'stripe');
-    expect(last?.payload).toHaveProperty('referenceId', 'ref_123');
-    expect(last?.payload).toHaveProperty('eventId', 'ev_456');
+    const systemSent = sink.ofKind('SYSTEM_EVENT_SENT');
+    const webhook = systemSent.find(
+      (e) => e.kind === 'SYSTEM_EVENT_SENT' && e.eventType === 'WEBHOOK_RECEIVED',
+    );
+    expect(webhook).toBeDefined();
+    expect(webhook?.refs?.['referenceId']).toBe('ref_123');
+    expect(webhook?.refs?.['eventId']).toBe('ev_456');
+
+    for (const event of sink.getEvents()) {
+      const refs = 'refs' in event ? event.refs : undefined;
+      if (refs && typeof refs === 'object') {
+        for (const key of FORBIDDEN_KEYS) {
+          expect(refs).not.toHaveProperty(key);
+        }
+      }
+      const meta = 'meta' in event ? event.meta : undefined;
+      if (meta && typeof meta === 'object') {
+        for (const key of FORBIDDEN_KEYS) {
+          expect(meta).not.toHaveProperty(key);
+        }
+      }
+    }
   });
 });

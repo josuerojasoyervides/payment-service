@@ -1,6 +1,6 @@
 /**
  * Deterministic scenario harness for payment flow stress tests (PR6 Phase C).
- * Uses PAYMENTS_FLOW_TELEMETRY_SINK with InMemoryTelemetrySink; exposes state (port), telemetry, sendCommand, sendSystem, flush, advance, drain.
+ * Uses FLOW_TELEMETRY_SINK with InMemoryFlowTelemetrySink; exposes state (port), telemetry, sendCommand, sendSystem, flush, advance, drain.
  * Harness does not import @payments/infrastructure.
  */
 import type { Provider } from '@angular/core';
@@ -10,10 +10,10 @@ import type {
   RedirectReturnedPayload,
   WebhookReceivedPayload,
 } from '@app/features/payments/application/adapters/events/flow/payment-flow.events';
+import { InMemoryFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/dev-only/in-memory-flow-telemetry-sink';
 import type { PaymentFlowPort } from '@app/features/payments/application/api/ports/payment-store.port';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
-import { PAYMENTS_FLOW_TELEMETRY_SINK } from '@payments/application/observability/telemetry/flow-telemetry.sink';
-import { InMemoryTelemetrySink } from '@payments/application/observability/telemetry/sinks/in-memory-telemetry.sink';
+import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type {
   PaymentFlowCommandEvent,
@@ -51,8 +51,8 @@ export interface PaymentFlowScenarioHarnessOptions {
 }
 
 export interface PaymentFlowScenarioHarness {
-  /** InMemoryTelemetrySink (PR6 observability) for timeline assertions */
-  telemetry: InMemoryTelemetrySink;
+  /** InMemoryFlowTelemetrySink (PR6 observability) for timeline assertions */
+  telemetry: InMemoryFlowTelemetrySink;
   /** PaymentFlowPort (PAYMENT_STATE) for store/UI-facing state */
   state: PaymentFlowPort;
   sendCommand(type: string, payload?: Record<string, unknown>): boolean;
@@ -71,7 +71,7 @@ export interface PaymentFlowScenarioHarness {
 }
 
 /**
- * Creates a scenario harness with TestBed, PAYMENTS_FLOW_TELEMETRY_SINK (InMemoryTelemetrySink), and optional overrides.
+ * Creates a scenario harness with TestBed, FLOW_TELEMETRY_SINK (InMemoryFlowTelemetrySink), and optional overrides.
  */
 export function createPaymentFlowScenarioHarness(
   options?: PaymentFlowScenarioHarnessOptions,
@@ -82,12 +82,12 @@ export function createPaymentFlowScenarioHarness(
     vi.useFakeTimers();
   }
 
-  const sink = new InMemoryTelemetrySink();
+  const sink = new InMemoryFlowTelemetrySink();
 
   TestBed.configureTestingModule({
     providers: [
       ...providePayments(),
-      { provide: PAYMENTS_FLOW_TELEMETRY_SINK, useValue: sink },
+      { provide: FLOW_TELEMETRY_SINK, useValue: sink },
       ...(options?.extraProviders ?? []),
     ],
   });

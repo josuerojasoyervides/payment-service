@@ -4,12 +4,12 @@
 
 ---
 
-## 🕒 Last Sync: 2026-01-30
+## 🕒 Last Sync: 2026-01-31
 
 ## 📍 Mission State
 
-- **Current mission:** Payments refactor complete. UI demo + state machine + fakes. PR6 adds flow telemetry contract (Phase A done).
-- **Key folders:** Domain `domain/**`, Application `application/orchestration/**`, `application/adapters/**`, `application/observability/telemetry/**`, Config `config/payment.providers.ts`.
+- **Current mission:** PR2 done — legacy flow telemetry (observability/telemetry folder) removed. Only FLOW_TELEMETRY_SINK remains.
+- **Key folders:** Domain `domain/**`, Application `application/orchestration/**`, `application/adapters/telemetry/**`, `application/api/tokens/telemetry/**`, Config `config/payment.providers.ts`.
 
 ## 🖥️ UI surface & boundaries (UI-01)
 
@@ -26,15 +26,12 @@
 
 - **Adapters:** No `@core/i18n` or I18nKeys in `application/**`. Errors use `messageKey` string; UI translates with `i18n.t(error.messageKey)`.
 
-## 🧩 PR6 — Flow telemetry (Phase A)
+## 🧩 PR6 — Flow telemetry (PR2 done)
 
-- **Contract:** `FlowTelemetryEvent` + `FlowTelemetrySink` (emit) + strict sanitizer in `application/observability/telemetry/`.
-- **Event types:** FLOW_STARTED, COMMAND_RECEIVED, SYSTEM_EVENT_RECEIVED, INTENT_UPDATED, POLL_ATTEMPTED, FINALIZE_REQUESTED, FINALIZE_SKIPPED, FALLBACK_STATUS, FLOW_SUCCEEDED, FLOW_FAILED. JSON-serializable; provider-agnostic.
-- **Sanitizer:** `sanitizeTelemetryPayloadForSink` — shallow allowlist (providerId, referenceId, eventId, returnNonce, operation, attempt, reason, status, code, messageKey). Never: raw, headers, clientSecret, token, email, authorization, request, response.
-- **Sinks:** NullTelemetrySink, InMemoryTelemetrySink (all/ofType/last/clear), optional ConsoleTelemetrySink. Token `PAYMENTS_FLOW_TELEMETRY_SINK`; default Null sink in config.
-- **Phase B:** Flow instrumented with minimal telemetry events (FLOW_STARTED, COMMAND_RECEIVED, SYSTEM_EVENT_RECEIVED, POLL_ATTEMPTED, FLOW_SUCCEEDED/FLOW_FAILED); default Null sink wired; tests use InMemory sink.
-- **Phase C:** Deterministic scenario harness (orchestration/testing) + stress specs for idempotency and correlation mismatch; asserts invariants + telemetry.
-- **Phase D:** Chaos fakes (scheduleDelayedWebhook, createFlakyStatusUseCaseFake, OutOfOrder) + mega scenario + docs for resilience suite.
+- **Contract:** `FlowTelemetryEvent` (kind/eventType/refs/meta) + `FlowTelemetrySink` (record) in `application/adapters/telemetry/types/flow-telemetry.types.ts`. Token `FLOW_TELEMETRY_SINK`; default NoopFlowTelemetrySink in config. No legacy observability/telemetry folder.
+- **Kinds:** COMMAND_SENT, SYSTEM_EVENT_SENT, STATE_CHANGED, EFFECT_START, EFFECT_FINISH, ERROR_RAISED. Correlation via `refs.referenceId` / `refs.eventId`; no raw payloads.
+- **Tests:** All flow telemetry tests use FLOW_TELEMETRY_SINK + InMemoryFlowTelemetrySink (scenario harness + actor telemetry spec). Assert on `telemetry.ofKind(...)`, `telemetry.lastKind(...)`, `event.refs?.['referenceId']`.
+- **Docs:** `docs/pr6-resilience-suite.md` describes kind vocabulary and InMemoryFlowTelemetrySink helpers.
 
 ## 🧩 Fake mode (demo)
 

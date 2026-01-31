@@ -35,8 +35,6 @@ import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ng
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
 import { CLIENT_CONFIRM_PORTS } from '@payments/application/api/tokens/operations/client-confirm.token';
 import { FINALIZE_PORTS } from '@payments/application/api/tokens/operations/finalize.token';
-import { PAYMENTS_FLOW_TELEMETRY_SINK } from '@payments/application/observability/telemetry/flow-telemetry.sink';
-import { NullTelemetrySink } from '@payments/application/observability/telemetry/sinks/null-telemetry.sink';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
 import {
@@ -76,7 +74,6 @@ const APPLICATION_PROVIDERS: Provider[] = [
   { provide: PAYMENT_STATE, useExisting: NgRxSignalsStateAdapter },
   { provide: PAYMENT_CHECKOUT_CATALOG, useExisting: NgRxSignalsStateAdapter },
   { provide: FLOW_TELEMETRY_SINK, useClass: NoopFlowTelemetrySink },
-  { provide: PAYMENTS_FLOW_TELEMETRY_SINK, useClass: NullTelemetrySink },
 ];
 
 const SHARED_PROVIDERS: Provider[] = [IdempotencyKeyFactory];

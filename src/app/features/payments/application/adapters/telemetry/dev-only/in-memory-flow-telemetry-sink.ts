@@ -53,4 +53,14 @@ export class InMemoryFlowTelemetrySink implements FlowTelemetrySink {
     }
     return this.events.filter((e) => e.kind === predicateOrKind).length;
   }
+
+  /** Returns all events of the given kind (pure helper over existing storage). */
+  ofKind(kind: FlowTelemetryEvent['kind']): FlowTelemetryEvent[] {
+    return this.events.filter((e) => e.kind === kind);
+  }
+
+  /** Returns the last event of the given kind, or undefined (pure helper over existing storage). */
+  lastKind(kind: FlowTelemetryEvent['kind']): FlowTelemetryEvent | undefined {
+    return this.findLast((e) => e.kind === kind);
+  }
 }

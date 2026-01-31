@@ -1,6 +1,6 @@
 /**
  * Stress scenario: finalize idempotency under duplicate/out-of-order events (PR6 Phase C).
- * Asserts: finalize side-effect called exactly once; flow converges; telemetry contains expected SYSTEM_EVENT_RECEIVED.
+ * Asserts: finalize side-effect called exactly once; flow converges; telemetry contains expected SYSTEM_EVENT_SENT.
  */
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
 import {
@@ -28,7 +28,7 @@ describe('Payment flow stress — finalize idempotency (PR6 Phase C)', () => {
     harness = null;
   });
 
-  it('REDIRECT_RETURNED + WEBHOOK_RECEIVED + duplicate WEBHOOK: finalize called exactly once; flow converges; telemetry has SYSTEM_EVENT_RECEIVED', async () => {
+  it('REDIRECT_RETURNED + WEBHOOK_RECEIVED + duplicate WEBHOOK: finalize called exactly once; flow converges; telemetry has SYSTEM_EVENT_SENT', async () => {
     const refId = 'pi_123';
     const succeededIntent = {
       id: refId,
@@ -86,9 +86,9 @@ describe('Payment flow stress — finalize idempotency (PR6 Phase C)', () => {
     const snap = harness!.getSnapshot();
     expect(snap.hasTag('done') || snap.hasTag('ready') || harness!.state.isReady()).toBe(true);
 
-    const systemReceived = harness!.telemetry.ofType('SYSTEM_EVENT_RECEIVED');
-    expect(systemReceived.length).toBeGreaterThanOrEqual(1);
-    const withRef = systemReceived.filter((e) => e.payload?.['referenceId'] === refId);
+    const systemSent = harness!.telemetry.ofKind('SYSTEM_EVENT_SENT');
+    expect(systemSent.length).toBeGreaterThanOrEqual(1);
+    const withRef = systemSent.filter((e) => e.refs?.['referenceId'] === refId);
     expect(withRef.length).toBeGreaterThanOrEqual(1);
   });
 });

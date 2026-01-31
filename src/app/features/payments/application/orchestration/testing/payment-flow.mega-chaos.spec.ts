@@ -1,6 +1,6 @@
 /**
  * Mega stress scenario (PR6 Phase D): duplicates + delays + out-of-order events.
- * Asserts: convergence, finalize idempotency, telemetry timeline, no secrets in payloads.
+ * Asserts: convergence, finalize idempotency, telemetry timeline (new kinds/refs), no secrets in meta.
  */
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
 import { scheduleDelayedWebhook } from '@payments/application/orchestration/testing/fakes/delayed-webhook.fake';
@@ -22,7 +22,7 @@ const baseRequest: CreatePaymentRequest = {
 const FORBIDDEN_PAYLOAD_KEYS = ['raw', 'clientSecret', 'token', 'email'];
 
 describe('Payment flow mega chaos (PR6 Phase D)', () => {
-  it('START + REDIRECT_RETURNED + delayed webhook + duplicate now + advance + REFRESH: finalize once, flow converges, telemetry has COMMAND_RECEIVED/SYSTEM_EVENT_RECEIVED, no secrets in payloads', async () => {
+  it('START + REDIRECT_RETURNED + delayed webhook + duplicate now + advance + REFRESH: finalize once, flow converges, telemetry has COMMAND_SENT/SYSTEM_EVENT_SENT, no secrets in meta', async () => {
     const refId = 'pi_mega';
     const succeededIntent = {
       id: refId,
@@ -83,33 +83,23 @@ describe('Payment flow mega chaos (PR6 Phase D)', () => {
     expect(snap.hasTag('failed')).toBe(false);
     expect(snap.hasTag('done') || snap.hasTag('ready') || harness.state.isReady()).toBe(true);
 
-    const commandReceived = harness.telemetry.ofType('COMMAND_RECEIVED');
-    expect(commandReceived.some((e) => e.flowId !== undefined || e.referenceId !== null)).toBe(
-      true,
-    );
-    const hasStartCommand = harness.telemetry.all().some((e) => e.type === 'FLOW_STARTED');
+    const commandSent = harness.telemetry.ofKind('COMMAND_SENT');
+    expect(commandSent.length).toBeGreaterThanOrEqual(1);
+    const hasStartCommand = harness.telemetry
+      .ofKind('COMMAND_SENT')
+      .some((e) => e.kind === 'COMMAND_SENT' && e.eventType === 'START');
     expect(hasStartCommand).toBe(true);
 
-    const systemReceived = harness.telemetry.ofType('SYSTEM_EVENT_RECEIVED');
-    expect(systemReceived.length).toBeGreaterThanOrEqual(2);
-    const withRef = systemReceived.filter((e) => e.payload?.['referenceId'] === refId);
+    const systemSent = harness.telemetry.ofKind('SYSTEM_EVENT_SENT');
+    expect(systemSent.length).toBeGreaterThanOrEqual(2);
+    const withRef = systemSent.filter((e) => e.refs?.['referenceId'] === refId);
     expect(withRef.length).toBeGreaterThanOrEqual(1);
 
-    const pollAttempted = harness.telemetry.ofType('POLL_ATTEMPTED');
-    for (const event of pollAttempted) {
-      const payload = event.payload;
-      if (payload && typeof payload === 'object') {
+    for (const event of harness.telemetry.getEvents()) {
+      const meta = 'meta' in event ? event.meta : undefined;
+      if (meta && typeof meta === 'object') {
         for (const key of FORBIDDEN_PAYLOAD_KEYS) {
-          expect(payload).not.toHaveProperty(key);
-        }
-      }
-    }
-
-    for (const event of harness.telemetry.all()) {
-      const payload = event.payload;
-      if (payload && typeof payload === 'object') {
-        for (const key of FORBIDDEN_PAYLOAD_KEYS) {
-          expect(payload).not.toHaveProperty(key);
+          expect(meta).not.toHaveProperty(key);
         }
       }
     }
