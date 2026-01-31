@@ -71,6 +71,9 @@
         },
         "test": {
           "builder": "@angular/build:unit-test",
+          "options": {
+            "setupFiles": ["src/tests/vitest/timer.rule.ts"]
+          },
           "configurations": {
             "ci": {
               "watch": false,

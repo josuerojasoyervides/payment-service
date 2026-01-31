@@ -22,6 +22,10 @@ const baseRequest: CreatePaymentRequest = {
 const FORBIDDEN_PAYLOAD_KEYS = ['raw', 'clientSecret', 'token', 'email'];
 
 describe('Payment flow mega chaos (PR6 Phase D)', () => {
+  afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
+  });
   it('START + REDIRECT_RETURNED + delayed webhook + duplicate now + advance + REFRESH: finalize once, flow converges, telemetry has COMMAND_SENT/SYSTEM_EVENT_SENT, no secrets in meta', async () => {
     const refId = 'pi_mega';
     const succeededIntent = {
