@@ -12,7 +12,7 @@ import type {
   PaymentFlowSnapshot,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import type { PaymentFlowConfigOverrides } from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.policy';
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type {
   PaymentIntent,
   PaymentProviderId,

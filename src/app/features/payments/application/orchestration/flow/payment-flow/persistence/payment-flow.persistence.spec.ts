@@ -4,7 +4,7 @@ import {
   FLOW_CONTEXT_SCHEMA_VERSION,
   FlowContextStore,
 } from '@payments/application/orchestration/flow/payment-flow/persistence/payment-flow.persistence';
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/entities/payment-flow-context.types';
 
 class MemoryStorage implements KeyValueStorage {
   private readonly store = new Map<string, string>();

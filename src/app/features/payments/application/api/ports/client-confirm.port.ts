@@ -1,9 +1,9 @@
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { NextActionClientConfirm } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import type { Observable } from 'rxjs';
 
 export interface ClientConfirmRequest {

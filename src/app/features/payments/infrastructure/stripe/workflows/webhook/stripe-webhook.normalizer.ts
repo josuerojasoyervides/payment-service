@@ -1,3 +1,4 @@
+import type { ProviderReferences } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type {
   PaymentIntentStatus,
   PaymentProviderId,
@@ -6,7 +7,6 @@ import type {
   StripePaymentIntentDto,
   StripePaymentIntentStatus,
 } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import type { ProviderReferences } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import type {
   NormalizedWebhookEvent,
   WebhookNormalizer,

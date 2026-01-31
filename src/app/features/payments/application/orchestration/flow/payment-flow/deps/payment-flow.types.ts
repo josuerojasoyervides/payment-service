@@ -5,6 +5,7 @@ import type {
 } from '@app/features/payments/application/adapters/events/flow/payment-flow.events';
 // ✅ IMPORTANT: type-only import to avoid runtime circular dependency
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type {
   PaymentIntent,
   PaymentProviderId,
@@ -12,7 +13,6 @@ import type {
 import type { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type { FallbackMode } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
 import type { NextActionClientConfirm } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type {
   ActorRefFrom,

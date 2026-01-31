@@ -1,10 +1,10 @@
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type {
   PaymentIntent,
   PaymentProviderId,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { ClientConfirmRequest } from '@payments/application/api/ports/client-confirm.port';
 import type { FinalizeRequest } from '@payments/application/api/ports/finalize.port';
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,

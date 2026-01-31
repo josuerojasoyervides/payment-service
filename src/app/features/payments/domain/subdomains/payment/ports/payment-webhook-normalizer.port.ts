@@ -1,8 +1,8 @@
+import type { ProviderReferences } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type {
   PaymentIntentStatus,
   PaymentProviderId,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
-import type { ProviderReferences } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
 
 /**
  * Provider-agnostic representation of a webhook event that can be fed into

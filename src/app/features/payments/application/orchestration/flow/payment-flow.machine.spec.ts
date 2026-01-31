@@ -5,7 +5,7 @@ import type {
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import type { KeyValueStorage } from '@payments/application/orchestration/flow/payment-flow/persistence/payment-flow.persistence';
 import { createPaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { firstValueFrom, of } from 'rxjs';
 import type { AnyActorRef } from 'xstate';

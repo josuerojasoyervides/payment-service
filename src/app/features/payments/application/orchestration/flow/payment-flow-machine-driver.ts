@@ -1,5 +1,5 @@
 import { computed, inject, Injectable } from '@angular/core';
-import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/contracts/payment-flow-context.types';
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type { PaymentFlowPublicEvent } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
