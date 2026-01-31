@@ -7,7 +7,7 @@ const TEST_FILES = [
 
 const TEST_SUPPORT = [
   '[.]harness[.]ts$',
-  '(^|/)(testing|__tests__)/',
+  '(^|/)(testing|__tests__|tests)/',
 ];
 
 module.exports = {
