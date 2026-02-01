@@ -3,7 +3,7 @@ import { ExternalEventAdapter } from '@app/features/payments/application/adapter
 import type { WebhookReceivedPayload } from '@app/features/payments/application/adapters/events/flow/payment-flow.events';
 import { WEBHOOK_NORMALIZER_REGISTRY } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
-import type { NormalizedWebhookEvent } from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
+import type { NormalizedWebhookEvent } from '@app/features/payments/domain/subdomains/payment/messages/payment-webhook.event';
 
 @Injectable()
 export class WebhookIngestionService {

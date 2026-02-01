@@ -1,4 +1,5 @@
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import { createPaymentError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import {
   createFlowContext,
   mergeExternalReference,
@@ -47,7 +48,6 @@ import {
   isPaymentError,
   normalizePaymentError,
 } from '@payments/application/orchestration/store/projection/payment-store.errors';
-import { createPaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
 import { assign, fromPromise, setup } from 'xstate';
 
 export const createPaymentFlowMachine = (

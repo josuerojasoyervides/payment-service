@@ -8,7 +8,7 @@ import { createFlakyStatusUseCaseFake } from '@payments/application/orchestratio
 import { createPaymentFlowScenarioHarness } from '@payments/application/orchestration/testing/payment-flow.scenario-harness';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 

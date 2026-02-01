@@ -1,4 +1,4 @@
-import { NullTokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/null-token-validator.port';
+import { NoopTokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/noop-token-validator';
 
 /**
  * Token validator for PayPal.
@@ -22,7 +22,7 @@ import { NullTokenValidator } from '@app/features/payments/domain/subdomains/pay
  * validator.isValid('anything');  // true
  * ```
  */
-export class PaypalTokenValidatorPolicy extends NullTokenValidator {
+export class PaypalTokenValidatorPolicy extends NoopTokenValidator {
   /**
    * Override to provide a more specific message.
    */

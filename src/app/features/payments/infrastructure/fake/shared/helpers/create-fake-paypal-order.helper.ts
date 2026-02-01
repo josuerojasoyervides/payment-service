@@ -1,8 +1,8 @@
 // ============ FAKE PAYPAL RESPONSES ============
 
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { generateId } from '@app/features/payments/infrastructure/fake/shared/helpers/get-id.helper';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 export function createFakePaypalOrder(req: CreatePaymentRequest): PaypalOrderDto {
   const orderId = generateId('ORDER').toUpperCase();

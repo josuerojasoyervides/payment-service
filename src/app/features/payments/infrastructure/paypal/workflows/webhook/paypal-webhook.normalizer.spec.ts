@@ -1,4 +1,4 @@
-import type { NormalizedWebhookEvent } from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
+import type { NormalizedWebhookEvent } from '@payments/domain/subdomains/payment/messages/payment-webhook.event';
 import {
   type PaypalWebhookEvent,
   PaypalWebhookNormalizer,

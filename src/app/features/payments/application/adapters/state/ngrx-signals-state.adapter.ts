@@ -12,6 +12,12 @@ import type {
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type {
+  CancelPaymentRequest,
+  ConfirmPaymentRequest,
+  CreatePaymentRequest,
+  GetPaymentStatusRequest,
+} from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { deepComputed } from '@ngrx/signals';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
 import { mapReturnQueryToReference } from '@payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
@@ -27,12 +33,6 @@ import { ProviderDescriptorRegistry } from '@payments/application/orchestration/
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
-import type {
-  CancelPaymentRequest,
-  ConfirmPaymentRequest,
-  CreatePaymentRequest,
-  GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 /**
  * Adapter implementing PaymentFlowPort and PaymentCheckoutCatalogPort by delegating to PaymentsStore.

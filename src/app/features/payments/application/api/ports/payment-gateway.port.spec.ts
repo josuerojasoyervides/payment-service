@@ -5,15 +5,15 @@ import type { PaymentError } from '@app/features/payments/domain/subdomains/paym
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { BasePaymentGateway } from '@payments/application/api/ports/payment-gateway.port';
 import type {
+  PaymentIntent,
+  PaymentIntentStatus,
+} from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import type {
-  PaymentIntent,
-  PaymentIntentStatus,
-} from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+} from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import type { Observable } from 'rxjs';
 import { firstValueFrom, of, throwError } from 'rxjs';
 

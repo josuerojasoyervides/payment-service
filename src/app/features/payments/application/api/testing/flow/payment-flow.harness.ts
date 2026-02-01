@@ -14,13 +14,13 @@ import { InMemoryFlowTelemetrySink } from '@app/features/payments/application/ad
 import type { FlowTelemetryEvent } from '@app/features/payments/application/adapters/telemetry/types/flow-telemetry.types';
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type {
   PaymentFlowCommandEvent,
   PaymentFlowSnapshot,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import providePayments from '@payments/config/payment.providers';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { vi } from 'vitest';
 
 export interface ScenarioHarness {

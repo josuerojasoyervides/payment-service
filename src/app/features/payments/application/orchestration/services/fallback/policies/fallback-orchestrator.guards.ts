@@ -6,7 +6,7 @@ import type {
 import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
 import type { FallbackStatus } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-statuses.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 
 /**
  * ✅ Config / Enabled

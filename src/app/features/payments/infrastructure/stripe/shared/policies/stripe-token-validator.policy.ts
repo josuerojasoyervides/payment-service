@@ -1,4 +1,4 @@
-import { BaseTokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/base-token-validator.port';
+import { AbstractTokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/abstract-token-validator';
 
 /**
  * Token validator for Stripe.
@@ -16,7 +16,7 @@ import { BaseTokenValidator } from '@app/features/payments/domain/subdomains/pay
  * validator.validate('invalid');               // throws Error
  * ```
  */
-export class StripeTokenValidatorPolicy extends BaseTokenValidator {
+export class StripeTokenValidatorPolicy extends AbstractTokenValidator {
   protected readonly patterns = [
     /^tok_[a-zA-Z0-9]{14,}$/, // Stripe.js token
     /^pm_[a-zA-Z0-9]{14,}$/, // PaymentMethod ID

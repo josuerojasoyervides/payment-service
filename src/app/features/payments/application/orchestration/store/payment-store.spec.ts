@@ -8,8 +8,8 @@ import { FallbackOrchestratorService } from '@payments/application/orchestration
 import { HISTORY_MAX_ENTRIES } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
 import { initialPaymentsState } from '@payments/application/orchestration/store/types/payment-store-state';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { Subject } from 'rxjs';
 
 describe('PaymentsStore', () => {

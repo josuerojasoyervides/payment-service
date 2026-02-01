@@ -6,8 +6,8 @@ import type { PaymentGatewayPort } from '@payments/application/api/ports/payment
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { CancelPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/cancel-payment.use-case';
-import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { firstValueFrom, of, throwError } from 'rxjs';
 

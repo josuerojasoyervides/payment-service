@@ -1,9 +1,9 @@
-import type { TokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator.port';
+import type { TokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/token-validator.port';
 
 /**
  * Base validator that can be extended by providers.
  */
-export abstract class BaseTokenValidator implements TokenValidator {
+export abstract class AbstractTokenValidator implements TokenValidator {
   protected abstract readonly patterns: RegExp[];
   protected abstract readonly patternDescriptions: string[];
 

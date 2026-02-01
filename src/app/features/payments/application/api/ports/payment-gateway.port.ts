@@ -3,14 +3,14 @@ import { inject } from '@angular/core';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
-import { LoggerService } from '@core/logging';
-import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
+import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+} from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import { LoggerService } from '@core/logging';
 import type { Observable } from 'rxjs';
 import { catchError, map, tap, throwError } from 'rxjs';
 

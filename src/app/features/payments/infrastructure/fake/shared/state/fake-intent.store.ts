@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { generateId } from '@app/features/payments/infrastructure/fake/shared/helpers/get-id.helper';
 import type { TokenBehavior } from '@app/features/payments/infrastructure/fake/shared/helpers/get-token-behavior';
 import { getTokenBehavior } from '@app/features/payments/infrastructure/fake/shared/helpers/get-token-behavior';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 /** Stripe-compatible status for DTO mapping. */
 export type FakeIntentStatus =

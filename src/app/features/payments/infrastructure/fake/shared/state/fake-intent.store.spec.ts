@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { SPECIAL_TOKENS } from '@app/features/payments/infrastructure/fake/shared/constants/special-tokens';
 import { FakeIntentStore } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 
 function createRequest(overrides: Partial<CreatePaymentRequest> = {}): CreatePaymentRequest {
   return {

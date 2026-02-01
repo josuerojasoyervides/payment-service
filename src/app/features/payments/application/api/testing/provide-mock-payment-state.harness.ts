@@ -16,6 +16,12 @@ import type { PaymentMethodType } from '@app/features/payments/domain/subdomains
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type {
+  CancelPaymentRequest,
+  ConfirmPaymentRequest,
+  CreatePaymentRequest,
+  GetPaymentStatusRequest,
+} from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import type {
   PaymentDebugSummary,
   PaymentStorePort,
   ProviderDescriptor,
@@ -26,12 +32,6 @@ import type {
   PaymentFlowStatus,
   PaymentsState,
 } from '@payments/application/orchestration/store/types/payment-store-state';
-import type {
-  CancelPaymentRequest,
-  ConfirmPaymentRequest,
-  CreatePaymentRequest,
-  GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 export interface MockPaymentStateOverrides {
   status?: PaymentFlowStatus;

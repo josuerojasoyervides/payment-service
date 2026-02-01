@@ -1,7 +1,7 @@
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { I18nKeys } from '@core/i18n';
-import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 
 export function validateCreate(req: CreatePaymentRequest, providerId: PaymentProviderId) {
   if (!req.orderId) throw invalidRequestError('errors.order_id_required', { field: 'orderId' });

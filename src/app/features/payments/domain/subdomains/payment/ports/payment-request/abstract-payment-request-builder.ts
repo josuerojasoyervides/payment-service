@@ -1,7 +1,8 @@
-import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
+import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/payment-request-builder.port';
 /**
  * Base interface for payment request builders.
  *
@@ -10,7 +11,7 @@ import type { PaymentOptions } from '@app/features/payments/domain/subdomains/pa
  *
  * The UI never imports from infrastructure, only uses this interface.
  */
-export abstract class PaymentRequestBuilder {
+export abstract class PaymentRequestBuilder implements PaymentRequestBuilderPort {
   abstract forOrder(orderId: string): this;
   abstract withAmount(amount: number, currency: CurrencyCode): this;
   abstract withOptions(options: PaymentOptions): this;

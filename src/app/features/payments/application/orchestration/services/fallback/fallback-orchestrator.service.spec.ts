@@ -8,7 +8,7 @@ import {
 } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import type { FallbackConfig } from '@payments/domain/subdomains/fallback/entities/fallback-config.model';
 import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/subdomains/fallback/entities/fallback-config.model';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 
 describe('FallbackOrchestratorService', () => {
   let service: FallbackOrchestratorService;

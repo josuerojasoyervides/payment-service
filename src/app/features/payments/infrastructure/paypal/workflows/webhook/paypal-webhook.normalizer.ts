@@ -1,10 +1,8 @@
 import type { PaymentIntentStatus } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { ProviderReferences } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider-references.types';
-import type {
-  NormalizedWebhookEvent,
-  WebhookNormalizer,
-} from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
+import type { NormalizedWebhookEvent } from '@app/features/payments/domain/subdomains/payment/messages/payment-webhook.event';
+import type { WebhookNormalizer } from '@app/features/payments/domain/subdomains/payment/ports/payment-webhook-normalizer/payment-webhook-normalizer.port';
 
 /**
  * Minimal PayPal webhook event DTO for Orders/Captures events.

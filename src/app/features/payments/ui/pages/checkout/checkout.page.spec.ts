@@ -20,8 +20,8 @@ import type {
   PaymentFlowPort,
   ProviderDescriptor,
 } from '@payments/application/api/ports/payment-store.port';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
   {

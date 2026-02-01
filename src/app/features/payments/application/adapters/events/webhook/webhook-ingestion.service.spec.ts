@@ -15,7 +15,7 @@ import type {
 import type { PaymentFlowConfigOverrides } from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.policy';
 import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
-import type { NormalizedWebhookEvent } from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
+import type { NormalizedWebhookEvent } from '@payments/domain/subdomains/payment/messages/payment-webhook.event';
 import {
   type StripePaymentIntentWebhookEvent,
   StripeWebhookNormalizer,

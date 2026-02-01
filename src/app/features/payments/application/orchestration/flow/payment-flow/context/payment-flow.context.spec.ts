@@ -4,8 +4,8 @@ import {
   mergeProviderRefs,
   updateFlowContextProviderRefs,
 } from '@payments/application/orchestration/flow/payment-flow/context/payment-flow.context';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/entities/payment-flow-context.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 
 describe('payment-flow.context', () => {
   const request: CreatePaymentRequest = {
