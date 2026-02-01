@@ -31,6 +31,7 @@ export interface Translations {
     amount_invalid: string;
     method_type_required: string;
     card_token_required: string;
+    card_token_invalid_format: string;
     intent_id_required: string;
     min_amount: string;
     max_amount: string;

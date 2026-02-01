@@ -1,9 +1,14 @@
+import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { TokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/token-validator.port';
+import { I18nKeys } from '@core/i18n';
 
 /**
- * Base validator that can be extended by providers.
+ * Base validator for provider-specific token formats.
+ *
+ * Lives in Infrastructure (Stripe) — not in Domain — because it throws
+ * PaymentError with i18n keys. Domain only exposes the TokenValidator port.
  */
-export abstract class AbstractTokenValidator implements TokenValidator {
+export abstract class BaseTokenValidator implements TokenValidator {
   protected abstract readonly patterns: RegExp[];
   protected abstract readonly patternDescriptions: string[];
 
@@ -13,18 +18,14 @@ export abstract class AbstractTokenValidator implements TokenValidator {
     }
 
     if (!token) {
-      // TODO : Fix this magic strings
-      // TODO : Fix - i18n usage here
-      throw new Error(`Token is required for this payment method`);
+      throw invalidRequestError(I18nKeys.errors.card_token_required);
     }
 
     if (!this.isValid(token)) {
-      // TODO : Fix this magic strings
-      // TODO : Fix - i18n usage here
-      throw new Error(
-        `Invalid token format. Expected: ${this.patternDescriptions.join(' or ')}. ` +
-          `Got: ${this.maskToken(token)}`,
-      );
+      throw invalidRequestError(I18nKeys.errors.card_token_invalid_format, {
+        expected: this.patternDescriptions.join(' or '),
+        got: this.maskToken(token),
+      });
     }
   }
 
@@ -49,13 +50,11 @@ export abstract class AbstractTokenValidator implements TokenValidator {
   }
 
   /**
-   * Mask the token for safe logging.
+   * Mask the token for safe logging/error messages.
    */
   protected maskToken(token: string): string {
     if (!token || token.length < 8) {
-      // TODO : Fix this magic strings
-      // TODO : Fix - i18n usage here
-      return '[invalid]';
+      return '***';
     }
     return `${token.substring(0, 4)}...${token.substring(token.length - 4)}`;
   }

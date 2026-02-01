@@ -25,6 +25,8 @@ export const es: Translations = {
     amount_invalid: 'amount es inválido',
     method_type_required: 'payment method type es requerido',
     card_token_required: 'card token es requerido',
+    card_token_invalid_format:
+      'Formato de token inválido. Esperado: {{expected}}. Recibido: {{got}}',
     intent_id_required: 'intentId es requerido',
     min_amount: 'Monto mínimo para pagos con tarjeta es {{amount}} {{currency}}',
     max_amount: 'Monto máximo para pagos con SPEI es {{amount}} {{currency}}',
