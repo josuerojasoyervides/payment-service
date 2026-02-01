@@ -7,6 +7,8 @@ import type {
   FinishStatus,
   ReportFailurePayload,
 } from '@app/features/payments/application/orchestration/services/fallback/helpers/fallback-orchestrator.types';
+import type { FallbackConfig } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.types';
+import { DEFAULT_FALLBACK_CONFIG } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.types';
 import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.types';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
@@ -44,8 +46,6 @@ import {
   setPendingManualTransition,
   setTerminalTransition,
 } from '@payments/application/orchestration/services/fallback/runtime/fallback-orchestrator.transitions';
-import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
-import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
 import type {
   FallbackAvailableEvent,
   FallbackUserResponse,
