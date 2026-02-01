@@ -5,8 +5,8 @@ import type {
 } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
 import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
 import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-event.model';
-import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.types';
-import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type {
   CurrencyCode,
   PaymentIntent,

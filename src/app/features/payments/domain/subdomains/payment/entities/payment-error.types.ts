@@ -2,23 +2,25 @@
  * Stable error codes that can be asserted in tests and used for branching decisions
  * outside of UI (e.g., fallback orchestration).
  */
-export type PaymentErrorCode =
-  | 'invalid_request'
-  | 'missing_provider'
-  | 'provider_unavailable'
-  | 'provider_error'
-  | 'network_error'
-  | 'timeout'
-  | 'processing_timeout'
-  | 'unknown_error'
-  | 'card_declined'
-  | 'insufficient_funds'
-  | 'expired_card'
-  | 'requires_action'
-  | 'unsupported_client_confirm'
-  | 'unsupported_finalize'
-  | 'return_correlation_mismatch'
-  | 'fallback_handled';
+export const PAYMENT_ERROR_CODES = [
+  'invalid_request',
+  'missing_provider',
+  'provider_unavailable',
+  'provider_error',
+  'network_error',
+  'timeout',
+  'processing_timeout',
+  'unknown_error',
+  'card_declined',
+  'insufficient_funds',
+  'expired_card',
+  'requires_action',
+  'unsupported_client_confirm',
+  'unsupported_finalize',
+  'return_correlation_mismatch',
+  'fallback_handled',
+] as const;
+export type PaymentErrorCode = (typeof PAYMENT_ERROR_CODES)[number];
 
 /**
  * Interpolation params for i18n messages.
@@ -35,18 +37,3 @@ export type PaymentErrorParams = Record<string, string | number | boolean | null
  * to keep Domain tech-less. Application/UI can narrow this type via generics.
  */
 export type PaymentErrorMessageKey = string;
-
-/**
- * Domain-level error contract.
- *
- * Rules:
- * - `messageKey` is the long-term source of truth for UI copy.
- * - `params` are optional and should be clean (no `undefined` values).
- * - `raw` is never meant to be rendered directly; it is for diagnostics only.
- */
-export interface PaymentError<TKey extends PaymentErrorMessageKey = PaymentErrorMessageKey> {
-  code: PaymentErrorCode;
-  messageKey: TKey;
-  params?: PaymentErrorParams;
-  raw: unknown;
-}

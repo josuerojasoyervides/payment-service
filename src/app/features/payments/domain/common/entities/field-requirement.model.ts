@@ -1,5 +1,5 @@
+import type { FieldType } from '@app/features/payments/domain/common/entities/field.types';
 import type { AutoCompleteHint } from '@app/features/payments/domain/common/primitives/autocomplete-hint.types';
-import type { FieldType } from '@app/features/payments/domain/common/primitives/fields/field.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 /**
  * Field requirements for a specific provider/method.

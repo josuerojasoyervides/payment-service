@@ -7,14 +7,14 @@ import type {
   FinishStatus,
   ReportFailurePayload,
 } from '@app/features/payments/application/orchestration/services/fallback/helpers/fallback-orchestrator.types';
-import type { FallbackConfig } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.types';
-import { DEFAULT_FALLBACK_CONFIG } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.types';
+import type { FallbackConfig } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.model';
+import { DEFAULT_FALLBACK_CONFIG } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.model';
 import type {
   FallbackAvailableEvent,
   FallbackUserResponse,
 } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-event.model';
-import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.types';
-import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { LoggerService } from '@core/logging/logger.service';
 import {

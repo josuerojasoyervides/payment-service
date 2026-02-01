@@ -1,6 +1,6 @@
 import { updateState } from '@angular-architects/ngrx-toolkit';
-import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.types';
-import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';

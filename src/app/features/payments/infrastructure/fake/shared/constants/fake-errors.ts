@@ -1,4 +1,4 @@
-import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { FakeScenario } from '@app/features/payments/infrastructure/fake/shared/types/fake-scenario.type';
 import { I18nKeys } from '@core/i18n';
 

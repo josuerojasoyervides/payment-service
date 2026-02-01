@@ -1,11 +1,11 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
 import { ProviderDescriptorRegistry } from '@payments/application/orchestration/registry/provider-descriptor/provider-descriptor.registry';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
-import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/entities/fallback-state.types';
 
 describe('NgRxSignalsStateAdapter', () => {
   let adapter: NgRxSignalsStateAdapter;

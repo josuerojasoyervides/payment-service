@@ -15,7 +15,7 @@ import {
 import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import type { PaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
 import { initialPaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
-import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import {
   signalStore,

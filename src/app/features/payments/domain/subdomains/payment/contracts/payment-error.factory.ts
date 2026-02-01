@@ -1,5 +1,5 @@
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type {
-  PaymentError,
   PaymentErrorCode,
   PaymentErrorMessageKey,
   PaymentErrorParams,

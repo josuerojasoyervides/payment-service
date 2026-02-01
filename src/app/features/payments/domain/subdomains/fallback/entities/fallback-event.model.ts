@@ -1,5 +1,5 @@
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import type { PaymentError } from '@payments/domain/subdomains/payment/entities/payment-error.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/entities/payment-provider.types';
 
 /**

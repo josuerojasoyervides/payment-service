@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import type { PaymentCheckoutCatalogPort } from '@app/features/payments/application/api/ports/payment-store.port';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
-import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.types';
+import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';

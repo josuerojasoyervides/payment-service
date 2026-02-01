@@ -7,7 +7,8 @@ import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
 import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-event.model';
-import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
@@ -19,7 +20,6 @@ import type {
   PaymentFlowPort,
   ProviderDescriptor,
 } from '@payments/application/api/ports/payment-store.port';
-import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/entities/fallback-state.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';

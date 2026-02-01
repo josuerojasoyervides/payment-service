@@ -1,4 +1,4 @@
-import type { NextActionManualStep } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.types';
+import type { NextActionManualStep } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.model';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import { I18nKeys } from '@core/i18n';

@@ -1,4 +1,4 @@
-import type { NextActionClientConfirm } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.types';
+import type { NextActionClientConfirm } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.model';
 import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';

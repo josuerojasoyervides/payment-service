@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
-import type { FallbackStatus } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.types';
+import type { FallbackStatus } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-statuses.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 
 /**

@@ -1,5 +1,5 @@
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
-import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/entities/fallback-state.types';
+import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { deriveFlowPhase } from '@payments/ui/shared/flow-phase';
 
