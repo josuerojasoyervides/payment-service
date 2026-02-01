@@ -1,4 +1,4 @@
-import { NullTokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator.port';
+import { NullTokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/null-token-validator.port';
 
 /**
  * Token validator for PayPal.
