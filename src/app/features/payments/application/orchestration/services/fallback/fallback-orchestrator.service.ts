@@ -8,7 +8,6 @@ import type {
   ReportFailurePayload,
 } from '@app/features/payments/application/orchestration/services/fallback/helpers/fallback-orchestrator.types';
 import type { FallbackConfig } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.model';
-import { DEFAULT_FALLBACK_CONFIG } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.model';
 import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
 import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
 import type { FallbackUserResponse } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-user-response.event';
@@ -17,6 +16,7 @@ import type { PaymentError } from '@app/features/payments/domain/subdomains/paym
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { LoggerService } from '@core/logging/logger.service';
+import { DEFAULT_FALLBACK_CONFIG } from '@payments/application/orchestration/services/fallback/fallback-config.constant';
 import {
   hasDifferentEventId,
   isAutoExecutingGuard,

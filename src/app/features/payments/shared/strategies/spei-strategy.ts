@@ -8,6 +8,11 @@ import {
   SPEI_MIN_AMOUNT_MXN,
   validateSpeiAmount,
 } from '@app/features/payments/domain/subdomains/payment/rules/spei-amount.rule';
+import {
+  formatSpeiPaymentConcept,
+  generateSpeiReference,
+} from '@app/features/payments/domain/subdomains/payment/rules/spei-concept.rule';
+import { SPEI_DEFAULT_EXPIRY_HOURS } from '@app/features/payments/domain/subdomains/payment/rules/spei-expiry.rule';
 import { I18nKeys } from '@core/i18n';
 import type { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
@@ -31,8 +36,6 @@ import { map, tap } from 'rxjs';
  */
 export class SpeiStrategy implements PaymentStrategy {
   readonly type: PaymentMethodType = 'spei';
-
-  private static readonly DEFAULT_EXPIRY_HOURS = 72;
 
   // Common receiving banks for SPEI
   private static readonly RECEIVING_BANKS: Record<string, string> = {
@@ -92,7 +95,7 @@ export class SpeiStrategy implements PaymentStrategy {
    * - Prepares metadata for tracking
    */
   prepare(req: CreatePaymentRequest, _context?: StrategyContext): StrategyPrepareResult {
-    const expiryHours = SpeiStrategy.DEFAULT_EXPIRY_HOURS;
+    const expiryHours = SPEI_DEFAULT_EXPIRY_HOURS;
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + expiryHours);
 
@@ -100,7 +103,7 @@ export class SpeiStrategy implements PaymentStrategy {
       payment_method_type: 'spei',
       expires_at: expiresAt.toISOString(),
       expiry_hours: expiryHours,
-      payment_concept: this.generatePaymentConcept(req.orderId),
+      payment_concept: formatSpeiPaymentConcept(req.orderId),
       timestamp: new Date().toISOString(),
       requires_polling: true,
     };
@@ -175,7 +178,7 @@ export class SpeiStrategy implements PaymentStrategy {
   ): PaymentIntent {
     const details = [
       { label: 'CLABE', value: this.extractClabeFromRaw(intent) },
-      { label: 'Reference', value: this.generateReference(req.orderId) },
+      { label: 'Reference', value: generateSpeiReference(req.orderId) },
       {
         label: 'Bank',
         value: SpeiStrategy.RECEIVING_BANKS[intent.provider] ?? 'STP',
@@ -198,23 +201,6 @@ export class SpeiStrategy implements PaymentStrategy {
       status: 'requires_action',
       nextAction: speiAction,
     };
-  }
-
-  /**
-   * Generates a valid payment concept for SPEI (max 40 characters).
-   */
-  private generatePaymentConcept(orderId: string): string {
-    const prefix = 'PAGO';
-    const sanitizedOrderId = orderId.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-    return `${prefix} ${sanitizedOrderId}`.substring(0, 40);
-  }
-
-  /**
-   * Generates a 7-digit numeric reference.
-   */
-  private generateReference(orderId: string): string {
-    const hash = orderId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return String(hash % 10000000).padStart(7, '0');
   }
 
   /**

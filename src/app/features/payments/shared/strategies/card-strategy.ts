@@ -2,7 +2,6 @@ import type { PaymentIntent } from '@app/features/payments/domain/subdomains/pay
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
-import { NoopTokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/noop-token-validator';
 import type { TokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/token-validator.port';
 import {
   getCardMinAmount,
@@ -16,6 +15,7 @@ import type {
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
+import { NoopTokenValidator } from '@payments/shared/token-validators/noop-token-validator';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
 

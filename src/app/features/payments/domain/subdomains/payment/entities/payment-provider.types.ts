@@ -1,2 +1,5 @@
-export const PAYMENT_PROVIDER_IDS = ['stripe', 'paypal'] as const;
-export type PaymentProviderId = (typeof PAYMENT_PROVIDER_IDS)[number];
+/**
+ * Opaque identifier for a payment provider.
+ * Domain does not know concrete provider names; the catalog lives in Application.
+ */
+export type PaymentProviderId = string;

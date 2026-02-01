@@ -19,14 +19,3 @@ export interface FallbackConfig {
 
   maxAutoFallbacks: number;
 }
-
-export const DEFAULT_FALLBACK_CONFIG: FallbackConfig = {
-  enabled: true,
-  maxAttempts: 2,
-  userResponseTimeout: 30000,
-  triggerErrorCodes: ['provider_unavailable', 'provider_error', 'network_error', 'timeout'],
-  providerPriority: ['stripe', 'paypal'],
-  mode: 'manual',
-  autoFallbackDelay: 2000,
-  maxAutoFallbacks: 1,
-};
