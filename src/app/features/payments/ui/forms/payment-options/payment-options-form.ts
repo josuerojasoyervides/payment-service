@@ -9,10 +9,8 @@ import {
   untracked,
 } from '@angular/core';
 import { disabled, email, type FieldTree, form, required } from '@angular/forms/signals';
-import type {
-  FieldRequirements,
-  PaymentOptions,
-} from '@app/features/payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import {
   isEmailField,
   isFlagField,

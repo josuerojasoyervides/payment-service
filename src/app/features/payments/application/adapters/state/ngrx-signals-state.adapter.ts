@@ -1,6 +1,7 @@
 import type { Signal } from '@angular/core';
 import { computed, effect, inject, Injectable } from '@angular/core';
 import type { PaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
+import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
 import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.types';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type {
@@ -8,6 +9,7 @@ import type {
   PaymentIntent,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { deepComputed } from '@ngrx/signals';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
@@ -31,10 +33,6 @@ import type {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import type {
-  FieldRequirements,
-  PaymentOptions,
-} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 
 /**
  * Adapter implementing PaymentFlowPort and PaymentCheckoutCatalogPort by delegating to PaymentsStore.

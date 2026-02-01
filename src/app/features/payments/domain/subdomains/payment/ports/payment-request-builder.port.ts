@@ -1,57 +1,7 @@
-import type { AutoCompleteHint } from '@app/features/payments/domain/common/primitives/autocomplete-hint.types';
+import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/contracts/payment-error.factory';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
-import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
-import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-
-/**
- * Generic options for the builder.
- *
- * Contains ALL possible fields that any provider might need.
- * Each specific builder uses what it needs and validates required ones.
- */
-export interface PaymentOptions {
-  token?: string;
-  returnUrl?: string;
-  cancelUrl?: string;
-  customerEmail?: string;
-  saveForFuture?: boolean;
-  description?: string;
-  createdAt?: Date;
-  paymentMethodTypes?: PaymentMethodType[];
-}
-
-/**
- * Field types supported in the form.
- */
-export type FieldType = 'text' | 'email' | 'hidden' | 'url';
-
-/**
- * Field requirements for a specific provider/method.
- *
- * The UI queries this BEFORE rendering the form
- * to know which fields to show.
- */
-export interface FieldRequirement {
-  name: keyof PaymentOptions;
-  labelKey: string;
-  placeholderKey?: string;
-  descriptionKey?: string;
-  instructionsKey?: string;
-
-  required: boolean;
-  type: 'text' | 'email' | 'hidden';
-
-  autoComplete?: AutoCompleteHint;
-  defaultValue?: string;
-}
-
-export interface FieldRequirements {
-  descriptionKey?: string;
-  instructionsKey?: string;
-  fields: FieldRequirement[];
-}
-
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 /**
  * Base interface for payment request builders.
  *

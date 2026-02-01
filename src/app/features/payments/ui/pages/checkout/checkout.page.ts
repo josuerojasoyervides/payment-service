@@ -3,18 +3,16 @@ import { Component, computed, effect, inject, isDevMode } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
+import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
 import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.types';
 import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
-import type {
-  FieldRequirements,
-  PaymentOptions,
-} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { FallbackStatusBannerComponent } from '@payments/ui/components/fallback-status-banner/fallback-status-banner.component';
 import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';

@@ -2,11 +2,6 @@
  * Port for payment token validation.
  *
  * Each provider implements its own validation logic
- * because token formats vary:
- * - Stripe: tok_*, pm_*, card_*
- * - PayPal: does not use tokens (redirect flow)
- * - Conekta: tok_*
- * - MercadoPago: card_token_*
  *
  * This allows shared strategies (CardStrategy)
  * to delegate provider-specific validation.
@@ -38,7 +33,7 @@ export interface TokenValidator {
   /**
    * Indicates whether this provider requires a token for the payment method.
    *
-   * For example, PayPal does not require tokens (uses redirect).
+   * For example, providers that do not use tokens (uses redirect).
    */
   requiresToken(): boolean;
 }
@@ -46,7 +41,7 @@ export interface TokenValidator {
 /**
  * Null validator for providers that do not use tokens.
  *
- * Useful for PayPal or other providers with redirect flow.
+ * Useful for providers that do not use tokens (redirect flow).
  */
 export class NullTokenValidator implements TokenValidator {
   validate(_token: string): void {
