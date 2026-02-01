@@ -3,6 +3,11 @@ import type { PaymentMethodType } from '@app/features/payments/domain/subdomains
 import type { NextActionManualStep } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import {
+  SPEI_MAX_AMOUNT_MXN,
+  SPEI_MIN_AMOUNT_MXN,
+  validateSpeiAmount,
+} from '@app/features/payments/domain/subdomains/payment/rules/spei-amount.rule';
 import { I18nKeys } from '@core/i18n';
 import type { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
@@ -27,9 +32,6 @@ import { map, tap } from 'rxjs';
 export class SpeiStrategy implements PaymentStrategy {
   readonly type: PaymentMethodType = 'spei';
 
-  // SPEI limits according to Mexican regulation
-  private static readonly MIN_AMOUNT_MXN = 1;
-  private static readonly MAX_AMOUNT_MXN = 8_000_000; // 8 million MXN
   private static readonly DEFAULT_EXPIRY_HOURS = 72;
 
   // Common receiving banks for SPEI
@@ -47,31 +49,31 @@ export class SpeiStrategy implements PaymentStrategy {
   /**
    * Validates the request for SPEI payments.
    *
-   * Rules:
+   * Uses domain rules (validateSpeiAmount) for amount/currency validation.
    * - Only accepts MXN
    * - Amount between 1 and 8,000,000 MXN
    * - Does not require token (unlike cards)
    */
   validate(req: CreatePaymentRequest): void {
-    if (req.currency !== 'MXN') {
-      throw invalidRequestError(I18nKeys.errors.invalid_request, {
-        reason: 'spei_only_mxn',
-        currency: req.currency,
-      });
-    }
-
-    if (req.amount < SpeiStrategy.MIN_AMOUNT_MXN) {
-      throw invalidRequestError(I18nKeys.errors.min_amount, {
-        amount: SpeiStrategy.MIN_AMOUNT_MXN,
-        currency: req.currency,
-      });
-    }
-
-    if (req.amount > SpeiStrategy.MAX_AMOUNT_MXN) {
-      throw invalidRequestError(I18nKeys.errors.max_amount, {
-        amount: SpeiStrategy.MAX_AMOUNT_MXN,
-        currency: req.currency,
-      });
+    const violations = validateSpeiAmount({ amount: req.amount, currency: req.currency });
+    for (const v of violations) {
+      switch (v.code) {
+        case 'SPEI_INVALID_CURRENCY':
+          throw invalidRequestError(I18nKeys.errors.invalid_request, {
+            reason: 'spei_only_mxn',
+            currency: req.currency,
+          });
+        case 'SPEI_AMOUNT_TOO_LOW':
+          throw invalidRequestError(I18nKeys.errors.min_amount, {
+            amount: SPEI_MIN_AMOUNT_MXN,
+            currency: req.currency,
+          });
+        case 'SPEI_AMOUNT_TOO_HIGH':
+          throw invalidRequestError(I18nKeys.errors.max_amount, {
+            amount: SPEI_MAX_AMOUNT_MXN,
+            currency: req.currency,
+          });
+      }
     }
 
     if (req.method.token) {

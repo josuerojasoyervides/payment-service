@@ -4,6 +4,10 @@ import { invalidRequestError } from '@app/features/payments/domain/subdomains/pa
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { NoopTokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/noop-token-validator';
 import type { TokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/token-validator.port';
+import {
+  getCardMinAmount,
+  validateCardAmount,
+} from '@app/features/payments/domain/subdomains/payment/rules/min-amount-by-currency.rule';
 import { I18nKeys } from '@core/i18n';
 import type { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
@@ -43,7 +47,7 @@ export class CardStrategy implements PaymentStrategy {
    *
    * Rules:
    * - Token is mandatory if provider requires it (delegated to TokenValidator)
-   * - Minimum amount of 10 MXN / 1 USD
+   * - Minimum amount from domain rule (10 MXN / 1 USD)
    */
   validate(req: CreatePaymentRequest): void {
     if (this.tokenValidator.requiresToken()) {
@@ -53,12 +57,15 @@ export class CardStrategy implements PaymentStrategy {
       this.tokenValidator.validate(req.method.token);
     }
 
-    const minAmount = req.currency === 'MXN' ? 10 : 1;
-    if (req.amount < minAmount) {
-      throw invalidRequestError(I18nKeys.errors.min_amount, {
-        amount: minAmount,
-        currency: req.currency,
-      });
+    const violations = validateCardAmount({ amount: req.amount, currency: req.currency });
+    for (const v of violations) {
+      if (v.code === 'CARD_AMOUNT_TOO_LOW') {
+        const minAmount = getCardMinAmount(req.currency);
+        throw invalidRequestError(I18nKeys.errors.min_amount, {
+          amount: minAmount,
+          currency: req.currency,
+        });
+      }
     }
   }
 
