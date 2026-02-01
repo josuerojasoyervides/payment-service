@@ -5,13 +5,13 @@
  * merge per provider for reconciliation (each provider uses different IDs — intentId,
  * orderId, preferenceId, paymentId — so we keep a provider-keyed map and merge on updates).
  */
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type {
-  PaymentFlowContext,
   ProviderReferences,
   ProviderReferenceSet,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-provider-references.types';
 
 export const FLOW_CONTEXT_TTL_MS = 30 * 60 * 1000;
 

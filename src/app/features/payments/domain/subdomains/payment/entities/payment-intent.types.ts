@@ -1,6 +1,6 @@
-import type { ProviderRefs } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { ProviderRefs } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider-references.types';
 
 export const PAYMENT_INTENT_STATUSES = [
   'requires_payment_method',
