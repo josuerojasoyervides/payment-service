@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
-import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.model';
+import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
 import { I18nKeys, I18nService } from '@core/i18n';
 
 @Component({

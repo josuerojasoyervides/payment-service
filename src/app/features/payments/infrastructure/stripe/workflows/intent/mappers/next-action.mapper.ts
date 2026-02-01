@@ -1,4 +1,4 @@
-import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.model';
+import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 
 export function mapStripeNextAction(dto: StripePaymentIntentDto): NextAction | undefined {

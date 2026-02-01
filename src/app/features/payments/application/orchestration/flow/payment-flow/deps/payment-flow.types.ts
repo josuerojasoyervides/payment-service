@@ -5,10 +5,10 @@ import type {
 } from '@app/features/payments/application/adapters/events/flow/payment-flow.events';
 // ✅ IMPORTANT: type-only import to avoid runtime circular dependency
 import type { FallbackMode } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-modes.types';
-import type { NextActionClientConfirm } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.model';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { NextActionClientConfirm } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';

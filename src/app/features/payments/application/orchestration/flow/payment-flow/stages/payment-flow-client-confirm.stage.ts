@@ -1,4 +1,4 @@
-import type { NextActionClientConfirm } from '@app/features/payments/domain/subdomains/payment/entities/payment-action.model';
+import type { NextActionClientConfirm } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
 import type {
   PaymentFlowMachineContext,
   PaymentFlowStatesConfig,
