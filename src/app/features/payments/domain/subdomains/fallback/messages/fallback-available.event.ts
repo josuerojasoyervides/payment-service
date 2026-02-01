@@ -19,12 +19,3 @@ export interface FallbackAvailableEvent {
 
   timestamp: number;
 }
-
-export interface FallbackUserResponse {
-  eventId: string;
-
-  accepted: boolean;
-  selectedProvider?: PaymentProviderId;
-
-  timestamp: number;
-}

@@ -1,6 +1,6 @@
 import type { FieldType } from '@app/features/payments/domain/common/entities/field.types';
 import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
-import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-event.model';
+import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type {
   CurrencyCode,
