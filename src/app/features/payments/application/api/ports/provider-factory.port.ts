@@ -18,7 +18,7 @@
  * others return null.
  */
 
-import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
+import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { PaymentRequestBuilder } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/abstract-payment-request-builder';

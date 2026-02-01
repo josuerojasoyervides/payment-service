@@ -1,9 +1,9 @@
 import type { Signal } from '@angular/core';
+import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type {
   PaymentFlowStatus,
   PaymentsState,
 } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
-import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
 import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
 import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
