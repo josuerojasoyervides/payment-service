@@ -1,7 +1,7 @@
+import { BasePaymentRequestBuilder } from '@app/features/payments/application/api/builders/base-payment-request.builder';
 import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
-import { PaymentRequestBuilder } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/abstract-payment-request-builder';
 import { I18nKeys } from '@core/i18n/i18n.keys';
 
 /**
@@ -15,7 +15,7 @@ import { I18nKeys } from '@core/i18n/i18n.keys';
  * - returnUrl (No redirect)
  * - saveForFuture (Not applicable to SPEI)
  */
-export class StripeSpeiRequestBuilder extends PaymentRequestBuilder {
+export class StripeSpeiRequestBuilder extends BasePaymentRequestBuilder {
   private orderId?: string;
   private amount?: number;
   private currency?: CurrencyCode;

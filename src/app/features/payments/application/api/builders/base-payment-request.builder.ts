@@ -3,15 +3,16 @@ import type { PaymentOptions } from '@app/features/payments/domain/subdomains/pa
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/payment-request-builder.port';
+
 /**
- * Base interface for payment request builders.
+ * Base class for payment request builders.
  *
- * This is the ABSTRACTION that the UI knows.
- * Infrastructure provides specific IMPLEMENTATIONS.
+ * Lives in Application — not in Domain — because it contains validation
+ * logic with invalidRequestError (i18n). Domain only exposes the port (interface).
  *
- * The UI never imports from infrastructure, only uses this interface.
+ * Infrastructure builders (Stripe, PayPal) extend this class.
  */
-export abstract class PaymentRequestBuilder implements PaymentRequestBuilderPort {
+export abstract class BasePaymentRequestBuilder implements PaymentRequestBuilderPort {
   abstract forOrder(orderId: string): this;
   abstract withAmount(amount: number, currency: CurrencyCode): this;
   abstract withOptions(options: PaymentOptions): this;
@@ -49,7 +50,6 @@ export abstract class PaymentRequestBuilder implements PaymentRequestBuilderPort
     field: 'returnUrl' | 'cancelUrl',
     value: string | undefined | null,
   ) {
-    // If it's missing, it's NOT an error
     if (value === undefined || value === null || value.trim().length === 0) return;
 
     try {
