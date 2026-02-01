@@ -1,5 +1,6 @@
 import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
 import type { FieldType } from '@app/features/payments/domain/common/primitives/fields/field.types';
+import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-event.model';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type {
   CurrencyCode,
@@ -9,7 +10,6 @@ import type { PaymentMethodType } from '@app/features/payments/domain/subdomains
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys } from '@core/i18n';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 
 /**
  * Order item shown in summary.

@@ -1,4 +1,4 @@
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
+import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-event.model';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import type { PaymentError } from '@payments/domain/subdomains/payment/entities/payment-error.types';
 import type { PaymentProviderId } from '@payments/domain/subdomains/payment/entities/payment-provider.types';

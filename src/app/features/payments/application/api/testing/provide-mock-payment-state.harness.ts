@@ -4,6 +4,7 @@ import { computed, effect, signal } from '@angular/core';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
+import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-event.model';
 import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.types';
 import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.types';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
@@ -25,7 +26,6 @@ import type {
   PaymentFlowStatus,
   PaymentsState,
 } from '@payments/application/orchestration/store/types/payment-store-state';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
