@@ -6,6 +6,7 @@ import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/su
 import { OrderId } from '@payments/domain/common/primitives/ids/order-id.vo';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { Money } from '@payments/domain/common/primitives/money/money.vo';
+import { UrlString } from '@payments/domain/common/primitives/url-string.vo';
 
 /**
  * Base class for payment request builders.
@@ -49,18 +50,46 @@ export abstract class BasePaymentRequestBuilder implements PaymentRequestBuilder
     }
   }
 
+  /**
+   * Validates an optional URL using the UrlString VO.
+   * Returns the validated URL string or undefined if not provided.
+   * @deprecated Use validateUrl instead for clearer semantics
+   */
   protected validateOptionalUrl(
     field: 'returnUrl' | 'cancelUrl',
     value: string | undefined | null,
-  ) {
-    if (value === undefined || value === null || value.trim().length === 0) return;
+  ): string | undefined {
+    if (value === undefined || value === null || value.trim().length === 0) return undefined;
 
-    try {
-      new URL(value);
-    } catch {
+    return this.validateUrl(field, value);
+  }
+
+  /**
+   * Validates a URL using the UrlString VO.
+   * @returns The validated URL string
+   */
+  protected validateUrl(
+    field: 'returnUrl' | 'cancelUrl',
+    value: string | undefined | null,
+  ): string {
+    if (value === undefined || value === null || value.trim().length === 0) {
       const fieldKey = field === 'returnUrl' ? 'return_url' : 'cancel_url';
+      throw invalidRequestError(`errors.${fieldKey}_required`, { field });
+    }
+
+    const result = UrlString.from(value);
+    if (!result.ok) {
+      const v = result.violations[0];
+      const fieldKey = field === 'returnUrl' ? 'return_url' : 'cancel_url';
+
+      if (v.code === 'URL_STRING_EMPTY') {
+        throw invalidRequestError(`errors.${fieldKey}_required`, { field });
+      }
+
       throw invalidRequestError(`errors.${fieldKey}_invalid`, { field }, { [field]: value });
     }
+
+    return result.value.value;
   }
 
   protected requireDefinedWithKey<T>(

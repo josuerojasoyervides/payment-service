@@ -58,8 +58,11 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
     this.orderId = this.validateOrderId(this.orderId, I18nKeys.errors.order_id_required);
     this.requireDefinedWithKey('currency', this.currency, I18nKeys.errors.currency_required);
     this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
-    this.validateOptionalUrl('returnUrl', this.returnUrl);
-    this.validateOptionalUrl('cancelUrl', this.cancelUrl);
+
+    // returnUrl and cancelUrl are optional in builder - they can come from StrategyContext
+    // But if provided, they must be valid URLs
+    this.returnUrl = this.validateOptionalUrl('returnUrl', this.returnUrl);
+    this.cancelUrl = this.validateOptionalUrl('cancelUrl', this.cancelUrl);
   }
 
   protected override buildUnsafe(): CreatePaymentRequest {
@@ -74,8 +77,8 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
       method: {
         type: 'card',
       },
-      returnUrl: this.returnUrl!,
-      cancelUrl: this.cancelUrl!,
+      returnUrl: this.returnUrl,
+      cancelUrl: this.cancelUrl,
     };
   }
 }
