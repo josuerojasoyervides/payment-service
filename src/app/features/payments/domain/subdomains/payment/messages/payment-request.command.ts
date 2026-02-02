@@ -1,4 +1,6 @@
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { OrderId } from '@payments/domain/common/primitives/ids/order-id.vo';
+import type { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import type { Money } from '@payments/domain/common/primitives/money/money.vo';
 /**
  * Provider-agnostic command to create a payment intent.
@@ -9,7 +11,7 @@ import type { Money } from '@payments/domain/common/primitives/money/money.vo';
  * - `metadata` is for diagnostics and tracing only. Do not use it for core logic.
  */
 export interface CreatePaymentRequest {
-  orderId: string;
+  orderId: OrderId;
   money: Money;
 
   method: {
@@ -33,7 +35,7 @@ export interface CreatePaymentRequest {
 
 /** Command to confirm an existing intent, when supported by the selected provider/method. */
 export interface ConfirmPaymentRequest {
-  intentId: string;
+  intentId: PaymentIntentId;
   returnUrl?: string;
   /** Idempotency key for safe retries. Typically generated outside Domain. */
   idempotencyKey?: string;
@@ -41,14 +43,14 @@ export interface ConfirmPaymentRequest {
 
 /** Command to cancel an existing intent, when supported by the selected provider/method. */
 export interface CancelPaymentRequest {
-  intentId: string;
+  intentId: PaymentIntentId;
   /** Idempotency key for safe retries. Typically generated outside Domain. */
   idempotencyKey?: string;
 }
 
 /** Command to fetch the latest intent status from the provider. */
 export interface GetPaymentStatusRequest {
-  intentId: string;
+  intentId: PaymentIntentId;
   /** Idempotency key for safe retries. Typically generated outside Domain. */
   idempotencyKey?: string;
 }

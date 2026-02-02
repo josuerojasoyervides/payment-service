@@ -22,23 +22,24 @@ export abstract class FakeConfirmIntentGateway extends PaymentOperationPort<
   private readonly fakeIntentStore = inject(FakeIntentStore);
 
   protected override executeRaw(request: ConfirmPaymentRequest): Observable<any> {
-    this.logger.warn(`[FakeGateway] Confirming intent ${request.intentId}`, this.logContext, {
+    const id = request.intentId.value;
+    this.logger.warn(`[FakeGateway] Confirming intent ${id}`, this.logContext, {
       request,
     });
 
     if (this.providerId === 'paypal') {
-      return simulateNetworkDelay(createConfirmedPaypalOrder(request.intentId));
+      return simulateNetworkDelay(createConfirmedPaypalOrder(id));
     }
 
-    const state = this.fakeIntentStore.get(request.intentId);
+    const state = this.fakeIntentStore.get(id);
     if (state?.scenarioId === 'client_confirm') {
-      this.fakeIntentStore.markClientConfirmed(request.intentId);
-      const updated = this.fakeIntentStore.refresh(request.intentId);
+      this.fakeIntentStore.markClientConfirmed(id);
+      const updated = this.fakeIntentStore.refresh(id);
       const dto = buildStripeDtoFromFakeState(updated ?? state);
       return simulateNetworkDelay(dto);
     }
 
-    return simulateNetworkDelay(createConfirmedStripeIntent(request.intentId));
+    return simulateNetworkDelay(createConfirmedStripeIntent(id));
   }
 
   protected override mapResponse(dto: any): PaymentIntent {

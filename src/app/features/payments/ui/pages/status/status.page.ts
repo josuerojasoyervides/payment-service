@@ -9,6 +9,7 @@ import type { NextAction } from '@app/features/payments/domain/subdomains/paymen
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';
 import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
 import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
@@ -78,7 +79,7 @@ export class StatusComponent {
   readonly result = computed(() => {
     const lastId = this.statusPageState.lastQueryId();
     const intent = this.flowState.intent();
-    if (!lastId || !intent || intent.id !== lastId) return null;
+    if (!lastId || !intent || intent.id.value !== lastId) return null;
     return intent;
   });
 
@@ -105,7 +106,10 @@ export class StatusComponent {
         return;
       }
       this.didPrefill = true;
-      patchState(this.statusPageState, { intentId: intent.id, lastQueryId: intent.id });
+      patchState(this.statusPageState, {
+        intentId: intent.id.value,
+        lastQueryId: intent.id.value,
+      });
       this.state.selectProvider(intent.provider);
     });
   }
@@ -120,12 +124,16 @@ export class StatusComponent {
       providerId = descriptors[0].id;
     }
     if (!providerId) return;
+    const idResult = PaymentIntentId.from(id);
+    if (!idResult.ok) return;
     patchState(this.statusPageState, { lastQueryId: id });
-    this.state.refreshPayment({ intentId: id }, providerId);
+    this.state.refreshPayment({ intentId: idResult.value }, providerId);
   }
 
   confirmPayment(intentId: string): void {
-    this.state.confirmPayment({ intentId });
+    const result = PaymentIntentId.from(intentId);
+    if (!result.ok) return;
+    this.state.confirmPayment({ intentId: result.value });
   }
 
   onNextActionRequested(action: NextAction): void {
@@ -135,20 +143,31 @@ export class StatusComponent {
     }
     if (action.kind === 'client_confirm') {
       const intent = this.state.intent();
-      const intentId = intent?.id ?? this.statusPageState.lastQueryId() ?? null;
-      if (intentId) this.state.confirmPayment({ intentId });
+      const idVo =
+        intent?.id ??
+        (() => {
+          const raw = this.statusPageState.lastQueryId();
+          if (!raw) return null;
+          const r = PaymentIntentId.from(raw);
+          return r.ok ? r.value : null;
+        })();
+      if (idVo) this.state.confirmPayment({ intentId: idVo });
     }
   }
 
   cancelPayment(intentId: string): void {
-    this.state.cancelPayment({ intentId });
+    const result = PaymentIntentId.from(intentId);
+    if (!result.ok) return;
+    this.state.cancelPayment({ intentId: result.value });
   }
 
   refreshPayment(intentId: string): void {
+    const result = PaymentIntentId.from(intentId);
+    if (!result.ok) return;
     const providerId = this.state.selectedProvider();
     if (providerId) {
       patchState(this.statusPageState, { lastQueryId: intentId });
-      this.state.refreshPayment({ intentId }, providerId);
+      this.state.refreshPayment({ intentId: result.value }, providerId);
     }
   }
 

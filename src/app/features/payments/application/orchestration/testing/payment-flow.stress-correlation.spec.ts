@@ -2,6 +2,7 @@
  * Stress scenario: correlation mismatch handling (PR6 Phase C).
  * Asserts: mismatch event (referenceId pi_B when flow is for pi_A) is ignored; state unchanged; no finalize; telemetry records SYSTEM_EVENT_SENT with pi_B.
  */
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
 import {
   createPaymentFlowScenarioHarness,
@@ -14,7 +15,7 @@ import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 const baseRequest: CreatePaymentRequest = {
-  orderId: 'o1',
+  orderId: createOrderId('o1'),
   money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_visa1234567890abcdef' },
 };
@@ -91,7 +92,7 @@ describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {
 
     const snapAfter = harness!.getSnapshot();
     const intentIdAfter = snapAfter.context.intentId ?? snapAfter.context.intent?.id ?? null;
-    expect(intentIdAfter).toBe(refA);
+    expect(intentIdAfter?.value ?? intentIdAfter).toBe(refA);
     expect(
       stateBefore === 'requiresAction' || stateBefore === 'polling' || stateBefore === 'starting',
     ).toBe(true);

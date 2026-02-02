@@ -370,7 +370,7 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intentFinal?.status).toBe('succeeded');
       const summary = state.debugSummary();
       expect(summary.provider).toBe('stripe');
-      expect(summary.intentId).toBe(intentAfterStart?.id);
+      expect(summary.intentId).toBe(intentAfterStart?.id?.value ?? intentAfterStart?.id);
       const rawFinal = intentFinal?.raw as { _fakeDebug?: { stepCount?: number } } | undefined;
       if (rawFinal?._fakeDebug?.stepCount !== undefined) {
         expect(rawFinal._fakeDebug.stepCount).toBeGreaterThan(stepCount0);
@@ -391,7 +391,7 @@ describe('CheckoutComponent - Real Integration', () => {
 
       const summaryAfterStart = state.debugSummary();
       expect(summaryAfterStart.provider).toBe('stripe');
-      expect(summaryAfterStart.intentId).toBe(intentAfterStart?.id);
+      expect(summaryAfterStart.intentId).toBe(intentAfterStart?.id?.value ?? intentAfterStart?.id);
 
       state.confirmPayment({ intentId: intentAfterStart!.id }, 'stripe');
       await waitForPaymentComplete(state, 2500);
@@ -410,7 +410,7 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intentFinal?.status).toBe('succeeded');
       const summary = state.debugSummary();
       expect(summary.provider).toBe('stripe');
-      expect(summary.intentId).toBe(intentAfterStart?.id);
+      expect(summary.intentId).toBe(intentAfterStart?.id?.value ?? intentAfterStart?.id);
     });
 
     it('tok_3ds: requires_action and NextActionCard visible', async () => {

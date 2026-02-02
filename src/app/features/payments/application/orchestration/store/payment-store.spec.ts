@@ -3,6 +3,10 @@ import { TestBed } from '@angular/core/testing';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { patchState } from '@ngrx/signals';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import { HISTORY_MAX_ENTRIES } from '@payments/application/orchestration/store/history/payment-store.history.types';
@@ -24,13 +28,13 @@ describe('PaymentsStore', () => {
   };
 
   const req: CreatePaymentRequest = {
-    orderId: 'o1',
+    orderId: createOrderId('o1'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
   };
 
   const intent: PaymentIntent = {
-    id: 'pi_1',
+    id: createPaymentIntentId('pi_1'),
     provider: 'stripe',
     status: 'processing',
     money: { amount: 100, currency: 'MXN' },
@@ -262,7 +266,7 @@ describe('PaymentsStore', () => {
       await flush();
 
       expect(store.status()).toBe('ready');
-      expect(store.intent()?.id).toBe('pi_1');
+      expect(store.intent()?.id?.value ?? store.intent()?.id).toBe('pi_1');
       expect(store.history().length).toBe(1);
     });
 
@@ -422,8 +426,9 @@ describe('PaymentsStore', () => {
     };
 
     it('refreshPayment -> uses XState when accepted', async () => {
+      const pi123 = createPaymentIntentId('pi_123');
       store.refreshPayment({
-        request: { intentId: 'pi_123' },
+        request: { intentId: pi123 },
         providerId: 'stripe',
       });
 
@@ -432,7 +437,7 @@ describe('PaymentsStore', () => {
           providerId: 'stripe',
           request: null,
           intent: null,
-          intentId: 'pi_123',
+          intentId: pi123,
         },
         'fetchingStatus',
       );
@@ -442,7 +447,7 @@ describe('PaymentsStore', () => {
         expect.objectContaining({
           type: 'REFRESH',
           providerId: 'stripe',
-          intentId: 'pi_123',
+          intentId: pi123,
         }),
       );
 
@@ -455,24 +460,24 @@ describe('PaymentsStore', () => {
             providerId: 'stripe',
             request: null,
             flowContext: null,
-            intent: { ...intent, id: 'pi_123', status: 'processing' },
+            intent: { ...intent, id: pi123, status: 'processing' },
             error: null,
           },
-          lastSentEvent: { type: 'REFRESH', providerId: 'stripe', intentId: 'pi_123' },
+          lastSentEvent: { type: 'REFRESH', providerId: 'stripe', intentId: pi123 },
         }),
       );
 
       await powerFlush();
 
       expect(store.status()).toBe('ready');
-      expect(store.intent()?.id).toBe('pi_123');
+      expect(store.intent()?.id.value).toBe('pi_123');
     });
 
     it('refreshPayment -> ignores when machine rejects', async () => {
       (stateMachineMock.send as any).mockReturnValueOnce(false);
-
+      const pi123 = createPaymentIntentId('pi_123');
       store.refreshPayment({
-        request: { intentId: 'pi_123' },
+        request: { intentId: pi123 },
         providerId: 'stripe',
       });
 
@@ -482,7 +487,7 @@ describe('PaymentsStore', () => {
         expect.objectContaining({
           type: 'REFRESH',
           providerId: 'stripe',
-          intentId: 'pi_123',
+          intentId: pi123,
         }),
       );
 
@@ -502,7 +507,7 @@ describe('PaymentsStore', () => {
         store.startPayment({ request: req, providerId: 'stripe' });
 
         setMachineReady({
-          intent: { ...intent, id: `pi_${i}` },
+          intent: { ...intent, id: createPaymentIntentId(`pi_${i}`) },
         });
         await flush();
       }

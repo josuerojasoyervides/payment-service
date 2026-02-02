@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import { LoggerService } from '@core/logging';
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
@@ -38,7 +39,7 @@ describe('StripeCreateIntentGateway', () => {
 
   it('POST /intents for card payments with correct payload and headers', () => {
     const req: CreatePaymentRequest = {
-      orderId: 'order_1',
+      orderId: createOrderId('order_1'),
       money: { amount: 100, currency: 'MXN' },
       method: { type: 'card', token: 'tok_123' },
       idempotencyKey: 'idem_123',
@@ -47,7 +48,7 @@ describe('StripeCreateIntentGateway', () => {
     gateway.execute(req).subscribe({
       next: (intent: PaymentIntent) => {
         expect(intent.provider).toBe('stripe');
-        expect(intent.id).toBe('pi_1');
+        expect(intent.id.value).toBe('pi_1');
       },
       error: (error: PaymentError) => {
         throw error;
@@ -81,7 +82,7 @@ describe('StripeCreateIntentGateway', () => {
 
   it('POST /sources for SPEI payments', () => {
     const req: CreatePaymentRequest = {
-      orderId: 'order_2',
+      orderId: createOrderId('order_2'),
       money: { amount: 200, currency: 'MXN' },
       method: { type: 'spei' },
       idempotencyKey: 'idem_spei',
@@ -115,7 +116,7 @@ describe('StripeCreateIntentGateway', () => {
 
   it('propagates provider error when backend fails', () => {
     const req: CreatePaymentRequest = {
-      orderId: 'order_error',
+      orderId: createOrderId('order_error'),
       money: { amount: 100, currency: 'MXN' },
       method: { type: 'card', token: 'tok_123' },
       idempotencyKey: 'idem_error',

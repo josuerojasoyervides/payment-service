@@ -15,6 +15,7 @@ import type { FlowTelemetryEvent } from '@app/features/payments/application/adap
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type {
   PaymentFlowCommandEvent,
@@ -52,12 +53,15 @@ function buildCommandEvent(
       providerId: payload['providerId'] as PaymentProviderId,
       request: payload['request'] as CreatePaymentRequest,
     };
-  if (type === 'REFRESH')
+  if (type === 'REFRESH') {
+    const rawId = payload?.['intentId'] as string | undefined;
+    const intentId = rawId != null ? createPaymentIntentId(rawId) : undefined;
     return {
       type: 'REFRESH',
       providerId: payload?.['providerId'] as PaymentProviderId | undefined,
-      intentId: payload?.['intentId'] as string | undefined,
+      intentId,
     };
+  }
   throw new Error(`Unsupported command type: ${type}`);
 }
 

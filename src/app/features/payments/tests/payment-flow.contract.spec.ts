@@ -1,3 +1,7 @@
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type {
   PaymentFlowActorRef,
@@ -29,14 +33,14 @@ const createDeferred = <T>(): Deferred<T> => {
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const baseIntent: PaymentIntent = {
-  id: 'pi_1',
+  id: createPaymentIntentId('pi_1'),
   provider: 'stripe',
   status: 'processing',
   money: { amount: 100, currency: 'MXN' },
 };
 
 const baseRequest: CreatePaymentRequest = {
-  orderId: 'o1',
+  orderId: createOrderId('o1'),
   money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_123' },
 };
@@ -148,7 +152,7 @@ describe('PaymentFlow contract tests', () => {
     actor.send({
       type: 'CONFIRM',
       providerId: 'stripe',
-      intentId: 'pi_confirm',
+      intentId: createPaymentIntentId('pi_confirm'),
       returnUrl: 'https://return.test',
     });
 
@@ -162,7 +166,11 @@ describe('PaymentFlow contract tests', () => {
     const cancelDeferred = createDeferred<PaymentIntent>();
     const { actor } = setup({ cancelDeferred });
 
-    actor.send({ type: 'CANCEL', providerId: 'stripe', intentId: 'pi_cancel' });
+    actor.send({
+      type: 'CANCEL',
+      providerId: 'stripe',
+      intentId: createPaymentIntentId('pi_cancel'),
+    });
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'cancelling');
     expect(snap.value).toBe('cancelling');
@@ -174,7 +182,11 @@ describe('PaymentFlow contract tests', () => {
     const statusDeferred = createDeferred<PaymentIntent>();
     const { actor } = setup({ statusDeferred });
 
-    actor.send({ type: 'REFRESH', providerId: 'stripe', intentId: 'pi_refresh' });
+    actor.send({
+      type: 'REFRESH',
+      providerId: 'stripe',
+      intentId: createPaymentIntentId('pi_refresh'),
+    });
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'fetchingStatusInvoke');
     expect(snap.value).toBe('fetchingStatusInvoke');
@@ -207,7 +219,11 @@ describe('PaymentFlow contract tests', () => {
     actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
     await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
 
-    actor.send({ type: 'CONFIRM', providerId: 'stripe', intentId: 'pi_req' });
+    actor.send({
+      type: 'CONFIRM',
+      providerId: 'stripe',
+      intentId: createPaymentIntentId('pi_req'),
+    });
     const snap = await waitForSnapshot(actor, (s) => s.value === 'confirming');
     expect(snap.value).toBe('confirming');
 
@@ -270,7 +286,7 @@ describe('PaymentFlow contract tests', () => {
     // referenceId must match stored ref (intent id from start) to avoid correlation mismatch
     actor.send({
       type: 'REDIRECT_RETURNED',
-      payload: { providerId: 'stripe', referenceId: baseIntent.id },
+      payload: { providerId: 'stripe', referenceId: baseIntent.id.value },
     });
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'reconcilingInvoke');
@@ -293,7 +309,7 @@ describe('PaymentFlow contract tests', () => {
     actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
     await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
 
-    const payload = { providerId: 'stripe' as const, referenceId: baseIntent.id };
+    const payload = { providerId: 'stripe' as const, referenceId: baseIntent.id.value };
     actor.send({ type: 'REDIRECT_RETURNED', payload });
     actor.send({ type: 'REDIRECT_RETURNED', payload });
 
@@ -322,16 +338,17 @@ describe('PaymentFlow contract tests', () => {
     expect(snap.hasTag('error')).toBe(false);
     expect(deps.finalize).toHaveBeenCalledTimes(1);
 
-    statusDeferred.resolve({ ...baseIntent, id: 'pi_return', status: 'succeeded' });
+    const piReturn = createPaymentIntentId('pi_return');
+    statusDeferred.resolve({ ...baseIntent, id: piReturn, status: 'succeeded' });
     await waitForSnapshot(actor, (s) => s.value === 'done');
-    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_return' });
+    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: piReturn });
   });
 
   it('REDIRECT_RETURNED with referenceId mismatch vs stored ref -> failed, no finalize', async () => {
     const { actor, deps } = setup({
       initialContext: {
         providerId: 'stripe',
-        intentId: 'pi_A',
+        intentId: createPaymentIntentId('pi_A'),
         flowContext: {
           providerId: 'stripe',
           providerRefs: { stripe: { paymentId: 'pi_A' } },
@@ -361,15 +378,16 @@ describe('PaymentFlow contract tests', () => {
     const snap = await waitForSnapshot(actor, (s) => s.value === 'reconcilingInvoke');
     expect(snap.value).toBe('reconcilingInvoke');
 
+    const order123 = createPaymentIntentId('ORDER_123');
     statusDeferred.resolve({
       ...baseIntent,
       provider: 'paypal',
-      id: 'ORDER_123',
+      id: order123,
       status: 'processing',
     });
     await waitForSnapshot(actor, (s) => s.value === 'polling');
 
-    expect(deps.getStatus).toHaveBeenCalledWith('paypal', { intentId: 'ORDER_123' });
+    expect(deps.getStatus).toHaveBeenCalledWith('paypal', { intentId: order123 });
   });
 
   it('idle accepts WEBHOOK_RECEIVED -> reconcilingInvoke', async () => {
@@ -389,10 +407,17 @@ describe('PaymentFlow contract tests', () => {
     const snap = await waitForSnapshot(actor, (s) => s.value === 'reconcilingInvoke');
     expect(snap.value).toBe('reconcilingInvoke');
 
-    statusDeferred.resolve({ ...baseIntent, id: 'pi_webhook', status: 'succeeded' });
+    statusDeferred.resolve({
+      ...baseIntent,
+      id: createPaymentIntentId('pi_webhook'),
+      status: 'succeeded',
+    });
     await waitForSnapshot(actor, (s) => s.value === 'done');
 
-    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_webhook' });
+    expect(deps.getStatus).toHaveBeenCalledWith(
+      'stripe',
+      expect.objectContaining({ intentId: expect.objectContaining({ value: 'pi_webhook' }) }),
+    );
   });
 
   it('failed accepts FALLBACK_REQUESTED -> fallbackCandidate', async () => {
@@ -456,7 +481,11 @@ describe('PaymentFlow contract tests', () => {
     });
     await waitForSnapshot(actor, (s) => s.value === 'fallbackCandidate');
 
-    actor.send({ type: 'CONFIRM', providerId: 'stripe', intentId: 'pi_fallback' });
+    actor.send({
+      type: 'CONFIRM',
+      providerId: 'stripe',
+      intentId: createPaymentIntentId('pi_fallback'),
+    });
     await flush();
     expect(actor.getSnapshot().value).toBe('fallbackCandidate');
   });
@@ -487,7 +516,11 @@ describe('PaymentFlow contract tests', () => {
     const confirmDeferred = createDeferred<PaymentIntent>();
     const { actor } = setup({ confirmDeferred });
 
-    actor.send({ type: 'CONFIRM', providerId: 'stripe', intentId: 'pi_confirm' });
+    actor.send({
+      type: 'CONFIRM',
+      providerId: 'stripe',
+      intentId: createPaymentIntentId('pi_confirm'),
+    });
     await waitForSnapshot(actor, (s) => s.value === 'confirming');
 
     actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });

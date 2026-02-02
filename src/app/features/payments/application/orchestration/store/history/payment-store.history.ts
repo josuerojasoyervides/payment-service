@@ -28,7 +28,7 @@ export function addToHistory(
   error?: PaymentError,
 ): void {
   const entry: PaymentHistoryEntry = {
-    intentId: intent.id,
+    intentId: intent.id.value,
     provider: providerId,
     status: intent.status,
     amount: intent.money.amount,

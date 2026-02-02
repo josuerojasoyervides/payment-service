@@ -2,6 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import type { TokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/token-validator.port';
 import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
@@ -16,13 +20,13 @@ describe('CardStrategy', () => {
   const validToken = 'tok_test1234567890abc';
 
   const validReq: CreatePaymentRequest = {
-    orderId: 'order_1',
+    orderId: createOrderId('order_1'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: validToken },
   };
 
   const intentResponse: PaymentIntent = {
-    id: 'pi_1',
+    id: createPaymentIntentId('pi_1'),
     provider: 'stripe',
     status: 'requires_payment_method',
     money: { amount: 100, currency: 'MXN' },
@@ -155,7 +159,7 @@ describe('CardStrategy', () => {
 
       expect(gatewayMock.createIntent).toHaveBeenCalledTimes(1);
       expect(gatewayMock.createIntent).toHaveBeenCalledWith(validReq);
-      expect(result.id).toBe('pi_1');
+      expect(result.id?.value ?? result.id).toBe('pi_1');
     });
 
     it('throws validation error before calling gateway', () => {

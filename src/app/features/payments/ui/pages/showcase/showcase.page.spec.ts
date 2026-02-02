@@ -91,7 +91,7 @@ describe('ShowcaseComponent', () => {
     it('should have sampleIntent configured from catalog', () => {
       const intent = component.sampleIntent();
       expect(intent).toBeTruthy();
-      expect(intent?.id).toBe('pi_fake_demo123');
+      expect(intent?.id?.value ?? intent?.id).toBe('pi_fake_demo123');
       expect(intent?.provider).toBe(component.catalogProviderIds().p0);
       expect(intent?.status).toBe('succeeded');
       expect(intent?.money.amount).toBe(499.99);
@@ -116,7 +116,7 @@ describe('ShowcaseComponent', () => {
       const card = component.intentCard();
       expect(card.intent).not.toBeNull();
       if (card.intent) {
-        expect(card.intent.id).toBe('pi_fake_card_demo');
+        expect(card.intent.id?.value ?? card.intent.id).toBe('pi_fake_card_demo');
         expect(card.intent.status).toBe('requires_confirmation');
         expect(card.intent.provider).toBe(component.catalogProviderIds().p0);
       }
@@ -211,7 +211,7 @@ describe('ShowcaseComponent', () => {
         expect(event.alternativeProviders).toEqual(
           component.catalogProviderIds().p1 ? [component.catalogProviderIds().p1] : [],
         );
-        expect(event.originalRequest.orderId).toBe('order_123');
+        expect(event.originalRequest.orderId.value).toBe('order_123');
       }
     });
 

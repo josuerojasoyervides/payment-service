@@ -75,13 +75,13 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
 
     if (request.method.type === 'spei') {
       const dto = createFakeSpeiSource(request) as unknown as Record<string, unknown>;
-      addFakeDebug(dto, behavior, DEFAULT_DELAY_MS, request.orderId);
+      addFakeDebug(dto, behavior, DEFAULT_DELAY_MS, request.orderId.value);
       return simulateNetworkDelay(dto);
     }
 
     if (this.providerId === 'paypal') {
       const dto = createFakePaypalOrder(request) as unknown as Record<string, unknown>;
-      addFakeDebug(dto, behavior, DEFAULT_DELAY_MS, request.orderId);
+      addFakeDebug(dto, behavior, DEFAULT_DELAY_MS, request.orderId.value);
       return simulateNetworkDelay(dto);
     }
 

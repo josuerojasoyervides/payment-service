@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { InMemoryFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/dev-only/in-memory-flow-telemetry-sink';
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import providePayments from '@payments/config/payment.providers';
 
@@ -26,7 +27,7 @@ describe('PaymentFlowActorService (PR6 flow telemetry)', () => {
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
+        orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_processing1234567890' },
       },

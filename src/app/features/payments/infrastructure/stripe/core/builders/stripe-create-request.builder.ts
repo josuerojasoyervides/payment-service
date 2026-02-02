@@ -6,6 +6,7 @@ import type { PaymentOptions } from '@app/features/payments/domain/subdomains/pa
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import type { StripeCreateIntentRequest } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import type { OrderId } from '@payments/domain/common/primitives/ids/order-id.vo';
 
 export function buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreateIntentRequest {
   const isCard = req.method.type === 'card';
@@ -19,13 +20,14 @@ export function buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreat
     ...(isCard ? { payment_method: req.method.token } : {}),
 
     metadata: {
-      order_id: req.orderId,
+      order_id: req.orderId.value,
     },
   };
 }
 
 export class StripeCreateRequestBuilder extends BasePaymentRequestBuilder {
   private orderId?: string;
+  private orderIdVo?: OrderId;
   private amount?: number;
   private currency?: CurrencyCode;
   private money?: Money;
@@ -62,7 +64,7 @@ export class StripeCreateRequestBuilder extends BasePaymentRequestBuilder {
 
   protected override validateRequired(): void {
     // Required basics
-    this.requireNonEmptyString('orderId', this.orderId);
+    this.orderIdVo = this.createOrderIdOrThrow(this.orderId, 'errors.required_field_missing');
     this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency ?? 'MXN');
 
     // Selected method
@@ -92,7 +94,7 @@ export class StripeCreateRequestBuilder extends BasePaymentRequestBuilder {
     const selected = this.paymentMethodTypes![0];
 
     return {
-      orderId: this.orderId!,
+      orderId: this.orderIdVo!,
       money: this.money!,
       method: {
         type: selected,

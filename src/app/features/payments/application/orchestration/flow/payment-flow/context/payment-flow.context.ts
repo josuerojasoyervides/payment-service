@@ -37,7 +37,7 @@ export function createFlowContext(params: {
   const flowId = base.flowId ?? flowIdGenerator(nowMs);
   const createdAt = base.createdAt ?? nowMs;
   const expiresAt = base.expiresAt ?? nowMs + FLOW_CONTEXT_TTL_MS;
-  const externalReference = base.externalReference ?? params.request.orderId;
+  const externalReference = base.externalReference ?? params.request.orderId.value;
 
   const providerRefs = mergeProviderRefs(base.providerRefs, {
     [params.providerId]: base.providerRefs?.[params.providerId] ?? {},

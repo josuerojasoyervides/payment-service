@@ -25,9 +25,9 @@ export class StripeCancelIntentGateway extends PaymentOperationPort<
 
   protected executeRaw(request: CancelPaymentRequest): Observable<StripePaymentIntentDto> {
     return this.http.post<StripePaymentIntentDto>(
-      `${StripeCancelIntentGateway.API_BASE}/intents/${request.intentId}/cancel`,
+      `${StripeCancelIntentGateway.API_BASE}/intents/${request.intentId.value}/cancel`,
       {},
-      { headers: getIdempotencyHeaders(request.intentId, 'cancel', request.idempotencyKey) },
+      { headers: getIdempotencyHeaders(request.intentId.value, 'cancel', request.idempotencyKey) },
     );
   }
 

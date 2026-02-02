@@ -32,7 +32,7 @@ describe('StripeSpeiRequestBuilder', () => {
         .withOptions({ customerEmail: 'test@example.com' })
         .build();
 
-      expect(request.orderId).toBe('order_123');
+      expect(request.orderId.value).toBe('order_123');
       expect(request.money.amount).toBe(100);
       expect(request.money.currency).toBe('MXN');
       expect(request.method.type).toBe('spei');

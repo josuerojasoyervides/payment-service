@@ -2,11 +2,12 @@ import { Injectable } from '@angular/core';
 import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import type { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 
 export type IdempotencyOperation = 'start' | 'confirm' | 'cancel' | 'get';
 
 interface IntentReq {
-  intentId: string;
+  intentId: PaymentIntentId;
 }
 type IntentOperation = Exclude<IdempotencyOperation, 'start'>;
 
@@ -20,7 +21,7 @@ export class IdempotencyKeyFactory {
     const parts = [
       providerId,
       'start',
-      req.orderId,
+      req.orderId.value,
       req.money.amount.toString(),
       req.money.currency,
       req.method.type,
@@ -28,16 +29,16 @@ export class IdempotencyKeyFactory {
     return parts.join(':');
   }
 
-  generateForConfirm(providerId: PaymentProviderId, intentId: string): string {
-    return `${providerId}:confirm:${intentId}`;
+  generateForConfirm(providerId: PaymentProviderId, intentId: PaymentIntentId): string {
+    return `${providerId}:confirm:${intentId.value}`;
   }
 
-  generateForCancel(providerId: PaymentProviderId, intentId: string): string {
-    return `${providerId}:cancel:${intentId}`;
+  generateForCancel(providerId: PaymentProviderId, intentId: PaymentIntentId): string {
+    return `${providerId}:cancel:${intentId.value}`;
   }
 
-  generateForGet(providerId: PaymentProviderId, intentId: string): string {
-    return `${providerId}:get:${intentId}`;
+  generateForGet(providerId: PaymentProviderId, intentId: PaymentIntentId): string {
+    return `${providerId}:get:${intentId.value}`;
   }
 
   /**

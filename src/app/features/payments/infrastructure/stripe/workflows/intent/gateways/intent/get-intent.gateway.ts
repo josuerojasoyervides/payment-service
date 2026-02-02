@@ -24,7 +24,7 @@ export class StripeGetIntentGateway extends PaymentOperationPort<
 
   protected executeRaw(request: GetPaymentStatusRequest): Observable<StripePaymentIntentDto> {
     return this.http.get<StripePaymentIntentDto>(
-      `${StripeGetIntentGateway.API_BASE}/intents/${request.intentId}`,
+      `${StripeGetIntentGateway.API_BASE}/intents/${request.intentId.value}`,
     );
   }
 

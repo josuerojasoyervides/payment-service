@@ -18,15 +18,16 @@ export abstract class FakeCancelIntentGateway extends PaymentOperationPort<
   abstract override readonly providerId: PaymentProviderId;
 
   protected override executeRaw(request: CancelPaymentRequest): Observable<any> {
-    this.logger.warn(`[FakeGateway] Canceling intent ${request.intentId}`, this.logContext, {
+    const id = request.intentId.value;
+    this.logger.warn(`[FakeGateway] Canceling intent ${id}`, this.logContext, {
       request,
     });
 
     if (this.providerId === 'paypal') {
-      return simulateNetworkDelay(createVoidedPaypalOrder(request.intentId));
+      return simulateNetworkDelay(createVoidedPaypalOrder(id));
     }
 
-    return simulateNetworkDelay(createCanceledStripeIntent(request.intentId));
+    return simulateNetworkDelay(createCanceledStripeIntent(id));
   }
 
   protected override mapResponse(dto: any): PaymentIntent {

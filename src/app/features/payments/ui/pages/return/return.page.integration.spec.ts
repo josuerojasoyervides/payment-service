@@ -140,7 +140,10 @@ describe('ReturnComponent - Integration', () => {
       expect(ref?.providerLabel).toBeDefined();
 
       comp.refreshPaymentByReference('pi_mock_123');
-      expect(refreshSpy).toHaveBeenCalledWith({ intentId: 'pi_mock_123' }, 'stripe');
+      expect(refreshSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ intentId: expect.objectContaining({ value: 'pi_mock_123' }) }),
+        'stripe',
+      );
     });
   });
 });

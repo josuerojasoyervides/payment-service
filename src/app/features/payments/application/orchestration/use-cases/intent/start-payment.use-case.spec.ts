@@ -7,6 +7,10 @@ import type {
   PaymentStrategy,
   StrategyContext,
 } from '@payments/application/api/ports/payment-strategy.port';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
@@ -18,13 +22,13 @@ describe('StartPaymentUseCase', () => {
   let useCase: StartPaymentUseCase;
 
   const req: CreatePaymentRequest = {
-    orderId: 'o1',
+    orderId: createOrderId('o1'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
   };
 
   const intentResponse: PaymentIntent = {
-    id: 'pi_1',
+    id: createPaymentIntentId('pi_1'),
     provider: 'stripe',
     status: 'requires_payment_method',
     money: { amount: 100, currency: 'MXN' },
@@ -110,7 +114,7 @@ describe('StartPaymentUseCase', () => {
     it('returns the PaymentIntent from strategy.start', async () => {
       const result = await firstValueFrom(useCase.execute(req, 'stripe'));
 
-      expect(result.id).toBe('pi_1');
+      expect(result.id?.value ?? result.id).toBe('pi_1');
       expect(result.provider).toBe('stripe');
     });
 

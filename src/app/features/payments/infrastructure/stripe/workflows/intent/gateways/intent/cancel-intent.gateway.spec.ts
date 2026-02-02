@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/cancel-intent.gateway';
@@ -37,14 +38,14 @@ describe('StripeCancelIntentGateway', () => {
 
   it('POST /intents/:id/cancel with idempotency headers', () => {
     const req: CancelPaymentRequest = {
-      intentId: 'pi_123',
+      intentId: createPaymentIntentId('pi_123'),
       idempotencyKey: 'idem_cancel_123',
     };
 
     gateway.execute(req).subscribe({
       next: (intent: PaymentIntent) => {
         expect(intent.provider).toBe('stripe');
-        expect(intent.id).toBe('pi_123');
+        expect(intent.id.value).toBe('pi_123');
         expect(intent.status).toBeDefined();
       },
       error: (e) => {
@@ -69,7 +70,7 @@ describe('StripeCancelIntentGateway', () => {
 
   it('propagates provider error when backend fails', () => {
     const req: CancelPaymentRequest = {
-      intentId: 'pi_error',
+      intentId: createPaymentIntentId('pi_error'),
       idempotencyKey: 'idem_cancel_error',
     };
 

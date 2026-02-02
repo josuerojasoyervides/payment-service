@@ -8,6 +8,7 @@ import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/sto
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';
 import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
 import { normalizeQueryParams } from '@payments/ui/shared/normalize-query-params';
@@ -96,14 +97,18 @@ export class ReturnComponent implements OnInit {
   }
 
   confirmPayment(intentId: string): void {
-    this.state.confirmPayment({ intentId });
+    const result = PaymentIntentId.from(intentId);
+    if (!result.ok) return;
+    this.state.confirmPayment({ intentId: result.value });
   }
 
   refreshPaymentByReference(referenceId: string): void {
+    const result = PaymentIntentId.from(referenceId);
+    if (!result.ok) return;
     const ref = this.returnPageState.returnReference();
     const providerId = ref?.providerId ?? this.state.selectedProvider();
     if (providerId) {
-      this.state.refreshPayment({ intentId: referenceId }, providerId);
+      this.state.refreshPayment({ intentId: result.value }, providerId);
     }
   }
 

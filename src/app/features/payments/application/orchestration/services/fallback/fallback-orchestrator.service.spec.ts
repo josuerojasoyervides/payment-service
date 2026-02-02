@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { DEFAULT_FALLBACK_CONFIG } from '@payments/application/orchestration/services/fallback/fallback-config.constant';
 import {
@@ -18,7 +19,7 @@ describe('FallbackOrchestratorService', () => {
   };
 
   const mockRequest: CreatePaymentRequest = {
-    orderId: 'order_123',
+    orderId: createOrderId('order_123'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_test1234567890abc' },
   };
@@ -696,7 +697,7 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
   };
 
   const mockRequest: CreatePaymentRequest = {
-    orderId: 'order_123',
+    orderId: createOrderId('order_123'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_test1234567890abc' },
   };

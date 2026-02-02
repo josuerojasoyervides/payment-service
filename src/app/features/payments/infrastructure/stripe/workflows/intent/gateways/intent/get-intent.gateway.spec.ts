@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
 
@@ -35,9 +36,9 @@ describe('StripeGetIntentGateway', () => {
   });
 
   it('GET /intents/:id and maps payment intent correctly', () => {
-    gateway.execute({ intentId: 'pi_123' }).subscribe({
+    gateway.execute({ intentId: createPaymentIntentId('pi_123') }).subscribe({
       next: (intent: PaymentIntent) => {
-        expect(intent.id).toBe('pi_123');
+        expect(intent.id?.value ?? intent.id).toBe('pi_123');
         expect(intent.provider).toBe('stripe');
         expect(intent.money.amount).toBe(200);
         expect(intent.money.currency).toBe('MXN');
@@ -63,7 +64,7 @@ describe('StripeGetIntentGateway', () => {
   });
 
   it('propagates provider error when backend fails', () => {
-    gateway.execute({ intentId: 'pi_error' }).subscribe({
+    gateway.execute({ intentId: createPaymentIntentId('pi_error') }).subscribe({
       next: () => {
         expect.fail('Expected error');
       },

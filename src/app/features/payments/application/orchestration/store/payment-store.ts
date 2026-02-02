@@ -52,7 +52,8 @@ export const PaymentsStore = signalStore(
       const snap = snapshot();
       if (!snap.hasTag('idle')) return null;
       const ctx = snap.context;
-      return ctx.intent?.id ?? ctx.intentId ?? null;
+      const id = ctx.intent?.id ?? ctx.intentId;
+      return id?.value ?? null;
     });
     const debugStateNode = computed(() => {
       const snap = snapshot();

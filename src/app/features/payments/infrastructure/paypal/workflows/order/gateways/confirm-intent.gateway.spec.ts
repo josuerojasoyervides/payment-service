@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/confirm-intent.gateway';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
@@ -37,9 +38,9 @@ describe('PaypalConfirmIntentGateway', () => {
   });
 
   it('POST /orders/:id/capture with idempotency header', () => {
-    gateway.execute({ intentId: 'ORDER_1' }).subscribe({
+    gateway.execute({ intentId: createPaymentIntentId('ORDER_1') }).subscribe({
       next: (intent: PaymentIntent) => {
-        expect(intent.id).toBe('ORDER_1');
+        expect(intent.id.value).toBe('ORDER_1');
         expect(intent.provider).toBe('paypal');
         expect(intent.status).toBe('succeeded');
       },
@@ -69,7 +70,7 @@ describe('PaypalConfirmIntentGateway', () => {
   });
 
   it('propagates provider error when backend fails', () => {
-    gateway.execute({ intentId: 'ORDER_ERROR' }).subscribe({
+    gateway.execute({ intentId: createPaymentIntentId('ORDER_ERROR') }).subscribe({
       next: () => {
         expect.fail('Expected error');
       },

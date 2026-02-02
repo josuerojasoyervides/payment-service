@@ -32,9 +32,11 @@ export class StripeConfirmIntentGateway extends PaymentOperationPort<
     };
 
     return this.http.post<StripePaymentIntentDto>(
-      `${StripeConfirmIntentGateway.API_BASE}/intents/${request.intentId}/confirm`,
+      `${StripeConfirmIntentGateway.API_BASE}/intents/${request.intentId.value}/confirm`,
       stripeRequest,
-      { headers: getIdempotencyHeaders(request.intentId, 'confirm', request.idempotencyKey) },
+      {
+        headers: getIdempotencyHeaders(request.intentId.value, 'confirm', request.idempotencyKey),
+      },
     );
   }
 

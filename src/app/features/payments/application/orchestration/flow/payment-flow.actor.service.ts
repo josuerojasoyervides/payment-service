@@ -35,6 +35,7 @@ import {
   isPaymentFlowSnapshot,
   isSnapshotInspectionEventWithSnapshot,
 } from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.guards';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
 
@@ -57,7 +58,10 @@ function buildInitialMachineContext(
 
   const flowContext = toFlowContext(persisted);
   const providerId = flowContext.providerId ?? null;
-  const intentId = providerId ? (flowContext.providerRefs?.[providerId]?.intentId ?? null) : null;
+  const raw =
+    providerId != null ? (flowContext.providerRefs?.[providerId]?.intentId ?? null) : null;
+  const fromRaw = raw != null ? PaymentIntentId.from(raw) : null;
+  const intentId = fromRaw?.ok ? fromRaw.value : null;
 
   return {
     flowContext,
@@ -173,7 +177,7 @@ export class PaymentFlowActorService {
 
   private prevSnapshot: PaymentFlowSnapshot | null = null;
   private lastReportedError: PaymentError | null = null;
-  private lastSuccessIntentId: string | null = null;
+  private lastSuccessIntentId: PaymentIntentId | null = null;
   private lastErrorCodeForTelemetry: string | null = null;
 
   private readonly actor: PaymentFlowActorRef = createActor(this.machine, {
@@ -392,7 +396,7 @@ export class PaymentFlowActorService {
 
   private maybeNotifyFallbackSuccess(snapshot: PaymentFlowSnapshot): void {
     const intentId = snapshot.context.intent?.id ?? null;
-    if (!intentId || intentId === this.lastSuccessIntentId) return;
+    if (!intentId || intentId.value === this.lastSuccessIntentId?.value) return;
 
     const fallbackStatus = this.fallbackOrchestrator.state().status;
     if (fallbackStatus === 'idle') return;

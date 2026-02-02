@@ -1,3 +1,4 @@
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import {
   createFlowContext,
   FLOW_CONTEXT_TTL_MS,
@@ -9,7 +10,7 @@ import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/m
 
 describe('payment-flow.context', () => {
   const request: CreatePaymentRequest = {
-    orderId: 'order_123',
+    orderId: createOrderId('order_123'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
   };

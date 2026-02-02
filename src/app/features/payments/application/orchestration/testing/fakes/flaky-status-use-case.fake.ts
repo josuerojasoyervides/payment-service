@@ -9,6 +9,7 @@ import type {
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { GetPaymentStatusRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import type { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import type { Observable } from 'rxjs';
 import { of, switchMap, timer } from 'rxjs';
 
@@ -16,7 +17,7 @@ export interface FlakyStatusUseCaseFakeConfig {
   /** Status sequence returned per call (e.g. ['processing', 'processing', 'succeeded']). */
   statusSequence: PaymentIntentStatus[];
   /** Intent id and provider used for all returned intents. */
-  intentId: string;
+  intentId: PaymentIntentId;
   providerId: PaymentProviderId;
   amount?: number;
   currency?: 'MXN' | 'USD';

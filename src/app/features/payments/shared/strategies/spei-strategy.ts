@@ -144,14 +144,14 @@ export class SpeiStrategy implements PaymentStrategy {
     const { preparedRequest, metadata } = this.prepare(req, context);
 
     this.logger.warn(`[SpeiStrategy] Starting SPEI payment:`, 'SpeiStrategy', {
-      orderId: req.orderId,
+      orderId: req.orderId.value,
       amount: req.money.amount,
       expiresAt: metadata['expires_at'],
     });
     return this.gateway.createIntent(preparedRequest).pipe(
       tap((intent) => {
-        this.logger.warn(`[SpeiStrategy] SPEI source created: ${intent.id}`, 'SpeiStrategy', {
-          intentId: intent.id,
+        this.logger.warn(`[SpeiStrategy] SPEI source created: ${intent.id.value}`, 'SpeiStrategy', {
+          intentId: intent.id.value,
         });
       }),
       map((intent) => this.enrichIntentWithSpeiInstructions(intent, req, metadata)),

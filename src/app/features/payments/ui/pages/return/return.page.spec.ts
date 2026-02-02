@@ -8,6 +8,7 @@ import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/sto
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { ReturnComponent } from '@payments/ui/pages/return/return.page';
 
@@ -28,7 +29,7 @@ describe('ReturnComponent', () => {
   };
 
   const mockIntent: PaymentIntent = {
-    id: 'pi_test_123',
+    id: createPaymentIntentId('pi_test_123'),
     provider: 'stripe',
     status: 'succeeded',
     money: { amount: 499.99, currency: 'MXN' },
@@ -170,7 +171,9 @@ describe('ReturnComponent', () => {
       mockActivatedRoute.snapshot.queryParams = { payment_intent: 'pi_test_123' };
       component.ngOnInit();
       component.confirmPayment('pi_test_123');
-      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
+      expect(mockState.confirmPayment).toHaveBeenCalledWith(
+        expect.objectContaining({ intentId: expect.objectContaining({ value: 'pi_test_123' }) }),
+      );
     });
 
     it('should refresh payment with providerId from returnReference', () => {
@@ -178,7 +181,7 @@ describe('ReturnComponent', () => {
       component.ngOnInit();
       component.refreshPaymentByReference('pi_test_123');
       expect(mockState.refreshPayment).toHaveBeenCalledWith(
-        { intentId: 'pi_test_123' },
+        expect.objectContaining({ intentId: expect.objectContaining({ value: 'pi_test_123' }) }),
         expect.any(String),
       );
     });

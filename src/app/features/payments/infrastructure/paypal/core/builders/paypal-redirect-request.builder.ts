@@ -4,6 +4,7 @@ import type { CurrencyCode } from '@app/features/payments/domain/subdomains/paym
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { I18nKeys } from '@core/i18n';
+import type { OrderId } from '@payments/domain/common/primitives/ids/order-id.vo';
 
 /**
  * Builder for payments via PayPal (redirect flow).
@@ -21,6 +22,7 @@ import { I18nKeys } from '@core/i18n';
  */
 export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
   private orderId?: string;
+  private orderIdVo?: OrderId;
   private amount?: number;
   private currency?: CurrencyCode;
   private money?: Money;
@@ -55,7 +57,7 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
   }
 
   protected override validateRequired(): void {
-    this.orderId = this.validateOrderId(this.orderId, I18nKeys.errors.order_id_required);
+    this.orderIdVo = this.createOrderIdOrThrow(this.orderId, I18nKeys.errors.order_id_required);
     this.requireDefinedWithKey('currency', this.currency, I18nKeys.errors.currency_required);
     this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
 
@@ -72,7 +74,7 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
      * it uses card only as a compatibility label.
      */
     return {
-      orderId: this.orderId!,
+      orderId: this.orderIdVo!,
       money: this.money!,
       method: {
         type: 'card',

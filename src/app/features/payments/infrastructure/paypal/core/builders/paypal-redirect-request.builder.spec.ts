@@ -35,7 +35,7 @@ describe('PaypalRedirectRequestBuilder', () => {
         })
         .build();
 
-      expect(request.orderId).toBe('order_123');
+      expect(request.orderId.value).toBe('order_123');
       expect(request.money.amount).toBe(100);
       expect(request.money.currency).toBe('MXN');
       expect(request.method.type).toBe('card');
@@ -143,7 +143,7 @@ describe('PaypalRedirectRequestBuilder', () => {
       // returnUrl is optional in the builder - it can come from StrategyContext
       const request = builder.forOrder('order_123').withAmount(100, 'MXN').build();
 
-      expect(request.orderId).toBe('order_123');
+      expect(request.orderId.value).toBe('order_123');
       expect(request.money.amount).toBe(100);
       expect(request.returnUrl).toBeUndefined();
     });

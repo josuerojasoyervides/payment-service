@@ -48,7 +48,7 @@ export function buildPaymentsSelectors(state: PaymentsSelectorsSource) {
     // Debug summary (single place to inspect state quickly)
     debugSummary: computed(() => ({
       status: state.status(),
-      intentId: state.intent()?.id ?? null,
+      intentId: state.intent()?.id?.value ?? null,
       provider: state.selectedProvider(),
       fallbackStatus: state.fallback().status,
       isAutoFallback: state.fallback().isAutoFallback,

@@ -5,6 +5,7 @@ import type { PaymentProviderId } from '@app/features/payments/domain/subdomains
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type { PaymentFlowPublicEvent } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 
 /**
  * PaymentFlowMachineDriver
@@ -84,10 +85,12 @@ export class PaymentFlowMachineDriver {
   }
 
   refresh(providerId: PaymentProviderId, intentId: string): boolean {
+    const result = PaymentIntentId.from(intentId);
+    if (!result.ok) return false;
     return this.flow.send({
       type: 'REFRESH',
       providerId,
-      intentId,
+      intentId: result.value,
     } satisfies PaymentFlowPublicEvent);
   }
 

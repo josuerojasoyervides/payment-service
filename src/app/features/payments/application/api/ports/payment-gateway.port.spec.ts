@@ -4,6 +4,10 @@ import { TestBed } from '@angular/core/testing';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { BasePaymentGateway } from '@payments/application/api/ports/payment-gateway.port';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import type {
   PaymentIntent,
   PaymentIntentStatus,
@@ -25,7 +29,7 @@ class PaymentGatewayTest extends BasePaymentGateway<any, any> {
   protected createIntentRaw(req: CreatePaymentRequest): Observable<unknown> {
     if (this.mode === 'raw-error') return throwError(() => ({ kind: 'RAW_ERROR', detail: 'boom' }));
     return of({
-      id: 'pi_123',
+      id: createPaymentIntentId('pi_123'),
       status: 'requires_payment_method',
       amount: req.money.amount,
       currency: req.money.currency,
@@ -83,8 +87,12 @@ class PaymentGatewayTest extends BasePaymentGateway<any, any> {
   }
 
   private mapBase(dto: any): PaymentIntent {
+    const id =
+      typeof dto.id === 'object' && dto.id != null && 'value' in dto.id
+        ? dto.id
+        : createPaymentIntentId(String(dto.id));
     return {
-      id: dto.id,
+      id,
       provider: this.providerId,
       status: dto.status as PaymentIntentStatus,
       money: { amount: dto.amount, currency: dto.currency },
@@ -146,7 +154,7 @@ function expectSyncPaymentError(fn: () => unknown, expected: Partial<PaymentErro
 
 function validReq(overrides: Partial<CreatePaymentRequest> = {}): CreatePaymentRequest {
   return {
-    orderId: 'order_1',
+    orderId: createOrderId('order_1'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
     ...overrides,
@@ -155,14 +163,14 @@ function validReq(overrides: Partial<CreatePaymentRequest> = {}): CreatePaymentR
 
 function validConfirmReq(overrides: Partial<ConfirmPaymentRequest> = {}): ConfirmPaymentRequest {
   return {
-    intentId: 'pi_123',
+    intentId: createPaymentIntentId('pi_123'),
     ...overrides,
   };
 }
 
 function validCancelReq(overrides: Partial<CancelPaymentRequest> = {}): CancelPaymentRequest {
   return {
-    intentId: 'pi_123',
+    intentId: createPaymentIntentId('pi_123'),
     ...overrides,
   };
 }
@@ -171,7 +179,7 @@ function validGetStatusReq(
   overrides: Partial<GetPaymentStatusRequest> = {},
 ): GetPaymentStatusRequest {
   return {
-    intentId: 'pi_123',
+    intentId: createPaymentIntentId('pi_123'),
     ...overrides,
   };
 }
@@ -190,7 +198,7 @@ describe('PaymentGateway (abstract class)', () => {
   describe('createIntent', () => {
     describe('validations', () => {
       it('throws if orderId is missing (validateCreate)', () => {
-        expectSyncPaymentError(() => gateway.createIntent(validReq({ orderId: '' })), {
+        expectSyncPaymentError(() => gateway.createIntent(validReq({ orderId: '' as any })), {
           code: 'invalid_request',
           messageKey: 'errors.order_id_required',
           params: { field: 'orderId' },
@@ -266,7 +274,7 @@ describe('PaymentGateway (abstract class)', () => {
 
         expect(res).toEqual(
           expect.objectContaining({
-            id: 'pi_123',
+            id: expect.objectContaining({ value: 'pi_123' }),
             provider: 'paypal',
             status: 'requires_payment_method',
             money: { amount: 250, currency: 'MXN' },
@@ -304,11 +312,14 @@ describe('PaymentGateway (abstract class)', () => {
   describe('confirm', () => {
     describe('validations', () => {
       it('throws if intentId is missing (validateConfirm)', () => {
-        expectSyncPaymentError(() => gateway.confirmIntent(validConfirmReq({ intentId: '' })), {
-          code: 'invalid_request',
-          messageKey: 'errors.intent_id_required',
-          params: { field: 'intentId' },
-        });
+        expectSyncPaymentError(
+          () => gateway.confirmIntent(validConfirmReq({ intentId: '' as any })),
+          {
+            code: 'invalid_request',
+            messageKey: 'errors.intent_id_required',
+            params: { field: 'intentId' },
+          },
+        );
       });
     });
 
@@ -354,11 +365,14 @@ describe('PaymentGateway (abstract class)', () => {
   describe('cancel', () => {
     describe('validations', () => {
       it('throws if intentId is missing (validateCancel)', () => {
-        expectSyncPaymentError(() => gateway.cancelIntent(validCancelReq({ intentId: '' })), {
-          code: 'invalid_request',
-          messageKey: 'errors.intent_id_required',
-          params: { field: 'intentId' },
-        });
+        expectSyncPaymentError(
+          () => gateway.cancelIntent(validCancelReq({ intentId: '' as any })),
+          {
+            code: 'invalid_request',
+            messageKey: 'errors.intent_id_required',
+            params: { field: 'intentId' },
+          },
+        );
       });
     });
 
@@ -400,11 +414,14 @@ describe('PaymentGateway (abstract class)', () => {
   describe('get', () => {
     describe('validations', () => {
       it('throws if intentId is missing (validateGetStatus)', () => {
-        expectSyncPaymentError(() => gateway.getIntent(validGetStatusReq({ intentId: '' })), {
-          code: 'invalid_request',
-          messageKey: 'errors.intent_id_required',
-          params: { field: 'intentId' },
-        });
+        expectSyncPaymentError(
+          () => gateway.getIntent(validGetStatusReq({ intentId: '' as any })),
+          {
+            code: 'invalid_request',
+            messageKey: 'errors.intent_id_required',
+            params: { field: 'intentId' },
+          },
+        );
       });
     });
 

@@ -3,6 +3,13 @@ import type {
   PaymentIntentStatus,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
+
+function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
+  const result = PaymentIntentId.from(raw);
+  if (!result.ok) throw new Error(`Invalid intent id from provider: ${raw}`);
+  return result.value;
+}
 
 export function mapPaypalOrder(dto: PaypalOrderDto): PaymentIntent {
   const statusMap: Record<PaypalOrderDto['status'], PaymentIntentStatus> = {
@@ -18,7 +25,7 @@ export function mapPaypalOrder(dto: PaypalOrderDto): PaymentIntent {
   const approveLink = dto.links.find((l) => l.rel === 'approve')?.href;
 
   return {
-    id: dto.id,
+    id: toPaymentIntentIdOrThrow(dto.id),
     provider: 'paypal',
     status: statusMap[dto.status],
     money: {

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
@@ -13,7 +14,7 @@ describe('NextActionOrchestratorService (PayPal wiring)', () => {
       providerId: 'paypal',
       confirmIntent: vi.fn(() =>
         of({
-          id: 'ORDER_1',
+          id: createPaymentIntentId('ORDER_1'),
           provider: 'paypal' as const,
           status: 'succeeded' as const,
           money: { amount: 100, currency: 'MXN' as const },
@@ -44,6 +45,10 @@ describe('NextActionOrchestratorService (PayPal wiring)', () => {
     );
 
     expect(executeSpy).toHaveBeenCalledTimes(1);
-    expect(result).toMatchObject({ provider: 'paypal', status: 'succeeded', id: 'ORDER_1' });
+    expect(result).toMatchObject({
+      provider: 'paypal',
+      status: 'succeeded',
+      id: expect.objectContaining({ value: 'ORDER_1' }),
+    });
   });
 });

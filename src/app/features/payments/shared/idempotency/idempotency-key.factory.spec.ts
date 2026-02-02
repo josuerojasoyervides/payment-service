@@ -1,4 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
@@ -14,7 +18,7 @@ describe('IdempotencyKeyFactory', () => {
 
   describe('generateForStart', () => {
     const req: CreatePaymentRequest = {
-      orderId: 'o1',
+      orderId: createOrderId('o1'),
       money: { amount: 100, currency: 'MXN' },
       method: { type: 'card', token: 'tok_123' },
     };
@@ -37,7 +41,7 @@ describe('IdempotencyKeyFactory', () => {
     });
 
     it('generates different key for different orderId', () => {
-      const req2 = { ...req, orderId: 'o2' };
+      const req2 = { ...req, orderId: createOrderId('o2') };
       const key1 = factory.generateForStart('stripe', req);
       const key2 = factory.generateForStart('stripe', req2);
 
@@ -79,16 +83,16 @@ describe('IdempotencyKeyFactory', () => {
 
   describe('generateForConfirm', () => {
     it('generates stable key for same intentId', () => {
-      const key1 = factory.generateForConfirm('stripe', 'pi_1');
-      const key2 = factory.generateForConfirm('stripe', 'pi_1');
+      const key1 = factory.generateForConfirm('stripe', createPaymentIntentId('pi_1'));
+      const key2 = factory.generateForConfirm('stripe', createPaymentIntentId('pi_1'));
 
       expect(key1).toBe(key2);
       expect(key1).toBe('stripe:confirm:pi_1');
     });
 
     it('generates different key for different provider', () => {
-      const key1 = factory.generateForConfirm('stripe', 'pi_1');
-      const key2 = factory.generateForConfirm('paypal', 'pi_1');
+      const key1 = factory.generateForConfirm('stripe', createPaymentIntentId('pi_1'));
+      const key2 = factory.generateForConfirm('paypal', createPaymentIntentId('pi_1'));
 
       expect(key1).not.toBe(key2);
       expect(key1).toBe('stripe:confirm:pi_1');
@@ -98,8 +102,8 @@ describe('IdempotencyKeyFactory', () => {
 
   describe('generateForCancel', () => {
     it('generates stable key for same intentId', () => {
-      const key1 = factory.generateForCancel('stripe', 'pi_1');
-      const key2 = factory.generateForCancel('stripe', 'pi_1');
+      const key1 = factory.generateForCancel('stripe', createPaymentIntentId('pi_1'));
+      const key2 = factory.generateForCancel('stripe', createPaymentIntentId('pi_1'));
 
       expect(key1).toBe(key2);
       expect(key1).toBe('stripe:cancel:pi_1');
@@ -108,8 +112,8 @@ describe('IdempotencyKeyFactory', () => {
 
   describe('generateForGet', () => {
     it('generates stable key for same intentId', () => {
-      const key1 = factory.generateForGet('stripe', 'pi_1');
-      const key2 = factory.generateForGet('stripe', 'pi_1');
+      const key1 = factory.generateForGet('stripe', createPaymentIntentId('pi_1'));
+      const key2 = factory.generateForGet('stripe', createPaymentIntentId('pi_1'));
 
       expect(key1).toBe(key2);
       expect(key1).toBe('stripe:get:pi_1');
@@ -119,7 +123,7 @@ describe('IdempotencyKeyFactory', () => {
   describe('generate', () => {
     it('generates correct key for start operation', () => {
       const req: CreatePaymentRequest = {
-        orderId: 'o1',
+        orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card' },
       };
@@ -129,17 +133,26 @@ describe('IdempotencyKeyFactory', () => {
     });
 
     it('generates correct key for confirm operation', () => {
-      const key = factory.generate('stripe', { operation: 'confirm', req: { intentId: 'pi_1' } });
+      const key = factory.generate('stripe', {
+        operation: 'confirm',
+        req: { intentId: createPaymentIntentId('pi_1') },
+      });
       expect(key).toBe('stripe:confirm:pi_1');
     });
 
     it('generates correct key for cancel operation', () => {
-      const key = factory.generate('stripe', { operation: 'cancel', req: { intentId: 'pi_1' } });
+      const key = factory.generate('stripe', {
+        operation: 'cancel',
+        req: { intentId: createPaymentIntentId('pi_1') },
+      });
       expect(key).toBe('stripe:cancel:pi_1');
     });
 
     it('generates correct key for get operation', () => {
-      const key = factory.generate('stripe', { operation: 'get', req: { intentId: 'pi_1' } });
+      const key = factory.generate('stripe', {
+        operation: 'get',
+        req: { intentId: createPaymentIntentId('pi_1') },
+      });
       expect(key).toBe('stripe:get:pi_1');
     });
   });

@@ -21,7 +21,7 @@ export class PaypalConfirmIntentGateway extends PaymentOperationPort<
   readonly providerId: PaymentProviderId = 'paypal' as const;
   protected override executeRaw(request: ConfirmPaymentRequest): Observable<PaypalOrderDto> {
     return this.http.post<PaypalOrderDto>(
-      `${this.API_BASE}/orders/${request.intentId}/capture`,
+      `${this.API_BASE}/orders/${request.intentId.value}/capture`,
       {},
       {
         headers: {

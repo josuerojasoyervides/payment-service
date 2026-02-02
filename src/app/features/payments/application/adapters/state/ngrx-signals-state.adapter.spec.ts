@@ -3,6 +3,10 @@ import { TestBed } from '@angular/core/testing';
 import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import { ProviderDescriptorRegistry } from '@payments/application/orchestration/registry/provider-descriptor/provider-descriptor.registry';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
@@ -113,7 +117,7 @@ describe('NgRxSignalsStateAdapter', () => {
 
     it('exposes intent from store', () => {
       const mockIntent = {
-        id: 'pi_1',
+        id: createPaymentIntentId('pi_1'),
         provider: 'stripe',
         status: 'succeeded',
         money: { amount: 100, currency: 'MXN' },
@@ -197,7 +201,7 @@ describe('NgRxSignalsStateAdapter', () => {
   describe('payment actions delegation', () => {
     it('delegates startPayment to store', () => {
       const request = {
-        orderId: 'o1',
+        orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' as const },
         method: { type: 'card' as const },
       };
@@ -211,7 +215,7 @@ describe('NgRxSignalsStateAdapter', () => {
 
     it('delegates startPayment with context to store', () => {
       const request = {
-        orderId: 'o1',
+        orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' as const },
         method: { type: 'card' as const },
       };
@@ -225,30 +229,30 @@ describe('NgRxSignalsStateAdapter', () => {
     });
 
     it('delegates confirmPayment to store', () => {
-      const request = { intentId: 'pi_1' };
+      const request = { intentId: createPaymentIntentId('pi_1') };
       adapter.confirmPayment(request, 'stripe');
       expect(storeMock.confirmPayment).toHaveBeenCalledWith({ request, providerId: 'stripe' });
     });
 
     it('delegates cancelPayment to store', () => {
-      const request = { intentId: 'pi_1' };
+      const request = { intentId: createPaymentIntentId('pi_1') };
       adapter.cancelPayment(request, 'stripe');
       expect(storeMock.cancelPayment).toHaveBeenCalledWith({ request, providerId: 'stripe' });
     });
 
     it('delegates refreshPayment to store', () => {
-      const request = { intentId: 'pi_1' };
+      const request = { intentId: createPaymentIntentId('pi_1') };
       adapter.refreshPayment(request, 'stripe');
       expect(storeMock.refreshPayment).toHaveBeenCalledWith({ request, providerId: 'stripe' });
     });
   });
 
   describe('providerId resolution (confirmPayment, cancelPayment, refreshPayment)', () => {
-    const request = { intentId: 'pi_1' as const };
+    const request = { intentId: createPaymentIntentId('pi_1') };
 
     it('uses intent.provider when providerId is omitted', () => {
       storeMock.currentIntent.set({
-        id: 'pi_1',
+        id: createPaymentIntentId('pi_1'),
         provider: 'stripe',
         status: 'succeeded',
         money: { amount: 100, currency: 'MXN' },

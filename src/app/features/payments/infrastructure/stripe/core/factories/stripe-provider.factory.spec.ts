@@ -2,6 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { StripeProviderFactory } from '@app/features/payments/infrastructure/stripe/core/factories/stripe-provider.factory';
 import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
 import { I18nKeys } from '@core/i18n';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 import { firstValueFrom, of } from 'rxjs';
@@ -50,7 +54,7 @@ describe('StripeProviderFactory', () => {
   it('creates a strategy that delegates to the injected gateway', async () => {
     gatewayStub.createIntent = vi.fn(() =>
       of({
-        id: 'pi_1',
+        id: createPaymentIntentId('pi_1'),
         provider: 'stripe',
         status: 'requires_payment_method',
         money: { amount: 100, currency: 'MXN' },
@@ -60,7 +64,7 @@ describe('StripeProviderFactory', () => {
     const strategy = factory.createStrategy('card');
     const result = await firstValueFrom(
       strategy.start({
-        orderId: 'o1',
+        orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_test1234567890abc' },
       }),

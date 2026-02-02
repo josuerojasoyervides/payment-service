@@ -4,6 +4,7 @@
  * Uses scenario harness + telemetry; asserts providerId/refs and no duplicate side-effects.
  */
 import { createScenarioHarness } from '@app/features/payments/application/api/testing/flow/payment-flow.harness';
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import {
   PAYMENT_FLOW_CONFIG_OVERRIDES,
   PAYMENT_FLOW_INITIAL_CONTEXT,
@@ -16,7 +17,7 @@ import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 const baseRequest: CreatePaymentRequest = {
-  orderId: 'o1',
+  orderId: createOrderId('o1'),
   money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_123' },
 };

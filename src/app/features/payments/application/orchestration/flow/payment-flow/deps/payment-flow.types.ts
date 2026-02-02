@@ -12,6 +12,7 @@ import type { NextActionClientConfirm } from '@app/features/payments/domain/subd
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import type { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
+import type { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import type {
   ActorRefFrom,
   EventObject,
@@ -41,9 +42,14 @@ export type PaymentFlowCommandEvent =
       request: CreatePaymentRequest;
       flowContext?: PaymentFlowContext;
     }
-  | { type: 'CONFIRM'; providerId: PaymentProviderId; intentId: string; returnUrl?: string }
-  | { type: 'CANCEL'; providerId: PaymentProviderId; intentId: string }
-  | { type: 'REFRESH'; providerId?: PaymentProviderId; intentId?: string }
+  | {
+      type: 'CONFIRM';
+      providerId: PaymentProviderId;
+      intentId: PaymentIntentId;
+      returnUrl?: string;
+    }
+  | { type: 'CANCEL'; providerId: PaymentProviderId; intentId: PaymentIntentId }
+  | { type: 'REFRESH'; providerId?: PaymentProviderId; intentId?: PaymentIntentId }
   | { type: 'RESET' };
 
 export type PaymentFlowSystemEvent =
@@ -112,7 +118,7 @@ export interface PaymentFlowMachineContext {
   flowContext: PaymentFlowContext | null;
   intent: PaymentIntent | null;
 
-  intentId: string | null;
+  intentId: PaymentIntentId | null;
   error: PaymentError | null;
   fallback: PaymentFlowFallbackContext;
   polling: PaymentFlowPollingState;
@@ -127,18 +133,18 @@ export interface StartInput {
 
 export interface ConfirmInput {
   providerId: PaymentProviderId;
-  intentId: string;
+  intentId: PaymentIntentId;
   returnUrl?: string;
 }
 
 export interface CancelInput {
   providerId: PaymentProviderId;
-  intentId: string;
+  intentId: PaymentIntentId;
 }
 
 export interface StatusInput {
   providerId: PaymentProviderId;
-  intentId: string;
+  intentId: PaymentIntentId;
 }
 
 export interface ClientConfirmInput {

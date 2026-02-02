@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { SPECIAL_TOKENS } from '@app/features/payments/infrastructure/fake/shared/constants/special-tokens';
 import { FakeIntentStore } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 
 function createRequest(overrides: Partial<CreatePaymentRequest> = {}): CreatePaymentRequest {
   return {
-    orderId: 'order_test',
+    orderId: createOrderId('order_test'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_visa' },
     ...overrides,

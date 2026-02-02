@@ -126,7 +126,7 @@ export class CardStrategy implements PaymentStrategy {
 
     const { preparedRequest, metadata } = this.prepare(req, context);
     this.logger.info('Starting payment', 'CardStrategy', {
-      orderId: req.orderId,
+      orderId: req.orderId.value,
       amount: req.money.amount,
       currency: req.money.currency,
       tokenPrefix: req.method.token?.substring(0, 6),
@@ -137,7 +137,7 @@ export class CardStrategy implements PaymentStrategy {
       tap((intent) => {
         if (this.requiresUserAction(intent)) {
           this.logger.info('3DS required for intent', 'CardStrategy', {
-            intentId: intent.id,
+            intentId: intent.id.value,
           });
         }
       }),

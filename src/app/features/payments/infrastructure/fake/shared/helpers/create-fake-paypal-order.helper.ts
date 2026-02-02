@@ -32,9 +32,9 @@ export function createFakePaypalOrder(req: CreatePaymentRequest): PaypalOrderDto
     ],
     purchase_units: [
       {
-        reference_id: req.orderId,
-        custom_id: req.orderId,
-        description: `Order ${req.orderId}`,
+        reference_id: req.orderId.value,
+        custom_id: req.orderId.value,
+        description: `Order ${req.orderId.value}`,
         amount: {
           currency_code: req.money.currency,
           value: req.money.amount.toFixed(2),

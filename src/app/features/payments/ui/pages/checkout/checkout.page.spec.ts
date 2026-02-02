@@ -20,6 +20,10 @@ import type {
   PaymentFlowPort,
   ProviderDescriptor,
 } from '@payments/application/api/ports/payment-store.port';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
@@ -51,7 +55,7 @@ function withCheckoutCatalog<T extends PaymentFlowPort & PaymentCheckoutCatalogP
     getSupportedMethods: () => ['card', 'spei'] as PaymentMethodType[],
     getFieldRequirements: () => null,
     buildCreatePaymentRequest: (): CreatePaymentRequest => ({
-      orderId: 'order_test',
+      orderId: createOrderId('order_test'),
       money: { amount: 499.99, currency: 'MXN' },
       method: { type: 'card', token: 'tok_test' },
     }),
@@ -76,7 +80,7 @@ describe('CheckoutComponent', () => {
   let mockBuilder: any;
 
   const mockIntent: PaymentIntent = {
-    id: 'pi_test_123',
+    id: createPaymentIntentId('pi_test_123'),
     provider: 'stripe',
     status: 'succeeded',
     money: { amount: 499.99, currency: 'MXN' },
@@ -95,7 +99,7 @@ describe('CheckoutComponent', () => {
     error: mockError,
     alternativeProviders: ['paypal'],
     originalRequest: {
-      orderId: 'order_test',
+      orderId: createOrderId('order_test'),
       money: { amount: 499.99, currency: 'MXN' },
       method: { type: 'card', token: 'tok_test' },
     },
@@ -109,7 +113,7 @@ describe('CheckoutComponent', () => {
       withAmount: vi.fn().mockReturnThis(),
       withOptions: vi.fn().mockReturnThis(),
       build: vi.fn().mockReturnValue({
-        orderId: 'order_test',
+        orderId: createOrderId('order_test'),
         money: { amount: 499.99, currency: 'MXN' },
         method: { type: 'card', token: 'tok_test' },
       }),
@@ -747,12 +751,15 @@ describe('CheckoutComponent', () => {
       expect(c.showResumeBanner()).toBe(true);
       expect(f.nativeElement.querySelector('[data-testid="resume-banner"]')).toBeTruthy();
       c.resumePayment();
-      expect(refreshPaymentSpy).toHaveBeenCalledWith({ intentId: 'pi_123' }, 'stripe');
+      expect(refreshPaymentSpy).toHaveBeenCalledWith(
+        { intentId: expect.objectContaining({ value: 'pi_123' }) },
+        'stripe',
+      );
     });
 
     it('showProcessingPanel is true when flowPhase is processing; refreshProcessingStatus calls refreshPayment', () => {
       const processingIntent: PaymentIntent = {
-        id: 'pi_123',
+        id: createPaymentIntentId('pi_123'),
         provider: 'stripe',
         status: 'processing',
         money: { amount: 499.99, currency: 'MXN' },
@@ -780,7 +787,10 @@ describe('CheckoutComponent', () => {
       expect(c.showProcessingPanel()).toBe(true);
       expect(f.nativeElement.querySelector('[data-testid="processing-panel"]')).toBeTruthy();
       c.refreshProcessingStatus();
-      expect(refreshPaymentSpy).toHaveBeenCalledWith({ intentId: 'pi_123' }, 'stripe');
+      expect(refreshPaymentSpy).toHaveBeenCalledWith(
+        { intentId: expect.objectContaining({ value: 'pi_123' }) },
+        'stripe',
+      );
     });
   });
 });

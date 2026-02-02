@@ -27,6 +27,7 @@ import type {
   ProviderDescriptor,
 } from '@payments/application/api/ports/payment-store.port';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import type {
   PaymentFlowStatus,
@@ -83,7 +84,7 @@ export function createMockPaymentState(
 
   const debugSummary = computed<PaymentDebugSummary>(() => ({
     status: state().status,
-    intentId: state().intent?.id ?? null,
+    intentId: state().intent?.id?.value ?? null,
     provider: state().selectedProvider,
     fallbackStatus: state().fallback.status,
     isAutoFallback: state().fallback.isAutoFallback,
@@ -174,12 +175,11 @@ export function createMockPaymentState(
     amount: number;
     currency: CurrencyCode;
     options: PaymentOptions;
-  }): CreatePaymentRequest =>
-    ({
-      orderId: '',
-      money: { amount: 0, currency: 'MXN' },
-      method: { type: 'card' },
-    }) as CreatePaymentRequest;
+  }): CreatePaymentRequest => ({
+    orderId: createOrderId('mock_order'),
+    money: { amount: 0, currency: 'MXN' },
+    method: { type: 'card' },
+  });
 
   return {
     state,

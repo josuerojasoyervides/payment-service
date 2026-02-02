@@ -14,6 +14,10 @@ import type { PaymentMethodType } from '@app/features/payments/domain/subdomains
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
 import { OrderSummaryComponent } from '@payments/ui/components/order-summary/order-summary.component';
@@ -135,7 +139,7 @@ export class ShowcaseComponent {
     const { p0 } = this.catalogProviderIds();
     if (!p0) return null;
     return {
-      id: 'pi_fake_demo123',
+      id: createPaymentIntentId('pi_fake_demo123'),
       provider: p0,
       status: 'succeeded',
       money: { amount: 499.99, currency: 'MXN' },
@@ -171,7 +175,7 @@ export class ShowcaseComponent {
     const { p0 } = this.catalogProviderIds();
     const intent: PaymentIntent | null = p0
       ? {
-          id: 'pi_fake_card_demo',
+          id: createPaymentIntentId('pi_fake_card_demo'),
           provider: p0,
           status: this.intentCardStatus,
           money: { amount: 299.99, currency: 'MXN' as CurrencyCode },
@@ -198,7 +202,7 @@ export class ShowcaseComponent {
       },
       alternativeProviders: p1 ? [p1] : [],
       originalRequest: {
-        orderId: 'order_123',
+        orderId: createOrderId('order_123'),
         money: { amount: 499.99, currency: 'MXN' },
         method: { type: 'card', token: 'tok_xxx' },
       },

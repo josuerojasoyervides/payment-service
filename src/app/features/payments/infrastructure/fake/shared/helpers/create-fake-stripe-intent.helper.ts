@@ -59,7 +59,7 @@ export function createFakeStripeIntent(
     created: Math.floor(Date.now() / 1000),
     livemode: false,
     metadata: {
-      order_id: req.orderId,
+      order_id: req.orderId.value,
     },
     payment_method: req.method.token ?? null,
     payment_method_types: ['card'],

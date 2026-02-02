@@ -18,7 +18,10 @@ export class PaypalCancelIntentGateway extends PaymentOperationPort<
 
   readonly providerId: PaymentProviderId = 'paypal' as const;
   protected override executeRaw(request: CancelPaymentRequest): Observable<PaypalOrderDto> {
-    return this.http.post<PaypalOrderDto>(`${this.API_BASE}/orders/${request.intentId}/void`, {});
+    return this.http.post<PaypalOrderDto>(
+      `${this.API_BASE}/orders/${request.intentId.value}/void`,
+      {},
+    );
   }
   protected override mapResponse(dto: PaypalOrderDto): PaymentIntent {
     return mapOrder(dto, this.providerId);

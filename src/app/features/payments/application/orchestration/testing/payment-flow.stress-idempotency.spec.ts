@@ -2,6 +2,7 @@
  * Stress scenario: finalize idempotency under duplicate/out-of-order events (PR6 Phase C).
  * Asserts: finalize side-effect called exactly once; flow converges; telemetry contains expected SYSTEM_EVENT_SENT.
  */
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
 import {
   createPaymentFlowScenarioHarness,
@@ -14,7 +15,7 @@ import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 const baseRequest: CreatePaymentRequest = {
-  orderId: 'o1',
+  orderId: createOrderId('o1'),
   money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_visa1234567890abcdef' },
 };

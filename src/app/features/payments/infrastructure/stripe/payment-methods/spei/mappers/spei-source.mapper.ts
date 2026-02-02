@@ -2,7 +2,14 @@ import type { PaymentIntent } from '@app/features/payments/domain/subdomains/pay
 import type { NextActionManualStep } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { StripeSpeiSourceDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { SpeiStatusMapper } from '@payments/infrastructure/stripe/payment-methods/spei/mappers/spei-status.mapper';
+
+function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
+  const result = PaymentIntentId.from(raw);
+  if (!result.ok) throw new Error(`Invalid intent id from provider: ${raw}`);
+  return result.value;
+}
 
 export class SpeiSourceMapper {
   constructor(private readonly providerId: PaymentProviderId) {}
@@ -24,7 +31,7 @@ export class SpeiSourceMapper {
     const status = new SpeiStatusMapper().mapSpeiStatus(dto.status);
 
     return {
-      id: dto.id,
+      id: toPaymentIntentIdOrThrow(dto.id),
       provider: this.providerId,
       status,
       money: {

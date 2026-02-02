@@ -22,23 +22,24 @@ export abstract class FakeGetIntentGateway extends PaymentOperationPort<
   private readonly fakeIntentStore = inject(FakeIntentStore);
 
   protected override executeRaw(request: GetPaymentStatusRequest): Observable<any> {
-    this.logger.warn(`[FakeGateway] Getting status for ${request.intentId}`, this.logContext, {
+    const id = request.intentId.value;
+    this.logger.warn(`[FakeGateway] Getting status for ${id}`, this.logContext, {
       request,
     });
     if (this.providerId === 'paypal') {
-      return simulateNetworkDelay(createFakePaypalOrderStatus(request.intentId));
+      return simulateNetworkDelay(createFakePaypalOrderStatus(id));
     }
 
-    const state = this.fakeIntentStore.get(request.intentId);
+    const state = this.fakeIntentStore.get(id);
     if (state) {
-      const updated = this.fakeIntentStore.refresh(request.intentId);
+      const updated = this.fakeIntentStore.refresh(id);
       const dto = updated
         ? buildStripeDtoFromFakeState(updated)
         : buildStripeDtoFromFakeState(state);
       return simulateNetworkDelay(dto);
     }
 
-    return simulateNetworkDelay(createFakeStripeIntentStatus(request.intentId));
+    return simulateNetworkDelay(createFakeStripeIntentStatus(id));
   }
   protected override mapResponse(dto: any): PaymentIntent {
     return mapIntent(dto, this.providerId);

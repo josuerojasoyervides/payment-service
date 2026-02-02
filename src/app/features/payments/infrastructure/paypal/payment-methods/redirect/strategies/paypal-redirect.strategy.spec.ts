@@ -2,6 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { PaypalRedirectStrategy } from '@app/features/payments/infrastructure/paypal/payment-methods/redirect/strategies/paypal-redirect.strategy';
 import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { firstValueFrom, of } from 'rxjs';
 
@@ -11,7 +15,7 @@ describe('PaypalRedirectStrategy', () => {
   let gatewayMock: Pick<PaymentGatewayPort, 'createIntent' | 'providerId'>;
 
   const req: CreatePaymentRequest = {
-    orderId: 'order_1',
+    orderId: createOrderId('order_1'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
   };
@@ -34,11 +38,10 @@ describe('PaypalRedirectStrategy', () => {
       providerId: 'paypal',
       createIntent: vi.fn(() =>
         of({
-          id: 'pi_1',
+          id: createPaymentIntentId('pi_1'),
           provider: 'paypal',
           status: 'requires_payment_method',
-          amount: 100,
-          currency: 'MXN',
+          money: { amount: 100, currency: 'MXN' },
         }),
       ),
     } as any;
@@ -66,6 +69,6 @@ describe('PaypalRedirectStrategy', () => {
       }),
     );
 
-    expect(result.id).toBe('pi_1');
+    expect(result.id?.value ?? result.id).toBe('pi_1');
   });
 });

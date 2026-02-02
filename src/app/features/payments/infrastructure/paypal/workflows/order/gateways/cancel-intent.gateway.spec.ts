@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/cancel-intent.gateway';
 
@@ -35,9 +36,9 @@ describe('PaypalCancelIntentGateway', () => {
   });
 
   it('POST /orders/:id/void and maps payment intent correctly', () => {
-    gateway.execute({ intentId: 'ORDER_1' }).subscribe({
+    gateway.execute({ intentId: createPaymentIntentId('ORDER_1') }).subscribe({
       next: (intent: PaymentIntent) => {
-        expect(intent.id).toBe('ORDER_1');
+        expect(intent.id.value).toBe('ORDER_1');
         expect(intent.provider).toBe('paypal');
         expect(intent.status).toBe('canceled');
       },
@@ -66,7 +67,7 @@ describe('PaypalCancelIntentGateway', () => {
   });
 
   it('propagates provider error when backend fails', () => {
-    gateway.execute({ intentId: 'ORDER_ERROR' }).subscribe({
+    gateway.execute({ intentId: createPaymentIntentId('ORDER_ERROR') }).subscribe({
       next: () => {
         expect.fail('Expected error');
       },

@@ -117,7 +117,7 @@ describe('HistoryComponent', () => {
       const entry = mockHistoryEntries[0];
       const intent = component.entryToIntent(entry);
 
-      expect(intent.id).toBe(entry.intentId);
+      expect(intent.id?.value ?? intent.id).toBe(entry.intentId);
       expect(intent.provider).toBe(entry.provider);
       expect(intent.status).toBe(entry.status);
       expect(intent.money.amount).toBe(entry.amount);

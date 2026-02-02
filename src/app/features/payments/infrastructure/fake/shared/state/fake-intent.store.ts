@@ -92,7 +92,7 @@ export class FakeIntentStore {
       currentStatus,
       nextActionKind,
       remainingRefreshesToSucceed,
-      correlationId: input.request.orderId,
+      correlationId: input.request.orderId.value,
       amount: amountCents,
       currency: (input.request.money?.currency ?? 'MXN').toLowerCase(),
       clientSecret,

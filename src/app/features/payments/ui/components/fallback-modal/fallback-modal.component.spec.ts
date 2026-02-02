@@ -6,6 +6,7 @@ import type { PaymentError } from '@app/features/payments/domain/subdomains/paym
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
@@ -50,7 +51,7 @@ describe('FallbackModalComponent', () => {
     error: mockError,
     alternativeProviders: ['paypal'],
     originalRequest: {
-      orderId: 'order_1',
+      orderId: createOrderId('order_1'),
       money: { amount: 100, currency: 'MXN' },
       method: { type: 'card', token: 'tok_test' },
     },
@@ -63,7 +64,7 @@ describe('FallbackModalComponent', () => {
     error: mockError,
     alternativeProviders: ['stripe'],
     originalRequest: {
-      orderId: 'order_2',
+      orderId: createOrderId('order_2'),
       money: { amount: 200, currency: 'MXN' },
       method: { type: 'card', token: 'tok_test' },
     },

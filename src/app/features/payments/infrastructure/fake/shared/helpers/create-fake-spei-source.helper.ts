@@ -8,11 +8,11 @@ export function createFakeSpeiSource(req: CreatePaymentRequest): StripeSpeiSourc
   const amountInCents = Math.round(req.money.amount * 100);
 
   // Deterministic CLABE based on orderId hash
-  const orderHash = hashString(req.orderId);
+  const orderHash = hashString(req.orderId.value);
   const clabe = '646180' + String(orderHash).padStart(12, '0').substring(0, 12);
 
   // Deterministic reference based on orderId hash
-  const referenceHash = Math.abs(hashString(req.orderId + '_ref'));
+  const referenceHash = Math.abs(hashString(req.orderId.value + '_ref'));
   const reference = String(referenceHash % 10000000).padStart(7, '0');
 
   const expiresAt = Math.floor(Date.now() / 1000) + 72 * 60 * 60;

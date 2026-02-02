@@ -4,6 +4,7 @@ import type { PaymentMethodType } from '@app/features/payments/domain/subdomains
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { ConfirmPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/confirm-payment.use-case';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
@@ -14,15 +15,16 @@ import { firstValueFrom, of, throwError } from 'rxjs';
 describe('ConfirmPaymentUseCase', () => {
   let useCase: ConfirmPaymentUseCase;
 
+  const pi1 = createPaymentIntentId('pi_1');
   const req: ConfirmPaymentRequest = {
-    intentId: 'pi_1',
+    intentId: pi1,
     returnUrl: 'https://example.com/return',
   };
 
   const gatewayMock = {
     confirmIntent: vi.fn(() =>
       of({
-        id: 'pi_1',
+        id: pi1,
         provider: 'stripe',
         status: 'processing',
         money: { amount: 100, currency: 'MXN' },
@@ -68,7 +70,7 @@ describe('ConfirmPaymentUseCase', () => {
         idempotencyKey: 'stripe:confirm:pi_1',
       }),
     );
-    expect(result.id).toBe('pi_1');
+    expect(result.id?.value ?? result.id).toBe('pi_1');
   });
 
   describe('error handling', () => {

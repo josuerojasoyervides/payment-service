@@ -43,7 +43,7 @@ export abstract class BasePaymentGateway<
       `Creating payment intent`,
       this.logContext,
       {
-        orderId: req.orderId,
+        orderId: req.orderId.value,
         amount: req.money.amount,
         currency: req.money.currency,
         method: req.method.type,
@@ -57,7 +57,7 @@ export abstract class BasePaymentGateway<
         this.logger.info(
           `Payment intent created`,
           this.logContext,
-          { intentId: intent.id, status: intent.status },
+          { intentId: intent.id.value, status: intent.status },
           correlationId,
         );
       }),
@@ -66,7 +66,7 @@ export abstract class BasePaymentGateway<
           `Failed to create payment intent`,
           this.logContext,
           err,
-          { orderId: req.orderId },
+          { orderId: req.orderId.value },
           correlationId,
         );
         return throwError(() => this.normalizeError(err));
@@ -81,7 +81,7 @@ export abstract class BasePaymentGateway<
     this.logger.info(
       `Confirming intent`,
       this.logContext,
-      { intentId: req.intentId },
+      { intentId: req.intentId.value },
       correlationId,
     );
 
@@ -91,7 +91,7 @@ export abstract class BasePaymentGateway<
         this.logger.info(
           `Intent confirmed`,
           this.logContext,
-          { intentId: intent.id, status: intent.status },
+          { intentId: intent.id.value, status: intent.status },
           correlationId,
         );
       }),
@@ -100,7 +100,7 @@ export abstract class BasePaymentGateway<
           `Failed to confirm intent`,
           this.logContext,
           err,
-          { intentId: req.intentId },
+          { intentId: req.intentId.value },
           correlationId,
         );
         return throwError(() => this.normalizeError(err));
@@ -115,7 +115,7 @@ export abstract class BasePaymentGateway<
     this.logger.info(
       `Canceling intent`,
       this.logContext,
-      { intentId: req.intentId },
+      { intentId: req.intentId.value },
       correlationId,
     );
 
@@ -125,7 +125,7 @@ export abstract class BasePaymentGateway<
         this.logger.info(
           `Intent canceled`,
           this.logContext,
-          { intentId: intent.id, status: intent.status },
+          { intentId: intent.id.value, status: intent.status },
           correlationId,
         );
       }),
@@ -134,7 +134,7 @@ export abstract class BasePaymentGateway<
           `Failed to cancel intent`,
           this.logContext,
           err,
-          { intentId: req.intentId },
+          { intentId: req.intentId.value },
           correlationId,
         );
         return throwError(() => this.normalizeError(err));
@@ -149,7 +149,7 @@ export abstract class BasePaymentGateway<
     this.logger.debug(
       `Getting intent status`,
       this.logContext,
-      { intentId: req.intentId },
+      { intentId: req.intentId.value },
       correlationId,
     );
 
@@ -159,7 +159,7 @@ export abstract class BasePaymentGateway<
         this.logger.debug(
           `Got intent status`,
           this.logContext,
-          { intentId: intent.id, status: intent.status },
+          { intentId: intent.id.value, status: intent.status },
           correlationId,
         );
       }),
@@ -168,7 +168,7 @@ export abstract class BasePaymentGateway<
           `Failed to get intent status`,
           this.logContext,
           err,
-          { intentId: req.intentId },
+          { intentId: req.intentId.value },
           correlationId,
         );
         return throwError(() => this.normalizeError(err));
@@ -178,7 +178,7 @@ export abstract class BasePaymentGateway<
 
   // ------- Helpers compartidos -------
   protected validateCreate(req: CreatePaymentRequest) {
-    if (!req.orderId) {
+    if (!req.orderId?.value) {
       throw invalidRequestError('errors.order_id_required', { field: 'orderId' });
     }
 

@@ -156,10 +156,10 @@ export abstract class BasePaymentRequestBuilder implements PaymentRequestBuilder
   }
 
   /**
-   * Validates an orderId using the OrderId VO.
-   * @returns The validated orderId string
+   * Validates orderId using the OrderId VO. Use when building CreatePaymentRequest.
+   * @returns The validated OrderId VO
    */
-  protected validateOrderId(orderId: string | undefined | null, messageKey: string): string {
+  protected createOrderIdOrThrow(orderId: string | undefined | null, messageKey: string): OrderId {
     if (orderId === undefined || orderId === null) {
       throw invalidRequestError(messageKey, { field: 'orderId' });
     }
@@ -179,14 +179,17 @@ export abstract class BasePaymentRequestBuilder implements PaymentRequestBuilder
       throw invalidRequestError('errors.order_id_invalid', { field: 'orderId' }, { orderId });
     }
 
-    return result.value.value;
+    return result.value;
   }
 
   /**
-   * Validates an intentId using the PaymentIntentId VO.
-   * @returns The validated intentId string
+   * Validates intentId using the PaymentIntentId VO. Use when building Confirm/Cancel/GetStatus requests.
+   * @returns The validated PaymentIntentId VO
    */
-  protected validateIntentId(intentId: string | undefined | null, messageKey: string): string {
+  protected createIntentIdOrThrow(
+    intentId: string | undefined | null,
+    messageKey: string,
+  ): PaymentIntentId {
     if (intentId === undefined || intentId === null) {
       throw invalidRequestError(messageKey, { field: 'intentId' });
     }
@@ -206,6 +209,6 @@ export abstract class BasePaymentRequestBuilder implements PaymentRequestBuilder
       throw invalidRequestError('errors.intent_id_invalid', { field: 'intentId' }, { intentId });
     }
 
-    return result.value.value;
+    return result.value;
   }
 }

@@ -1,9 +1,10 @@
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import { intentRequiresUserAction } from '@app/features/payments/domain/subdomains/payment/policies/requires-user-action.policy';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 
 describe('intentRequiresUserAction', () => {
   const baseIntent: PaymentIntent = {
-    id: 'pi_1',
+    id: createPaymentIntentId('pi_1'),
     provider: 'stripe',
     status: 'requires_payment_method',
     money: { amount: 100, currency: 'MXN' },

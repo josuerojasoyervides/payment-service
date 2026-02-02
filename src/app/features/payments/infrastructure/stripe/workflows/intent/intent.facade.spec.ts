@@ -1,5 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
@@ -22,22 +26,22 @@ describe('IntentFacade (adapter)', () => {
   const getIntentOp = { execute: vi.fn() };
 
   const createReq: CreatePaymentRequest = {
-    orderId: 'order_1',
+    orderId: createOrderId('order_1'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
   };
 
   const confirmReq: ConfirmPaymentRequest = {
-    intentId: 'pi_1',
+    intentId: createPaymentIntentId('pi_1'),
     returnUrl: 'https://example.com/return',
   };
 
   const cancelReq: CancelPaymentRequest = {
-    intentId: 'pi_1',
+    intentId: createPaymentIntentId('pi_1'),
   };
 
   const getIntentReq: GetPaymentStatusRequest = {
-    intentId: 'pi_1',
+    intentId: createPaymentIntentId('pi_1'),
   };
 
   beforeEach(() => {
@@ -64,7 +68,7 @@ describe('IntentFacade (adapter)', () => {
     expect(createIntentOp.execute).toHaveBeenCalledWith(createReq);
   });
   it('delegates confirmIntent to StripeConfirmIntentGateway.execute', async () => {
-    confirmIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
+    confirmIntentOp.execute.mockReturnValue(of({ id: createPaymentIntentId('pi_1') } as any));
 
     gateway.confirmIntent(confirmReq).subscribe();
 
@@ -80,7 +84,7 @@ describe('IntentFacade (adapter)', () => {
     expect(cancelIntentOp.execute).toHaveBeenCalledWith(cancelReq);
   });
   it('delegates getIntentStatus to StripeGetIntentGateway.execute', async () => {
-    getIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
+    getIntentOp.execute.mockReturnValue(of({ id: createPaymentIntentId('pi_1') } as any));
 
     gateway.getIntent(getIntentReq).subscribe();
 

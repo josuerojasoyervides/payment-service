@@ -6,6 +6,7 @@ import {
   type WebhookNormalizerRegistry,
 } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type {
   PaymentFlowActorRef,
@@ -89,7 +90,7 @@ describe('WebhookIngestionService', () => {
 
 describe('WebhookIngestionService integration with PaymentFlowMachine', () => {
   const baseIntent: PaymentIntent = {
-    id: 'pi_webhook',
+    id: createPaymentIntentId('pi_webhook'),
     provider: 'stripe',
     status: 'processing',
     money: { amount: 100, currency: 'MXN' },
@@ -133,7 +134,7 @@ describe('WebhookIngestionService integration with PaymentFlowMachine', () => {
       cancelPayment: vi.fn(async () => ({ ...baseIntent, status: 'canceled' as const })),
       getStatus: vi.fn(async () => ({
         ...baseIntent,
-        id: 'pi_webhook',
+        id: createPaymentIntentId('pi_webhook'),
         status: 'succeeded' as const,
       })),
       clientConfirm: vi.fn(async () => baseIntent),

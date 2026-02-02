@@ -1,9 +1,16 @@
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { StripeSpeiSourceDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
+
+function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
+  const result = PaymentIntentId.from(raw);
+  if (!result.ok) throw new Error(`Invalid intent id from provider: ${raw}`);
+  return result.value;
+}
 
 export function mapStripeSpeiSource(dto: StripeSpeiSourceDto): PaymentIntent {
   return {
-    id: dto.id,
+    id: toPaymentIntentIdOrThrow(dto.id),
     provider: 'stripe',
     status: 'requires_action',
     money: {

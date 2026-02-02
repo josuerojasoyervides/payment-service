@@ -86,8 +86,9 @@ export function setupPaymentFlowMachineBridge(
     const providerId = machineProviderId() as PaymentProviderId | null;
     if (!providerId) return;
 
-    if (intent.id !== lastIntentId) {
-      lastIntentId = intent.id;
+    const intentIdValue = intent.id.value;
+    if (intentIdValue !== lastIntentId) {
+      lastIntentId = intentIdValue;
       addToHistory(store, intent, providerId);
     }
     return;

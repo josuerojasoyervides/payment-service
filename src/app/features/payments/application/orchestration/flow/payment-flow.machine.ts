@@ -48,7 +48,17 @@ import {
   isPaymentError,
   normalizePaymentError,
 } from '@payments/application/orchestration/store/projection/payment-store.errors';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { assign, fromPromise, setup } from 'xstate';
+
+function toPaymentIntentIdOrNull(
+  raw: string | PaymentIntentId | null | undefined,
+): PaymentIntentId | null {
+  if (raw == null) return null;
+  if (typeof raw === 'object' && 'value' in raw) return raw as PaymentIntentId;
+  const result = PaymentIntentId.from(raw as string);
+  return result.ok ? result.value : null;
+}
 
 export const createPaymentFlowMachine = (
   deps: PaymentFlowDeps,
@@ -140,10 +150,13 @@ export const createPaymentFlowMachine = (
         const providerId = event.providerId ?? context.providerId;
         const resolvedReference = resolveStatusReference(context.flowContext, providerId ?? null);
 
+        const intentId = toPaymentIntentIdOrNull(
+          event.intentId ?? resolvedReference ?? context.intentId ?? context.intent?.id ?? null,
+        );
+
         return {
           providerId,
-          intentId:
-            event.intentId ?? resolvedReference ?? context.intentId ?? context.intent?.id ?? null,
+          intentId,
           error: null,
           statusRetry: { count: 0 },
         };
@@ -178,14 +191,17 @@ export const createPaymentFlowMachine = (
 
         const resolvedReference = resolveStatusReference(flowContext, event.payload.providerId);
 
-        return {
-          providerId: event.payload.providerId,
-          intentId:
-            event.payload.referenceId ??
+        const intentId = toPaymentIntentIdOrNull(
+          event.payload.referenceId ??
             resolvedReference ??
             context.intentId ??
             context.intent?.id ??
             null,
+        );
+
+        return {
+          providerId: event.payload.providerId,
+          intentId,
           flowContext,
           error: null,
           statusRetry: { count: 0 },
@@ -219,14 +235,16 @@ export const createPaymentFlowMachine = (
       setIntent: assign(({ event, context }) => {
         if (!('output' in event)) return {};
 
-        const providerRefs = event.output.providerRefs ?? { intentId: event.output.id };
+        const providerRefs = event.output.providerRefs ?? {
+          intentId: event.output.id.value,
+        };
         const flowContext = updateFlowContextProviderRefs({
           context: context.flowContext,
           providerId: event.output.provider,
           refs: providerRefs,
         });
 
-        const resolvedIntentId = providerRefs?.intentId ?? event.output.id;
+        const resolvedIntentId = toPaymentIntentIdOrNull(providerRefs?.intentId ?? event.output.id);
         return {
           intent: event.output,
           intentId: resolvedIntentId,

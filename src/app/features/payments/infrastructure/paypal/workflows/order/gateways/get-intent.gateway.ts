@@ -18,7 +18,7 @@ export class PaypalGetIntentGateway extends PaymentOperationPort<
 
   readonly providerId: PaymentProviderId = 'paypal' as const;
   protected executeRaw(request: GetPaymentStatusRequest): Observable<PaypalOrderDto> {
-    return this.http.get<PaypalOrderDto>(`${this.API_BASE}/orders/${request.intentId}`);
+    return this.http.get<PaypalOrderDto>(`${this.API_BASE}/orders/${request.intentId.value}`);
   }
   protected mapResponse(dto: PaypalOrderDto): PaymentIntent {
     return mapOrder(dto, this.providerId);

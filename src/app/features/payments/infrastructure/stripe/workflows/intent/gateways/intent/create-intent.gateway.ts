@@ -37,14 +37,14 @@ export class StripeCreateIntentGateway extends PaymentOperationPort<
       return this.http.post<StripeSpeiSourceDto>(
         `${StripeCreateIntentGateway.API_BASE}/sources`,
         stripeRequest,
-        { headers: getIdempotencyHeaders(request.orderId, 'create', request.idempotencyKey) },
+        { headers: getIdempotencyHeaders(request.orderId.value, 'create', request.idempotencyKey) },
       );
     }
 
     return this.http.post<StripePaymentIntentDto>(
       `${StripeCreateIntentGateway.API_BASE}/intents`,
       stripeRequest,
-      { headers: getIdempotencyHeaders(request.orderId, 'create', request.idempotencyKey) },
+      { headers: getIdempotencyHeaders(request.orderId.value, 'create', request.idempotencyKey) },
     );
   }
   protected mapResponse(dto: StripePaymentIntentDto | StripeSpeiSourceDto): PaymentIntent {
@@ -62,10 +62,10 @@ export class StripeCreateIntentGateway extends PaymentOperationPort<
       payment_method_types: [req.method.type === 'spei' ? 'spei' : 'card'],
       payment_method: req.method.token,
       metadata: {
-        order_id: req.orderId,
+        order_id: req.orderId.value,
         created_at: new Date().toISOString(),
       },
-      description: `Order ${req.orderId}`,
+      description: `Order ${req.orderId.value}`,
     };
   }
 }

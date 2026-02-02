@@ -1,6 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { PaypalRedirectStrategy } from '@app/features/payments/infrastructure/paypal/payment-methods/redirect/strategies/paypal-redirect.strategy';
 import { I18nKeys } from '@core/i18n';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import { PaypalProviderFactory } from '@payments/infrastructure/paypal/core/factories/paypal-provider.factory';
 import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/order.facade';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
@@ -48,11 +52,10 @@ describe('PaypalProviderFactory', () => {
   it('creates a strategy that delegates to the injected gateway', async () => {
     gatewayStub.createIntent = vi.fn(() =>
       of({
-        id: 'pi_1',
+        id: createPaymentIntentId('pi_1'),
         provider: 'paypal',
         status: 'requires_payment_method',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
       }),
     );
 
@@ -65,7 +68,7 @@ describe('PaypalProviderFactory', () => {
     const result = await firstValueFrom(
       strategy.start(
         {
-          orderId: 'o1',
+          orderId: createOrderId('o1'),
           money: { amount: 100, currency: 'MXN' },
           method: { type: 'card', token: 'tok' },
         },

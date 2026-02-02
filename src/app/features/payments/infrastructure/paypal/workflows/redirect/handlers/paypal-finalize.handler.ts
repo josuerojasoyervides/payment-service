@@ -4,6 +4,7 @@ import type { PaymentProviderId } from '@app/features/payments/domain/subdomains
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import { PaypalIntentFacade } from '@app/features/payments/infrastructure/paypal/workflows/order/order.facade';
 import type { FinalizePort, FinalizeRequest } from '@payments/application/api/ports/finalize.port';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import type { Observable } from 'rxjs';
 
 /**
@@ -19,8 +20,12 @@ export class PaypalFinalizeHandler implements FinalizePort {
   private readonly gateway = inject(PaypalIntentFacade);
 
   execute(request: FinalizeRequest): Observable<PaymentIntent> {
-    const orderId = this.resolveOrderId(request);
-    return this.gateway.confirmIntent({ intentId: orderId });
+    const rawId = this.resolveOrderId(request);
+    const result = PaymentIntentId.from(rawId);
+    if (!result.ok) {
+      throw invalidRequestError('errors.intent_id_required', { field: 'context.providerRefs' });
+    }
+    return this.gateway.confirmIntent({ intentId: result.value });
   }
 
   private resolveOrderId(request: FinalizeRequest): string {

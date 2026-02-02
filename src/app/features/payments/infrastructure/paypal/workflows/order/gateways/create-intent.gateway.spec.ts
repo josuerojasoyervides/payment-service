@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/create-intent.gateway';
@@ -41,7 +42,7 @@ describe('PaypalCreateIntentGateway', () => {
 
   it('POST /orders with correct payload and headers', () => {
     const req: CreatePaymentRequest = {
-      orderId: 'order_1',
+      orderId: createOrderId('order_1'),
       money: { amount: 100, currency: 'MXN' },
       method: { type: 'card' },
       returnUrl: 'https://return.test',
@@ -51,7 +52,7 @@ describe('PaypalCreateIntentGateway', () => {
     gateway.execute(req).subscribe({
       next: (intent: PaymentIntent) => {
         expect(intent.provider).toBe('paypal');
-        expect(intent.id).toBe('ORDER_1');
+        expect(intent.id.value).toBe('ORDER_1');
         expect(intent.status).toBe('requires_action');
         expect(intent.redirectUrl).toBe('https://paypal.test/approve');
       },
@@ -111,7 +112,7 @@ describe('PaypalCreateIntentGateway', () => {
 
   it('throws invalid_request when returnUrl is missing', () => {
     const req: CreatePaymentRequest = {
-      orderId: 'order_2',
+      orderId: createOrderId('order_2'),
       money: { amount: 120, currency: 'MXN' },
       method: { type: 'card' },
     };
@@ -128,7 +129,7 @@ describe('PaypalCreateIntentGateway', () => {
 
   it('propagates provider error when backend fails', () => {
     const req: CreatePaymentRequest = {
-      orderId: 'order_3',
+      orderId: createOrderId('order_3'),
       money: { amount: 140, currency: 'MXN' },
       method: { type: 'card' },
       returnUrl: 'https://return.test',

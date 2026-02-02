@@ -1,6 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import {
@@ -15,13 +19,13 @@ describe('SpeiStrategy', () => {
   let gatewayMock: Pick<PaymentGatewayPort, 'createIntent' | 'providerId'>;
 
   const validReq: CreatePaymentRequest = {
-    orderId: 'order_1',
+    orderId: createOrderId('order_1'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'spei' },
   };
 
   const intentResponse: PaymentIntent = {
-    id: 'src_1',
+    id: createPaymentIntentId('src_1'),
     provider: 'stripe',
     status: 'requires_action',
     money: { amount: 100, currency: 'MXN' },
@@ -140,7 +144,7 @@ describe('SpeiStrategy', () => {
       const result = await firstValueFrom(strategy.start(validReq));
 
       expect(gatewayMock.createIntent).toHaveBeenCalledTimes(1);
-      expect(result.id).toBe('src_1');
+      expect(result.id?.value ?? result.id).toBe('src_1');
     });
 
     it('throws validation error before calling gateway', () => {

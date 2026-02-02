@@ -13,6 +13,7 @@ import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { FallbackStatusBannerComponent } from '@payments/ui/components/fallback-status-banner/fallback-status-banner.component';
 import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';
@@ -302,10 +303,11 @@ export class CheckoutComponent {
 
   resumePayment(): void {
     const providerId = this.state.resumeProviderId();
-    const intentId = this.state.resumeIntentId();
-    if (providerId && intentId) {
-      this.state.refreshPayment({ intentId }, providerId);
-    }
+    const rawId = this.state.resumeIntentId();
+    if (!providerId || !rawId) return;
+    const result = PaymentIntentId.from(rawId);
+    if (!result.ok) return;
+    this.state.refreshPayment({ intentId: result.value }, providerId);
   }
 
   refreshProcessingStatus(): void {

@@ -1,5 +1,6 @@
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
 import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { deriveFlowPhase } from '@payments/ui/shared/flow-phase';
 
@@ -22,7 +23,7 @@ describe('deriveFlowPhase', () => {
 
   it('returns action_required when intent has requires_action', () => {
     const intent: PaymentIntent = {
-      id: 'pi_1',
+      id: createPaymentIntentId('pi_1'),
       provider: 'stripe',
       status: 'requires_action',
       money: { amount: 100, currency: 'MXN' },
@@ -35,7 +36,7 @@ describe('deriveFlowPhase', () => {
 
   it('returns processing when intent status is processing', () => {
     const intent: PaymentIntent = {
-      id: 'pi_1',
+      id: createPaymentIntentId('pi_1'),
       provider: 'stripe',
       status: 'processing',
       money: { amount: 100, currency: 'MXN' },
@@ -47,7 +48,7 @@ describe('deriveFlowPhase', () => {
 
   it('returns done when intent status is succeeded', () => {
     const intent: PaymentIntent = {
-      id: 'pi_1',
+      id: createPaymentIntentId('pi_1'),
       provider: 'stripe',
       status: 'succeeded',
       money: { amount: 100, currency: 'MXN' },
@@ -69,7 +70,7 @@ describe('deriveFlowPhase', () => {
 
   it('returns failed when intent.status is failed even if hasError is false', () => {
     const intent: PaymentIntent = {
-      id: 'pi_1',
+      id: createPaymentIntentId('pi_1'),
       provider: 'stripe',
       status: 'failed',
       money: { amount: 100, currency: 'MXN' },
@@ -102,7 +103,7 @@ describe('deriveFlowPhase', () => {
 
   it('fallback_pending wins over hasError and requires_action', () => {
     const intent: PaymentIntent = {
-      id: 'pi_1',
+      id: createPaymentIntentId('pi_1'),
       provider: 'stripe',
       status: 'requires_action',
       money: { amount: 100, currency: 'MXN' },

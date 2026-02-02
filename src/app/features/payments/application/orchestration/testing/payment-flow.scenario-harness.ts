@@ -22,6 +22,7 @@ import type {
   PaymentFlowSnapshot,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import providePayments from '@payments/config/payment.providers';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { vi } from 'vitest';
 
 function buildCommandEvent(
@@ -35,12 +36,21 @@ function buildCommandEvent(
       providerId: payload['providerId'] as PaymentProviderId,
       request: payload['request'] as CreatePaymentRequest,
     };
-  if (type === 'REFRESH')
+  if (type === 'REFRESH') {
+    const rawIntentId = payload?.['intentId'];
+    const intentId =
+      rawIntentId != null && typeof rawIntentId === 'string'
+        ? (() => {
+            const r = PaymentIntentId.from(rawIntentId);
+            return r.ok ? r.value : undefined;
+          })()
+        : (rawIntentId as PaymentIntentId | undefined);
     return {
       type: 'REFRESH',
       providerId: payload?.['providerId'] as PaymentProviderId | undefined,
-      intentId: payload?.['intentId'] as string | undefined,
+      intentId,
     };
+  }
   throw new Error(`Unsupported command type: ${type}`);
 }
 
