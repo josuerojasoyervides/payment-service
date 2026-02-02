@@ -1,0 +1,56 @@
+---
+config:
+  theme: redux
+  layout: dagre
+---
+flowchart LR
+ subgraph UI["UI (Angular)"]
+        UIC["Pages / Components<br>(Next-Action UI + Fallback UI)"]
+        UIF(("UI Facade"))
+  end
+ subgraph APP["Application / Orchestration"]
+        ACT["Flow Actor<br>(runtime wrapper)"]
+        FLOW["PAYMENT FLOW MACHINE<br>👑 cerebro 👑"]
+        EXT["External Event Adapter<br>(webhook/redirect/status)"]
+        NEXT["Next-Action Orchestrator"]
+        FALL["Fallback Orchestrator"]
+        REG(("Provider Registry"))
+        TEL(("Telemetry Port"))
+        SB(("Store Bridge"))
+  end
+ subgraph STORE["Store"]
+        PS["Payments Store<br>(NgRx Signals)"]
+        PROJ["Projection / Selectors<br>(derived view)"]
+  end
+ subgraph DOMAIN["Domain (tech-less)"]
+        DC["Contracts<br>(types/models)"]
+        DR["Rules/Policies<br>(pure)"]
+        DE["PaymentError<br>(messageKey/params/code)"]
+  end
+ subgraph INFRA["Providers (Infrastructure)"]
+        PA["Provider A Adapter"]
+        PB["Provider B Adapter"]
+        PF["Fake Provider Adapter<br>(tests/stress)"]
+  end
+ subgraph OBS["Observability (Infra)"]
+        SINKS["Telemetry Sinks\<br>InMemory / Console / Noop)"]
+  end
+    UIC --> UIF
+    UIF -- commands --> ACT
+    ACT -- sendCommand --> FLOW
+    EXT -- sendSystem</br>WEBHOOK/RETURN/STATUS --> FLOW
+    FLOW --> NEXT & FALL & TEL
+    FLOW -- state + context updates --> SB
+    FLOW -- effects --> REG
+    ACT --> TEL
+    SB --> PS
+    PS --> PROJ
+    PROJ --> UIC
+    REG --> PA & PB & PF
+    PA -- results --> FLOW
+    PB -- results --> FLOW
+    PF -- results --> FLOW
+    TEL --> SINKS
+    FLOW -. uses .-> DC & DR
+    FLOW -. emits .-> DE
+    UIC -. translates .-> DE

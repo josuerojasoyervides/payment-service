@@ -1,0 +1,24 @@
+---
+config:
+  theme: redux
+  layout: fixed
+---
+flowchart TB
+ subgraph UI["UI Layer"]
+        UIX["UI Components / Pages"]
+  end
+ subgraph APP["Application Layer"]
+        APX["Flow + <br>Orchestrators + <br>UseCases"]
+        BRX(("Bridges / Ports"))
+  end
+ subgraph DOMAIN["👑 Domain Layer 👑"]
+        DMX["Contracts(types/models/errors)"]
+        DRX["Contracts<br>(types/models/errors)"]
+  end
+ subgraph INFRA["Infrastructure Layer"]
+        IFX["Provider Adapters<br>(gateways/http)"]
+  end
+    UIX --> APX & DMX
+    APX --> DMX & DRX & BRX
+    IFX --> DMX & BRX
+    DOMAIN -. X .-> UIX & APX & IFX
