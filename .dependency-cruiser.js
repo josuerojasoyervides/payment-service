@@ -302,6 +302,18 @@ module.exports = {
       to: { path: PAYMENTS_CONFIG_ROOT },
     },
     {
+      name: 'shared-no-core',
+      severity: 'error',
+      comment:
+        'Payments shared/ may only import domain/. It must not import @core (i18n, logging, etc.). ' +
+        'Use domain contracts (e.g. PAYMENT_ERROR_KEYS) and inject ports for cross-cutting concerns.',
+      from: {
+        path: PAYMENTS_SHARED_ROOT,
+        pathNot: TEST_FILES,
+      },
+      to: { path: '^src/app/core' },
+    },
+    {
       name: 'runtime-not-to-api-testing',
       severity: 'error',
       comment: 'application/api/testing/** may only be imported from *.spec.ts or *.test.ts.',

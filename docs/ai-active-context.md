@@ -4,12 +4,12 @@
 
 ---
 
-## 🕒 Last Sync: 2026-01-31
+## 🕒 Last Sync: 2026-02-02
 
 ## 📍 Mission State
 
-- **Current mission:** PR2 done — legacy flow telemetry (observability/telemetry folder) removed. Only FLOW_TELEMETRY_SINK remains.
-- **Key folders:** Domain `domain/**`, Application `application/orchestration/**`, `application/adapters/telemetry/**`, `application/api/tokens/telemetry/**`, Config `config/payment.providers.ts`.
+- **Current mission:** Domain Boundary Leaks plan completed. Error keys and SPEI display config in Domain/infra; shared → domain only; depcruise `shared-no-core` enforced.
+- **Key folders:** Domain `domain/**` (contracts: `payment-error-keys.types.ts`, `spei-display-config.types.ts`; policies: `requires-user-action.policy.ts`), Application `application/orchestration/**`, Config `config/payment.providers.ts`, Infra constants `infrastructure/fake/shared/constants/spei-display.constants.ts`.
 
 ## 🖥️ UI surface & boundaries (UI-01)
 
@@ -25,6 +25,13 @@
 ## 🧩 Application layer (clean layering)
 
 - **Adapters:** No `@core/i18n` or I18nKeys in `application/**`. Errors use `messageKey` string; UI translates with `i18n.t(error.messageKey)`.
+
+## 🧩 Domain boundaries (shared → domain only)
+
+- **Error / message keys:** Domain defines `PAYMENT_ERROR_KEYS`, `PAYMENT_MESSAGE_KEYS`, `PAYMENT_SPEI_DETAIL_LABEL_KEYS` in `domain/.../contracts/payment-error-keys.types.ts`. Strategies (shared/infra) import from Domain; UI still uses I18nKeys for translation. No `@core/i18n` in shared.
+- **Policy:** `intentRequiresUserAction(intent)` in `domain/.../policies/requires-user-action.policy.ts`; strategies use it as base for `requiresUserAction()`.
+- **Shared-no-core:** Depcruise rule `shared-no-core` forbids payments `shared/` from importing `src/app/core`. IdempotencyKeyFactory no longer uses LoggerService/TraceOperation from @core.
+- **SPEI display config:** `SpeiDisplayConfig` (receivingBanks, beneficiaryName, testClabe) in domain contracts; constants in `infrastructure/fake/shared/constants/spei-display.constants.ts`; SpeiStrategy receives config via constructor (optional; defaults in tests).
 
 ## 🧩 PR6 — Flow telemetry (PR2 done)
 
@@ -43,6 +50,7 @@
 
 - **Suffixes:** `*.types.ts`, `*.event.ts`, `*.command.ts`, `*.vo.ts`, `*.rule.ts`, `*.policy.ts`, `*.port.ts`
 - **Folders:** `domain/common/primitives/{ids,money,time}`, `domain/subdomains/{payment,fallback}/{contracts,entities,primitives,rules,policies,ports}`
+- **Contracts (payment):** `payment-error-keys.types.ts` (error/message/label keys), `spei-display-config.types.ts` (SPEI display data contract).
 
 ---
 

@@ -3,6 +3,7 @@ import {
   PAYMENT_MESSAGE_KEYS,
   PAYMENT_SPEI_DETAIL_LABEL_KEYS,
 } from '@app/features/payments/domain/subdomains/payment/contracts/payment-error-keys.types';
+import type { SpeiDisplayConfig } from '@app/features/payments/domain/subdomains/payment/contracts/spei-display-config.types';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { NextActionManualStep } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
@@ -39,20 +40,25 @@ import { map, tap } from 'rxjs';
  * - Requires polling to verify payment
  * - Minimum and maximum amounts according to regulation
  */
+/** Defaults when no display config is injected (e.g. in tests). */
+const DEFAULT_DISPLAY_CONFIG: SpeiDisplayConfig = {
+  receivingBanks: {},
+  beneficiaryName: 'Beneficiary',
+  testClabe: '646180111812345678',
+};
+
 export class SpeiStrategy implements PaymentStrategy {
   readonly type: PaymentMethodType = 'spei';
 
-  // Common receiving banks for SPEI
-  private static readonly RECEIVING_BANKS: Record<string, string> = {
-    stripe: 'STP (Transfers and Payments System)',
-    conekta: 'STP (Transfers and Payments System)',
-    openpay: 'BBVA Mexico',
-  };
+  private readonly displayConfig: SpeiDisplayConfig;
 
   constructor(
     private readonly gateway: PaymentGatewayPort,
     private readonly logger: LoggerService,
-  ) {}
+    displayConfig?: SpeiDisplayConfig,
+  ) {
+    this.displayConfig = displayConfig ?? DEFAULT_DISPLAY_CONFIG;
+  }
 
   /**
    * Validates the request for SPEI payments.
@@ -189,9 +195,12 @@ export class SpeiStrategy implements PaymentStrategy {
       },
       {
         label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.BANK,
-        value: SpeiStrategy.RECEIVING_BANKS[intent.provider] ?? 'STP',
+        value: this.displayConfig.receivingBanks[intent.provider] ?? 'STP',
       },
-      { label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.BENEFICIARY, value: 'Payment Service SA de CV' },
+      {
+        label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.BENEFICIARY,
+        value: this.displayConfig.beneficiaryName,
+      },
       {
         label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.AMOUNT,
         value: `${req.amount} ${req.currency}`,
@@ -225,7 +234,7 @@ export class SpeiStrategy implements PaymentStrategy {
       this.getStringFromUnknown(intent.raw, ['spei', 'clabe']) ??
       this.getStringFromUnknown(intent.raw, ['payment_method', 'clabe']);
 
-    return clabe ?? '646180111812345678'; // STP test CLABE
+    return clabe ?? this.displayConfig.testClabe;
   }
 
   private getStringFromUnknown(obj: unknown, path: string[]): string | null {
