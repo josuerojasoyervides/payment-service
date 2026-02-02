@@ -3,6 +3,8 @@ import type { PaymentOptions } from '@app/features/payments/domain/subdomains/pa
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/payment-request-builder.port';
+import { OrderId } from '@payments/domain/common/primitives/ids/order-id.vo';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { Money } from '@payments/domain/common/primitives/money/money.vo';
 
 /**
@@ -122,5 +124,59 @@ export abstract class BasePaymentRequestBuilder implements PaymentRequestBuilder
     if (!isValid) {
       throw invalidRequestError(invalidKey, { field }, { [field]: value });
     }
+  }
+
+  /**
+   * Validates an orderId using the OrderId VO.
+   * @returns The validated orderId string
+   */
+  protected validateOrderId(orderId: string | undefined | null, messageKey: string): string {
+    if (orderId === undefined || orderId === null) {
+      throw invalidRequestError(messageKey, { field: 'orderId' });
+    }
+
+    const result = OrderId.from(orderId);
+    if (!result.ok) {
+      const v = result.violations[0];
+      if (v.code === 'ORDER_ID_EMPTY') {
+        throw invalidRequestError(messageKey, { field: 'orderId' });
+      }
+      if (v.code === 'ORDER_ID_TOO_LONG') {
+        throw invalidRequestError('errors.order_id_too_long', {
+          field: 'orderId',
+          max: OrderId.MAX_LENGTH,
+        });
+      }
+      throw invalidRequestError('errors.order_id_invalid', { field: 'orderId' }, { orderId });
+    }
+
+    return result.value.value;
+  }
+
+  /**
+   * Validates an intentId using the PaymentIntentId VO.
+   * @returns The validated intentId string
+   */
+  protected validateIntentId(intentId: string | undefined | null, messageKey: string): string {
+    if (intentId === undefined || intentId === null) {
+      throw invalidRequestError(messageKey, { field: 'intentId' });
+    }
+
+    const result = PaymentIntentId.from(intentId);
+    if (!result.ok) {
+      const v = result.violations[0];
+      if (v.code === 'PAYMENT_INTENT_ID_EMPTY') {
+        throw invalidRequestError(messageKey, { field: 'intentId' });
+      }
+      if (v.code === 'PAYMENT_INTENT_ID_TOO_LONG') {
+        throw invalidRequestError('errors.intent_id_too_long', {
+          field: 'intentId',
+          max: PaymentIntentId.MAX_LENGTH,
+        });
+      }
+      throw invalidRequestError('errors.intent_id_invalid', { field: 'intentId' }, { intentId });
+    }
+
+    return result.value.value;
   }
 }

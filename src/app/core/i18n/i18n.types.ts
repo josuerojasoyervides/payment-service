@@ -27,12 +27,16 @@ export interface Translations {
     processing_error: string;
 
     order_id_required: string;
+    order_id_too_long: string;
+    order_id_invalid: string;
     currency_required: string;
     amount_invalid: string;
     method_type_required: string;
     card_token_required: string;
     card_token_invalid_format: string;
     intent_id_required: string;
+    intent_id_too_long: string;
+    intent_id_invalid: string;
     min_amount: string;
     max_amount: string;
 

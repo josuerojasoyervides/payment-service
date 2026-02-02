@@ -21,6 +21,8 @@ export const es: Translations = {
     authentication_required: 'Tu banco requiere verificación adicional.',
     processing_error: 'Hubo un error procesando tu pago. Intenta de nuevo.',
     order_id_required: 'orderId es requerido',
+    order_id_too_long: 'orderId excede la longitud máxima de {{max}} caracteres',
+    order_id_invalid: 'orderId contiene caracteres inválidos',
     currency_required: 'currency es requerido',
     amount_invalid: 'amount es inválido',
     method_type_required: 'payment method type es requerido',
@@ -28,6 +30,8 @@ export const es: Translations = {
     card_token_invalid_format:
       'Formato de token inválido. Esperado: {{expected}}. Recibido: {{got}}',
     intent_id_required: 'intentId es requerido',
+    intent_id_too_long: 'intentId excede la longitud máxima de {{max}} caracteres',
+    intent_id_invalid: 'intentId contiene caracteres inválidos',
     min_amount: 'Monto mínimo para pagos con tarjeta es {{amount}} {{currency}}',
     max_amount: 'Monto máximo para pagos con SPEI es {{amount}} {{currency}}',
     stripe_error: 'Error procesando el pago con Stripe.',

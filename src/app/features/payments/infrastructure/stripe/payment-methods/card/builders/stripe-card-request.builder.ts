@@ -43,7 +43,7 @@ export class StripeCardRequestBuilder extends BasePaymentRequestBuilder {
   }
 
   protected override validateRequired(): void {
-    this.requireNonEmptyStringWithKey('orderId', this.orderId, I18nKeys.errors.order_id_required);
+    this.orderId = this.validateOrderId(this.orderId, I18nKeys.errors.order_id_required);
     this.requireDefinedWithKey('currency', this.currency, I18nKeys.errors.currency_required);
     this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
     this.requireNonEmptyStringWithKey('token', this.token, I18nKeys.errors.card_token_required);
