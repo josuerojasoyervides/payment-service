@@ -1,5 +1,7 @@
-import type { FieldType } from '@app/features/payments/domain/common/entities/field.types';
-import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
+import type {
+  FieldRequirements,
+  FieldType,
+} from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type {
@@ -7,6 +9,7 @@ import type {
   PaymentIntent,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys } from '@core/i18n';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';

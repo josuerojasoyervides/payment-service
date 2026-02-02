@@ -1,16 +1,15 @@
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type {
   PaymentErrorCode,
-  PaymentErrorMessageKey,
   PaymentErrorParams,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 
-export function createPaymentError<TKey extends PaymentErrorMessageKey = PaymentErrorMessageKey>(
+export function createPaymentError(
   code: PaymentErrorCode,
-  messageKey: TKey,
+  messageKey: string,
   params?: PaymentErrorParams,
   raw?: unknown,
-): PaymentError<TKey> {
+): PaymentError {
   return {
     code,
     messageKey,
@@ -19,10 +18,10 @@ export function createPaymentError<TKey extends PaymentErrorMessageKey = Payment
   };
 }
 
-export function invalidRequestError<TKey extends PaymentErrorMessageKey = PaymentErrorMessageKey>(
-  messageKey: TKey,
+export function invalidRequestError(
+  messageKey: string,
   params?: PaymentErrorParams,
   raw?: unknown,
-): PaymentError<TKey> {
+): PaymentError {
   return createPaymentError('invalid_request', messageKey, params, raw);
 }

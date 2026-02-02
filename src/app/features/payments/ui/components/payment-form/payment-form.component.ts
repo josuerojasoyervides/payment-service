@@ -4,7 +4,7 @@ import { FormField } from '@angular/forms/signals';
 import type {
   FieldRequirement,
   FieldRequirements,
-} from '@app/features/payments/domain/common/entities/field-requirement.model';
+} from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
 import { PaymentOptionsForm } from '@payments/ui/forms/payment-options/payment-options-form';

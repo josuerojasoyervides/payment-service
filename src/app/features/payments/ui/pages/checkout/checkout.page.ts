@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, isDevMode } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
-import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
 import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';

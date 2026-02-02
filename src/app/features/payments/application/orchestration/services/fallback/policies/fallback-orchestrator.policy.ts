@@ -1,17 +1,14 @@
 import type { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import type { FallbackConfig } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.model';
 import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
-import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 
-/**
- * ✅ Eligibility / stopping conditions
- */
-export function isEligibleForFallbackPolicy(config: FallbackConfig, error: PaymentError): boolean {
-  return config.triggerErrorCodes.includes(error.code);
-}
+export { isEligibleForFallbackPolicy } from '@app/features/payments/domain/subdomains/fallback/policies/eligible-for-fallback.policy';
 
+/**
+ * ✅ Stopping conditions
+ */
 export function hasReachedMaxAttemptsPolicy(config: FallbackConfig, state: FallbackState): boolean {
   return state.failedAttempts.length >= config.maxAttempts;
 }

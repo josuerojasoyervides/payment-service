@@ -1,4 +1,5 @@
 import { StripeTokenValidatorPolicy } from '@app/features/payments/infrastructure/stripe/shared/policies/stripe-token-validator.policy';
+import { I18nKeys } from '@core/i18n';
 
 describe('StripeTokenValidatorPolicy', () => {
   let policy: StripeTokenValidatorPolicy;
@@ -29,24 +30,64 @@ describe('StripeTokenValidatorPolicy', () => {
       expect(() => policy.validate('card_abcdefghijklmn')).not.toThrow();
     });
 
-    it('throws for tokens with less than 14 chars after prefix', () => {
-      expect(() => policy.validate('tok_short')).toThrow(/Invalid token format/);
-      expect(() => policy.validate('pm_123')).toThrow(/Invalid token format/);
-      expect(() => policy.validate('card_abc')).toThrow(/Invalid token format/);
+    it('throws PaymentError for tokens with less than 14 chars after prefix', () => {
+      expect(() => policy.validate('tok_short')).toThrow(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: I18nKeys.errors.card_token_invalid_format,
+        }),
+      );
+      expect(() => policy.validate('pm_123')).toThrow(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: I18nKeys.errors.card_token_invalid_format,
+        }),
+      );
+      expect(() => policy.validate('card_abc')).toThrow(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: I18nKeys.errors.card_token_invalid_format,
+        }),
+      );
     });
 
-    it('throws for invalid prefixes', () => {
-      expect(() => policy.validate('invalid_token1234567890')).toThrow(/Invalid token format/);
-      expect(() => policy.validate('stripe_1234567890abcd')).toThrow(/Invalid token format/);
+    it('throws PaymentError for invalid prefixes', () => {
+      expect(() => policy.validate('invalid_token1234567890')).toThrow(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: I18nKeys.errors.card_token_invalid_format,
+        }),
+      );
+      expect(() => policy.validate('stripe_1234567890abcd')).toThrow(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: I18nKeys.errors.card_token_invalid_format,
+        }),
+      );
     });
 
-    it('throws for empty token', () => {
-      expect(() => policy.validate('')).toThrow(/Token is required/);
+    it('throws PaymentError for empty token', () => {
+      expect(() => policy.validate('')).toThrow(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: I18nKeys.errors.card_token_required,
+        }),
+      );
     });
 
-    it('throws for null/undefined token', () => {
-      expect(() => policy.validate(null as any)).toThrow();
-      expect(() => policy.validate(undefined as any)).toThrow();
+    it('throws PaymentError for null/undefined token', () => {
+      expect(() => policy.validate(null as any)).toThrow(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: I18nKeys.errors.card_token_required,
+        }),
+      );
+      expect(() => policy.validate(undefined as any)).toThrow(
+        expect.objectContaining({
+          code: 'invalid_request',
+          messageKey: I18nKeys.errors.card_token_required,
+        }),
+      );
     });
   });
 

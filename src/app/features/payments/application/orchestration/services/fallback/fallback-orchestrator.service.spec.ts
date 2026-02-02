@@ -2,12 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
+import { DEFAULT_FALLBACK_CONFIG } from '@payments/application/orchestration/services/fallback/fallback-config.constant';
 import {
   FALLBACK_CONFIG,
   FallbackOrchestratorService,
 } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import type { FallbackConfig } from '@payments/domain/subdomains/fallback/entities/fallback-config.model';
-import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/subdomains/fallback/entities/fallback-config.model';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 
 describe('FallbackOrchestratorService', () => {

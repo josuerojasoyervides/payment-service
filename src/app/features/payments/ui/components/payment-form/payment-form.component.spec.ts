@@ -3,7 +3,7 @@ import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import type { FieldTree } from '@angular/forms/signals';
 import { By } from '@angular/platform-browser';
-import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
+import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import { I18nService } from '@core/i18n';
 import { PaymentFormComponent } from '@payments/ui/components/payment-form/payment-form.component';

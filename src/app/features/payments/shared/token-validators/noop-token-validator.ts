@@ -4,6 +4,7 @@ import type { TokenValidator } from '@app/features/payments/domain/subdomains/pa
  * Null validator for providers that do not use tokens.
  *
  * Useful for providers that do not use tokens (redirect flow).
+ * Lives in Shared — not Domain — because it is a concrete implementation.
  */
 export class NoopTokenValidator implements TokenValidator {
   validate(_token: string): void {

@@ -25,6 +25,8 @@ export const es: Translations = {
     amount_invalid: 'amount es inválido',
     method_type_required: 'payment method type es requerido',
     card_token_required: 'card token es requerido',
+    card_token_invalid_format:
+      'Formato de token inválido. Esperado: {{expected}}. Recibido: {{got}}',
     intent_id_required: 'intentId es requerido',
     min_amount: 'Monto mínimo para pagos con tarjeta es {{amount}} {{currency}}',
     max_amount: 'Monto máximo para pagos con SPEI es {{amount}} {{currency}}',
@@ -57,6 +59,8 @@ export const es: Translations = {
     bank_verification_required:
       'Tu banco requiere verificación adicional. Serás redirigido a una página segura para completar la autenticación.',
     spei_instructions: 'Realiza una transferencia SPEI con los siguientes datos:',
+    spei_instruction_complete_transfer: 'Completa la transferencia con los datos siguientes.',
+    spei_instruction_make_transfer: 'Realiza una transferencia bancaria con los datos siguientes.',
     paypal_redirect_required: 'Serás redirigido a PayPal para aprobar el pago.',
     status_requires_payment_method: 'Requiere método de pago',
     status_requires_confirmation: 'Requiere confirmación',

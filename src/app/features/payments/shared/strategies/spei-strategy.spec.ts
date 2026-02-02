@@ -1,9 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import {
+  PAYMENT_ERROR_KEYS,
+  PAYMENT_MESSAGE_KEYS,
+} from '@payments/shared/constants/payment-error-keys';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 import { firstValueFrom, of } from 'rxjs';
 
@@ -59,7 +62,7 @@ describe('SpeiStrategy', () => {
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.invalid_request,
+          messageKey: PAYMENT_ERROR_KEYS.INVALID_REQUEST,
         }),
       );
     });
@@ -69,7 +72,7 @@ describe('SpeiStrategy', () => {
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.min_amount,
+          messageKey: PAYMENT_ERROR_KEYS.MIN_AMOUNT,
         }),
       );
     });
@@ -79,7 +82,7 @@ describe('SpeiStrategy', () => {
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.max_amount,
+          messageKey: PAYMENT_ERROR_KEYS.MAX_AMOUNT,
         }),
       );
     });
@@ -147,7 +150,7 @@ describe('SpeiStrategy', () => {
       expect(() => strategy.start(invalidReq)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.invalid_request,
+          messageKey: PAYMENT_ERROR_KEYS.INVALID_REQUEST,
         }),
       );
 
@@ -195,24 +198,24 @@ describe('SpeiStrategy', () => {
   });
 
   describe('getUserInstructions()', () => {
-    it('returns detailed SPEI instructions', () => {
+    it('returns SPEI instruction keys (UI translates when rendering)', () => {
       const intent: PaymentIntent = {
         ...intentResponse,
         nextAction: {
           kind: 'manual_step',
           instructions: ['Transfer'],
           details: [
-            { label: 'CLABE', value: '646180111812345678' },
-            { label: 'Reference', value: '1234567' },
+            { label: 'ui.clabe_label', value: '646180111812345678' },
+            { label: 'ui.reference', value: '1234567' },
           ],
         },
       };
 
       const instructions = strategy.getUserInstructions(intent);
 
-      expect(instructions).toEqual(
-        expect.arrayContaining(['Complete the transfer using the details below.']),
-      );
+      expect(instructions).toContain(PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_COMPLETE_TRANSFER);
+      expect(instructions).toContain(PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_TRANSFER_EXACT);
+      expect(instructions).toContain(PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_KEEP_RECEIPT);
     });
 
     it('returns null when not a SPEI intent', () => {

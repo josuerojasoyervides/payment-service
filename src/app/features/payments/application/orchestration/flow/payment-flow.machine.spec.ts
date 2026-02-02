@@ -876,7 +876,7 @@ describe('PaymentFlowMachine', () => {
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'done');
     expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pay_1' });
-    expect(snap.context.flowContext?.providerRefs?.stripe?.preferenceId).toBe('pref_1');
-    expect(snap.context.flowContext?.providerRefs?.stripe?.paymentId).toBe('pay_1');
+    expect(snap.context.flowContext?.providerRefs?.['stripe']?.preferenceId).toBe('pref_1');
+    expect(snap.context.flowContext?.providerRefs?.['stripe']?.paymentId).toBe('pay_1');
   });
 });

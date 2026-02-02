@@ -9,7 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { disabled, email, type FieldTree, form, required } from '@angular/forms/signals';
-import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
+import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import {
   isEmailField,

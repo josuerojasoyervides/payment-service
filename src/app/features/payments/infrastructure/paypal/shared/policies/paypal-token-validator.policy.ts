@@ -1,4 +1,4 @@
-import { NoopTokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/noop-token-validator';
+import { NoopTokenValidator } from '@payments/shared/token-validators/noop-token-validator';
 
 /**
  * Token validator for PayPal.

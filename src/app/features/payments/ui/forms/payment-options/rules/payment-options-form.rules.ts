@@ -2,7 +2,7 @@ import { disabled, email, required, type SchemaPath } from '@angular/forms/signa
 import type {
   FieldRequirement,
   FieldRequirements,
-} from '@app/features/payments/domain/common/entities/field-requirement.model';
+} from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type {
   FlagFieldName,

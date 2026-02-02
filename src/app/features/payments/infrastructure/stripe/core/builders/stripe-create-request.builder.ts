@@ -1,11 +1,11 @@
+import { BasePaymentRequestBuilder } from '@app/features/payments/application/api/builders/base-payment-request.builder';
 import type {
   CurrencyCode,
   PaymentMethodType,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
-import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/abstract-payment-request-builder';
-import { PaymentRequestBuilder } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/abstract-payment-request-builder';
 import type { StripeCreateIntentRequest } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 
 export function buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreateIntentRequest {
@@ -25,7 +25,7 @@ export function buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreat
   };
 }
 
-export class StripeCreateRequestBuilder extends PaymentRequestBuilder {
+export class StripeCreateRequestBuilder extends BasePaymentRequestBuilder {
   private orderId?: string;
   private amount?: number;
   private currency?: CurrencyCode;

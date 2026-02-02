@@ -5,8 +5,8 @@ import { provideRouter } from '@angular/router';
 import { LoggerService } from '@app/core';
 import { FALLBACK_CONFIG } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import providePayments from '@app/features/payments/config/payment.providers';
-import { DEFAULT_FALLBACK_CONFIG } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.model';
 import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
+import { DEFAULT_FALLBACK_CONFIG } from '@payments/application/orchestration/services/fallback/fallback-config.constant';
 import { vi } from 'vitest';
 
 /**

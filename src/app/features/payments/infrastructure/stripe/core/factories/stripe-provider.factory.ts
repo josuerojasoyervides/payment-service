@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import type { FieldRequirements } from '@app/features/payments/domain/common/entities/field-requirement.model';
+import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
-import type { PaymentRequestBuilder } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/abstract-payment-request-builder';
+import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/payment-request-builder.port';
 import { StripeTokenValidatorPolicy } from '@app/features/payments/infrastructure/stripe/shared/policies/stripe-token-validator.policy';
 import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
 import { I18nKeys } from '@core/i18n';
@@ -10,6 +10,7 @@ import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
+import { SPEI_DISPLAY_CONSTANTS } from '@payments/infrastructure/fake/shared/constants/spei-display.constants';
 import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/card/builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/spei/builders/stripe-spei-request.builder';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
@@ -82,7 +83,7 @@ export class StripeProviderFactory implements ProviderFactory {
    * The UI uses this to build the request with the correct fields.
    * Each builder knows what fields it needs and validates on build().
    */
-  createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilder {
+  createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilderPort {
     this.assertSupported(type);
 
     switch (type) {
@@ -166,7 +167,7 @@ export class StripeProviderFactory implements ProviderFactory {
       case 'card':
         return new CardStrategy(this.gateway, new StripeTokenValidatorPolicy(), this.logger);
       case 'spei':
-        return new SpeiStrategy(this.gateway, this.logger);
+        return new SpeiStrategy(this.gateway, this.logger, SPEI_DISPLAY_CONSTANTS);
       default:
         throw invalidRequestError(I18nKeys.errors.invalid_request, {
           reason: 'unexpected_payment_method_type',
