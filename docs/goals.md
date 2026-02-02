@@ -1,6 +1,6 @@
 # Goals and North Star
 
-> **Last review:** 2026-01-26
+> **Last review:** 2026-02-01
 > Strategic document: defines **why** this module exists, the **North Star**, and how to evolve without breaking what already works.
 
 ## How to use this doc

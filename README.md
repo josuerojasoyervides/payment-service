@@ -33,7 +33,9 @@ Open the app and go to **`/payments/checkout`** (the default payments page). Fro
 **Useful commands:**
 
 - `bun run test:ci` — run the full test suite
+- `bun run dep:check` — verify dependency rules (dependency-cruise)
 - `bun run lint` — run ESLint (no auto-fix)
+- `bun run lint:fix` — ESLint with auto-fix
 
 ---
 
@@ -152,6 +154,7 @@ The repo protects its own architecture:
 - **Domain is framework-free** — The domain layer has no Angular, RxJS, or XState; it stays pure types, contracts, and rules.
 - **Shared keeps Domain agnostic** — The payments `shared/` layer must not import `@core` (i18n, logging). Depcruise rule `shared-no-core` enforces this. Error/message keys live in `shared/constants/`; `SpeiDisplayConfig` in `application/api/contracts/`; SPEI display data (bank names, beneficiary, test CLABE) is injected from infrastructure constants.
 - **Architecture tests yell early** — Tests (e.g. boundary/import rules) fail the build if someone breaks these rules.
+- **Value Objects in domain** — Core contracts use `Money`, `PaymentIntentId`, and `OrderId`; builders validate at the Application edge before emitting requests.
 
 So: you can rely on "UI → application → domain", "shared → domain only", and "infrastructure → application"; the tooling checks it.
 
@@ -162,9 +165,8 @@ So: you can rely on "UI → application → domain", "shared → domain only", a
 For deeper detail, read these (no content copied here):
 
 - **docs/goals.md** — North star and intent
-- **docs/architecture-rules.md** — Layers, boundaries, and current state
+- **docs/architecture-rules.md** — Layers, boundaries, Value Objects, and current state
 - **docs/flow-brain.md** — State machine and transitions
-- **docs/provider-integration-plan.md** — Provider contracts and migration plan
 - **docs/observability/flow-telemetry.md** — Telemetry envelope, redaction, sinks
 
 ---

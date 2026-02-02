@@ -4,11 +4,11 @@
 
 ---
 
-## 🕒 Last Sync: 2026-02-02
+## 🕒 Last Sync: 2026-02-01
 
 ## 📍 Mission State
 
-- **Current mission:** Domain Boundary Leaks plan completed. Domain agnostic of UI vocabulary; error keys in `shared/constants/`; SpeiDisplayConfig in `application/api/contracts/`; depcruise `shared-no-core` enforced.
+- **Current mission:** Domain sanitized (UI-agnostic, fallback naming); Value Objects adopted in core contracts: Money, PaymentIntentId, OrderId. Domain agnostic of UI vocabulary; error keys in `shared/constants/`; SpeiDisplayConfig in `application/api/contracts/`; depcruise `shared-no-core` enforced.
 - **Key folders:** Domain `domain/**` (policies: `requires-user-action.policy.ts`), Shared `shared/constants/payment-error-keys.ts`, Application `application/orchestration/**` + `application/api/contracts/spei-display-config.types.ts`, Config `config/payment.providers.ts`, Infra constants `infrastructure/fake/shared/constants/spei-display.constants.ts`.
 
 ## 🖥️ UI surface & boundaries (UI-01)
@@ -38,7 +38,7 @@
 - **Contract:** `FlowTelemetryEvent` (kind/eventType/refs/meta) + `FlowTelemetrySink` (record) in `application/adapters/telemetry/types/flow-telemetry.types.ts`. Token `FLOW_TELEMETRY_SINK`; default NoopFlowTelemetrySink in config. No legacy observability/telemetry folder.
 - **Kinds:** COMMAND_SENT, SYSTEM_EVENT_SENT, STATE_CHANGED, EFFECT_START, EFFECT_FINISH, ERROR_RAISED. Correlation via `refs.referenceId` / `refs.eventId`; no raw payloads.
 - **Tests:** All flow telemetry tests use FLOW_TELEMETRY_SINK + InMemoryFlowTelemetrySink (scenario harness + actor telemetry spec). Assert on `telemetry.ofKind(...)`, `telemetry.lastKind(...)`, `event.refs?.['referenceId']`.
-- **Docs:** `docs/pr6-resilience-suite.md` describes kind vocabulary and InMemoryFlowTelemetrySink helpers.
+- **Docs:** `docs/observability/flow-telemetry.md` describes event kinds and InMemoryFlowTelemetrySink; scenario harness uses `telemetry.ofKind(...)`, `telemetry.lastKind(...)`.
 
 ## 🧩 Fake mode (demo)
 
@@ -49,7 +49,8 @@
 ## 🧩 Naming (Domain)
 
 - **Suffixes:** `*.types.ts`, `*.event.ts`, `*.command.ts`, `*.vo.ts`, `*.rule.ts`, `*.policy.ts`, `*.port.ts`
-- **Folders:** `domain/common/primitives/{ids,money,time}`, `domain/subdomains/{payment,fallback}/{contracts,entities,primitives,rules,policies,ports}`
+- **Folders:** `domain/common/primitives/{ids,money,time}`, `domain/subdomains/{payment,fallback}/{contracts,entities,messages,rules,policies,ports}` — messages hold `*.command.ts` and `*.event.ts`; entities hold `*.types.ts` and `*.model.ts`.
+- **VOs adopted in contracts:** `Money`, `PaymentIntentId`, `OrderId` in `domain/common/primitives/`; used in `CreatePaymentRequest`, `ConfirmPaymentRequest`, `CancelPaymentRequest`, `GetPaymentStatusRequest`, `PaymentIntent` (see `domain/subdomains/payment/messages/payment-request.command.ts` and `entities/payment-intent.types.ts`).
 - **Contracts:** Error/message keys in `shared/constants/payment-error-keys.ts`; `SpeiDisplayConfig` in `application/api/contracts/spei-display-config.types.ts`.
 
 ---

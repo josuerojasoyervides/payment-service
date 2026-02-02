@@ -1,6 +1,6 @@
 # Payments Module — Architecture & Quality Rules
 
-> **Last review:** 2026-01-29
+> **Last review:** 2026-02-01
 > This repo is a lab to practice payments architecture **without turning it into a spider web**.
 
 ## How to read this document
@@ -267,10 +267,13 @@ Per critical operation, at minimum:
 **Current state (Domain layout as of 2026-02)**
 
 - `domain/common/`:
-  - `primitives/{ids,money,time}` → shared value objects.
+  - `primitives/{ids,money,time}` → shared value objects: `Money`, `PaymentIntentId`, `OrderId`, `UrlString`, `TimestampMs`, `FlowId` (see `domain/common/primitives/ids/`, `money/`, `time/`, `url-string.vo.ts`).
   - `ports/` → truly cross-subdomain ports (e.g. token validators).
-- `domain/subdomains/payment/{contracts,entities,primitives,rules,policies,ports}` — policies include `requires-user-action.policy.ts`. Error keys in `shared/constants/`; `SpeiDisplayConfig` in `application/api/contracts/`.
-- `domain/subdomains/fallback/{contracts,entities,primitives,rules,policies,ports}`
+- `domain/subdomains/payment/`:
+  - `messages/` → `payment-request.command.ts` (CreatePaymentRequest, ConfirmPaymentRequest, CancelPaymentRequest, GetPaymentStatusRequest), `payment-webhook.event.ts`.
+  - `entities/` → `payment-intent.types.ts`, `payment-flow-context.types.ts`, `payment-error.model.ts`, etc.
+  - `rules/`, `policies/`, `ports/` — policies include `requires-user-action.policy.ts`. Error keys in `shared/constants/`; `SpeiDisplayConfig` in `application/api/contracts/`.
+- `domain/subdomains/fallback/{contracts,entities,messages,policies,ports}` — messages include `fallback-user-response.command.ts`.
 
 To keep the structure visible while subfolders are still empty, we use **temporary markers**:
 
@@ -278,6 +281,13 @@ To keep the structure visible while subfolders are still empty, we use **tempora
   - which suffixes belong there (e.g. `*.vo.ts`, `*.rule.ts`),
   - 1–2 examples of expected artifacts.
 - These `.txt` files are **not** imported anywhere and can be safely deleted once real code exists in that folder.
+
+**Value Objects and current contracts**
+
+- **Adopted in domain contracts:** `Money` (CreatePaymentRequest.money, PaymentIntent.money), `PaymentIntentId` (intentId in Confirm/Cancel/GetStatus requests, PaymentIntent.id), `OrderId` (CreatePaymentRequest.orderId).
+- **Contracts:** Only interfaces; data lives in entities. Commands in `messages/*.command.ts`; events in `messages/*.event.ts`.
+- **Edge validation:** Builders (e.g. `BasePaymentRequestBuilder`) parse raw strings into VOs via `createMoneyOrThrow()`, `createOrderIdOrThrow()`, `createIntentIdOrThrow()`; optional URLs are validated with `UrlString.from()` (returnUrl/cancelUrl remain `string` in contracts; validation happens at Application edge).
+- **Guardrails:** `bun run test`, `bun run dep:check`, `bun run lint:fix` must pass.
 
 **Config & DI interplay (reminder)**
 

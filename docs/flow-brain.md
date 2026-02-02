@@ -1,6 +1,6 @@
 # Flow Brain — Payments State Machine (XState)
 
-> **Last review:** 2026-01-26
+> **Last review:** 2026-02-01
 > This document is the operational map of the payments flow. It explains **why** a state is entered and **who** triggers it.
 
 ---
