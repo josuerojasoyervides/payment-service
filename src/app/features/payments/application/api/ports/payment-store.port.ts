@@ -56,10 +56,36 @@ export interface PaymentDebugSummary {
 }
 
 /**
- * Flow port: state signals, payment/UI/fallback actions, return helpers.
+ * Core flow port (UI-agnostic): snapshot + imperative actions.
+ *
+ * UI can build signals/selectors on top of this, but the core port does not
+ * depend on framework or presentation types.
+ */
+export interface PaymentFlowPortCore {
+  getSnapshot(): Readonly<PaymentsState>;
+  subscribe(listener: () => void): Unsubscribe;
+
+  startPayment(
+    request: CreatePaymentRequest,
+    providerId: PaymentProviderId,
+    context?: StrategyContext,
+  ): void;
+  confirmPayment(request: ConfirmPaymentRequest, providerId?: PaymentProviderId): void;
+  cancelPayment(request: CancelPaymentRequest, providerId?: PaymentProviderId): void;
+  refreshPayment(request: GetPaymentStatusRequest, providerId?: PaymentProviderId): void;
+  selectProvider(providerId: PaymentProviderId): void;
+  clearError(): void;
+  reset(): void;
+  clearHistory(): void;
+  executeFallback(providerId: PaymentProviderId): void;
+  cancelFallback(): void;
+}
+
+/**
+ * UI flow port: signals, debug helpers, and UI-only helpers.
  * UI injects PAYMENT_STATE to get this contract.
  */
-export interface PaymentFlowPort {
+export interface PaymentFlowPortUi extends PaymentFlowPortCore {
   readonly state: Signal<PaymentsState>;
   readonly isLoading: Signal<boolean>;
   readonly isReady: Signal<boolean>;
@@ -90,24 +116,6 @@ export interface PaymentFlowPort {
   readonly debugTags: Signal<string[]>;
   readonly debugLastEventType: Signal<string | null>;
   readonly debugLastEventPayload: Signal<unknown | null>;
-
-  getSnapshot(): Readonly<PaymentsState>;
-  subscribe(listener: () => void): Unsubscribe;
-
-  startPayment(
-    request: CreatePaymentRequest,
-    providerId: PaymentProviderId,
-    context?: StrategyContext,
-  ): void;
-  confirmPayment(request: ConfirmPaymentRequest, providerId?: PaymentProviderId): void;
-  cancelPayment(request: CancelPaymentRequest, providerId?: PaymentProviderId): void;
-  refreshPayment(request: GetPaymentStatusRequest, providerId?: PaymentProviderId): void;
-  selectProvider(providerId: PaymentProviderId): void;
-  clearError(): void;
-  reset(): void;
-  clearHistory(): void;
-  executeFallback(providerId: PaymentProviderId): void;
-  cancelFallback(): void;
 
   getReturnReferenceFromQuery(queryParams: Record<string, unknown>): {
     providerId: PaymentProviderId;
@@ -143,4 +151,7 @@ export interface PaymentCheckoutCatalogPort {
  * Combined port for backward compatibility. Prefer injecting PAYMENT_STATE (FlowPort)
  * and PAYMENT_CHECKOUT_CATALOG (CatalogPort) separately in UI.
  */
-export interface PaymentStorePort extends PaymentFlowPort, PaymentCheckoutCatalogPort {}
+export interface PaymentStorePort extends PaymentFlowPortUi, PaymentCheckoutCatalogPort {}
+
+/** Backwards-compatible alias; prefer PaymentFlowPortCore or PaymentFlowPortUi explicitly. */
+export type PaymentFlowPort = PaymentFlowPortUi;
