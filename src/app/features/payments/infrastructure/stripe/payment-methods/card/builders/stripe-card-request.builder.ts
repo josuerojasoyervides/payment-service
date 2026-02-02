@@ -1,4 +1,5 @@
 import { BasePaymentRequestBuilder } from '@app/features/payments/application/api/builders/base-payment-request.builder';
+import type { Money } from '@app/features/payments/domain/common/primitives/money/money.vo';
 import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';

@@ -1,5 +1,5 @@
 import type { FallbackConfig } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.model';
-import type { FallbackUserResponse } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
+import type { FallbackUserResponse } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-user-response.command';
 import type { LoggerService } from '@core/logging';
 
 export function warnUnknown(
