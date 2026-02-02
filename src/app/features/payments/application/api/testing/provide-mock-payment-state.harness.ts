@@ -1,7 +1,6 @@
 // src/testing/payments/mock-payment-state.ts
 import type { Provider } from '@angular/core';
 import { computed, effect, signal } from '@angular/core';
-import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
@@ -33,6 +32,7 @@ import type {
   PaymentFlowStatus,
   PaymentsState,
 } from '@payments/application/orchestration/store/types/payment-store-state';
+import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 
 export interface MockPaymentStateOverrides {
   status?: PaymentFlowStatus;

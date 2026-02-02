@@ -1,9 +1,9 @@
 import { disabled, email, required, type SchemaPath } from '@angular/forms/signals';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type {
   FieldRequirement,
   FieldRequirements,
-} from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
-import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
+} from '@payments/presentation/contracts/checkout-field-requirements.types';
 import type {
   FlagFieldName,
   NormalizedFlagField,

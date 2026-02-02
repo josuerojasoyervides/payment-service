@@ -1,6 +1,5 @@
 import type { Signal } from '@angular/core';
 import { computed, effect, inject, Injectable } from '@angular/core';
-import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type { PaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
 import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
 import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
@@ -29,10 +28,11 @@ import type {
   Unsubscribe,
 } from '@payments/application/api/ports/payment-store.port';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
-import { ProviderDescriptorRegistry } from '@payments/application/orchestration/registry/provider-descriptor/provider-descriptor.registry';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
+import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
+import { ProviderDescriptorRegistry } from '@payments/presentation/registry/provider-descriptor/provider-descriptor.registry';
 
 /**
  * Adapter implementing PaymentFlowPort and PaymentCheckoutCatalogPort by delegating to PaymentsStore.

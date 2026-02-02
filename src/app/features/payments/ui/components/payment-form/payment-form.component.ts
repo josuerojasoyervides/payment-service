@@ -1,12 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, input, output } from '@angular/core';
 import { FormField } from '@angular/forms/signals';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
+import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
 import type {
   FieldRequirement,
   FieldRequirements,
-} from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
-import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
-import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
+} from '@payments/presentation/contracts/checkout-field-requirements.types';
 import { PaymentOptionsForm } from '@payments/ui/forms/payment-options/payment-options-form';
 import { AutofocusDirective } from '@shared/directives/autofocus.directive';
 

@@ -2,7 +2,6 @@ import type { signal } from '@angular/core';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
-import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
@@ -26,6 +25,7 @@ import {
 } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
   {

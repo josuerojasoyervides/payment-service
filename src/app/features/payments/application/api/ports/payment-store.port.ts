@@ -1,5 +1,4 @@
 import type { Signal } from '@angular/core';
-import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type {
   PaymentFlowStatus,
   PaymentsState,
@@ -22,6 +21,7 @@ import type {
 } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
+import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 
 export type { PaymentHistoryEntry };
 

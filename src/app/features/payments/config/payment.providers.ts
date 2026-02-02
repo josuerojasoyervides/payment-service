@@ -24,7 +24,6 @@ import {
 } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { WEBHOOK_NORMALIZER_REGISTRY } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
 import { PaymentFlowMachineDriver } from '@app/features/payments/application/orchestration/flow/payment-flow-machine-driver';
-import { ProviderDescriptorRegistry } from '@app/features/payments/application/orchestration/registry/provider-descriptor/provider-descriptor.registry';
 import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { ProviderMethodPolicyRegistry } from '@app/features/payments/application/orchestration/registry/provider-method-policy/provider-method-policy.registry';
 import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
@@ -57,6 +56,7 @@ import {
   type PaymentsProvidersMode,
   type PaymentsProvidersOptions,
 } from '@payments/config/payments-providers.types';
+import { ProviderDescriptorRegistry } from '@payments/presentation/registry/provider-descriptor/provider-descriptor.registry';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 function selectProviderConfigs(mode: PaymentsProvidersMode): Provider[] {

@@ -1,5 +1,4 @@
 import { inject, Injectable } from '@angular/core';
-import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/payment-request-builder.port';
@@ -13,6 +12,7 @@ import type { PaymentGatewayPort } from '@payments/application/api/ports/payment
 import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
+import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 
 /**
  * PayPal provider factory.

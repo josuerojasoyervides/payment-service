@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, isDevMode } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
@@ -14,6 +13,7 @@ import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
+import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { FallbackStatusBannerComponent } from '@payments/ui/components/fallback-status-banner/fallback-status-banner.component';
 import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';

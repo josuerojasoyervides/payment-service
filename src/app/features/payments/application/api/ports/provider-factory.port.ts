@@ -18,7 +18,6 @@
  * others return null.
  */
 
-import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/payment-request-builder.port';
@@ -26,6 +25,7 @@ import type { ClientConfirmPort } from '@payments/application/api/ports/client-c
 import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
+import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 
 export interface ProviderFactory {
   /** Unique provider identifier */

@@ -1,5 +1,4 @@
 import { inject, Injectable } from '@angular/core';
-import type { FieldRequirements } from '@app/features/payments/application/api/contracts/checkout-field-requirements.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/payment-request-builder.port';
@@ -13,6 +12,7 @@ import type { ProviderFactory } from '@payments/application/api/ports/provider-f
 import { SPEI_DISPLAY_CONSTANTS } from '@payments/infrastructure/fake/shared/constants/spei-display.constants';
 import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/card/builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/spei/builders/stripe-spei-request.builder';
+import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 
