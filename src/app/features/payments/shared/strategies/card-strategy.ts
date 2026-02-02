@@ -6,6 +6,7 @@ import type { PaymentIntent } from '@app/features/payments/domain/subdomains/pay
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import { intentRequiresUserAction } from '@app/features/payments/domain/subdomains/payment/policies/requires-user-action.policy';
 import type { TokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/token-validator.port';
 import {
   getCardMinAmount,
@@ -148,7 +149,7 @@ export class CardStrategy implements PaymentStrategy {
    * Determines if the intent requires user action (3DS).
    */
   requiresUserAction(intent: PaymentIntent): boolean {
-    return intent.status === 'requires_action' && intent.nextAction?.kind === 'client_confirm';
+    return intentRequiresUserAction(intent) && intent.nextAction?.kind === 'client_confirm';
   }
 
   /**

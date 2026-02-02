@@ -5,6 +5,7 @@ import type {
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import { intentRequiresUserAction } from '@app/features/payments/domain/subdomains/payment/policies/requires-user-action.policy';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { findPaypalLink } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { I18nKeys } from '@core/i18n';
@@ -172,7 +173,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
   }
 
   requiresUserAction(intent: PaymentIntent): boolean {
-    return intent.status === 'requires_action' || intent.nextAction?.kind === 'redirect';
+    return intentRequiresUserAction(intent) || intent.nextAction?.kind === 'redirect';
   }
 
   getUserInstructions(intent: PaymentIntent): string[] | null {

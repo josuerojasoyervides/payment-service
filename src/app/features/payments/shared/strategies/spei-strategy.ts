@@ -8,6 +8,7 @@ import type { PaymentMethodType } from '@app/features/payments/domain/subdomains
 import type { NextActionManualStep } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import { intentRequiresUserAction } from '@app/features/payments/domain/subdomains/payment/policies/requires-user-action.policy';
 import {
   SPEI_MAX_AMOUNT_MXN,
   SPEI_MIN_AMOUNT_MXN,
@@ -155,7 +156,7 @@ export class SpeiStrategy implements PaymentStrategy {
    * SPEI always requires user action (perform the transfer).
    */
   requiresUserAction(intent: PaymentIntent): boolean {
-    return intent.status === 'requires_action' && intent.nextAction?.kind === 'manual_step';
+    return intentRequiresUserAction(intent) && intent.nextAction?.kind === 'manual_step';
   }
 
   /**
