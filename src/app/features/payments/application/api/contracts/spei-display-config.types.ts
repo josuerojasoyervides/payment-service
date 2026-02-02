@@ -3,6 +3,8 @@
  *
  * Provided by infrastructure when instantiating SpeiStrategy; keeps shared/ free of
  * provider-specific or environment-specific copy and test data.
+ *
+ * Lives in Application (not Domain) because it is presentation/infrastructure concern.
  */
 export interface SpeiDisplayConfig {
   /** Map provider id -> receiving bank display name (e.g. stripe -> 'STP (Transfers and Payments System)'). */

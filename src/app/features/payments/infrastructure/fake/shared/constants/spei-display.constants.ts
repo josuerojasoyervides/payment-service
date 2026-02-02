@@ -1,4 +1,4 @@
-import type { SpeiDisplayConfig } from '@app/features/payments/domain/subdomains/payment/contracts/spei-display-config.types';
+import type { SpeiDisplayConfig } from '@payments/application/api/contracts/spei-display-config.types';
 
 /**
  * SPEI display constants for demo/fake and shared provider use.

@@ -1,9 +1,3 @@
-import {
-  PAYMENT_ERROR_KEYS,
-  PAYMENT_MESSAGE_KEYS,
-  PAYMENT_SPEI_DETAIL_LABEL_KEYS,
-} from '@app/features/payments/domain/subdomains/payment/contracts/payment-error-keys.types';
-import type { SpeiDisplayConfig } from '@app/features/payments/domain/subdomains/payment/contracts/spei-display-config.types';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { NextActionManualStep } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
@@ -21,12 +15,18 @@ import {
 } from '@app/features/payments/domain/subdomains/payment/rules/spei-concept.rule';
 import { SPEI_DEFAULT_EXPIRY_HOURS } from '@app/features/payments/domain/subdomains/payment/rules/spei-expiry.rule';
 import type { LoggerService } from '@core/logging';
+import type { SpeiDisplayConfig } from '@payments/application/api/contracts/spei-display-config.types';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
+import {
+  PAYMENT_ERROR_KEYS,
+  PAYMENT_MESSAGE_KEYS,
+  PAYMENT_SPEI_DETAIL_LABEL_KEYS,
+} from '@payments/shared/constants/payment-error-keys';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
 

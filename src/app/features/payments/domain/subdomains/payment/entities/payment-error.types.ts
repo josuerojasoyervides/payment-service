@@ -29,11 +29,3 @@ export type PaymentErrorCode = (typeof PAYMENT_ERROR_CODES)[number];
  * Note: Avoid `undefined` in contracts. If a param doesn't exist, omit the key.
  */
 export type PaymentErrorParams = Record<string, string | number | boolean | null>;
-
-/**
- * Opaque i18n key used by the UI layer to render an end-user message.
- *
- * This is intentionally not coupled to any concrete i18n implementation/types
- * to keep Domain tech-less. Application/UI can narrow this type via generics.
- */
-export type PaymentErrorMessageKey = string;

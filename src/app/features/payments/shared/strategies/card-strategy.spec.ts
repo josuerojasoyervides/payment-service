@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { PAYMENT_ERROR_KEYS } from '@app/features/payments/domain/subdomains/payment/contracts/payment-error-keys.types';
 import type { TokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/token-validator.port';
 import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { firstValueFrom, of } from 'rxjs';
 

@@ -1,7 +1,3 @@
-import {
-  PAYMENT_ERROR_KEYS,
-  PAYMENT_MESSAGE_KEYS,
-} from '@app/features/payments/domain/subdomains/payment/contracts/payment-error-keys.types';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
@@ -19,6 +15,10 @@ import type {
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
+import {
+  PAYMENT_ERROR_KEYS,
+  PAYMENT_MESSAGE_KEYS,
+} from '@payments/shared/constants/payment-error-keys';
 import { NoopTokenValidator } from '@payments/shared/token-validators/noop-token-validator';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';

@@ -1,10 +1,11 @@
 /**
- * Error message keys emitted by the payment domain.
+ * Error and message keys for payment flows.
  *
  * These are opaque strings that the UI layer translates via i18n.
  * Convention: keys must match entries in en.ts/es.ts translation files.
  *
- * Domain defines the vocabulary of errors; it does NOT implement i18n.
+ * Kept in Shared (not Domain) so Domain stays agnostic of UI vocabulary.
+ * Strategies use these when building errors/instructions; UI translates via i18n when rendering.
  */
 export const PAYMENT_ERROR_KEYS = {
   // Card errors
@@ -22,12 +23,10 @@ export const PAYMENT_ERROR_KEYS = {
   UNKNOWN_ERROR: 'errors.unknown_error',
 } as const;
 
-export type PaymentErrorKey = (typeof PAYMENT_ERROR_KEYS)[keyof typeof PAYMENT_ERROR_KEYS];
-
 /**
  * Message keys for user-facing instructions (not errors).
  *
- * These are used by strategies to communicate next steps to the user.
+ * Used by strategies to communicate next steps to the user.
  * The UI translates these keys to localized text.
  */
 export const PAYMENT_MESSAGE_KEYS = {
@@ -40,8 +39,6 @@ export const PAYMENT_MESSAGE_KEYS = {
   SPEI_INSTRUCTION_KEEP_RECEIPT: 'ui.keep_receipt',
   SPEI_INSTRUCTION_MAKE_TRANSFER: 'messages.spei_instruction_make_transfer',
 } as const;
-
-export type PaymentMessageKey = (typeof PAYMENT_MESSAGE_KEYS)[keyof typeof PAYMENT_MESSAGE_KEYS];
 
 /**
  * UI label keys for SPEI manual step details (CLABE, Reference, Bank, etc.).
@@ -56,6 +53,3 @@ export const PAYMENT_SPEI_DETAIL_LABEL_KEYS = {
   AMOUNT: 'ui.amount_label',
   EXPIRES_AT: 'ui.reference_expires',
 } as const;
-
-export type PaymentSpeiDetailLabelKey =
-  (typeof PAYMENT_SPEI_DETAIL_LABEL_KEYS)[keyof typeof PAYMENT_SPEI_DETAIL_LABEL_KEYS];

@@ -192,7 +192,7 @@ export interface PaymentError {
 
 **Current state:** enforced; guardrails prevent regressions.
 
-Domain defines the vocabulary of error and message keys in `domain/.../contracts/payment-error-keys.types.ts` (`PAYMENT_ERROR_KEYS`, `PAYMENT_MESSAGE_KEYS`, `PAYMENT_SPEI_DETAIL_LABEL_KEYS`). Strategies and infra use these constants; the UI translates via `i18n.t(messageKey)`.
+Error/message keys live in `shared/constants/payment-error-keys.ts` (`PAYMENT_ERROR_KEYS`, `PAYMENT_MESSAGE_KEYS`, `PAYMENT_SPEI_DETAIL_LABEL_KEYS`). Domain stays agnostic of UI vocabulary; strategies use these constants; the UI translates via i18n.
 
 ---
 
@@ -203,7 +203,7 @@ Domain defines the vocabulary of error and message keys in `domain/.../contracts
 - `shared/` (feature) may only import `domain/`. It must not import `@core` (i18n, logging).
 - Provider-specific or environment-specific display data (e.g. SPEI bank names, beneficiary, test CLABE) lives in infrastructure; it is injected into strategies via domain contracts (e.g. `SpeiDisplayConfig`).
 
-**Current state:** Depcruise rule `shared-no-core` forbids payments `shared/` from importing `src/app/core`. Error/message keys are in Domain. SPEI display constants live in `infrastructure/fake/shared/constants/spei-display.constants.ts`; `SpeiStrategy` receives optional `SpeiDisplayConfig` from the provider factory.
+**Current state:** Depcruise rule `shared-no-core` forbids payments `shared/` from importing `src/app/core`. Error/message keys are in `shared/constants/`. `SpeiDisplayConfig` lives in `application/api/contracts/`; constants in `infrastructure/fake/shared/constants/spei-display.constants.ts`; `SpeiStrategy` receives optional config from the provider factory.
 
 ---
 
@@ -269,7 +269,7 @@ Per critical operation, at minimum:
 - `domain/common/`:
   - `primitives/{ids,money,time}` → shared value objects.
   - `ports/` → truly cross-subdomain ports (e.g. token validators).
-- `domain/subdomains/payment/{contracts,entities,primitives,rules,policies,ports}` — contracts include `payment-error-keys.types.ts`, `spei-display-config.types.ts`; policies include `requires-user-action.policy.ts`.
+- `domain/subdomains/payment/{contracts,entities,primitives,rules,policies,ports}` — policies include `requires-user-action.policy.ts`. Error keys in `shared/constants/`; `SpeiDisplayConfig` in `application/api/contracts/`.
 - `domain/subdomains/fallback/{contracts,entities,primitives,rules,policies,ports}`
 
 To keep the structure visible while subfolders are still empty, we use **temporary markers**:

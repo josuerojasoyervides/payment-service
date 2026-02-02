@@ -150,7 +150,7 @@ The repo protects its own architecture:
 
 - **UI cannot import infrastructure** — Pages and components do not import Stripe/PayPal adapters directly; they use the flow API and the store. Dependency-cruiser and boundary tests enforce this.
 - **Domain is framework-free** — The domain layer has no Angular, RxJS, or XState; it stays pure types, contracts, and rules.
-- **Shared imports domain only** — The payments `shared/` layer may only import from `domain/`. It must not import `@core` (i18n, logging). Depcruise rule `shared-no-core` enforces this. Error/message keys live in Domain; SPEI display data (bank names, beneficiary, test CLABE) is injected via `SpeiDisplayConfig` from infrastructure constants.
+- **Shared keeps Domain agnostic** — The payments `shared/` layer must not import `@core` (i18n, logging). Depcruise rule `shared-no-core` enforces this. Error/message keys live in `shared/constants/`; `SpeiDisplayConfig` in `application/api/contracts/`; SPEI display data (bank names, beneficiary, test CLABE) is injected from infrastructure constants.
 - **Architecture tests yell early** — Tests (e.g. boundary/import rules) fail the build if someone breaks these rules.
 
 So: you can rely on "UI → application → domain", "shared → domain only", and "infrastructure → application"; the tooling checks it.
