@@ -1,8 +1,5 @@
-import { HttpClient } from '@angular/common/http';
-import { inject } from '@angular/core';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
-import { LoggerService } from '@core/logging';
 import type { Observable } from 'rxjs';
 import { catchError, map, throwError } from 'rxjs';
 
@@ -16,8 +13,6 @@ export abstract class PaymentOperationPort<
   TResponse,
 > implements PaymentOperationGatewayPort<TRequest, TResponse> {
   abstract readonly providerId: PaymentProviderId;
-  protected readonly http = inject(HttpClient);
-  protected readonly logger = inject(LoggerService);
 
   protected get logContext(): string {
     return `${this.providerId} Gateway`;

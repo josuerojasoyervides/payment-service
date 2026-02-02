@@ -1,4 +1,6 @@
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { LoggerService } from '@app/core';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
@@ -20,9 +22,13 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
   PaypalOrderDto,
   PaymentIntent
 > {
-  private readonly API_BASE = PAYPAL_API_BASE;
+  private readonly http = inject(HttpClient);
+  private readonly logger = inject(LoggerService);
   private readonly idempotencyKeyFactory = inject(IdempotencyKeyFactory);
+
+  private readonly API_BASE = PAYPAL_API_BASE;
   readonly providerId: PaymentProviderId = 'paypal' as const;
+
   protected executeRaw(request: CreatePaymentRequest): Observable<PaypalOrderDto> {
     const paypalRequest = this.buildPaypalCreateRequest(request);
 

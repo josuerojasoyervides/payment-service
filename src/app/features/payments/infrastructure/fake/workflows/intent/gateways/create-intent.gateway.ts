@@ -1,4 +1,6 @@
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { LoggerService } from '@app/core';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
@@ -44,9 +46,11 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
   any,
   PaymentIntent
 > {
-  abstract override readonly providerId: PaymentProviderId;
-
+  private readonly http = inject(HttpClient);
+  private readonly logger = inject(LoggerService);
   private readonly fakeIntentStore = inject(FakeIntentStore);
+
+  abstract override readonly providerId: PaymentProviderId;
 
   protected override executeRaw(request: CreatePaymentRequest): Observable<any> {
     this.logger.warn(`[FakeGateway] Creating intent for ${this.providerId}`, this.logContext, {

@@ -1,4 +1,6 @@
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { LoggerService } from '@app/core';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { CancelPaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
@@ -14,9 +16,12 @@ export class PaypalCancelIntentGateway extends PaymentOperationPort<
   PaypalOrderDto,
   PaymentIntent
 > {
-  private readonly API_BASE = PAYPAL_API_BASE;
+  private readonly http = inject(HttpClient);
+  private readonly logger = inject(LoggerService);
 
   readonly providerId: PaymentProviderId = 'paypal' as const;
+  private readonly API_BASE = PAYPAL_API_BASE;
+
   protected override executeRaw(request: CancelPaymentRequest): Observable<PaypalOrderDto> {
     return this.http.post<PaypalOrderDto>(
       `${this.API_BASE}/orders/${request.intentId.value}/void`,

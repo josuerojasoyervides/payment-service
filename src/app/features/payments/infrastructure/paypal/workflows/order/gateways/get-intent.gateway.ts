@@ -1,4 +1,6 @@
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { LoggerService } from '@app/core';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { GetPaymentStatusRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
@@ -14,6 +16,8 @@ export class PaypalGetIntentGateway extends PaymentOperationPort<
   PaypalOrderDto,
   PaymentIntent
 > {
+  private readonly http = inject(HttpClient);
+  private readonly logger = inject(LoggerService);
   private readonly API_BASE = PAYPAL_API_BASE;
 
   readonly providerId: PaymentProviderId = 'paypal' as const;

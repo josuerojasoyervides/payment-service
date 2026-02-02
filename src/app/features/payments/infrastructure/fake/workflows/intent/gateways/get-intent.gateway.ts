@@ -1,4 +1,6 @@
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { LoggerService } from '@app/core';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { GetPaymentStatusRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
@@ -17,9 +19,11 @@ export abstract class FakeGetIntentGateway extends PaymentOperationPort<
   any,
   PaymentIntent
 > {
-  abstract override readonly providerId: PaymentProviderId;
-
+  private readonly http = inject(HttpClient);
+  private readonly logger = inject(LoggerService);
   private readonly fakeIntentStore = inject(FakeIntentStore);
+
+  abstract override readonly providerId: PaymentProviderId;
 
   protected override executeRaw(request: GetPaymentStatusRequest): Observable<any> {
     const id = request.intentId.value;

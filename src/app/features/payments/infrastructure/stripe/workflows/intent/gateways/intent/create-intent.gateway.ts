@@ -1,4 +1,6 @@
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { LoggerService } from '@app/core';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
@@ -20,8 +22,9 @@ export class StripeCreateIntentGateway extends PaymentOperationPort<
   StripePaymentIntentDto | StripeSpeiSourceDto,
   PaymentIntent
 > {
+  private readonly http = inject(HttpClient);
+  private readonly logger = inject(LoggerService);
   readonly providerId: PaymentProviderId = 'stripe' as const;
-
   private static readonly API_BASE = STRIPE_API_BASE;
 
   constructor() {
