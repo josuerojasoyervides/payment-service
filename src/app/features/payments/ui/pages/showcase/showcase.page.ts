@@ -14,10 +14,8 @@ import type { PaymentMethodType } from '@app/features/payments/domain/subdomains
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import {
-  createOrderId,
-  createPaymentIntentId,
-} from '@payments/application/api/testing/vo-test-helpers';
+import { OrderId } from '@payments/domain/common/primitives/ids/order-id.vo';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
 import { OrderSummaryComponent } from '@payments/ui/components/order-summary/order-summary.component';
@@ -138,8 +136,9 @@ export class ShowcaseComponent {
   readonly sampleIntent = computed((): PaymentIntent | null => {
     const { p0 } = this.catalogProviderIds();
     if (!p0) return null;
+    const idResult = PaymentIntentId.from('pi_fake_demo123');
     return {
-      id: createPaymentIntentId('pi_fake_demo123'),
+      id: idResult.ok ? idResult.value : { value: 'pi_fake_demo123' },
       provider: p0,
       status: 'succeeded',
       money: { amount: 499.99, currency: 'MXN' },
@@ -173,14 +172,16 @@ export class ShowcaseComponent {
   intentCardStatus: PaymentIntent['status'] = 'requires_confirmation';
   readonly intentCard = computed(() => {
     const { p0 } = this.catalogProviderIds();
-    const intent: PaymentIntent | null = p0
-      ? {
-          id: createPaymentIntentId('pi_fake_card_demo'),
-          provider: p0,
-          status: this.intentCardStatus,
-          money: { amount: 299.99, currency: 'MXN' as CurrencyCode },
-        }
-      : null;
+    const idResult = p0 ? PaymentIntentId.from('pi_fake_card_demo') : null;
+    const intent: PaymentIntent | null =
+      p0 && idResult
+        ? {
+            id: idResult.ok ? idResult.value : { value: 'pi_fake_card_demo' },
+            provider: p0,
+            status: this.intentCardStatus,
+            money: { amount: 299.99, currency: 'MXN' as CurrencyCode },
+          }
+        : null;
     return {
       intent,
       showActions: this.intentCardShowActions,
@@ -193,6 +194,7 @@ export class ShowcaseComponent {
   readonly fallbackModalEvent = computed((): FallbackAvailableEvent | null => {
     const { p0, p1 } = this.catalogProviderIds();
     if (!p0) return null;
+    const orderIdResult = OrderId.from('order_123');
     return {
       failedProvider: p0,
       error: {
@@ -202,7 +204,7 @@ export class ShowcaseComponent {
       },
       alternativeProviders: p1 ? [p1] : [],
       originalRequest: {
-        orderId: createOrderId('order_123'),
+        orderId: orderIdResult.ok ? orderIdResult.value : { value: 'order_123' },
         money: { amount: 499.99, currency: 'MXN' },
         method: { type: 'card', token: 'tok_xxx' },
       },

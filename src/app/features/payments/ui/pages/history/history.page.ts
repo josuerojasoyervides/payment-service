@@ -7,7 +7,7 @@ import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed } from '@ngrx/signals';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
 import type { PaymentHistoryEntry } from '@payments/application/api/ports/payment-store.port';
-import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
 import { ACTION_REQUIRED_STATUSES } from '@payments/ui/shared/ui.types';
 
@@ -36,8 +36,9 @@ export class HistoryComponent {
   }
 
   entryToIntent(entry: PaymentHistoryEntry): PaymentIntent {
+    const parsed = PaymentIntentId.from(entry.intentId);
     return {
-      id: createPaymentIntentId(entry.intentId),
+      id: parsed.ok ? parsed.value : { value: entry.intentId },
       provider: entry.provider,
       status: entry.status,
       money: { amount: entry.amount, currency: entry.currency },

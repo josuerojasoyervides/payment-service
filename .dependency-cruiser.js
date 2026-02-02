@@ -316,10 +316,11 @@ module.exports = {
     {
       name: 'runtime-not-to-api-testing',
       severity: 'error',
-      comment: 'application/api/testing/** may only be imported from *.spec.ts or *.test.ts.',
+      comment:
+        'application/api/testing/** may only be imported from *.spec.ts, *.test.ts or *.harness.ts.',
       from: {
         path: '^src',
-        pathNot: TEST_FILE_PATTERN_ANY_EXT,
+        pathNot: [TEST_FILE_PATTERN_ANY_EXT, HARNESS_FILE_PATTERN],
       },
       to: { path: `${PAYMENTS_APPLICATION_ROOT}/api/testing` },
     },
