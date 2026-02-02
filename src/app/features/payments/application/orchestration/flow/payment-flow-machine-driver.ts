@@ -3,6 +3,7 @@ import type { PaymentFlowContext } from '@app/features/payments/domain/subdomain
 import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import { EXTERNAL_NAVIGATOR } from '@payments/application/api/tokens/navigation/external-navigator.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type { PaymentFlowPublicEvent } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
@@ -24,6 +25,7 @@ import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-
 @Injectable()
 export class PaymentFlowMachineDriver {
   private readonly flow = inject(PaymentFlowActorService);
+  private readonly navigator = inject(EXTERNAL_NAVIGATOR);
 
   readonly snapshot = this.flow.snapshot;
   readonly lastSentEvent = this.flow.lastSentEvent;
@@ -115,7 +117,6 @@ export class PaymentFlowMachineDriver {
   }
 
   private navigateToExternal(url: string): void {
-    if (typeof window === 'undefined') return;
-    window.location.href = url;
+    this.navigator.navigate(url);
   }
 }

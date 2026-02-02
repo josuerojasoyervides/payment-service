@@ -2,6 +2,7 @@ import type { Signal } from '@angular/core';
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { FlowTelemetryRefs } from '@app/features/payments/application/adapters/telemetry/types/flow-telemetry.types';
+import { FLOW_CONTEXT_STORAGE } from '@app/features/payments/application/api/tokens/flow/flow-context-storage.token';
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import { NextActionOrchestratorService } from '@app/features/payments/application/orchestration/services/next-action/next-action-orchestrator.service';
@@ -38,20 +39,9 @@ import {
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
-
-// TODO : extract to a separate file
-function createFlowContextStore(): FlowContextStore | null {
-  try {
-    if (typeof globalThis === 'undefined') return null;
-    if (!('localStorage' in globalThis)) return null;
-    return new FlowContextStore(globalThis.localStorage);
-  } catch {
-    return null;
-  }
-}
 // TODO : extract to a separate file
 function buildInitialMachineContext(
-  store: FlowContextStore | null,
+  store: FlowContextStore,
 ): Partial<PaymentFlowMachineContext> | undefined {
   const persisted = store?.load();
   if (!persisted) return undefined;
@@ -148,7 +138,8 @@ export class PaymentFlowActorService {
     optional: true,
   });
 
-  private readonly flowContextStore = createFlowContextStore();
+  private readonly flowContextStorage = inject(FLOW_CONTEXT_STORAGE);
+  private readonly flowContextStore = new FlowContextStore(this.flowContextStorage);
   private readonly initialContext: Partial<PaymentFlowMachineContext> = {
     ...(buildInitialMachineContext(this.flowContextStore) ?? {}),
     ...this.initialContextOverride,

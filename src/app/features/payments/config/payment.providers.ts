@@ -12,6 +12,10 @@ import { CompositeFlowTelemetrySink } from '@app/features/payments/application/a
 import { ConsoleFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/dev-only/console-flow-telemetry-sink';
 import { InMemoryFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/dev-only/in-memory-flow-telemetry-sink';
 import { NoopFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/prod-only/noop-flow-telemetry-sink';
+import type { KeyValueStorage } from '@app/features/payments/application/api/contracts/key-value-storage.contract';
+import type { ExternalNavigatorPort } from '@app/features/payments/application/api/ports/external-navigator.port';
+import { FLOW_CONTEXT_STORAGE } from '@app/features/payments/application/api/tokens/flow/flow-context-storage.token';
+import { EXTERNAL_NAVIGATOR } from '@app/features/payments/application/api/tokens/navigation/external-navigator.token';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import {
@@ -29,6 +33,11 @@ import { CancelPaymentUseCase } from '@app/features/payments/application/orchest
 import { ConfirmPaymentUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/confirm-payment.use-case';
 import { GetPaymentStatusUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/start-payment.use-case';
+import { BrowserExternalNavigator } from '@app/features/payments/infrastructure/browser/adapters/browser-external-navigator.adapter';
+import { BrowserStorageAdapter } from '@app/features/payments/infrastructure/browser/adapters/browser-storage.adapter';
+import { NoopExternalNavigator } from '@app/features/payments/infrastructure/browser/adapters/noop-external-navigator.adapter';
+import { NoopStorageAdapter } from '@app/features/payments/infrastructure/browser/adapters/noop-storage.adapter';
+import { ThrowingExternalNavigator } from '@app/features/payments/infrastructure/browser/adapters/throwing-external-navigator.adapter';
 import {
   PaypalWebhookNormalizer,
   providePaypalPayments,
@@ -74,6 +83,22 @@ function selectTelemetryProviders(): Provider[] {
   return [...sinks];
 }
 
+function selectFlowContextStorage(): KeyValueStorage {
+  const storage =
+    typeof globalThis !== 'undefined' && 'localStorage' in globalThis
+      ? (globalThis as { localStorage?: Storage }).localStorage
+      : undefined;
+
+  if (storage) return new BrowserStorageAdapter(storage);
+  return new NoopStorageAdapter();
+}
+
+function selectExternalNavigator(): ExternalNavigatorPort {
+  const hasWindow = typeof window !== 'undefined' && !!window.location;
+  if (hasWindow) return new BrowserExternalNavigator();
+  return isDevMode() ? new ThrowingExternalNavigator() : new NoopExternalNavigator();
+}
+
 const USE_CASE_PROVIDERS: Provider[] = [
   StartPaymentUseCase,
   ConfirmPaymentUseCase,
@@ -110,6 +135,10 @@ const APPLICATION_PROVIDERS: Provider[] = [
 ];
 
 const SHARED_PROVIDERS: Provider[] = [IdempotencyKeyFactory];
+const ENV_PROVIDERS: Provider[] = [
+  { provide: FLOW_CONTEXT_STORAGE, useFactory: selectFlowContextStorage },
+  { provide: EXTERNAL_NAVIGATOR, useFactory: selectExternalNavigator },
+];
 
 function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provider[] {
   const mode = options.mode ?? 'fake';
@@ -120,6 +149,7 @@ function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provide
     ...ACTION_PORT_PROVIDERS,
     ...APPLICATION_PROVIDERS,
     ...SHARED_PROVIDERS,
+    ...ENV_PROVIDERS,
     ...UI_PROVIDERS,
     {
       provide: WEBHOOK_NORMALIZER_REGISTRY,
