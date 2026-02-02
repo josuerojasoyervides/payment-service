@@ -8,6 +8,7 @@ import { PaypalIntentFacade } from '@app/features/payments/infrastructure/paypal
 import { I18nKeys } from '@core/i18n';
 import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
+import { REDIRECT_RETURN_NORMALIZERS } from '@payments/application/api/tokens/redirect/redirect-return-normalizers.token';
 import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
 import { FakePaypalCancelIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-cancel-intent.gateway';
 import { FakePaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-confirm-intent.gateway';
@@ -15,6 +16,7 @@ import { FakePaypalCreateIntentGateway } from '@payments/infrastructure/paypal/t
 import { FakePaypalGetIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-get-intent.gateway';
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/create-intent.gateway';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
+import { PaypalRedirectReturnNormalizer } from '@payments/infrastructure/paypal/workflows/redirect/paypal-redirect-return.normalizer';
 import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-intent-facade.factory';
 import { PAYMENT_PROVIDER_DESCRIPTORS } from '@payments/presentation/tokens/provider/payment-provider-descriptors.token';
 import {
@@ -29,6 +31,10 @@ const PAYPAL_FACTORY_PROVIDERS: Provider[] = [
 
 const PAYPAL_POLICY_PROVIDERS: Provider[] = [
   { provide: PAYMENT_PROVIDER_METHOD_POLICIES, useClass: PaypalProviderMethodPolicy, multi: true },
+];
+
+const PAYPAL_REDIRECT_RETURN_PROVIDERS: Provider[] = [
+  { provide: REDIRECT_RETURN_NORMALIZERS, useClass: PaypalRedirectReturnNormalizer, multi: true },
 ];
 
 const PAYPAL_UI_META = {
@@ -62,6 +68,7 @@ const PAYPAL_REAL_PROVIDERS: Provider[] = [
   PaypalFinalizeHandler,
   ...PAYPAL_FACTORY_PROVIDERS,
   ...PAYPAL_POLICY_PROVIDERS,
+  ...PAYPAL_REDIRECT_RETURN_PROVIDERS,
   ...PAYPAL_UI_META_PROVIDERS,
   ...PAYPAL_DESCRIPTOR_PROVIDERS,
 ];
@@ -82,6 +89,7 @@ const PAYPAL_FAKE_PROVIDERS: Provider[] = [
   ),
   ...PAYPAL_FACTORY_PROVIDERS,
   ...PAYPAL_POLICY_PROVIDERS,
+  ...PAYPAL_REDIRECT_RETURN_PROVIDERS,
   ...PAYPAL_UI_META_PROVIDERS,
   ...PAYPAL_DESCRIPTOR_PROVIDERS,
 ];

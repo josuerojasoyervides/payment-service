@@ -18,11 +18,12 @@ describe('ReturnComponent', () => {
   let mockState: PaymentFlowPort & {
     confirmPayment: ReturnType<typeof vi.fn>;
     refreshPayment: ReturnType<typeof vi.fn>;
+    notifyRedirectReturned: ReturnType<typeof vi.fn>;
     selectProvider: ReturnType<typeof vi.fn>;
     intent: ReturnType<typeof signal<PaymentIntent | null>>;
   };
   let mockActivatedRoute: {
-    snapshot: { data: Record<string, unknown>; queryParams: Record<string, string> };
+    snapshot: { data: Record<string, unknown>; queryParams: Record<string, string | string[]> };
   };
   const mockCatalog = {
     getProviderDescriptor: (id: PaymentProviderId) => ({ id, labelKey: `ui.provider_${id}` }),
@@ -47,11 +48,12 @@ describe('ReturnComponent', () => {
       intent: baseMock.intent as ReturnType<typeof signal<PaymentIntent | null>>,
       confirmPayment: vi.fn(),
       refreshPayment: vi.fn(),
-      notifyRedirectReturned: vi.fn(),
+      notifyRedirectReturned: vi.fn(() => ({ providerId: 'stripe', referenceId: 'pi_mock' })),
       selectProvider: vi.fn(),
     } as PaymentFlowPort & {
       confirmPayment: ReturnType<typeof vi.fn>;
       refreshPayment: ReturnType<typeof vi.fn>;
+      notifyRedirectReturned: ReturnType<typeof vi.fn>;
       selectProvider: ReturnType<typeof vi.fn>;
       intent: ReturnType<typeof signal<PaymentIntent | null>>;
     };
@@ -101,6 +103,10 @@ describe('ReturnComponent', () => {
     });
 
     it('should set returnReference from port when payment_intent in params', () => {
+      mockState.notifyRedirectReturned.mockReturnValue({
+        providerId: 'stripe',
+        referenceId: 'pi_test_123',
+      });
       mockActivatedRoute.snapshot.queryParams = {
         payment_intent: 'pi_test_123',
         redirect_status: 'succeeded',
@@ -115,7 +121,7 @@ describe('ReturnComponent', () => {
       mockActivatedRoute.snapshot.queryParams = { payment_intent: 'pi_test_123' };
       component.ngOnInit();
       expect(mockState.notifyRedirectReturned).toHaveBeenCalledWith(
-        expect.objectContaining({ payment_intent: 'pi_test_123' }),
+        expect.objectContaining({ query: { payment_intent: 'pi_test_123' } }),
       );
     });
 
@@ -128,6 +134,10 @@ describe('ReturnComponent', () => {
 
   describe('ngOnInit - redirect return', () => {
     it('should set returnReference from port when token in params', () => {
+      mockState.notifyRedirectReturned.mockReturnValue({
+        providerId: 'paypal',
+        referenceId: 'ORDER_FAKE_XYZ',
+      });
       mockActivatedRoute.snapshot.queryParams = { token: 'ORDER_FAKE_XYZ' };
       component.ngOnInit();
       const ref = component.returnPageState.returnReference();
@@ -138,7 +148,7 @@ describe('ReturnComponent', () => {
       mockActivatedRoute.snapshot.queryParams = { token: 'ORDER_FAKE_XYZ' };
       component.ngOnInit();
       expect(mockState.notifyRedirectReturned).toHaveBeenCalledWith(
-        expect.objectContaining({ token: 'ORDER_FAKE_XYZ' }),
+        expect.objectContaining({ query: { token: 'ORDER_FAKE_XYZ' } }),
       );
     });
   });
@@ -155,7 +165,7 @@ describe('ReturnComponent', () => {
       mockActivatedRoute.snapshot.queryParams = { payment_intent: 'pi_test_123' };
       component.ngOnInit();
       expect(mockState.notifyRedirectReturned).toHaveBeenCalledWith(
-        expect.objectContaining({ payment_intent: 'pi_test_123' }),
+        expect.objectContaining({ query: { payment_intent: 'pi_test_123' } }),
       );
     });
 
@@ -168,6 +178,10 @@ describe('ReturnComponent', () => {
 
   describe('Payment actions', () => {
     it('should confirm payment', () => {
+      mockState.notifyRedirectReturned.mockReturnValue({
+        providerId: 'stripe',
+        referenceId: 'pi_test_123',
+      });
       mockActivatedRoute.snapshot.queryParams = { payment_intent: 'pi_test_123' };
       component.ngOnInit();
       component.confirmPayment('pi_test_123');
@@ -177,6 +191,10 @@ describe('ReturnComponent', () => {
     });
 
     it('should refresh payment with providerId from returnReference', () => {
+      mockState.notifyRedirectReturned.mockReturnValue({
+        providerId: 'stripe',
+        referenceId: 'pi_test_123',
+      });
       mockActivatedRoute.snapshot.queryParams = { payment_intent: 'pi_test_123' };
       component.ngOnInit();
       component.refreshPaymentByReference('pi_test_123');

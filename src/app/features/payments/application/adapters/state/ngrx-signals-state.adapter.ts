@@ -19,7 +19,8 @@ import type {
 } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { deepComputed } from '@ngrx/signals';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
-import { mapReturnQueryToReference } from '@payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
+import type { RedirectReturnRaw } from '@payments/application/api/contracts/redirect-return.contract';
+import type { RedirectReturnedPayload } from '@payments/application/api/contracts/redirect-return-normalized.contract';
 import type {
   PaymentCheckoutCatalogPort,
   PaymentDebugSummary,
@@ -28,6 +29,7 @@ import type {
   Unsubscribe,
 } from '@payments/application/api/ports/payment-store.port';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import { REDIRECT_RETURN_NORMALIZERS } from '@payments/application/api/tokens/redirect/redirect-return-normalizers.token';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
@@ -45,6 +47,7 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
   private readonly registry = inject(ProviderFactoryRegistry);
   private readonly descriptorRegistry = inject(ProviderDescriptorRegistry);
   private readonly externalEvents = inject(ExternalEventAdapter);
+  private readonly redirectReturnNormalizers = inject(REDIRECT_RETURN_NORMALIZERS);
 
   // ============================================================
   // REACTIVE STATE (delegated to store)
@@ -255,21 +258,35 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
       .build();
   }
 
-  getReturnReferenceFromQuery(queryParams: Record<string, unknown>): {
-    providerId: PaymentProviderId;
-    referenceId: string | null;
-  } {
-    const ref = mapReturnQueryToReference(queryParams);
-    return { providerId: ref.providerId, referenceId: ref.referenceId };
+  notifyRedirectReturned(raw: RedirectReturnRaw): RedirectReturnedPayload | null {
+    const providerId = this.resolveReturnProviderId();
+    if (!providerId) {
+      this.setMissingProviderError();
+      return null;
+    }
+
+    const normalizer = this.redirectReturnNormalizers.find(
+      (entry) => entry.providerId === providerId,
+    );
+    if (!normalizer) {
+      this.setMissingProviderError();
+      return null;
+    }
+
+    const payload = normalizer.normalize(raw);
+    if (!payload) return null;
+
+    this.externalEvents.redirectReturned(payload);
+    return payload;
   }
 
-  notifyRedirectReturned(queryParams: Record<string, unknown>): void {
-    const ref = mapReturnQueryToReference(queryParams);
-    if (ref.referenceId) {
-      this.externalEvents.redirectReturned({
-        providerId: ref.providerId,
-        referenceId: ref.referenceId,
-      });
-    }
+  private resolveReturnProviderId(): PaymentProviderId | null {
+    const resume = this.store.resumeProviderId();
+    if (resume) return resume;
+    const selected = this.store.selectedProvider();
+    if (selected) return selected;
+    const intentProvider = this.store.currentIntent()?.provider ?? null;
+    if (intentProvider) return intentProvider;
+    return null;
   }
 }

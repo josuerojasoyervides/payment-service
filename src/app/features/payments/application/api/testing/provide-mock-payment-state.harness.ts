@@ -20,6 +20,8 @@ import type {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import type { RedirectReturnRaw } from '@payments/application/api/contracts/redirect-return.contract';
+import type { RedirectReturnedPayload } from '@payments/application/api/contracts/redirect-return-normalized.contract';
 import type {
   PaymentDebugSummary,
   PaymentStorePort,
@@ -244,18 +246,7 @@ export function createMockPaymentState(
     getFieldRequirements,
     buildCreatePaymentRequest,
 
-    getReturnReferenceFromQuery: (queryParams: Record<string, unknown>) => {
-      const token = Array.isArray(queryParams['token'])
-        ? queryParams['token'][0]
-        : queryParams['token'];
-      const pi = queryParams['payment_intent'] ?? queryParams['setup_intent'] ?? null;
-      const id = typeof pi === 'string' ? pi : Array.isArray(pi) ? pi[0] : null;
-      if (typeof token === 'string' && token)
-        return { providerId: 'paypal' as PaymentProviderId, referenceId: token };
-      if (id) return { providerId: 'stripe' as PaymentProviderId, referenceId: id };
-      return { providerId: 'stripe' as PaymentProviderId, referenceId: null };
-    },
-    notifyRedirectReturned: () => {},
+    notifyRedirectReturned: (_raw: RedirectReturnRaw): RedirectReturnedPayload | null => null,
   };
 }
 

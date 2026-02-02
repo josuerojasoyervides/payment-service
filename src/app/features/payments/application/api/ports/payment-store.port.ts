@@ -19,6 +19,8 @@ import type {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import type { RedirectReturnRaw } from '@payments/application/api/contracts/redirect-return.contract';
+import type { RedirectReturnedPayload } from '@payments/application/api/contracts/redirect-return-normalized.contract';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
@@ -117,11 +119,7 @@ export interface PaymentFlowPortUi extends PaymentFlowPortCore {
   readonly debugLastEventType: Signal<string | null>;
   readonly debugLastEventPayload: Signal<unknown | null>;
 
-  getReturnReferenceFromQuery(queryParams: Record<string, unknown>): {
-    providerId: PaymentProviderId;
-    referenceId: string | null;
-  };
-  notifyRedirectReturned(queryParams: Record<string, unknown>): void;
+  notifyRedirectReturned(raw: RedirectReturnRaw): RedirectReturnedPayload | null;
 }
 
 /**

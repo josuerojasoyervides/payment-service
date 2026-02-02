@@ -38,9 +38,10 @@ describe('ReturnComponent - Integration', () => {
 
   it('should call notifyRedirectReturned with normalized params on init', () => {
     const route = TestBed.inject(ActivatedRoute) as unknown as {
-      snapshot: { data: Record<string, unknown>; queryParams: Record<string, string> };
+      snapshot: { data: Record<string, unknown>; queryParams: Record<string, string | string[]> };
     };
     route.snapshot.queryParams = { payment_intent: 'pi_fake_123' };
+    state.selectProvider('stripe');
     component.ngOnInit();
     expect(component.returnPageState.returnReference()).toBeDefined();
     expect(component.returnPageState.returnReference()?.referenceId).toBe('pi_fake_123');
@@ -48,9 +49,10 @@ describe('ReturnComponent - Integration', () => {
 
   it('should set returnReference and selectProvider from port', () => {
     const route = TestBed.inject(ActivatedRoute) as unknown as {
-      snapshot: { data: Record<string, unknown>; queryParams: Record<string, string> };
+      snapshot: { data: Record<string, unknown>; queryParams: Record<string, string | string[]> };
     };
     route.snapshot.queryParams = { payment_intent: 'pi_fake_xyz' };
+    state.selectProvider('stripe');
     component.ngOnInit();
     const ref = component.returnPageState.returnReference();
     expect(ref?.providerId).toBeDefined();
@@ -60,9 +62,10 @@ describe('ReturnComponent - Integration', () => {
 
   it('should allow refresh by reference with providerId', () => {
     const route = TestBed.inject(ActivatedRoute) as unknown as {
-      snapshot: { data: Record<string, unknown>; queryParams: Record<string, string> };
+      snapshot: { data: Record<string, unknown>; queryParams: Record<string, string | string[]> };
     };
     route.snapshot.queryParams = { payment_intent: 'pi_fake_abc' };
+    state.selectProvider('stripe');
     component.ngOnInit();
     component.refreshPaymentByReference('pi_fake_abc');
     // After refreshPayment the state may be loading or already have a result (async)
@@ -72,7 +75,10 @@ describe('ReturnComponent - Integration', () => {
 
   describe('port assertions (mock state)', () => {
     it('should call notifyRedirectReturned and selectProvider on init; refresh is manual only', async () => {
-      const notifySpy = vi.fn();
+      const notifySpy = vi.fn(() => ({
+        providerId: 'stripe' as PaymentProviderId,
+        referenceId: 'pi_mock_123',
+      }));
       const refreshSpy = vi.fn();
       const selectSpy = vi.fn();
       const mockCatalog = {
@@ -91,10 +97,6 @@ describe('ReturnComponent - Integration', () => {
         notifyRedirectReturned: notifySpy,
         refreshPayment: refreshSpy,
         selectProvider: selectSpy,
-        getReturnReferenceFromQuery: (q: Record<string, unknown>) => ({
-          providerId: 'stripe' as PaymentProviderId,
-          referenceId: (q['payment_intent'] as string) ?? null,
-        }),
       };
 
       await TestBed.resetTestingModule();
@@ -129,7 +131,7 @@ describe('ReturnComponent - Integration', () => {
       comp.ngOnInit();
 
       expect(notifySpy).toHaveBeenCalledWith(
-        expect.objectContaining({ payment_intent: 'pi_mock_123' }),
+        expect.objectContaining({ query: { payment_intent: 'pi_mock_123' } }),
       );
       expect(selectSpy).toHaveBeenCalledWith('stripe');
       expect(refreshSpy).not.toHaveBeenCalled();

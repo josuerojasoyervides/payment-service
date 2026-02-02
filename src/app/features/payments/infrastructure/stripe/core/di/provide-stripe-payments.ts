@@ -5,6 +5,7 @@ import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe
 import { I18nKeys } from '@core/i18n';
 import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
+import { REDIRECT_RETURN_NORMALIZERS } from '@payments/application/api/tokens/redirect/redirect-return-normalizers.token';
 import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
 import { FakeIntentStore } from '@payments/infrastructure/fake/shared/state/fake-intent.store';
 import { FakeStripeCancelIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-cancel-intent.gateway';
@@ -17,6 +18,7 @@ import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workf
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
+import { StripeRedirectReturnNormalizer } from '@payments/infrastructure/stripe/workflows/redirect/stripe-redirect-return.normalizer';
 import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-intent-facade.factory';
 import { PAYMENT_PROVIDER_DESCRIPTORS } from '@payments/presentation/tokens/provider/payment-provider-descriptors.token';
 import {
@@ -31,6 +33,10 @@ const STRIPE_FACTORY_PROVIDERS: Provider[] = [
 
 const STRIPE_POLICY_PROVIDERS: Provider[] = [
   { provide: PAYMENT_PROVIDER_METHOD_POLICIES, useClass: StripeProviderMethodPolicy, multi: true },
+];
+
+const STRIPE_REDIRECT_RETURN_PROVIDERS: Provider[] = [
+  { provide: REDIRECT_RETURN_NORMALIZERS, useClass: StripeRedirectReturnNormalizer, multi: true },
 ];
 
 const STRIPE_UI_META = {
@@ -63,6 +69,7 @@ const STRIPE_REAL_PROVIDERS: Provider[] = [
   StripeGetIntentGateway,
   ...STRIPE_FACTORY_PROVIDERS,
   ...STRIPE_POLICY_PROVIDERS,
+  ...STRIPE_REDIRECT_RETURN_PROVIDERS,
   ...STRIPE_UI_META_PROVIDERS,
   ...STRIPE_DESCRIPTOR_PROVIDERS,
 ];
@@ -88,6 +95,7 @@ const STRIPE_FAKE_PROVIDERS: Provider[] = [
   ),
   ...STRIPE_FAKE_FACTORY_PROVIDERS,
   ...STRIPE_POLICY_PROVIDERS,
+  ...STRIPE_REDIRECT_RETURN_PROVIDERS,
   ...STRIPE_UI_META_PROVIDERS,
   ...STRIPE_DESCRIPTOR_PROVIDERS,
 ];
