@@ -12,13 +12,15 @@ import type {
   ProviderReferenceSet,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider-references.types';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import { FlowId } from '@payments/domain/common/primitives/ids/flow-id.vo';
 
 export const FLOW_CONTEXT_TTL_MS = 30 * 60 * 1000;
 
 export type FlowIdGenerator = (nowMs: number) => string;
 
 export const defaultFlowIdGenerator: FlowIdGenerator = (nowMs) => {
-  return `flow_${nowMs.toString(36)}_${createRandomSuffix()}`;
+  const built = FlowId.build(nowMs, createRandomSuffix());
+  return built.ok ? built.value.value : `flow_${nowMs.toString(36)}_${createRandomSuffix()}`;
 };
 
 export function createFlowContext(params: {
