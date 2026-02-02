@@ -85,14 +85,23 @@ function redactIntent(
   };
 }
 
-// TODO : Are these states global? Do these states already exist? What type are these states?
-const EFFECT_STATES = new Set([
+// Effect phases are defined by tags on the machine states (stable across refactors).
+const EFFECT_TAGS = [
   'starting',
   'fetchingStatusInvoke',
-  'reconcilingInvoke',
+  'reconciling',
   'finalizing',
   'clientConfirming',
-]);
+] as const;
+
+type EffectTag = (typeof EFFECT_TAGS)[number];
+
+function resolveEffectTag(snapshot: PaymentFlowSnapshot): EffectTag | null {
+  for (const tag of EFFECT_TAGS) {
+    if (snapshot.hasTag(tag)) return tag;
+  }
+  return null;
+}
 
 // TODO : extract to a separate file
 function flowContextToRefs(
@@ -224,20 +233,20 @@ export class PaymentFlowActorService {
 
       this._snapshot.set(snapshot);
 
-      const prevWasEffect = prevState != null && EFFECT_STATES.has(String(prevState));
-      const nowIsEffect = EFFECT_STATES.has(stateStr);
-      if (nowIsEffect && !prevWasEffect) {
+      const prevEffect = prev ? resolveEffectTag(prev) : null;
+      const nowEffect = resolveEffectTag(snapshot);
+      if (prevEffect && prevEffect !== nowEffect) {
         this.telemetry.record({
-          kind: 'EFFECT_START',
-          effect: stateStr,
+          kind: 'EFFECT_FINISH',
+          effect: prevEffect,
           atMs,
           ...base,
         });
       }
-      if (prevWasEffect && !nowIsEffect) {
+      if (nowEffect && prevEffect !== nowEffect) {
         this.telemetry.record({
-          kind: 'EFFECT_FINISH',
-          effect: String(prevState),
+          kind: 'EFFECT_START',
+          effect: nowEffect,
           atMs,
           ...base,
         });
