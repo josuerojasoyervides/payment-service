@@ -1,4 +1,5 @@
 import type { CurrencyCode } from '@app/features/payments/domain/common/primitives/money/currency.types';
+import { CURRENCY_CODES } from '@app/features/payments/domain/common/primitives/money/currency.types';
 import type { Result } from '@payments/domain/common/primitives/result.types';
 
 export type MoneyViolationCode =
