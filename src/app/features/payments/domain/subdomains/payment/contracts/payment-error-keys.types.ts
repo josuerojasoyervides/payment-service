@@ -33,6 +33,29 @@ export type PaymentErrorKey = (typeof PAYMENT_ERROR_KEYS)[keyof typeof PAYMENT_E
 export const PAYMENT_MESSAGE_KEYS = {
   BANK_VERIFICATION_REQUIRED: 'messages.bank_verification_required',
   SPEI_INSTRUCTIONS: 'messages.spei_instructions',
+
+  // SPEI manual step instructions (displayed in order)
+  SPEI_INSTRUCTION_COMPLETE_TRANSFER: 'messages.spei_instruction_complete_transfer',
+  SPEI_INSTRUCTION_TRANSFER_EXACT: 'ui.transfer_exact_amount',
+  SPEI_INSTRUCTION_KEEP_RECEIPT: 'ui.keep_receipt',
+  SPEI_INSTRUCTION_MAKE_TRANSFER: 'messages.spei_instruction_make_transfer',
 } as const;
 
 export type PaymentMessageKey = (typeof PAYMENT_MESSAGE_KEYS)[keyof typeof PAYMENT_MESSAGE_KEYS];
+
+/**
+ * UI label keys for SPEI manual step details (CLABE, Reference, Bank, etc.).
+ *
+ * The strategy uses these as detail.label; the UI translates via i18n when rendering.
+ */
+export const PAYMENT_SPEI_DETAIL_LABEL_KEYS = {
+  CLABE: 'ui.clabe_label',
+  REFERENCE: 'ui.reference',
+  BANK: 'ui.destination_bank',
+  BENEFICIARY: 'ui.beneficiary',
+  AMOUNT: 'ui.amount_label',
+  EXPIRES_AT: 'ui.reference_expires',
+} as const;
+
+export type PaymentSpeiDetailLabelKey =
+  (typeof PAYMENT_SPEI_DETAIL_LABEL_KEYS)[keyof typeof PAYMENT_SPEI_DETAIL_LABEL_KEYS];

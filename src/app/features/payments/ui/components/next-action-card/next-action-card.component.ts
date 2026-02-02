@@ -1,12 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
 import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
-import { I18nKeys, I18nService } from '@core/i18n';
+import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
 
 @Component({
   selector: 'app-next-action-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, I18nPipe],
   templateUrl: './next-action-card.component.html',
 })
 export class NextActionCardComponent {

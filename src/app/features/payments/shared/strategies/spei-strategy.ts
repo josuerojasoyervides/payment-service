@@ -1,4 +1,8 @@
-import { PAYMENT_ERROR_KEYS } from '@app/features/payments/domain/subdomains/payment/contracts/payment-error-keys.types';
+import {
+  PAYMENT_ERROR_KEYS,
+  PAYMENT_MESSAGE_KEYS,
+  PAYMENT_SPEI_DETAIL_LABEL_KEYS,
+} from '@app/features/payments/domain/subdomains/payment/contracts/payment-error-keys.types';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { NextActionManualStep } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
@@ -155,16 +159,16 @@ export class SpeiStrategy implements PaymentStrategy {
   }
 
   /**
-   * Generates detailed instructions for the user.
+   * Generates detailed instructions for the user (i18n keys; UI translates when rendering).
    */
   getUserInstructions(intent: PaymentIntent): string[] | null {
     if (!intent.nextAction || intent.nextAction.kind !== 'manual_step') {
       return null;
     }
     return [
-      `Complete the transfer using the details below.`,
-      `Transfer the exact amount to avoid rejections.`,
-      `Keep your transfer receipt.`,
+      PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_COMPLETE_TRANSFER,
+      PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_TRANSFER_EXACT,
+      PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_KEEP_RECEIPT,
     ];
   }
 
@@ -177,21 +181,30 @@ export class SpeiStrategy implements PaymentStrategy {
     metadata: Record<string, unknown>,
   ): PaymentIntent {
     const details = [
-      { label: 'CLABE', value: this.extractClabeFromRaw(intent) },
-      { label: 'Reference', value: generateSpeiReference(req.orderId) },
+      { label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.CLABE, value: this.extractClabeFromRaw(intent) },
       {
-        label: 'Bank',
+        label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.REFERENCE,
+        value: generateSpeiReference(req.orderId),
+      },
+      {
+        label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.BANK,
         value: SpeiStrategy.RECEIVING_BANKS[intent.provider] ?? 'STP',
       },
-      { label: 'Beneficiary', value: 'Payment Service SA de CV' },
-      { label: 'Amount', value: `${req.amount} ${req.currency}` },
-      { label: 'Expires At', value: metadata['expires_at'] as string },
+      { label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.BENEFICIARY, value: 'Payment Service SA de CV' },
+      {
+        label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.AMOUNT,
+        value: `${req.amount} ${req.currency}`,
+      },
+      {
+        label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.EXPIRES_AT,
+        value: metadata['expires_at'] as string,
+      },
     ];
 
     const speiAction: NextActionManualStep = {
       kind: 'manual_step',
       instructions: this.getUserInstructions(intent) ?? [
-        'Make a bank transfer using the details below.',
+        PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_MAKE_TRANSFER,
       ],
       details,
     };

@@ -59,6 +59,8 @@ export const en: Translations = {
     bank_verification_required:
       'Your bank requires additional verification. You will be redirected to a secure page to complete authentication.',
     spei_instructions: 'Make a SPEI transfer with the following data:',
+    spei_instruction_complete_transfer: 'Complete the transfer using the details below.',
+    spei_instruction_make_transfer: 'Make a bank transfer using the details below.',
     paypal_redirect_required: 'You will be redirected to PayPal to approve the payment.',
     status_requires_payment_method: 'Requires payment method',
     status_requires_confirmation: 'Requires confirmation',

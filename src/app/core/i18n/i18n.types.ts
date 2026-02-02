@@ -63,6 +63,8 @@ export interface Translations {
 
     bank_verification_required: string;
     spei_instructions: string;
+    spei_instruction_complete_transfer: string;
+    spei_instruction_make_transfer: string;
     paypal_redirect_required: string;
 
     status_requires_payment_method: string;

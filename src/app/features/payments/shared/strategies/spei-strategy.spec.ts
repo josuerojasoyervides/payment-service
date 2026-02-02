@@ -1,5 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { PAYMENT_ERROR_KEYS } from '@app/features/payments/domain/subdomains/payment/contracts/payment-error-keys.types';
+import {
+  PAYMENT_ERROR_KEYS,
+  PAYMENT_MESSAGE_KEYS,
+} from '@app/features/payments/domain/subdomains/payment/contracts/payment-error-keys.types';
 import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
@@ -195,24 +198,24 @@ describe('SpeiStrategy', () => {
   });
 
   describe('getUserInstructions()', () => {
-    it('returns detailed SPEI instructions', () => {
+    it('returns SPEI instruction keys (UI translates when rendering)', () => {
       const intent: PaymentIntent = {
         ...intentResponse,
         nextAction: {
           kind: 'manual_step',
           instructions: ['Transfer'],
           details: [
-            { label: 'CLABE', value: '646180111812345678' },
-            { label: 'Reference', value: '1234567' },
+            { label: 'ui.clabe_label', value: '646180111812345678' },
+            { label: 'ui.reference', value: '1234567' },
           ],
         },
       };
 
       const instructions = strategy.getUserInstructions(intent);
 
-      expect(instructions).toEqual(
-        expect.arrayContaining(['Complete the transfer using the details below.']),
-      );
+      expect(instructions).toContain(PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_COMPLETE_TRANSFER);
+      expect(instructions).toContain(PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_TRANSFER_EXACT);
+      expect(instructions).toContain(PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_KEEP_RECEIPT);
     });
 
     it('returns null when not a SPEI intent', () => {
