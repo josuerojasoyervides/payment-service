@@ -24,8 +24,7 @@ describe('GetPaymentStatusUseCase', () => {
         id: 'pi_1',
         provider: 'stripe',
         status: 'requires_action',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
       } satisfies PaymentIntent),
     ),
   } as Pick<PaymentGatewayPort, 'getIntent'>;

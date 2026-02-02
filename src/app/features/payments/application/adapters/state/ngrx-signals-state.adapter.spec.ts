@@ -116,8 +116,7 @@ describe('NgRxSignalsStateAdapter', () => {
         id: 'pi_1',
         provider: 'stripe',
         status: 'succeeded',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
       };
       expect(adapter.intent()).toBeNull();
       storeMock.currentIntent.set(mockIntent);
@@ -173,8 +172,7 @@ describe('NgRxSignalsStateAdapter', () => {
         intentId: 'pi_1',
         provider: 'stripe',
         status: 'succeeded',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         timestamp: Date.now(),
       };
       expect(adapter.lastHistoryEntry()).toBeNull();
@@ -200,8 +198,7 @@ describe('NgRxSignalsStateAdapter', () => {
     it('delegates startPayment to store', () => {
       const request = {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN' as const,
+        money: { amount: 100, currency: 'MXN' as const },
         method: { type: 'card' as const },
       };
       adapter.startPayment(request, 'stripe');
@@ -215,8 +212,7 @@ describe('NgRxSignalsStateAdapter', () => {
     it('delegates startPayment with context to store', () => {
       const request = {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN' as const,
+        money: { amount: 100, currency: 'MXN' as const },
         method: { type: 'card' as const },
       };
       const context = { returnUrl: 'https://return.com', isTest: true };
@@ -255,8 +251,7 @@ describe('NgRxSignalsStateAdapter', () => {
         id: 'pi_1',
         provider: 'stripe',
         status: 'succeeded',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         clientSecret: 'secret',
       });
       storeMock.selectedProvider.set(null);

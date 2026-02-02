@@ -1,5 +1,5 @@
-import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { Money } from '@payments/domain/common/primitives/money/money.vo';
 /**
  * Provider-agnostic command to create a payment intent.
  *
@@ -10,8 +10,7 @@ import type { PaymentMethodType } from '@app/features/payments/domain/subdomains
  */
 export interface CreatePaymentRequest {
   orderId: string;
-  amount: number;
-  currency: CurrencyCode;
+  money: Money;
 
   method: {
     type: PaymentMethodType;

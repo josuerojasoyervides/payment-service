@@ -17,8 +17,8 @@ describe('StripeCardRequestBuilder', () => {
         .build();
 
       expect(request.orderId).toBe('order_123');
-      expect(request.amount).toBe(100);
-      expect(request.currency).toBe('MXN');
+      expect(request.money.amount).toBe(100);
+      expect(request.money.currency).toBe('MXN');
       expect(request.method.type).toBe('card');
       expect(request.method.token).toBe('tok_test1234567890abc');
     });

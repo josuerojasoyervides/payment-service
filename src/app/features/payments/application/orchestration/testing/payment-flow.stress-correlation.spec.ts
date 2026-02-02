@@ -15,8 +15,7 @@ import { vi } from 'vitest';
 
 const baseRequest: CreatePaymentRequest = {
   orderId: 'o1',
-  amount: 100,
-  currency: 'MXN',
+  money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_visa1234567890abcdef' },
 };
 
@@ -43,8 +42,7 @@ describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {
                 id: refA,
                 provider: 'stripe' as const,
                 status: 'requires_action' as const,
-                amount: 100,
-                currency: 'MXN' as const,
+                money: { amount: 100, currency: 'MXN' as const },
               }),
           },
         },
@@ -57,8 +55,7 @@ describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {
                 id: refA,
                 provider: 'stripe' as const,
                 status: 'succeeded' as const,
-                amount: 100,
-                currency: 'MXN' as const,
+                money: { amount: 100, currency: 'MXN' as const },
               }),
             ),
           },
@@ -71,8 +68,7 @@ describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {
                 id: refA,
                 provider: 'stripe' as const,
                 status: 'processing' as const,
-                amount: 100,
-                currency: 'MXN' as const,
+                money: { amount: 100, currency: 'MXN' as const },
               }),
           },
         },

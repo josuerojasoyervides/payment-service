@@ -20,6 +20,7 @@ export class StripeCardRequestBuilder extends BasePaymentRequestBuilder {
   private orderId?: string;
   private amount?: number;
   private currency?: CurrencyCode;
+  private money?: Money;
   private token?: string;
   private saveForFuture?: boolean;
 
@@ -42,16 +43,15 @@ export class StripeCardRequestBuilder extends BasePaymentRequestBuilder {
 
   protected override validateRequired(): void {
     this.requireNonEmptyStringWithKey('orderId', this.orderId, I18nKeys.errors.order_id_required);
-    this.requirePositiveAmountWithKey('amount', this.amount, I18nKeys.errors.amount_invalid);
     this.requireDefinedWithKey('currency', this.currency, I18nKeys.errors.currency_required);
+    this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
     this.requireNonEmptyStringWithKey('token', this.token, I18nKeys.errors.card_token_required);
   }
 
   protected override buildUnsafe(): CreatePaymentRequest {
     return {
       orderId: this.orderId!,
-      amount: this.amount!,
-      currency: this.currency!,
+      money: this.money!,
       method: {
         type: 'card',
         token: this.token!,

@@ -42,8 +42,10 @@ export function createFlakyStatusUseCaseFake(config: FlakyStatusUseCaseFakeConfi
     id: config.intentId,
     provider: config.providerId,
     status: 'processing',
-    amount: config.amount ?? 100,
-    currency: config.currency ?? 'MXN',
+    money: {
+      amount: config.amount ?? 100,
+      currency: config.currency ?? 'MXN',
+    },
   };
 
   return {

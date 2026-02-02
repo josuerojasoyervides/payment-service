@@ -3,6 +3,7 @@ import type { PaymentOptions } from '@app/features/payments/domain/subdomains/pa
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/payment-request-builder.port';
+import { Money } from '@payments/domain/common/primitives/money/money.vo';
 
 /**
  * Base class for payment request builders.
@@ -78,6 +79,21 @@ export abstract class BasePaymentRequestBuilder implements PaymentRequestBuilder
     if (value === undefined || value === null || value.trim().length === 0) {
       throw invalidRequestError(messageKey, { field });
     }
+  }
+
+  /**
+   * Creates Money from amount+currency. Throws invalidRequestError on validation failure.
+   */
+  protected createMoneyOrThrow(amount: number, currency: CurrencyCode) {
+    const result = Money.create(amount, currency);
+    if (!result.ok) {
+      const v = result.violations[0];
+      if (v.code === 'MONEY_INVALID_CURRENCY') {
+        throw invalidRequestError('errors.currency_required', { field: 'currency' });
+      }
+      throw invalidRequestError('errors.amount_invalid', { field: 'amount', min: 1 }, v.meta);
+    }
+    return result.value;
   }
 
   protected requirePositiveAmountWithKey(

@@ -27,8 +27,7 @@ describe('PaymentFlowActorService (PR6 flow telemetry)', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_processing1234567890' },
       },
     });

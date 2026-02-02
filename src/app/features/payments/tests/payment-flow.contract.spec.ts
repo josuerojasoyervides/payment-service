@@ -32,14 +32,12 @@ const baseIntent: PaymentIntent = {
   id: 'pi_1',
   provider: 'stripe',
   status: 'processing',
-  amount: 100,
-  currency: 'MXN',
+  money: { amount: 100, currency: 'MXN' },
 };
 
 const baseRequest: CreatePaymentRequest = {
   orderId: 'o1',
-  amount: 100,
-  currency: 'MXN',
+  money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_123' },
 };
 

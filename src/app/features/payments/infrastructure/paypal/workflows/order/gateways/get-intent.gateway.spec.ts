@@ -39,8 +39,8 @@ describe('PaypalGetIntentGateway', () => {
       next: (intent: PaymentIntent) => {
         expect(intent.id).toBe('pi_123');
         expect(intent.provider).toBe('paypal');
-        expect(intent.amount).toBe(200);
-        expect(intent.currency).toBe('MXN');
+        expect(intent.money.amount).toBe(200);
+        expect(intent.money.currency).toBe('MXN');
         expect(intent.status).toBeDefined();
       },
       error: () => {

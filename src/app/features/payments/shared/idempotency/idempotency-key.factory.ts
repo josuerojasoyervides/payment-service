@@ -21,8 +21,8 @@ export class IdempotencyKeyFactory {
       providerId,
       'start',
       req.orderId,
-      req.amount.toString(),
-      req.currency,
+      req.money.amount.toString(),
+      req.money.currency,
       req.method.type,
     ];
     return parts.join(':');

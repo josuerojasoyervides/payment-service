@@ -1,4 +1,4 @@
-import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { Money } from '@payments/domain/common/primitives/money/money.vo';
 
 /**
  * SPEI amount limits (Mexican regulation).
@@ -18,17 +18,12 @@ export interface SpeiAmountViolation {
   meta?: Record<string, number | string>;
 }
 
-export interface SpeiAmountInput {
-  amount: number;
-  currency: CurrencyCode;
-}
-
 /**
  * Validates SPEI amount and currency.
  *
  * @returns Array of violations; empty if valid
  */
-export function validateSpeiAmount(input: SpeiAmountInput): SpeiAmountViolation[] {
+export function validateSpeiAmount(input: Money): SpeiAmountViolation[] {
   const violations: SpeiAmountViolation[] = [];
 
   if (input.currency !== 'MXN') {

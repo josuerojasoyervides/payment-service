@@ -10,8 +10,7 @@ import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/m
 describe('payment-flow.context', () => {
   const request: CreatePaymentRequest = {
     orderId: 'order_123',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
   };
 

@@ -51,8 +51,7 @@ describe('FallbackModalComponent', () => {
     alternativeProviders: ['paypal'],
     originalRequest: {
       orderId: 'order_1',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       method: { type: 'card', token: 'tok_test' },
     },
     timestamp: Date.now(),
@@ -65,8 +64,7 @@ describe('FallbackModalComponent', () => {
     alternativeProviders: ['stripe'],
     originalRequest: {
       orderId: 'order_2',
-      amount: 200,
-      currency: 'MXN',
+      money: { amount: 200, currency: 'MXN' },
       method: { type: 'card', token: 'tok_test' },
     },
     timestamp: Date.now(),

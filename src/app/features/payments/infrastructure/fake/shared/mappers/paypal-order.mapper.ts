@@ -21,8 +21,10 @@ export function mapPaypalOrder(dto: PaypalOrderDto): PaymentIntent {
     id: dto.id,
     provider: 'paypal',
     status: statusMap[dto.status],
-    amount: parseFloat(purchaseUnit?.amount?.value ?? '0'),
-    currency: (purchaseUnit?.amount?.currency_code ?? 'MXN') as 'MXN' | 'USD',
+    money: {
+      amount: parseFloat(purchaseUnit?.amount?.value ?? '0'),
+      currency: (purchaseUnit?.amount?.currency_code ?? 'MXN') as 'MXN' | 'USD',
+    },
     redirectUrl: approveLink,
     nextAction: approveLink
       ? {

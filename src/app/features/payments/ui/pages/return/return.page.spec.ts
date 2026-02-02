@@ -31,8 +31,7 @@ describe('ReturnComponent', () => {
     id: 'pi_test_123',
     provider: 'stripe',
     status: 'succeeded',
-    amount: 499.99,
-    currency: 'MXN',
+    money: { amount: 499.99, currency: 'MXN' },
     clientSecret: 'secret_test',
   };
 

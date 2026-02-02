@@ -1,4 +1,5 @@
 import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { Money } from '@payments/domain/common/primitives/money/money.vo';
 
 /**
  * Minimum amount per currency for card payments.
@@ -17,17 +18,12 @@ export interface CardAmountViolation {
   meta?: Record<string, number | string>;
 }
 
-export interface CardAmountInput {
-  amount: number;
-  currency: CurrencyCode;
-}
-
 /**
  * Validates card payment amount.
  *
  * @returns Array of violations; empty if valid
  */
-export function validateCardAmount(input: CardAmountInput): CardAmountViolation[] {
+export function validateCardAmount(input: Money): CardAmountViolation[] {
   const violations: CardAmountViolation[] = [];
   const min = getCardMinAmount(input.currency);
 

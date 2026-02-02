@@ -12,8 +12,7 @@ describe('PaypalRedirectStrategy', () => {
 
   const req: CreatePaymentRequest = {
     orderId: 'order_1',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
   };
 
@@ -60,8 +59,7 @@ describe('PaypalRedirectStrategy', () => {
     expect(gatewayMock.createIntent).toHaveBeenCalledWith(
       expect.objectContaining({
         orderId: req.orderId,
-        amount: req.amount,
-        currency: req.currency,
+        money: req.money,
         method: { type: 'card' }, // Token removed
         returnUrl: context.returnUrl,
         cancelUrl: context.cancelUrl,

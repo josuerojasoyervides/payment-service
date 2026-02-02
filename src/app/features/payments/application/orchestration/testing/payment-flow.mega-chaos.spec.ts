@@ -14,8 +14,7 @@ import { vi } from 'vitest';
 
 const baseRequest: CreatePaymentRequest = {
   orderId: 'o1',
-  amount: 100,
-  currency: 'MXN',
+  money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_visa1234567890abcdef' },
 };
 
@@ -32,8 +31,7 @@ describe('Payment flow mega chaos (PR6 Phase D)', () => {
       id: refId,
       provider: 'stripe' as const,
       status: 'succeeded' as const,
-      amount: 100,
-      currency: 'MXN' as const,
+      money: { amount: 100, currency: 'MXN' as const },
     };
     const requestFinalizeSpy = vi.fn(() => of(succeededIntent));
 

@@ -5,8 +5,9 @@ import { I18nKeys } from '@core/i18n';
 
 export function validateCreate(req: CreatePaymentRequest, providerId: PaymentProviderId) {
   if (!req.orderId) throw invalidRequestError('errors.order_id_required', { field: 'orderId' });
-  if (!req.currency) throw invalidRequestError('errors.currency_required', { field: 'currency' });
-  if (!Number.isFinite(req.amount) || req.amount <= 0)
+  if (!req.money?.currency)
+    throw invalidRequestError('errors.currency_required', { field: 'currency' });
+  if (!Number.isFinite(req.money?.amount) || req.money.amount <= 0)
     throw invalidRequestError('errors.amount_invalid', { field: 'amount' });
   if (!req.method?.type)
     throw invalidRequestError(I18nKeys.errors.method_type_required, { field: 'method.type' });

@@ -177,8 +177,7 @@ export function createMockPaymentState(
   }): CreatePaymentRequest =>
     ({
       orderId: '',
-      amount: 0,
-      currency: 'MXN',
+      money: { amount: 0, currency: 'MXN' },
       method: { type: 'card' },
     }) as CreatePaymentRequest;
 

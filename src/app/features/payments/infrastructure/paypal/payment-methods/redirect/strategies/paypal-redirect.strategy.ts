@@ -53,16 +53,16 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
 
     // Currency must exist (usually validated by BasePaymentGateway),
     // but we keep PayPal-specific rules here.
-    if (!req.currency || !supportedCurrencies.includes(req.currency)) {
+    if (!req.money.currency || !supportedCurrencies.includes(req.money.currency)) {
       throw invalidRequestError(
         I18nKeys.errors.currency_not_supported,
         {
           field: 'currency',
           provider: 'paypal',
           supportedCount: supportedCurrencies.length,
-          currency: req.currency,
+          currency: req.money.currency,
         },
-        { currency: req.currency },
+        { currency: req.money.currency },
       );
     }
 
@@ -71,14 +71,14 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
       MXN: 10,
     };
 
-    const minAmount = minAmounts[req.currency] ?? 1;
+    const minAmount = minAmounts[req.money.currency] ?? 1;
 
     // Invalid amount or below PayPal minimum for the currency
-    if (!Number.isFinite(req.amount) || req.amount < minAmount) {
+    if (!Number.isFinite(req.money.amount) || req.money.amount < minAmount) {
       throw invalidRequestError(
         I18nKeys.errors.amount_invalid,
-        { field: 'amount', min: minAmount, currency: req.currency },
-        { amount: req.amount, currency: req.currency, minAmount },
+        { field: 'amount', min: minAmount, currency: req.money.currency },
+        { amount: req.money.amount, currency: req.money.currency, minAmount },
       );
     }
 
@@ -124,7 +124,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
       user_action: PaypalRedirectStrategy.DEFAULT_USER_ACTION,
       brand_name: 'Payment Service',
       timestamp: new Date().toISOString(),
-      formatted_amount: req.amount.toFixed(2),
+      formatted_amount: req.money.amount.toFixed(2),
     };
 
     if (context?.deviceData) {
@@ -153,8 +153,8 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
 
     this.logger.warn(`[PaypalRedirectStrategy] Creating PayPal order:`, 'PaypalRedirectStrategy', {
       orderId: req.orderId,
-      amount: req.amount,
-      currency: req.currency,
+      amount: req.money.amount,
+      currency: req.money.currency,
       returnUrl: metadata['return_url'],
     });
 

@@ -15,8 +15,7 @@ describe('IdempotencyKeyFactory', () => {
   describe('generateForStart', () => {
     const req: CreatePaymentRequest = {
       orderId: 'o1',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       method: { type: 'card', token: 'tok_123' },
     };
 
@@ -48,7 +47,7 @@ describe('IdempotencyKeyFactory', () => {
     });
 
     it('generates different key for different amount', () => {
-      const req2 = { ...req, amount: 200 };
+      const req2 = { ...req, money: { amount: 200, currency: 'MXN' as const } };
       const key1 = factory.generateForStart('stripe', req);
       const key2 = factory.generateForStart('stripe', req2);
 
@@ -58,7 +57,7 @@ describe('IdempotencyKeyFactory', () => {
     });
 
     it('generates different key for different currency', () => {
-      const req2 = { ...req, currency: 'USD' as const };
+      const req2 = { ...req, money: { amount: 100, currency: 'USD' as const } };
       const key1 = factory.generateForStart('stripe', req);
       const key2 = factory.generateForStart('stripe', req2);
 
@@ -121,8 +120,7 @@ describe('IdempotencyKeyFactory', () => {
     it('generates correct key for start operation', () => {
       const req: CreatePaymentRequest = {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card' },
       };
 

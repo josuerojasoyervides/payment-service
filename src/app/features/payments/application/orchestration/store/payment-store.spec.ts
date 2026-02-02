@@ -25,8 +25,7 @@ describe('PaymentsStore', () => {
 
   const req: CreatePaymentRequest = {
     orderId: 'o1',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
   };
 
@@ -34,8 +33,7 @@ describe('PaymentsStore', () => {
     id: 'pi_1',
     provider: 'stripe',
     status: 'processing',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
   };
 
   const paymentError: PaymentError = {

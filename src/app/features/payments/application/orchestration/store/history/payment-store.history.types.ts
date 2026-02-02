@@ -15,7 +15,7 @@ export interface PaymentHistoryEntry {
   provider: PaymentProviderId;
   status: PaymentIntent['status'];
   amount: number;
-  currency: PaymentIntent['currency'];
+  currency: PaymentIntent['money']['currency'];
   timestamp: number;
   error?: PaymentError;
 }

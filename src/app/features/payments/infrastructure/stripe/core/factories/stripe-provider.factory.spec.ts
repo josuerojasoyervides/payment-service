@@ -53,8 +53,7 @@ describe('StripeProviderFactory', () => {
         id: 'pi_1',
         provider: 'stripe',
         status: 'requires_payment_method',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
       }),
     );
 
@@ -62,8 +61,7 @@ describe('StripeProviderFactory', () => {
     const result = await firstValueFrom(
       strategy.start({
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_test1234567890abc' },
       }),
     );

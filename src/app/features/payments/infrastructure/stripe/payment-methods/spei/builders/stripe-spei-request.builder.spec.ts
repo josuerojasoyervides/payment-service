@@ -33,8 +33,8 @@ describe('StripeSpeiRequestBuilder', () => {
         .build();
 
       expect(request.orderId).toBe('order_123');
-      expect(request.amount).toBe(100);
-      expect(request.currency).toBe('MXN');
+      expect(request.money.amount).toBe(100);
+      expect(request.money.currency).toBe('MXN');
       expect(request.method.type).toBe('spei');
       expect(request.customerEmail).toBe('test@example.com');
     });
@@ -79,19 +79,18 @@ describe('StripeSpeiRequestBuilder', () => {
     });
 
     it('throws PaymentError when amount is missing or invalid', () => {
-      // amount missing (undefined)
+      // amount missing (undefined) - currency also missing, so currency_required throws first
       expectSyncPaymentError(
         () =>
           builder.forOrder('order_123').withOptions({ customerEmail: 'test@example.com' }).build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.amount_invalid,
-          params: { field: 'amount', min: 1 },
-          raw: { amount: undefined },
+          messageKey: I18nKeys.errors.currency_required,
+          params: { field: 'currency' },
         },
       );
 
-      // amount = 0
+      // amount invalid (0) with valid currency
       expectSyncPaymentError(
         () =>
           builder

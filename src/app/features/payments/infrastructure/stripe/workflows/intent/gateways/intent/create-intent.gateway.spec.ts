@@ -39,8 +39,7 @@ describe('StripeCreateIntentGateway', () => {
   it('POST /intents for card payments with correct payload and headers', () => {
     const req: CreatePaymentRequest = {
       orderId: 'order_1',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       method: { type: 'card', token: 'tok_123' },
       idempotencyKey: 'idem_123',
     };
@@ -83,8 +82,7 @@ describe('StripeCreateIntentGateway', () => {
   it('POST /sources for SPEI payments', () => {
     const req: CreatePaymentRequest = {
       orderId: 'order_2',
-      amount: 200,
-      currency: 'MXN',
+      money: { amount: 200, currency: 'MXN' },
       method: { type: 'spei' },
       idempotencyKey: 'idem_spei',
     };
@@ -118,8 +116,7 @@ describe('StripeCreateIntentGateway', () => {
   it('propagates provider error when backend fails', () => {
     const req: CreatePaymentRequest = {
       orderId: 'order_error',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       method: { type: 'card', token: 'tok_123' },
       idempotencyKey: 'idem_error',
     };

@@ -17,8 +17,7 @@ describe('CardStrategy', () => {
 
   const validReq: CreatePaymentRequest = {
     orderId: 'order_1',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: validToken },
   };
 
@@ -26,8 +25,7 @@ describe('CardStrategy', () => {
     id: 'pi_1',
     provider: 'stripe',
     status: 'requires_payment_method',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
   };
 
   const loggerMock = {
@@ -92,7 +90,7 @@ describe('CardStrategy', () => {
     });
 
     it('throws if amount is below minimum for MXN', () => {
-      const req = { ...validReq, amount: 5, currency: 'MXN' as const };
+      const req = { ...validReq, money: { amount: 5, currency: 'MXN' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
@@ -102,7 +100,7 @@ describe('CardStrategy', () => {
     });
 
     it('throws if amount is below minimum for USD', () => {
-      const req = { ...validReq, amount: 0.5, currency: 'USD' as const };
+      const req = { ...validReq, money: { amount: 0.5, currency: 'USD' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',

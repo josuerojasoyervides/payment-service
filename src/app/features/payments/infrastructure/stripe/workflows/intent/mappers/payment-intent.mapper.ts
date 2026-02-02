@@ -14,8 +14,10 @@ export function mapPaymentIntent(
     id: dto.id,
     provider: providerId,
     status,
-    amount: dto.amount / 100,
-    currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
+    money: {
+      amount: dto.amount / 100,
+      currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
+    },
     clientSecret: dto.client_secret,
     raw: dto,
   };

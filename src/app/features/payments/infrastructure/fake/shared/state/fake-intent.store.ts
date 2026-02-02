@@ -81,7 +81,7 @@ export class FakeIntentStore {
       remainingRefreshesToSucceed = PROCESSING_REFRESHES;
     }
 
-    const amountCents = Math.round((input.request.amount ?? 0) * 100);
+    const amountCents = Math.round((input.request.money?.amount ?? 0) * 100);
     const clientSecret = `${intentId}_secret_${generateId('sec')}`;
     const state: FakeIntentState = {
       intentId,
@@ -94,7 +94,7 @@ export class FakeIntentStore {
       remainingRefreshesToSucceed,
       correlationId: input.request.orderId,
       amount: amountCents,
-      currency: (input.request.currency ?? 'MXN').toLowerCase(),
+      currency: (input.request.money?.currency ?? 'MXN').toLowerCase(),
       clientSecret,
     };
 

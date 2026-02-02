@@ -39,8 +39,7 @@ export class HistoryComponent {
       id: entry.intentId,
       provider: entry.provider,
       status: entry.status,
-      amount: entry.amount,
-      currency: entry.currency,
+      money: { amount: entry.amount, currency: entry.currency },
     };
   }
 

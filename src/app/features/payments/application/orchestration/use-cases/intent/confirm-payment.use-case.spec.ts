@@ -25,8 +25,7 @@ describe('ConfirmPaymentUseCase', () => {
         id: 'pi_1',
         provider: 'stripe',
         status: 'processing',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
       } satisfies PaymentIntent),
     ),
   } as Pick<PaymentGatewayPort, 'confirmIntent'>;

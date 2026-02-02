@@ -134,8 +134,8 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intent).toBeTruthy();
       expect(intent?.provider).toBe('stripe');
       expect(intent?.status).toBe('succeeded');
-      expect(intent?.amount).toBe(499.99);
-      expect(intent?.currency).toBe('MXN');
+      expect(intent?.money.amount).toBe(499.99);
+      expect(intent?.money.currency).toBe('MXN');
 
       // Component shows result
       expect(component.showResult()).toBe(true);
@@ -288,7 +288,7 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intent).toBeTruthy();
       expect(intent?.status).toBe('succeeded');
       expect(intent?.provider).toBe('stripe');
-      expect(intent?.amount).toBe(499.99);
+      expect(intent?.money.amount).toBe(499.99);
     });
   });
 

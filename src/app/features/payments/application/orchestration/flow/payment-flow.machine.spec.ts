@@ -57,8 +57,7 @@ describe('PaymentFlowMachine', () => {
     id: 'pi_1',
     provider: 'stripe',
     status: 'processing',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
   };
 
   afterEach(() => {
@@ -137,8 +136,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });
@@ -157,8 +155,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });
@@ -181,8 +178,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });
@@ -257,8 +253,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });
@@ -299,8 +294,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });
@@ -329,8 +323,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });
@@ -358,8 +351,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });
@@ -395,8 +387,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });
@@ -500,8 +491,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });
@@ -589,8 +579,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });
@@ -602,8 +591,7 @@ describe('PaymentFlowMachine', () => {
       failedProviderId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
       mode: 'manual',
@@ -629,8 +617,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });
@@ -658,8 +645,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });
@@ -724,8 +710,7 @@ describe('PaymentFlowMachine', () => {
       providerId: 'stripe',
       request: {
         orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
       },
     });

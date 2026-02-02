@@ -52,8 +52,7 @@ function withCheckoutCatalog<T extends PaymentFlowPort & PaymentCheckoutCatalogP
     getFieldRequirements: () => null,
     buildCreatePaymentRequest: (): CreatePaymentRequest => ({
       orderId: 'order_test',
-      amount: 499.99,
-      currency: 'MXN',
+      money: { amount: 499.99, currency: 'MXN' },
       method: { type: 'card', token: 'tok_test' },
     }),
   };
@@ -80,8 +79,7 @@ describe('CheckoutComponent', () => {
     id: 'pi_test_123',
     provider: 'stripe',
     status: 'succeeded',
-    amount: 499.99,
-    currency: 'MXN',
+    money: { amount: 499.99, currency: 'MXN' },
     clientSecret: 'secret_test',
   };
 
@@ -98,8 +96,7 @@ describe('CheckoutComponent', () => {
     alternativeProviders: ['paypal'],
     originalRequest: {
       orderId: 'order_test',
-      amount: 499.99,
-      currency: 'MXN',
+      money: { amount: 499.99, currency: 'MXN' },
       method: { type: 'card', token: 'tok_test' },
     },
     timestamp: Date.now(),
@@ -113,8 +110,7 @@ describe('CheckoutComponent', () => {
       withOptions: vi.fn().mockReturnThis(),
       build: vi.fn().mockReturnValue({
         orderId: 'order_test',
-        amount: 499.99,
-        currency: 'MXN',
+        money: { amount: 499.99, currency: 'MXN' },
         method: { type: 'card', token: 'tok_test' },
       }),
     };
@@ -759,8 +755,7 @@ describe('CheckoutComponent', () => {
         id: 'pi_123',
         provider: 'stripe',
         status: 'processing',
-        amount: 499.99,
-        currency: 'MXN',
+        money: { amount: 499.99, currency: 'MXN' },
         clientSecret: 'secret',
       };
       const processingMock = createMockPaymentState({ intent: processingIntent });

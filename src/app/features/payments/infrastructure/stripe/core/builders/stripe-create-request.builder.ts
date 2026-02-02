@@ -1,8 +1,7 @@
 import { BasePaymentRequestBuilder } from '@app/features/payments/application/api/builders/base-payment-request.builder';
-import type {
-  CurrencyCode,
-  PaymentMethodType,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { Money } from '@app/features/payments/domain/common/primitives/money/money.vo';
+import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
@@ -12,8 +11,8 @@ export function buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreat
   const isCard = req.method.type === 'card';
 
   return {
-    amount: Math.round(req.amount * 100),
-    currency: req.currency.toLowerCase(),
+    amount: Math.round(req.money.amount * 100),
+    currency: req.money.currency.toLowerCase(),
 
     payment_method_types: [isCard ? 'card' : 'spei'],
 
@@ -29,6 +28,7 @@ export class StripeCreateRequestBuilder extends BasePaymentRequestBuilder {
   private orderId?: string;
   private amount?: number;
   private currency?: CurrencyCode;
+  private money?: Money;
 
   private token?: string;
   private paymentMethodTypes?: PaymentMethodType[];
@@ -63,8 +63,7 @@ export class StripeCreateRequestBuilder extends BasePaymentRequestBuilder {
   protected override validateRequired(): void {
     // Required basics
     this.requireNonEmptyString('orderId', this.orderId);
-    this.requirePositiveAmount('amount', this.amount);
-    this.requireDefined('currency', this.currency);
+    this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency ?? 'MXN');
 
     // Selected method
     this.requireDefined('paymentMethodTypes', this.paymentMethodTypes);
@@ -94,8 +93,7 @@ export class StripeCreateRequestBuilder extends BasePaymentRequestBuilder {
 
     return {
       orderId: this.orderId!,
-      amount: this.amount!,
-      currency: this.currency!,
+      money: this.money!,
       method: {
         type: selected,
         token: selected === 'card' ? this.token! : undefined,

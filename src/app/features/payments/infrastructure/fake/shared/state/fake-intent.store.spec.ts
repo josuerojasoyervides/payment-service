@@ -6,8 +6,7 @@ import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/m
 function createRequest(overrides: Partial<CreatePaymentRequest> = {}): CreatePaymentRequest {
   return {
     orderId: 'order_test',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_visa' },
     ...overrides,
   };

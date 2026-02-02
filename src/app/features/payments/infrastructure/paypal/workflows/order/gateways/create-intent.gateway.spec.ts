@@ -42,8 +42,7 @@ describe('PaypalCreateIntentGateway', () => {
   it('POST /orders with correct payload and headers', () => {
     const req: CreatePaymentRequest = {
       orderId: 'order_1',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       method: { type: 'card' },
       returnUrl: 'https://return.test',
       cancelUrl: 'https://cancel.test',
@@ -113,8 +112,7 @@ describe('PaypalCreateIntentGateway', () => {
   it('throws invalid_request when returnUrl is missing', () => {
     const req: CreatePaymentRequest = {
       orderId: 'order_2',
-      amount: 120,
-      currency: 'MXN',
+      money: { amount: 120, currency: 'MXN' },
       method: { type: 'card' },
     };
 
@@ -131,8 +129,7 @@ describe('PaypalCreateIntentGateway', () => {
   it('propagates provider error when backend fails', () => {
     const req: CreatePaymentRequest = {
       orderId: 'order_3',
-      amount: 140,
-      currency: 'MXN',
+      money: { amount: 140, currency: 'MXN' },
       method: { type: 'card' },
       returnUrl: 'https://return.test',
     };

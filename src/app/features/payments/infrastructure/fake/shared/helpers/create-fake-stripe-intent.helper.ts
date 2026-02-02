@@ -14,7 +14,7 @@ export function createFakeStripeIntent(
   intentIdOverride?: string,
 ): StripePaymentIntentDto {
   const intentId = intentIdOverride ?? generateId('pi');
-  const amountInCents = Math.round(req.amount * 100);
+  const amountInCents = Math.round(req.money.amount * 100);
   const clientSecret = `${intentId}_secret_${generateId('sec')}`;
 
   let status: StripePaymentIntentDto['status'];
@@ -53,7 +53,7 @@ export function createFakeStripeIntent(
     object: 'payment_intent',
     amount: amountInCents,
     amount_received: status === 'succeeded' ? amountInCents : 0,
-    currency: req.currency.toLowerCase(),
+    currency: req.money.currency.toLowerCase(),
     status,
     client_secret: clientSecret,
     created: Math.floor(Date.now() / 1000),

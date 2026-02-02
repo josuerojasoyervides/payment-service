@@ -17,8 +17,7 @@ import { vi } from 'vitest';
 
 const baseRequest: CreatePaymentRequest = {
   orderId: 'o1',
-  amount: 100,
-  currency: 'MXN',
+  money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_123' },
 };
 

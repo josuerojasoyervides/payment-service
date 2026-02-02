@@ -10,8 +10,7 @@ describe('NextActionOrchestratorService', () => {
     id: 'pi_1',
     provider: 'stripe' as const,
     status: 'succeeded' as const,
-    amount: 100,
-    currency: 'MXN' as const,
+    money: { amount: 100, currency: 'MXN' as const },
   };
 
   function registryWithClientConfirmHandler(

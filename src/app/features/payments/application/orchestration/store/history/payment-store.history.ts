@@ -31,8 +31,8 @@ export function addToHistory(
     intentId: intent.id,
     provider: providerId,
     status: intent.status,
-    amount: intent.amount,
-    currency: intent.currency,
+    amount: intent.money.amount,
+    currency: intent.money.currency,
     timestamp: Date.now(),
     ...(error ? { error } : {}),
   };

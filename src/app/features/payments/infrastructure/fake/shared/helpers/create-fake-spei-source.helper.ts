@@ -5,7 +5,7 @@ import type { StripeSpeiSourceDto } from '@app/features/payments/infrastructure/
 
 export function createFakeSpeiSource(req: CreatePaymentRequest): StripeSpeiSourceDto {
   const sourceId = generateId('src');
-  const amountInCents = Math.round(req.amount * 100);
+  const amountInCents = Math.round(req.money.amount * 100);
 
   // Deterministic CLABE based on orderId hash
   const orderHash = hashString(req.orderId);
@@ -21,7 +21,7 @@ export function createFakeSpeiSource(req: CreatePaymentRequest): StripeSpeiSourc
     id: sourceId,
     object: 'source',
     amount: amountInCents,
-    currency: req.currency.toLowerCase(),
+    currency: req.money.currency.toLowerCase(),
     status: 'pending',
     type: 'spei',
     created: Math.floor(Date.now() / 1000),

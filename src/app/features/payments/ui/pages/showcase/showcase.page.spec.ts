@@ -94,8 +94,8 @@ describe('ShowcaseComponent', () => {
       expect(intent?.id).toBe('pi_fake_demo123');
       expect(intent?.provider).toBe(component.catalogProviderIds().p0);
       expect(intent?.status).toBe('succeeded');
-      expect(intent?.amount).toBe(499.99);
-      expect(intent?.currency).toBe('MXN');
+      expect(intent?.money.amount).toBe(499.99);
+      expect(intent?.money.currency).toBe('MXN');
     });
 
     it('should have sampleError configured', () => {

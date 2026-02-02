@@ -23,8 +23,7 @@ describe('IntentFacade (adapter)', () => {
 
   const createReq: CreatePaymentRequest = {
     orderId: 'order_1',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
   };
 

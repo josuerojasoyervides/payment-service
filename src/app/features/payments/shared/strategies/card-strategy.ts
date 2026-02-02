@@ -61,13 +61,13 @@ export class CardStrategy implements PaymentStrategy {
       this.tokenValidator.validate(req.method.token);
     }
 
-    const violations = validateCardAmount({ amount: req.amount, currency: req.currency });
+    const violations = validateCardAmount(req.money);
     for (const v of violations) {
       if (v.code === 'CARD_AMOUNT_TOO_LOW') {
-        const minAmount = getCardMinAmount(req.currency);
+        const minAmount = getCardMinAmount(req.money.currency);
         throw invalidRequestError(PAYMENT_ERROR_KEYS.MIN_AMOUNT, {
           amount: minAmount,
-          currency: req.currency,
+          currency: req.money.currency,
         });
       }
     }
@@ -127,8 +127,8 @@ export class CardStrategy implements PaymentStrategy {
     const { preparedRequest, metadata } = this.prepare(req, context);
     this.logger.info('Starting payment', 'CardStrategy', {
       orderId: req.orderId,
-      amount: req.amount,
-      currency: req.currency,
+      amount: req.money.amount,
+      currency: req.money.currency,
       tokenPrefix: req.method.token?.substring(0, 6),
       metadata,
     });

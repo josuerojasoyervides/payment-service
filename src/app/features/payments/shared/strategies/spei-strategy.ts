@@ -69,23 +69,23 @@ export class SpeiStrategy implements PaymentStrategy {
    * - Does not require token (unlike cards)
    */
   validate(req: CreatePaymentRequest): void {
-    const violations = validateSpeiAmount({ amount: req.amount, currency: req.currency });
+    const violations = validateSpeiAmount(req.money);
     for (const v of violations) {
       switch (v.code) {
         case 'SPEI_INVALID_CURRENCY':
           throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
             reason: 'spei_only_mxn',
-            currency: req.currency,
+            currency: req.money.currency,
           });
         case 'SPEI_AMOUNT_TOO_LOW':
           throw invalidRequestError(PAYMENT_ERROR_KEYS.MIN_AMOUNT, {
             amount: SPEI_MIN_AMOUNT_MXN,
-            currency: req.currency,
+            currency: req.money.currency,
           });
         case 'SPEI_AMOUNT_TOO_HIGH':
           throw invalidRequestError(PAYMENT_ERROR_KEYS.MAX_AMOUNT, {
             amount: SPEI_MAX_AMOUNT_MXN,
-            currency: req.currency,
+            currency: req.money.currency,
           });
       }
     }
@@ -145,7 +145,7 @@ export class SpeiStrategy implements PaymentStrategy {
 
     this.logger.warn(`[SpeiStrategy] Starting SPEI payment:`, 'SpeiStrategy', {
       orderId: req.orderId,
-      amount: req.amount,
+      amount: req.money.amount,
       expiresAt: metadata['expires_at'],
     });
     return this.gateway.createIntent(preparedRequest).pipe(
@@ -203,7 +203,7 @@ export class SpeiStrategy implements PaymentStrategy {
       },
       {
         label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.AMOUNT,
-        value: `${req.amount} ${req.currency}`,
+        value: `${req.money.amount} ${req.money.currency}`,
       },
       {
         label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.EXPIRES_AT,

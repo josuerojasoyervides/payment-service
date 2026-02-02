@@ -57,8 +57,8 @@ export class StripeCreateIntentGateway extends PaymentOperationPort<
 
   private buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreateIntentRequest {
     return {
-      amount: Math.round(req.amount * 100),
-      currency: req.currency.toLowerCase(),
+      amount: Math.round(req.money.amount * 100),
+      currency: req.money.currency.toLowerCase(),
       payment_method_types: [req.method.type === 'spei' ? 'spei' : 'card'],
       payment_method: req.method.token,
       metadata: {

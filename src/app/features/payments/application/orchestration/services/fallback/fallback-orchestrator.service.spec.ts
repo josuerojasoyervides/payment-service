@@ -19,8 +19,7 @@ describe('FallbackOrchestratorService', () => {
 
   const mockRequest: CreatePaymentRequest = {
     orderId: 'order_123',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_test1234567890abc' },
   };
 
@@ -698,8 +697,7 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
 
   const mockRequest: CreatePaymentRequest = {
     orderId: 'order_123',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_test1234567890abc' },
   };
 

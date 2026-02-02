@@ -138,8 +138,7 @@ export class ShowcaseComponent {
       id: 'pi_fake_demo123',
       provider: p0,
       status: 'succeeded',
-      amount: 499.99,
-      currency: 'MXN',
+      money: { amount: 499.99, currency: 'MXN' },
       clientSecret: 'pi_fake_demo123_secret_xxx',
     };
   });
@@ -175,8 +174,7 @@ export class ShowcaseComponent {
           id: 'pi_fake_card_demo',
           provider: p0,
           status: this.intentCardStatus,
-          amount: 299.99,
-          currency: 'MXN' as CurrencyCode,
+          money: { amount: 299.99, currency: 'MXN' as CurrencyCode },
         }
       : null;
     return {
@@ -201,8 +199,7 @@ export class ShowcaseComponent {
       alternativeProviders: p1 ? [p1] : [],
       originalRequest: {
         orderId: 'order_123',
-        amount: 499.99,
-        currency: 'MXN',
+        money: { amount: 499.99, currency: 'MXN' },
         method: { type: 'card', token: 'tok_xxx' },
       },
       timestamp: Date.now(),

@@ -16,8 +16,7 @@ describe('NextActionOrchestratorService (PayPal wiring)', () => {
           id: 'ORDER_1',
           provider: 'paypal' as const,
           status: 'succeeded' as const,
-          amount: 100,
-          currency: 'MXN' as const,
+          money: { amount: 100, currency: 'MXN' as const },
         }),
       ),
     };

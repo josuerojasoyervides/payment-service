@@ -27,8 +27,10 @@ export class SpeiSourceMapper {
       id: dto.id,
       provider: this.providerId,
       status,
-      amount: dto.amount / 100,
-      currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
+      money: {
+        amount: dto.amount / 100,
+        currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
+      },
       nextAction: speiAction,
       raw: dto,
     };

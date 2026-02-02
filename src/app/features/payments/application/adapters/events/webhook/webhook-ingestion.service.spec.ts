@@ -92,8 +92,7 @@ describe('WebhookIngestionService integration with PaymentFlowMachine', () => {
     id: 'pi_webhook',
     provider: 'stripe',
     status: 'processing',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
   };
 
   const config: PaymentFlowConfigOverrides = {

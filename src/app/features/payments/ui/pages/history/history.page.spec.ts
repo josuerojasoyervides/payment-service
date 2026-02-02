@@ -120,8 +120,8 @@ describe('HistoryComponent', () => {
       expect(intent.id).toBe(entry.intentId);
       expect(intent.provider).toBe(entry.provider);
       expect(intent.status).toBe(entry.status);
-      expect(intent.amount).toBe(entry.amount);
-      expect(intent.currency).toBe(entry.currency);
+      expect(intent.money.amount).toBe(entry.amount);
+      expect(intent.money.currency).toBe(entry.currency);
     });
 
     it('should handle different statuses', () => {

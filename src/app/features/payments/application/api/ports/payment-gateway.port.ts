@@ -42,7 +42,12 @@ export abstract class BasePaymentGateway<
     this.logger.info(
       `Creating payment intent`,
       this.logContext,
-      { orderId: req.orderId, amount: req.amount, currency: req.currency, method: req.method.type },
+      {
+        orderId: req.orderId,
+        amount: req.money.amount,
+        currency: req.money.currency,
+        method: req.method.type,
+      },
       correlationId,
     );
 
@@ -177,15 +182,15 @@ export abstract class BasePaymentGateway<
       throw invalidRequestError('errors.order_id_required', { field: 'orderId' });
     }
 
-    if (!req.currency) {
+    if (!req.money?.currency) {
       throw invalidRequestError('errors.currency_required', { field: 'currency' });
     }
 
-    if (!Number.isFinite(req.amount) || req.amount <= 0) {
+    if (!Number.isFinite(req.money.amount) || req.money.amount <= 0) {
       throw invalidRequestError(
         'errors.amount_invalid',
         { field: 'amount', min: 1 },
-        { amount: req.amount },
+        { amount: req.money.amount },
       );
     }
 

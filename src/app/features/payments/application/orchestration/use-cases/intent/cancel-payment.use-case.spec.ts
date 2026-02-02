@@ -24,8 +24,7 @@ describe('CancelPaymentUseCase', () => {
         id: 'pi_1',
         provider: 'stripe',
         status: 'canceled',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
       } satisfies PaymentIntent),
     ),
   } as Pick<PaymentGatewayPort, 'cancelIntent'>;

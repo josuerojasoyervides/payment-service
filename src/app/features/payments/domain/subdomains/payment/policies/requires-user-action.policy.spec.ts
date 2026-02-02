@@ -6,8 +6,7 @@ describe('intentRequiresUserAction', () => {
     id: 'pi_1',
     provider: 'stripe',
     status: 'requires_payment_method',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
   };
 
   it('returns true when status is requires_action', () => {

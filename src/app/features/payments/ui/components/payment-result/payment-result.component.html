@@ -78,7 +78,7 @@
 
           <dt class="text-green-700">{{ amountLabel() }}</dt>
           <dd class="text-green-900 font-semibold">
-            {{ intent()!.amount | currency: intent()!.currency }}
+            {{ intent()!.money.amount | currency: intent()!.money.currency }}
           </dd>
         </dl>
 

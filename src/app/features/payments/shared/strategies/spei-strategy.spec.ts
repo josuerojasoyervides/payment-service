@@ -16,8 +16,7 @@ describe('SpeiStrategy', () => {
 
   const validReq: CreatePaymentRequest = {
     orderId: 'order_1',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'spei' },
   };
 
@@ -25,8 +24,7 @@ describe('SpeiStrategy', () => {
     id: 'src_1',
     provider: 'stripe',
     status: 'requires_action',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     raw: {
       spei: {
         clabe: '646180111812345678',
@@ -58,7 +56,7 @@ describe('SpeiStrategy', () => {
 
   describe('validate()', () => {
     it('throws if currency is not MXN', () => {
-      const req = { ...validReq, currency: 'USD' as const };
+      const req = { ...validReq, money: { amount: 100, currency: 'USD' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
@@ -68,7 +66,7 @@ describe('SpeiStrategy', () => {
     });
 
     it('throws if amount is below minimum', () => {
-      const req = { ...validReq, amount: 0.5 };
+      const req = { ...validReq, money: { amount: 0.5, currency: 'MXN' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
@@ -78,7 +76,7 @@ describe('SpeiStrategy', () => {
     });
 
     it('throws if amount exceeds maximum', () => {
-      const req = { ...validReq, amount: 10_000_000 };
+      const req = { ...validReq, money: { amount: 10_000_000, currency: 'MXN' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
@@ -89,7 +87,9 @@ describe('SpeiStrategy', () => {
 
     it('accepts valid MXN amounts', () => {
       expect(() => strategy.validate(validReq)).not.toThrow();
-      expect(() => strategy.validate({ ...validReq, amount: 5_000_000 })).not.toThrow();
+      expect(() =>
+        strategy.validate({ ...validReq, money: { amount: 5_000_000, currency: 'MXN' } }),
+      ).not.toThrow();
     });
 
     it('warns but does not throw if token is provided', () => {
@@ -144,7 +144,7 @@ describe('SpeiStrategy', () => {
     });
 
     it('throws validation error before calling gateway', () => {
-      const invalidReq = { ...validReq, currency: 'USD' as const };
+      const invalidReq = { ...validReq, money: { amount: 100, currency: 'USD' as const } };
 
       // Error is thrown synchronously in start() before returning Observable
       expect(() => strategy.start(invalidReq)).toThrowError(

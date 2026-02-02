@@ -243,7 +243,7 @@ export class CheckoutComponent {
 
       this.logger.info('Payment request built', 'CheckoutPage', {
         orderId: request.orderId,
-        amount: request.amount,
+        amount: request.money.amount,
         method: request.method.type,
       });
 

@@ -6,8 +6,10 @@ export function mapGeneric(dto: any, providerId: PaymentProviderId): PaymentInte
     id: dto.id ?? 'unknown',
     provider: providerId,
     status: dto.status ?? 'processing',
-    amount: dto.amount ?? 0,
-    currency: dto.currency ?? 'MXN',
+    money: {
+      amount: dto.amount ?? 0,
+      currency: dto.currency ?? 'MXN',
+    },
     raw: dto,
   };
 }

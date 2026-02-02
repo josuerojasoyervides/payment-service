@@ -27,8 +27,8 @@ class PaymentGatewayTest extends BasePaymentGateway<any, any> {
     return of({
       id: 'pi_123',
       status: 'requires_payment_method',
-      amount: req.amount,
-      currency: req.currency,
+      amount: req.money.amount,
+      currency: req.money.currency,
       clientSecret: 'sec_test',
       redirectUrl: undefined,
     });
@@ -87,8 +87,7 @@ class PaymentGatewayTest extends BasePaymentGateway<any, any> {
       id: dto.id,
       provider: this.providerId,
       status: dto.status as PaymentIntentStatus,
-      amount: dto.amount,
-      currency: dto.currency,
+      money: { amount: dto.amount, currency: dto.currency },
       clientSecret: dto.clientSecret,
       redirectUrl: dto.redirectUrl,
       raw: dto,
@@ -148,8 +147,7 @@ function expectSyncPaymentError(fn: () => unknown, expected: Partial<PaymentErro
 function validReq(overrides: Partial<CreatePaymentRequest> = {}): CreatePaymentRequest {
   return {
     orderId: 'order_1',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
     ...overrides,
   };
@@ -200,20 +198,26 @@ describe('PaymentGateway (abstract class)', () => {
       });
 
       it('throws if currency is missing (validateCreate)', () => {
-        expectSyncPaymentError(() => gateway.createIntent(validReq({ currency: '' as any })), {
-          code: 'invalid_request',
-          messageKey: 'errors.currency_required',
-          params: { field: 'currency' },
-        });
+        expectSyncPaymentError(
+          () => gateway.createIntent(validReq({ money: { amount: 100, currency: '' as any } })),
+          {
+            code: 'invalid_request',
+            messageKey: 'errors.currency_required',
+            params: { field: 'currency' },
+          },
+        );
       });
 
       it('throws if amount is not valid (validateCreate)', () => {
-        expectSyncPaymentError(() => gateway.createIntent(validReq({ amount: 0 })), {
-          code: 'invalid_request',
-          messageKey: 'errors.amount_invalid',
-          params: { field: 'amount', min: 1 },
-          raw: { amount: 0 },
-        });
+        expectSyncPaymentError(
+          () => gateway.createIntent(validReq({ money: { amount: 0, currency: 'MXN' } })),
+          {
+            code: 'invalid_request',
+            messageKey: 'errors.amount_invalid',
+            params: { field: 'amount', min: 1 },
+            raw: { amount: 0 },
+          },
+        );
       });
 
       it('throws if method type is missing', () => {
@@ -256,15 +260,16 @@ describe('PaymentGateway (abstract class)', () => {
       });
 
       it('maps dto -> PaymentIntent when raw call succeeds', async () => {
-        const res = await firstValueFrom(gateway.createIntent(validReq({ amount: 250 })));
+        const res = await firstValueFrom(
+          gateway.createIntent(validReq({ money: { amount: 250, currency: 'MXN' } })),
+        );
 
         expect(res).toEqual(
           expect.objectContaining({
             id: 'pi_123',
             provider: 'paypal',
             status: 'requires_payment_method',
-            amount: 250,
-            currency: 'MXN',
+            money: { amount: 250, currency: 'MXN' },
             clientSecret: 'sec_test',
           }),
         );

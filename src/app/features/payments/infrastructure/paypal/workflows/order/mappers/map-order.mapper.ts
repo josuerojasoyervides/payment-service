@@ -15,8 +15,7 @@ export function mapOrder(dto: PaypalOrderDto, providerId: PaymentProviderId): Pa
     id: dto.id,
     provider: providerId,
     status,
-    amount,
-    currency,
+    money: { amount, currency },
     raw: dto,
   };
 

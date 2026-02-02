@@ -25,8 +25,7 @@ describe('deriveFlowPhase', () => {
       id: 'pi_1',
       provider: 'stripe',
       status: 'requires_action',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       clientSecret: 'secret',
       nextAction: { kind: 'client_confirm', token: 'tok_test' },
     };
@@ -39,8 +38,7 @@ describe('deriveFlowPhase', () => {
       id: 'pi_1',
       provider: 'stripe',
       status: 'processing',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       clientSecret: 'secret',
     };
     const { phaseSignal } = setup({ intent, isReady: true });
@@ -52,8 +50,7 @@ describe('deriveFlowPhase', () => {
       id: 'pi_1',
       provider: 'stripe',
       status: 'succeeded',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       clientSecret: 'secret',
     };
     const { phaseSignal } = setup({ intent, isReady: true });
@@ -75,8 +72,7 @@ describe('deriveFlowPhase', () => {
       id: 'pi_1',
       provider: 'stripe',
       status: 'failed',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       clientSecret: 'secret',
     };
     const { phaseSignal } = setup({ intent, isReady: true, hasError: false });
@@ -109,8 +105,7 @@ describe('deriveFlowPhase', () => {
       id: 'pi_1',
       provider: 'stripe',
       status: 'requires_action',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       clientSecret: 'secret',
       nextAction: { kind: 'client_confirm', token: 'tok_test' },
     };

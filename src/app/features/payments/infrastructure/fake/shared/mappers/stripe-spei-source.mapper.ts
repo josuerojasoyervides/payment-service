@@ -6,8 +6,10 @@ export function mapStripeSpeiSource(dto: StripeSpeiSourceDto): PaymentIntent {
     id: dto.id,
     provider: 'stripe',
     status: 'requires_action',
-    amount: dto.amount / 100,
-    currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
+    money: {
+      amount: dto.amount / 100,
+      currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
+    },
     nextAction: {
       kind: 'manual_step',
       instructions: ['Make a bank transfer using the details below.'],

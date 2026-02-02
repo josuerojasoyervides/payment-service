@@ -1,4 +1,5 @@
 import { BasePaymentRequestBuilder } from '@app/features/payments/application/api/builders/base-payment-request.builder';
+import type { Money } from '@app/features/payments/domain/common/primitives/money/money.vo';
 import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
@@ -22,6 +23,7 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
   private orderId?: string;
   private amount?: number;
   private currency?: CurrencyCode;
+  private money?: Money;
   private returnUrl?: string;
   private cancelUrl?: string;
 
@@ -54,8 +56,8 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
 
   protected override validateRequired(): void {
     this.requireNonEmptyStringWithKey('orderId', this.orderId, I18nKeys.errors.order_id_required);
-    this.requirePositiveAmountWithKey('amount', this.amount, I18nKeys.errors.amount_invalid);
     this.requireDefinedWithKey('currency', this.currency, I18nKeys.errors.currency_required);
+    this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
     this.validateOptionalUrl('returnUrl', this.returnUrl);
     this.validateOptionalUrl('cancelUrl', this.cancelUrl);
   }
@@ -68,8 +70,7 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
      */
     return {
       orderId: this.orderId!,
-      amount: this.amount!,
-      currency: this.currency!,
+      money: this.money!,
       method: {
         type: 'card',
       },

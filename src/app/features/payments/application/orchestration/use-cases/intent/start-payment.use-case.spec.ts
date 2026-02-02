@@ -19,8 +19,7 @@ describe('StartPaymentUseCase', () => {
 
   const req: CreatePaymentRequest = {
     orderId: 'o1',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
   };
 
@@ -28,8 +27,7 @@ describe('StartPaymentUseCase', () => {
     id: 'pi_1',
     provider: 'stripe',
     status: 'requires_payment_method',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
   };
 
   const strategyMock: PaymentStrategy = {

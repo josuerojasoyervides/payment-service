@@ -34,8 +34,10 @@ export function mapStripeIntent(dto: StripePaymentIntentDto): PaymentIntent {
     id: dto.id,
     provider: 'stripe',
     status: statusMap[dto.status],
-    amount: dto.amount / 100,
-    currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
+    money: {
+      amount: dto.amount / 100,
+      currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
+    },
     clientSecret: dto.client_secret,
     nextAction,
     raw: dto,
