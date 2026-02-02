@@ -1,3 +1,4 @@
+import { PAYMENT_ERROR_KEYS } from '@app/features/payments/domain/subdomains/payment/contracts/payment-error-keys.types';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { NextActionManualStep } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
@@ -13,7 +14,6 @@ import {
   generateSpeiReference,
 } from '@app/features/payments/domain/subdomains/payment/rules/spei-concept.rule';
 import { SPEI_DEFAULT_EXPIRY_HOURS } from '@app/features/payments/domain/subdomains/payment/rules/spei-expiry.rule';
-import { I18nKeys } from '@core/i18n';
 import type { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type {
@@ -62,17 +62,17 @@ export class SpeiStrategy implements PaymentStrategy {
     for (const v of violations) {
       switch (v.code) {
         case 'SPEI_INVALID_CURRENCY':
-          throw invalidRequestError(I18nKeys.errors.invalid_request, {
+          throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
             reason: 'spei_only_mxn',
             currency: req.currency,
           });
         case 'SPEI_AMOUNT_TOO_LOW':
-          throw invalidRequestError(I18nKeys.errors.min_amount, {
+          throw invalidRequestError(PAYMENT_ERROR_KEYS.MIN_AMOUNT, {
             amount: SPEI_MIN_AMOUNT_MXN,
             currency: req.currency,
           });
         case 'SPEI_AMOUNT_TOO_HIGH':
-          throw invalidRequestError(I18nKeys.errors.max_amount, {
+          throw invalidRequestError(PAYMENT_ERROR_KEYS.MAX_AMOUNT, {
             amount: SPEI_MAX_AMOUNT_MXN,
             currency: req.currency,
           });

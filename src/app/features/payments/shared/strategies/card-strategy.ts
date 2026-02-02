@@ -1,3 +1,7 @@
+import {
+  PAYMENT_ERROR_KEYS,
+  PAYMENT_MESSAGE_KEYS,
+} from '@app/features/payments/domain/subdomains/payment/contracts/payment-error-keys.types';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
@@ -7,7 +11,6 @@ import {
   getCardMinAmount,
   validateCardAmount,
 } from '@app/features/payments/domain/subdomains/payment/rules/min-amount-by-currency.rule';
-import { I18nKeys } from '@core/i18n';
 import type { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type {
@@ -52,7 +55,7 @@ export class CardStrategy implements PaymentStrategy {
   validate(req: CreatePaymentRequest): void {
     if (this.tokenValidator.requiresToken()) {
       if (!req.method.token) {
-        throw invalidRequestError(I18nKeys.errors.card_token_required);
+        throw invalidRequestError(PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED);
       }
       this.tokenValidator.validate(req.method.token);
     }
@@ -61,7 +64,7 @@ export class CardStrategy implements PaymentStrategy {
     for (const v of violations) {
       if (v.code === 'CARD_AMOUNT_TOO_LOW') {
         const minAmount = getCardMinAmount(req.currency);
-        throw invalidRequestError(I18nKeys.errors.min_amount, {
+        throw invalidRequestError(PAYMENT_ERROR_KEYS.MIN_AMOUNT, {
           amount: minAmount,
           currency: req.currency,
         });
@@ -156,7 +159,7 @@ export class CardStrategy implements PaymentStrategy {
       return null;
     }
 
-    return [I18nKeys.messages.bank_verification_required];
+    return [PAYMENT_MESSAGE_KEYS.BANK_VERIFICATION_REQUIRED];
   }
 
   /**
