@@ -226,7 +226,6 @@ export class PaymentFlowActorService {
     this.prevSnapshot = this.actor.getSnapshot() as PaymentFlowSnapshot;
     this.actor.subscribe((snapshot) => {
       const prev = this.prevSnapshot;
-      const prevState = prev?.value ?? null;
       const stateStr = String(snapshot.value);
       const base = snapshotTelemetryBase(snapshot);
       const atMs = Date.now();
