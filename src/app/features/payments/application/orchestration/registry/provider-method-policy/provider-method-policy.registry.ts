@@ -6,10 +6,12 @@ import type {
   ProviderMethodPolicyPort,
 } from '@payments/application/api/ports/provider-method-policy.port';
 import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 
 @Injectable()
 export class ProviderMethodPolicyRegistry {
   private readonly policies = inject<ProviderMethodPolicyPort[]>(PAYMENT_PROVIDER_METHOD_POLICIES);
+  private readonly factories = inject(ProviderFactoryRegistry);
   private readonly policyMap = new Map<string, ProviderMethodPolicy>();
 
   constructor() {
@@ -32,7 +34,7 @@ export class ProviderMethodPolicyRegistry {
   private buildPolicyMap(): void {
     for (const policyProvider of this.policies) {
       const providerId = policyProvider.providerId;
-      const methods: PaymentMethodType[] = ['card', 'spei'];
+      const methods = this.getSupportedMethods(providerId);
 
       for (const method of methods) {
         try {
@@ -46,6 +48,14 @@ export class ProviderMethodPolicyRegistry {
           // method not supported by this provider
         }
       }
+    }
+  }
+
+  private getSupportedMethods(providerId: PaymentProviderId): PaymentMethodType[] {
+    try {
+      return this.factories.get(providerId).getSupportedMethods();
+    } catch {
+      return [];
     }
   }
 }
