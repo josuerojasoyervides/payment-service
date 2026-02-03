@@ -66,6 +66,9 @@ Two maps explain the system: **runtime** (who talks to whom during a payment) an
 
 ![Dependency map](charts/chart-dependancy-feb-02.svg)
 
+**Payment flow: what is the machine purpose flow**
+![Payment flow machine map](charts/chart-payment-flow-machine-feb-02.svg)
+
 **How to use these maps:** When you feel lost, start at the centre (the **Flow** / state machine), then follow the bridges to the **store**, **UI**, and **providers**. The runtime map shows the live flow; the dependency map shows the rules the repo enforces so the architecture stays consistent.
 
 ---
