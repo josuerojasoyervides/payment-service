@@ -1,56 +1,119 @@
 ---
 config:
-  theme: redux
-  layout: dagre
+  theme: neo-dark
+  layout: elk
+  look: neo
+  flowchart:
+    nodeSpacing: 60
+    rankSpacing: 110
 ---
 flowchart LR
  subgraph UI["UI (Angular)"]
-        UIC["Pages / Components<br>(Next-Action UI + Fallback UI)"]
-        UIF(("UI Facade"))
+        Pages["Pages / Components<br>(ui/pages/**)"]
+        ReturnRaw["RedirectReturnRaw helper<br>(ui/shared/redirect-return-raw.ts)"]
   end
- subgraph APP["Application / Orchestration"]
-        ACT["Flow Actor<br>(runtime wrapper)"]
-        FLOW["PAYMENT FLOW MACHINE<br>👑 cerebro 👑"]
-        EXT["External Event Adapter<br>(webhook/redirect/status)"]
-        NEXT["Next-Action Orchestrator"]
-        FALL["Fallback Orchestrator"]
-        REG(("Provider Registry"))
-        TEL(("Telemetry Port"))
-        SB(("Store Bridge"))
+ subgraph PRESENT["Presentation (contracts + registry)"]
+    direction TB
+        P_HUB["P"]
+        FieldReq["FieldRequirements<br>(presentation/contracts/checkout-field-requirements.types.ts)"]
+        SpeiConfig["SpeiDisplayConfig<br>(presentation/contracts/spei-display-config.types.ts)"]
+        ProviderRegistry["ProviderDescriptorRegistry<br>(presentation/registry/provider-descriptor/**)"]
+        ProviderToken["PAYMENT_PROVIDER_DESCRIPTORS token<br>(presentation/tokens/provider/payment-provider-descriptors.token.ts)"]
   end
- subgraph STORE["Store"]
-        PS["Payments Store<br>(NgRx Signals)"]
-        PROJ["Projection / Selectors<br>(derived view)"]
+ subgraph API["Public API (ports/tokens/contracts)"]
+        FlowPort["PaymentFlowPortUi<br>(api/ports/payment-store.port.ts)"]
+        CatalogPort["PaymentCheckoutCatalogPort<br>(api/ports/payment-store.port.ts)"]
+        ApiContracts["Core Contracts<br>(api/contracts/*.ts)"]
+        TelemetryPort["FLOW_TELEMETRY_SINK token<br>(api/tokens/telemetry/flow-telemetry-sink.token.ts)"]
+  end
+ subgraph RUNTIME["Runtime (adapters + orchestration)"]
+        StateAdapter["NgRxSignalsStateAdapter<br>(adapters/state/ngrx-signals-state.adapter.ts)"]
+        ExternalEvents["External Event Adapter<br>(adapters/events/external/external-event.adapter.ts)"]
+        WebhookIngestion["Webhook Ingestion Service<br>(adapters/events/webhook/webhook-ingestion.service.ts)"]
+        TelemetrySinks["Telemetry Sinks<br>(adapters/telemetry/**)"]
+        Actor["Flow Actor<br>(orchestration/flow/payment-flow.actor.service.ts)"]
+        Flow["Payment Flow Machine<br>(orchestration/flow/payment-flow.machine.ts)"]
+        Store["Store + Projections<br>(orchestration/store/**)"]
+        Registry["Provider Registry<br>(orchestration/registry/**)"]
+  end
+ subgraph APPLICATION["Application"]
+        API
+        RUNTIME
   end
  subgraph DOMAIN["Domain (tech-less)"]
-        DC["Contracts<br>(types/models)"]
-        DR["Rules/Policies<br>(pure)"]
-        DE["PaymentError<br>(messageKey/params/code)"]
+    direction TB
+        D_HUB["D"]
+        Entities["Entities / VOs<br>(domain/**/entities/**)"]
+        Policies["Policies / Rules<br>(domain/**/policies/**)"]
   end
- subgraph INFRA["Providers (Infrastructure)"]
-        PA["Provider A Adapter"]
-        PB["Provider B Adapter"]
-        PF["Fake Provider Adapter<br>(tests/stress)"]
+ subgraph INFRA["Infrastructure"]
+    direction TB
+        I_HUB["I"]
+        Gateways["Provider Gateways<br>(infrastructure/**/gateways/*.ts)"]
+        ReturnNorm["Redirect Return Normalizers<br>(infrastructure/**/redirect/*normalizer*.ts)"]
+        WebhookNorm["Webhook Normalizers<br>(infrastructure/**/webhook/*normalizer*.ts)"]
   end
- subgraph OBS["Observability (Infra)"]
-        SINKS["Telemetry Sinks\<br>InMemory / Console / Noop)"]
-  end
-    UIC --> UIF
-    UIF -- commands --> ACT
-    ACT -- sendCommand --> FLOW
-    EXT -- sendSystem</br>WEBHOOK/RETURN/STATUS --> FLOW
-    FLOW --> NEXT & FALL & TEL
-    FLOW -- state + context updates --> SB
-    FLOW -- effects --> REG
-    ACT --> TEL
-    SB --> PS
-    PS --> PROJ
-    PROJ --> UIC
-    REG --> PA & PB & PF
-    PA -- results --> FLOW
-    PB -- results --> FLOW
-    PF -- results --> FLOW
-    TEL --> SINKS
-    FLOW -. uses .-> DC & DR
-    FLOW -. emits .-> DE
-    UIC -. translates .-> DE
+    UI_ANCH[" "] --> PRES_ANCH[" "]
+    PRES_ANCH --> APP_ANCH[" "]
+    APP_ANCH --> DOM_ANCH[" "] & INF_ANCH[" "]
+    UI_ANCH -.-> Pages
+    PRES_ANCH -.-> P_HUB
+    APP_ANCH -.-> Actor
+    DOM_ANCH -.-> D_HUB
+    INF_ANCH -.-> I_HUB
+    P_HUB L_P_HUB_FieldReq_0@-.-> FieldReq & SpeiConfig & ProviderRegistry
+    ProviderRegistry --- ProviderToken
+    D_HUB --- Entities & Policies
+    Pages L_Pages_FlowPort_0@-. uses ports .-> FlowPort & CatalogPort
+    Pages ----> ReturnRaw
+    Pages L_Pages_P_HUB_0@-. uses presentation .-> P_HUB
+    ReturnRaw L_ReturnRaw_ApiContracts_0@-. uses contract .-> ApiContracts
+    ProviderRegistry L_ProviderRegistry_FlowPort_0@-. uses type .-> FlowPort
+    FlowPort --> StateAdapter
+    CatalogPort --> StateAdapter
+    TelemetryPort --> TelemetrySinks
+    StateAdapter --> Store & Actor & ProviderRegistry
+    WebhookIngestion --> ExternalEvents
+    ExternalEvents --> Actor
+    Actor --> Flow
+    Flow --> Store & Registry & TelemetryPort
+    Registry L_Registry_Gateways_0@-. uses gateways .-> Gateways
+    ExternalEvents L_ExternalEvents_ReturnNorm_0@-. uses return normalizers .-> ReturnNorm
+    WebhookIngestion L_WebhookIngestion_WebhookNorm_0@-. uses webhook normalizers .-> WebhookNorm
+    Flow L_Flow_D_HUB_0@-. uses domain .-> D_HUB
+
+    P_HUB@{ shape: anchor}
+    D_HUB@{ shape: anchor}
+    I_HUB@{ shape: anchor}
+     P_HUB:::hub
+     D_HUB:::hub
+     I_HUB:::hub
+     UI_ANCH:::spacer
+     PRES_ANCH:::spacer
+     APP_ANCH:::spacer
+     DOM_ANCH:::spacer
+     INF_ANCH:::spacer
+    classDef spacer fill:transparent,stroke:transparent,color:transparent
+    classDef hub fill:#00000000,stroke:#00000000,color:#00000000
+    linkStyle 0 stroke:transparent,opacity:0,fill:none
+    linkStyle 1 stroke:transparent,opacity:0,fill:none
+    linkStyle 2 stroke:transparent,opacity:0,fill:none
+    linkStyle 3 stroke:transparent,opacity:0,fill:none
+    linkStyle 4 stroke:transparent,opacity:0,fill:none
+    linkStyle 5 stroke:transparent,opacity:0,fill:none
+    linkStyle 6 stroke:transparent,opacity:0,fill:none
+    linkStyle 7 stroke:transparent,opacity:0,fill:none
+    linkStyle 8 stroke:transparent,opacity:0,fill:none
+
+    L_P_HUB_FieldReq_0@{ animation: slow }
+    L_P_HUB_SpeiConfig_0@{ animation: slow }
+    L_P_HUB_ProviderRegistry_0@{ animation: slow }
+    L_Pages_FlowPort_0@{ animation: slow }
+    L_Pages_CatalogPort_0@{ animation: slow }
+    L_Pages_P_HUB_0@{ animation: slow }
+    L_ReturnRaw_ApiContracts_0@{ animation: slow }
+    L_ProviderRegistry_FlowPort_0@{ animation: slow }
+    L_Registry_Gateways_0@{ animation: fast }
+    L_ExternalEvents_ReturnNorm_0@{ animation: fast }
+    L_WebhookIngestion_WebhookNorm_0@{ animation: fast }
+    L_Flow_D_HUB_0@{ animation: fast }

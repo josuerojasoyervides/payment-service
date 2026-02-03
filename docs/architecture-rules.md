@@ -1,6 +1,6 @@
 # Payments Module — Architecture & Quality Rules
 
-> **Last review:** 2026-02-01
+> **Last review:** 2026-02-02
 > This repo is a lab to practice payments architecture **without turning it into a spider web**.
 
 ## How to read this document
@@ -13,7 +13,7 @@ This doc has two roles:
 You will see sections with:
 
 - **Rule (target)**
-- **Current state (as of 2026-01-26)**
+- **Current state (as of 2026-02-02)**
 - **Accepted deviation** (if any) + **closure plan**
 
 ---
@@ -86,6 +86,23 @@ You will see sections with:
 
 ## 2) Allowed dependencies (quick map)
 
+### 2.1 Ports vs presentation contracts
+
+**Rule (target)**
+
+- `application/api` defines **application ports** (input/output) and core contracts used by orchestration.
+- `presentation/` defines **UI-specific contracts** (display/form metadata).
+- `ui/` may depend on both `application/api` and `presentation/`.
+- `application/orchestration` and `domain` must **not** depend on `presentation/`.
+
+**Rationale**
+
+Ports belong to the application (how the core is used). Presentation contracts are UI concerns.
+Keeping them separate preserves UI-agnostic core and prevents UI metadata from leaking into orchestration.
+
+Presentation registries (e.g., provider descriptors) are fed by infra/config via tokens and consumed by application adapters.
+Orchestration and domain must remain presentation-free.
+
 **Rule (target)**
 
 - `ui/` → can import `application/`, `domain/`, `shared/` (feature), and `src/app/shared/**` (global UI).
@@ -99,6 +116,10 @@ You will see sections with:
 - `domain/` importing Angular/RxJS/HttpClient.
 - `ui/` importing `infrastructure/` directly.
 - `shared/` (feature) importing `i18n.t()` or UI code.
+
+**Note:** `application/api` is the public surface for UI/infra/config; it may re-export presentation
+contracts and import internal application types as type-only when they are part of the contract.
+Anything internal-only should live outside `application/api`.
 
 ---
 
@@ -203,7 +224,7 @@ Error/message keys live in `shared/constants/payment-error-keys.ts` (`PAYMENT_ER
 - `shared/` (feature) may only import `domain/`. It must not import `@core` (i18n, logging).
 - Provider-specific or environment-specific display data (e.g. SPEI bank names, beneficiary, test CLABE) lives in infrastructure; it is injected into strategies via domain contracts (e.g. `SpeiDisplayConfig`).
 
-**Current state:** Depcruise rule `shared-no-core` forbids payments `shared/` from importing `src/app/core`. Error/message keys are in `shared/constants/`. `SpeiDisplayConfig` lives in `application/api/contracts/`; constants in `infrastructure/fake/shared/constants/spei-display.constants.ts`; `SpeiStrategy` receives optional config from the provider factory.
+**Current state:** Depcruise rule `shared-no-core` forbids payments `shared/` from importing `src/app/core`. Error/message keys are in `shared/constants/`. `SpeiDisplayConfig` lives in `presentation/contracts/` (deprecated re-export in `application/api/contracts/`); constants in `infrastructure/fake/shared/constants/spei-display.constants.ts`; `SpeiStrategy` receives optional config from the provider factory.
 
 ---
 
@@ -272,7 +293,7 @@ Per critical operation, at minimum:
 - `domain/subdomains/payment/`:
   - `messages/` → `payment-request.command.ts` (CreatePaymentRequest, ConfirmPaymentRequest, CancelPaymentRequest, GetPaymentStatusRequest), `payment-webhook.event.ts`.
   - `entities/` → `payment-intent.types.ts`, `payment-flow-context.types.ts`, `payment-error.model.ts`, etc.
-  - `rules/`, `policies/`, `ports/` — policies include `requires-user-action.policy.ts`. Error keys in `shared/constants/`; `SpeiDisplayConfig` in `application/api/contracts/`.
+  - `rules/`, `policies/`, `ports/` — policies include `requires-user-action.policy.ts`. Error keys in `shared/constants/`; `SpeiDisplayConfig` in `presentation/contracts/` (deprecated re-export in `application/api/contracts/`).
 - `domain/subdomains/fallback/{contracts,entities,messages,policies,ports}` — messages include `fallback-user-response.command.ts`.
 
 To keep the structure visible while subfolders are still empty, we use **temporary markers**:

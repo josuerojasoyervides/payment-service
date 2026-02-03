@@ -4,12 +4,12 @@
 
 ---
 
-## 🕒 Last Sync: 2026-02-01
+## 🕒 Last Sync: 2026-02-02
 
 ## 📍 Mission State
 
-- **Current mission:** Domain sanitized (UI-agnostic, fallback naming); Value Objects adopted in core contracts: Money, PaymentIntentId, OrderId. Domain agnostic of UI vocabulary; error keys in `shared/constants/`; SpeiDisplayConfig in `application/api/contracts/`; depcruise `shared-no-core` enforced.
-- **Key folders:** Domain `domain/**` (policies: `requires-user-action.policy.ts`), Shared `shared/constants/payment-error-keys.ts`, Application `application/orchestration/**` + `application/api/contracts/spei-display-config.types.ts`, Config `config/payment.providers.ts`, Infra constants `infrastructure/fake/shared/constants/spei-display.constants.ts`.
+- **Current mission:** Domain sanitized (UI-agnostic, fallback naming); Value Objects adopted in core contracts: Money, PaymentIntentId, OrderId. Domain agnostic of UI vocabulary; error keys in `shared/constants/`; SpeiDisplayConfig in `presentation/contracts/` (deprecated re-export in `application/api/contracts/`); depcruise `shared-no-core` enforced.
+- **Key folders:** Domain `domain/**` (policies: `requires-user-action.policy.ts`), Shared `shared/constants/payment-error-keys.ts`, Application `application/orchestration/**` + `application/api/**` (ports/tokens/contracts), Presentation `presentation/contracts/**`, Config `config/payment.providers.ts`, Infra constants `infrastructure/fake/shared/constants/spei-display.constants.ts`.
 
 ## 🖥️ UI surface & boundaries (UI-01)
 
@@ -18,7 +18,7 @@
 - **Checkout** uses FlowPhase from PaymentFlowPort selectors; showResult from flowPhase. Resume banner: canResume / resumeIntentId / resumeProviderId when flowPhase === 'editing'. Processing panel with refresh CTA when flowPhase === 'processing'.
 - **PaymentForm** emits PaymentOptions from FieldRequirements.fields (no hardcoded keys). Checkout surfaces fallback status (auto/manual) via banner.
 - **FlowDebugPanel** shows machine state node/tags/last event via port; debugLastEventPayload is allowlisted; no secrets/raw in UI.
-- **UI runtime:** No provider identifiers or provider-specific query keys. Return page uses port `getReturnReferenceFromQuery(normalized)` + `notifyRedirectReturned(normalized)`; no auto-refresh on init; refresh is manual CTA. Status/Return/Showcase: catalog only.
+- **UI runtime:** No provider identifiers or provider-specific query keys. Return page uses `toRedirectReturnRaw()` + `notifyRedirectReturned(raw)`; infra normalizers map provider keys; no auto-refresh on init; refresh is manual CTA. Status/Return/Showcase: catalog only.
 - **Guardrail:** `ui-provider-coupling.spec.ts` bans provider names and provider-specific keys in status/return/showcase (ts+html).
 - **Rule:** UI must not import infrastructure; api/testing only in \*.spec.ts.
 
@@ -31,7 +31,7 @@
 - **Error / message keys:** Shared defines `PAYMENT_ERROR_KEYS`, `PAYMENT_MESSAGE_KEYS`, `PAYMENT_SPEI_DETAIL_LABEL_KEYS` in `shared/constants/payment-error-keys.ts`. Domain stays agnostic; strategies import from Shared; UI translates via i18n. No `@core/i18n` in shared.
 - **Policy:** `intentRequiresUserAction(intent)` in `domain/.../policies/requires-user-action.policy.ts`; strategies use it as base for `requiresUserAction()`.
 - **Shared-no-core:** Depcruise rule `shared-no-core` forbids payments `shared/` from importing `src/app/core`. IdempotencyKeyFactory no longer uses LoggerService/TraceOperation from @core.
-- **SPEI display config:** `SpeiDisplayConfig` in `application/api/contracts/spei-display-config.types.ts`; constants in `infrastructure/fake/shared/constants/spei-display.constants.ts`; SpeiStrategy receives config via constructor (optional; defaults in tests).
+- **SPEI display config:** `SpeiDisplayConfig` in `presentation/contracts/spei-display-config.types.ts` (deprecated re-export in `application/api/contracts/`); constants in `infrastructure/fake/shared/constants/spei-display.constants.ts`; SpeiStrategy receives config via constructor (optional; defaults in tests).
 
 ## 🧩 PR6 — Flow telemetry (PR2 done)
 
@@ -51,7 +51,7 @@
 - **Suffixes:** `*.types.ts`, `*.event.ts`, `*.command.ts`, `*.vo.ts`, `*.rule.ts`, `*.policy.ts`, `*.port.ts`
 - **Folders:** `domain/common/primitives/{ids,money,time}`, `domain/subdomains/{payment,fallback}/{contracts,entities,messages,rules,policies,ports}` — messages hold `*.command.ts` and `*.event.ts`; entities hold `*.types.ts` and `*.model.ts`.
 - **VOs adopted in contracts:** `Money`, `PaymentIntentId`, `OrderId` in `domain/common/primitives/`; used in `CreatePaymentRequest`, `ConfirmPaymentRequest`, `CancelPaymentRequest`, `GetPaymentStatusRequest`, `PaymentIntent` (see `domain/subdomains/payment/messages/payment-request.command.ts` and `entities/payment-intent.types.ts`).
-- **Contracts:** Error/message keys in `shared/constants/payment-error-keys.ts`; `SpeiDisplayConfig` in `application/api/contracts/spei-display-config.types.ts`.
+- **Contracts:** Error/message keys in `shared/constants/payment-error-keys.ts`; `SpeiDisplayConfig` in `presentation/contracts/spei-display-config.types.ts` (deprecated re-export in `application/api/contracts/`).
 
 ---
 

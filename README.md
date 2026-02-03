@@ -60,11 +60,11 @@ Two maps explain the system: **runtime** (who talks to whom during a payment) an
 
 **Runtime: what talks to what during a payment**
 
-![Payments runtime map](charts/chart-payments-runtime-29-jan.png)
+![Payments runtime map](charts/chart-payments-runtime-feb-02.svg)
 
 **Dependencies: what may import what (guardrails)**
 
-![Dependency map](charts/chart-dependancy-29-jan.png)
+![Dependency map](charts/chart-dependancy-02-feb.svg)
 
 **How to use these maps:** When you feel lost, start at the centre (the **Flow** / state machine), then follow the bridges to the **store**, **UI**, and **providers**. The runtime map shows the live flow; the dependency map shows the rules the repo enforces so the architecture stays consistent.
 

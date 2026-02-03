@@ -1,24 +1,57 @@
 ---
 config:
-  theme: redux
+  theme: neo-dark
   layout: fixed
+  flowchart:
+    padding: 1000
+    wrappingWidth: 1000
+    diagramPadding: 10
+    defaultRenderer: elk
 ---
-flowchart TB
- subgraph UI["UI Layer"]
+flowchart BT
+ subgraph DOMAIN["Domain Layer"]
+    direction BT
+        DMX["Entities / VOs / Policies"]
+  end
+ subgraph APP["Application Core"]
+    direction BT
+        ORX["Flow + Orchestration"]
+        ADX["Adapters (state/telemetry)"]
+  end
+ subgraph API["Application API"]
+    direction BT
+        APX["Ports + Tokens"]
+        ACX["Core Contracts"]
+  end
+ subgraph PRESENT["Presentation"]
+    direction BT
+        PRX["FieldRequirements / SpeiDisplayConfig"]
+        PRR["ProviderDescriptorRegistry"]
+  end
+ subgraph L2["Application + Presentation"]
+    direction LR
+        APP
+        API
+        PRESENT
+  end
+ subgraph L3["UI + Infrastructure"]
+    direction LR
         UIX["UI Components / Pages"]
+        IFX["Provider Gateways + Normalizers"]
   end
- subgraph APP["Application Layer"]
-        APX["Flow + <br>Orchestrators + <br>UseCases"]
-        BRX(("Bridges / Ports"))
-  end
- subgraph DOMAIN["👑 Domain Layer 👑"]
-        DMX["Contracts(types/models/errors)"]
-        DRX["Contracts<br>(types/models/errors)"]
-  end
- subgraph INFRA["Infrastructure Layer"]
-        IFX["Provider Adapters<br>(gateways/http)"]
-  end
-    UIX --> APX & DMX
-    APX --> DMX & DRX & BRX
-    IFX --> DMX & BRX
-    DOMAIN -. X .-> UIX & APX & IFX
+    UIX L_UIX_APX_0@--> APX & PRX & PRR
+    IFX L_IFX_APX_0@--> APX
+    ORX --> DMX
+    ADX --> DMX & PRR
+    ACX L_ACX_DMX_0@--> DMX
+    APX L_APX_ACX_0@--> ACX
+    PRR L_PRR_APX_0@-. types .-> APX
+    APX L_APX_PRX_0@-. "re-exports" .-> PRX
+
+
+    L_UIX_APX_0@{ animation: slow }
+    L_IFX_APX_0@{ animation: slow }
+    L_ACX_DMX_0@{ animation: fast }
+    L_APX_ACX_0@{ animation: fast }
+    L_PRR_APX_0@{ animation: slow }
+    L_APX_PRX_0@{ animation: fast }

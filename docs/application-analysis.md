@@ -19,8 +19,10 @@ Key folders and files:
     - ports/ (payment-store.port.ts, provider-factory.port.ts,
       payment-gateway.port.ts, ...)
     - tokens/ (store, provider, operations, telemetry, webhook)
-    - contracts/ (checkout-field-requirements.types.ts,
-      payment-provider-catalog.types.ts, spei-display-config.types.ts)
+    - contracts/ (redirect-return\*.ts, key-value-storage.contract.ts,
+      payment-provider-catalog.types.ts,
+      checkout-field-requirements.types.ts [deprecated re-export],
+      spei-display-config.types.ts [deprecated re-export])
     - facades/payment-history.facade.ts
     - builders/base-payment-request.builder.ts
     - testing/ (flow harness, mock state, vo helpers)
@@ -50,6 +52,13 @@ Outgoing dependencies (application depends on):
 - Shared utils: shared/rxjs/safe-defer.ts and shared idempotency.
 - Browser APIs: localStorage, window (see P0).
 
+## API boundary (application/api)
+
+- application/api is the integration surface for UI, infrastructure, and config.
+- It can re-export presentation contracts and import internal application types when they are part of the public contract.
+- Prefer `import type` for internal references to avoid runtime coupling; keep api curated (no internal-only exports).
+- UI-facing ports live here intentionally; core ports remain UI-agnostic.
+
 ## Prioritized findings
 
 ### P0
@@ -72,25 +81,23 @@ Browser APIs inside application (persistence / navigation)
 
 UI contracts and framework types exposed by application
 
-- Symptom: PaymentFlowPort uses Angular Signal, and exposes UI fields (labelKey, icon, field schema).
-  UI metadata tokens live in application.
-- Impact: tight coupling to Angular and presentation; infra registers UI metadata.
+- Symptom: UI-facing ports and presentation metadata were mixed with core contracts; presentation types lived under application/api/contracts.
+- Impact: confusion about what is public API vs core-only; risk of UI-only types leaking into orchestration.
 - Where:
   - src/app/features/payments/application/api/ports/payment-store.port.ts
-  - src/app/features/payments/application/api/contracts/checkout-field-requirements.types.ts
-  - src/app/features/payments/application/api/tokens/provider/payment-provider-ui-meta.token.ts
-  - src/app/features/payments/application/api/tokens/provider/payment-provider-descriptors.token.ts
-  - src/app/features/payments/application/orchestration/registry/provider-descriptor.provider.ts
-- Rule broken: application should be UI-agnostic; UI-only schema and tokens should not live here.
-- Proposal: split provider metadata into capabilities vs presentation.
-  - Capabilities (application): supportedMethods, requiresRedirect, supportsWebhook,
-    flow requirements (returnNonce required, customerAction required).
-  - Presentation (UI): icon, labelKey, instructionsKey, display configs (e.g. spei-display-config).
-    Define a core, UI-agnostic port and contracts; keep a UI adapter for signals.
-    Move UI-only contracts/tokens to ui/ or a presentation sublayer. Keep a temporary
-    re-export with /\*_ @deprecated _/ to avoid breaking API.
-- Risk/tradeoff: migration in UI and infra; plan needed to avoid breaking API.
-- Notes: spei-display-config.types.ts likely belongs in UI/presentation (probable move in Step 3).
+  - src/app/features/payments/application/api/ports/provider-factory.port.ts
+  - src/app/features/payments/application/api/contracts/checkout-field-requirements.types.ts (deprecated re-export)
+  - src/app/features/payments/application/api/contracts/spei-display-config.types.ts (deprecated re-export)
+  - src/app/features/payments/presentation/contracts/\*\*
+  - src/app/features/payments/presentation/tokens/provider/\*\*
+- Rule broken: application core should remain UI-agnostic; application/api must be a curated integration surface.
+- Proposal: keep UI ports in application/api as explicit UI contracts; enforce a UI-agnostic core port.
+  Split provider metadata into capabilities (application) vs presentation (UI).
+  Move UI-only contracts/tokens to @payments/presentation and keep deprecated re-exports in
+  application/api for a short migration window.
+- Risk/tradeoff: migration in UI/infra; requires docs and dependency rules to prevent regressions.
+- Notes: checkout-field-requirements and spei-display-config now live in presentation contracts
+  and are re-exported from application/api for compatibility.
 
 Redirect return parsing in application
 
@@ -143,18 +150,18 @@ Telemetry depends on string state names
      bun run test src/app/features/payments/application/orchestration/flow/payment-flow.actor.telemetry.spec.ts
    - Stop point: app works with new adapters and tests pass.
 
-2. Define core contracts + core port (UI-agnostic) and keep UI adapter.
+2. Define core contracts + core port (UI-agnostic) and keep a UI-facing port in application/api.
    - Files: payment-store.port.ts, ngrx-signals-state.adapter.ts, config tokens.
-   - Better: application is UI-agnostic; UI keeps signals via adapter.
-   - DoD: no UI-only types (labels, icon, FieldRequirements) in core port.
+   - Better: core remains UI-agnostic; UI port is an explicit contract in application/api.
+   - DoD: core port has no UI-only types; UI port may reference presentation contracts.
    - Tests: bun run test src/app/features/payments/application/orchestration/store/payment-store.spec.ts
    - Stop point: UI still uses signals; core port compiles.
 
-3. Move UI-only contracts/tokens to UI/presentation and re-export deprecations.
-   - Files: move checkout-field-requirements.types.ts, provider UI tokens;
-     add deprecated re-export in application for a short migration window.
-   - Better: application has no UI schema/tokens; infra no longer registers UI metadata.
-   - DoD: rg "application/api/tokens/provider.\*ui" in infra returns 0 hits.
+3. Move UI-only contracts/tokens to presentation and keep deprecated re-exports in application/api.
+   - Files: move checkout-field-requirements.types.ts, spei-display-config.types.ts,
+     and provider UI tokens to presentation; keep deprecated re-exports in application/api.
+   - Better: presentation contracts are owned by UI/presentation; application/api exposes them only for compatibility.
+   - DoD: new definitions live in @payments/presentation; application/api/contracts contain only deprecated re-exports.
    - Dependency: do this after Step 2 to avoid churn in core port/contracts.
    - Stop point: UI compiles using new locations.
 
@@ -173,7 +180,7 @@ Telemetry depends on string state names
      - createdAtMs
      - expiresAtMs (or ttlMs)
    - DoD: if missing/expired -> controlled error + telemetry (no secrets).
-   - DoD: no provider detection heuristics in UI/app; rg "payment_intent|setup_intent|token"
+   - DoD: no provider detection heuristics in UI/app; rg "payment_intent|setup_intent"
      in application returns 0 hits.
    - Tests: bun run test src/app/features/payments/ui/pages/return/return.page.spec.ts
      bun run test src/app/features/payments/infrastructure/\*\*/redirect-return-normalizer.spec.ts
@@ -415,11 +422,10 @@ export const REDIRECT_RETURN_NORMALIZERS =
 
 ## Layering guardrails (checks)
 
-- rg "@payments/application/adapters" src/app/features/payments/application/api returns 0 hits.
-- rg "@payments/application/orchestration" src/app/features/payments/application/api/contracts returns 0 hits.
-- rg "@payments/application/api/.\*ui" src/app/features/payments/infrastructure returns 0 hits.
 - rg "@payments/ui" src/app/features/payments/application --glob "\*.ts" returns 0 hits.
 - rg "@angular/router|ActivatedRoute|Router" src/app/features/payments/application --glob "\*.ts" returns 0 hits.
+- rg "@payments/presentation" src/app/features/payments/application/orchestration --glob "\*.ts" returns 0 hits.
+- application/api may import internal application types, but only via `import type` (manual review).
 
 ## Compatibility strategy
 
@@ -431,11 +437,12 @@ export const REDIRECT_RETURN_NORMALIZERS =
 
 - rg "localStorage" src/app/features/payments/application returns no results.
 - rg "window.location" src/app/features/payments/application returns no results.
-- rg "payment_intent|setup_intent|token" src/app/features/payments/application returns no results.
-- No imports from application/adapters into application/api/contracts or application/api/ports.
+- rg "payment_intent|setup_intent" src/app/features/payments/application returns no results.
 - rg "globalThis[.]localStorage|window[.]" src/app/features/payments/application returns no results.
-- rg "labelKey|placeholderKey|icon|FieldRequirements|display-config|instructionsKey" src/app/features/payments/application/api returns no results.
+- rg "labelKey|placeholderKey|icon|FieldRequirements|display-config|instructionsKey" src/app/features/payments/application/orchestration --glob "\*.ts" returns no results.
+- rg "labelKey|placeholderKey|icon|FieldRequirements|display-config|instructionsKey" src/app/features/payments/application/api is reviewed; only UI-facing ports or deprecated re-exports.
 - rg "payment_intent|setup_intent|token" src/app/features/payments --glob "\*.spec.ts" is reviewed; ideally 0 hits; move to infra normalizer tests if needed.
+- application/api imports from adapters/orchestration are type-only (manual review).
 - Tests pass:
   - bun run test src/app/features/payments/application/orchestration/flow/payment-flow.machine.spec.ts
   - bun run test src/app/features/payments/application/orchestration/flow/payment-flow.actor.telemetry.spec.ts
