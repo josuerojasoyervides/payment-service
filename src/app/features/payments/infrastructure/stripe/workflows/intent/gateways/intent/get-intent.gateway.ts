@@ -5,8 +5,8 @@ import type { PaymentIntent } from '@app/features/payments/domain/subdomains/pay
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { GetPaymentStatusRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import { STRIPE_API_BASE } from '@app/features/payments/infrastructure/stripe/shared/constants/base-api.constant';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
+import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { mapPaymentIntent } from '@payments/infrastructure/stripe/workflows/intent/mappers/payment-intent.mapper';
 import type { Observable } from 'rxjs';
 
@@ -18,9 +18,9 @@ export class StripeGetIntentGateway extends PaymentOperationPort<
 > {
   private readonly http = inject(HttpClient);
   private readonly logger = inject(LoggerService);
+  private readonly config = inject(PAYMENTS_INFRA_CONFIG);
 
   readonly providerId: PaymentProviderId = 'stripe' as const;
-  private static readonly API_BASE = STRIPE_API_BASE;
 
   constructor() {
     super();
@@ -28,7 +28,7 @@ export class StripeGetIntentGateway extends PaymentOperationPort<
 
   protected executeRaw(request: GetPaymentStatusRequest): Observable<StripePaymentIntentDto> {
     return this.http.get<StripePaymentIntentDto>(
-      `${StripeGetIntentGateway.API_BASE}/intents/${request.intentId.value}`,
+      `${this.config.stripe.baseUrl}/intents/${request.intentId.value}`,
     );
   }
 

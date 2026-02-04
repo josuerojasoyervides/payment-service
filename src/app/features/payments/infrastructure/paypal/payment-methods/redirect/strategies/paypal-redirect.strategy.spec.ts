@@ -50,7 +50,11 @@ describe('PaypalRedirectStrategy', () => {
       providers: [{ provide: LoggerService, useValue: loggerMock }],
     });
 
-    strategy = new PaypalRedirectStrategy(gatewayMock as any, loggerMock as any);
+    strategy = new PaypalRedirectStrategy(gatewayMock as any, loggerMock as any, {
+      brand_name: 'Payment Service',
+      landing_page: 'NO_PREFERENCE',
+      user_action: 'PAY_NOW',
+    });
   });
 
   it('delegates to gateway.createIntent(req)', async () => {

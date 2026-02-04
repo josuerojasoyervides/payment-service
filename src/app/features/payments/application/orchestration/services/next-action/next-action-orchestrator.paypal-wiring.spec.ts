@@ -3,6 +3,8 @@ import { createPaymentIntentId } from '@payments/application/api/testing/vo-test
 import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
+import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { PaypalProviderFactory } from '@payments/infrastructure/paypal/core/factories/paypal-provider.factory';
 import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/order.facade';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
@@ -10,6 +12,24 @@ import { firstValueFrom, of } from 'rxjs';
 
 describe('NextActionOrchestratorService (PayPal wiring)', () => {
   it('routes finalize via registry->paypal factory capability->handler.execute (real wiring)', async () => {
+    const infraConfigInput: PaymentsInfraConfigInput = {
+      paymentsBackendBaseUrl: '/test/payments',
+      timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
+      paypal: {
+        defaults: {
+          brand_name: 'Test Brand',
+          landing_page: 'NO_PREFERENCE',
+          user_action: 'PAY_NOW',
+        },
+      },
+      spei: {
+        displayConfig: {
+          receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+          beneficiaryName: 'Payment Service',
+        },
+      },
+    };
+
     const paypalIntentFacadeMock: Pick<PaypalIntentFacade, 'providerId' | 'confirmIntent'> = {
       providerId: 'paypal',
       confirmIntent: vi.fn(() =>
@@ -30,6 +50,7 @@ describe('NextActionOrchestratorService (PayPal wiring)', () => {
         PaypalProviderFactory,
         { provide: PaypalIntentFacade, useValue: paypalIntentFacadeMock },
         { provide: PAYMENT_PROVIDER_FACTORIES, useExisting: PaypalProviderFactory, multi: true },
+        providePaymentsInfraConfig(infraConfigInput),
       ],
     });
 

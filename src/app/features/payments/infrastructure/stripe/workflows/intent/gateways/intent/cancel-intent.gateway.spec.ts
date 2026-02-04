@@ -5,6 +5,8 @@ import { LoggerService } from '@core/logging';
 import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/cancel-intent.gateway';
 
 describe('StripeCancelIntentGateway', () => {
@@ -17,6 +19,23 @@ describe('StripeCancelIntentGateway', () => {
     info: vi.fn(),
     debug: vi.fn(),
   };
+  const infraConfigInput: PaymentsInfraConfigInput = {
+    paymentsBackendBaseUrl: '/test/payments',
+    timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
+    paypal: {
+      defaults: {
+        brand_name: 'Payment Service',
+        landing_page: 'NO_PREFERENCE',
+        user_action: 'PAY_NOW',
+      },
+    },
+    spei: {
+      displayConfig: {
+        receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+        beneficiaryName: 'Payment Service',
+      },
+    },
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -25,6 +44,7 @@ describe('StripeCancelIntentGateway', () => {
         provideHttpClientTesting(),
         StripeCancelIntentGateway,
         { provide: LoggerService, useValue: loggerMock },
+        providePaymentsInfraConfig(infraConfigInput),
       ],
     });
 
@@ -53,7 +73,7 @@ describe('StripeCancelIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/intents/pi_123/cancel');
+    const httpReq = httpMock.expectOne('/test/payments/stripe/intents/pi_123/cancel');
 
     expect(httpReq.request.method).toBe('POST');
     expect(httpReq.request.body).toEqual({});
@@ -84,7 +104,7 @@ describe('StripeCancelIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/intents/pi_error/cancel');
+    const httpReq = httpMock.expectOne('/test/payments/stripe/intents/pi_error/cancel');
     expect(httpReq.request.method).toBe('POST');
 
     httpReq.flush(

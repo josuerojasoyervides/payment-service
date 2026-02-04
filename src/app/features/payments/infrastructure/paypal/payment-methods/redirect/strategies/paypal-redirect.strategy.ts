@@ -16,6 +16,7 @@ import type {
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
+import type { PaypalAppContextDefaults } from '@payments/infrastructure/config/payments-infra-config.types';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
 
@@ -33,12 +34,10 @@ import { map, tap } from 'rxjs';
 export class PaypalRedirectStrategy implements PaymentStrategy {
   readonly type: PaymentMethodType = 'card';
 
-  private static readonly DEFAULT_LANDING_PAGE = 'LOGIN';
-  private static readonly DEFAULT_USER_ACTION = 'PAY_NOW';
-
   constructor(
     private readonly gateway: PaymentGatewayPort,
     private readonly logger: LoggerService,
+    private readonly defaults: PaypalAppContextDefaults,
   ) {}
 
   /**
@@ -120,9 +119,9 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
       payment_method_type: 'paypal_redirect',
       return_url: returnUrl,
       cancel_url: cancelUrl,
-      landing_page: PaypalRedirectStrategy.DEFAULT_LANDING_PAGE,
-      user_action: PaypalRedirectStrategy.DEFAULT_USER_ACTION,
-      brand_name: 'Payment Service',
+      landing_page: this.defaults.landing_page,
+      user_action: this.defaults.user_action,
+      brand_name: this.defaults.brand_name,
       timestamp: new Date().toISOString(),
       formatted_amount: req.money.amount.toFixed(2),
     };

@@ -11,6 +11,7 @@ import type { FinalizePort } from '@payments/application/api/ports/finalize.port
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
+import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
 import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 
@@ -33,6 +34,7 @@ export class PaypalProviderFactory implements ProviderFactory {
   private readonly gateway = inject(PaypalIntentFacade);
   private readonly logger = inject(LoggerService);
   private readonly finalizeHandler = inject(PaypalFinalizeHandler);
+  private readonly infraConfig = inject(PAYMENTS_INFRA_CONFIG);
   /**
    * Strategy cache.
    */
@@ -123,7 +125,11 @@ export class PaypalProviderFactory implements ProviderFactory {
   private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
     switch (type) {
       case 'card':
-        return new PaypalRedirectStrategy(this.gateway, this.logger);
+        return new PaypalRedirectStrategy(
+          this.gateway,
+          this.logger,
+          this.infraConfig.paypal.defaults,
+        );
       default:
         throw invalidRequestError(I18nKeys.errors.invalid_request, {
           reason: 'unexpected_payment_method_type',

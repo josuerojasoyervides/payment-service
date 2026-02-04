@@ -4,6 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/cancel-intent.gateway';
 
 describe('PaypalCancelIntentGateway', () => {
@@ -16,6 +18,23 @@ describe('PaypalCancelIntentGateway', () => {
     info: vi.fn(),
     debug: vi.fn(),
   };
+  const infraConfigInput: PaymentsInfraConfigInput = {
+    paymentsBackendBaseUrl: '/test/payments',
+    timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
+    paypal: {
+      defaults: {
+        brand_name: 'Test Brand',
+        landing_page: 'NO_PREFERENCE',
+        user_action: 'PAY_NOW',
+      },
+    },
+    spei: {
+      displayConfig: {
+        receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+        beneficiaryName: 'Payment Service',
+      },
+    },
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -24,6 +43,7 @@ describe('PaypalCancelIntentGateway', () => {
         provideHttpClientTesting(),
         PaypalCancelIntentGateway,
         { provide: LoggerService, useValue: loggerMock },
+        providePaymentsInfraConfig(infraConfigInput),
       ],
     });
 
@@ -47,7 +67,7 @@ describe('PaypalCancelIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/paypal/orders/ORDER_1/void');
+    const httpReq = httpMock.expectOne('/test/payments/paypal/orders/ORDER_1/void');
     expect(httpReq.request.method).toBe('POST');
     expect(httpReq.request.body).toEqual({});
 
@@ -77,7 +97,7 @@ describe('PaypalCancelIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/paypal/orders/ORDER_ERROR/void');
+    const httpReq = httpMock.expectOne('/test/payments/paypal/orders/ORDER_ERROR/void');
     expect(httpReq.request.method).toBe('POST');
 
     httpReq.flush(

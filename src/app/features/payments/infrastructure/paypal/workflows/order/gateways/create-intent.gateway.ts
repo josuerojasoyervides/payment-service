@@ -9,9 +9,9 @@ import type {
   PaypalCreateOrderRequest,
   PaypalOrderDto,
 } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
-import { PAYPAL_API_BASE } from '@app/features/payments/infrastructure/paypal/shared/constants/base-api.constant';
 import { I18nKeys } from '@core/i18n';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
+import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { mapOrder } from '@payments/infrastructure/paypal/workflows/order/mappers/map-order.mapper';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import type { Observable } from 'rxjs';
@@ -25,14 +25,14 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
   private readonly http = inject(HttpClient);
   private readonly logger = inject(LoggerService);
   private readonly idempotencyKeyFactory = inject(IdempotencyKeyFactory);
+  private readonly config = inject(PAYMENTS_INFRA_CONFIG);
 
-  private readonly API_BASE = PAYPAL_API_BASE;
   readonly providerId: PaymentProviderId = 'paypal' as const;
 
   protected executeRaw(request: CreatePaymentRequest): Observable<PaypalOrderDto> {
     const paypalRequest = this.buildPaypalCreateRequest(request);
 
-    return this.http.post<PaypalOrderDto>(`${this.API_BASE}/orders`, paypalRequest, {
+    return this.http.post<PaypalOrderDto>(`${this.config.paypal.baseUrl}/orders`, paypalRequest, {
       headers: {
         'PayPal-Request-Id': this.idempotencyKeyFactory.generateForStart(this.providerId, request),
         Prefer: 'return=representation',
@@ -61,6 +61,8 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
     const returnUrl = req.returnUrl;
     const cancelUrl = req.cancelUrl ?? returnUrl;
 
+    const defaults = this.config.paypal.defaults;
+
     return {
       intent: 'CAPTURE',
       purchase_units: [
@@ -75,9 +77,9 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
         },
       ],
       application_context: {
-        brand_name: 'Payment Service',
-        landing_page: 'LOGIN',
-        user_action: 'PAY_NOW',
+        brand_name: defaults.brand_name,
+        landing_page: defaults.landing_page,
+        user_action: defaults.user_action,
         return_url: returnUrl,
         cancel_url: cancelUrl,
       },

@@ -4,6 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
 
 describe('StripeGetIntentGateway', () => {
@@ -16,6 +18,23 @@ describe('StripeGetIntentGateway', () => {
     info: vi.fn(),
     debug: vi.fn(),
   };
+  const infraConfigInput: PaymentsInfraConfigInput = {
+    paymentsBackendBaseUrl: '/test/payments',
+    timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
+    paypal: {
+      defaults: {
+        brand_name: 'Payment Service',
+        landing_page: 'NO_PREFERENCE',
+        user_action: 'PAY_NOW',
+      },
+    },
+    spei: {
+      displayConfig: {
+        receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+        beneficiaryName: 'Payment Service',
+      },
+    },
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -24,6 +43,7 @@ describe('StripeGetIntentGateway', () => {
         provideHttpClientTesting(),
         StripeGetIntentGateway,
         { provide: LoggerService, useValue: loggerMock },
+        providePaymentsInfraConfig(infraConfigInput),
       ],
     });
 
@@ -49,7 +69,7 @@ describe('StripeGetIntentGateway', () => {
       },
     });
 
-    const req = httpMock.expectOne('/api/payments/stripe/intents/pi_123');
+    const req = httpMock.expectOne('/test/payments/stripe/intents/pi_123');
     expect(req.request.method).toBe('GET');
 
     req.flush({
@@ -74,7 +94,7 @@ describe('StripeGetIntentGateway', () => {
       },
     });
 
-    const req = httpMock.expectOne('/api/payments/stripe/intents/pi_error');
+    const req = httpMock.expectOne('/test/payments/stripe/intents/pi_error');
     expect(req.request.method).toBe('GET');
 
     req.flush({ message: 'Stripe error' }, { status: 500, statusText: 'Internal Server Error' });

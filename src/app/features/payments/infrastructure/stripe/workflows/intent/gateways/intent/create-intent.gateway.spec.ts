@@ -6,6 +6,8 @@ import { LoggerService } from '@core/logging';
 import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
 
 describe('StripeCreateIntentGateway', () => {
@@ -18,6 +20,23 @@ describe('StripeCreateIntentGateway', () => {
     info: vi.fn(),
     debug: vi.fn(),
   };
+  const infraConfigInput: PaymentsInfraConfigInput = {
+    paymentsBackendBaseUrl: '/test/payments',
+    timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
+    paypal: {
+      defaults: {
+        brand_name: 'Payment Service',
+        landing_page: 'NO_PREFERENCE',
+        user_action: 'PAY_NOW',
+      },
+    },
+    spei: {
+      displayConfig: {
+        receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+        beneficiaryName: 'Payment Service',
+      },
+    },
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -26,6 +45,7 @@ describe('StripeCreateIntentGateway', () => {
         provideHttpClientTesting(),
         StripeCreateIntentGateway,
         { provide: LoggerService, useValue: loggerMock },
+        providePaymentsInfraConfig(infraConfigInput),
       ],
     });
 
@@ -55,7 +75,7 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
+    const httpReq = httpMock.expectOne('/test/payments/stripe/intents');
     expect(httpReq.request.method).toBe('POST');
 
     expect(httpReq.request.body).toEqual({
@@ -97,7 +117,7 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/sources');
+    const httpReq = httpMock.expectOne('/test/payments/stripe/sources');
     expect(httpReq.request.method).toBe('POST');
 
     httpReq.flush({
@@ -132,7 +152,7 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
+    const httpReq = httpMock.expectOne('/test/payments/stripe/intents');
     expect(httpReq.request.method).toBe('POST');
 
     httpReq.flush(

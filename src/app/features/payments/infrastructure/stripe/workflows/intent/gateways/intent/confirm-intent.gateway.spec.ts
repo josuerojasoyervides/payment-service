@@ -5,6 +5,8 @@ import { LoggerService } from '@core/logging';
 import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
 
 describe('StripeConfirmIntentGateway', () => {
@@ -17,6 +19,23 @@ describe('StripeConfirmIntentGateway', () => {
     info: vi.fn(),
     debug: vi.fn(),
   };
+  const infraConfigInput: PaymentsInfraConfigInput = {
+    paymentsBackendBaseUrl: '/test/payments',
+    timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
+    paypal: {
+      defaults: {
+        brand_name: 'Payment Service',
+        landing_page: 'NO_PREFERENCE',
+        user_action: 'PAY_NOW',
+      },
+    },
+    spei: {
+      displayConfig: {
+        receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+        beneficiaryName: 'Payment Service',
+      },
+    },
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -25,6 +44,7 @@ describe('StripeConfirmIntentGateway', () => {
         provideHttpClientTesting(),
         StripeConfirmIntentGateway,
         { provide: LoggerService, useValue: loggerMock },
+        providePaymentsInfraConfig(infraConfigInput),
       ],
     });
 
@@ -53,7 +73,7 @@ describe('StripeConfirmIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/intents/pi_123/confirm');
+    const httpReq = httpMock.expectOne('/test/payments/stripe/intents/pi_123/confirm');
 
     expect(httpReq.request.method).toBe('POST');
 
@@ -87,7 +107,7 @@ describe('StripeConfirmIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/intents/pi_error/confirm');
+    const httpReq = httpMock.expectOne('/test/payments/stripe/intents/pi_error/confirm');
     expect(httpReq.request.method).toBe('POST');
 
     httpReq.flush(

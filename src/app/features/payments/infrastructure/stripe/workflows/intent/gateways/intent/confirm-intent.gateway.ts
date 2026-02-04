@@ -8,8 +8,8 @@ import type {
   StripeConfirmIntentRequest,
   StripePaymentIntentDto,
 } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import { STRIPE_API_BASE } from '@app/features/payments/infrastructure/stripe/shared/constants/base-api.constant';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
+import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { getIdempotencyHeaders } from '@payments/infrastructure/stripe/shared/idempotency/get-idempotency-headers';
 import { mapPaymentIntent } from '@payments/infrastructure/stripe/workflows/intent/mappers/payment-intent.mapper';
 import type { Observable } from 'rxjs';
@@ -22,9 +22,8 @@ export class StripeConfirmIntentGateway extends PaymentOperationPort<
 > {
   private readonly http = inject(HttpClient);
   private readonly logger = inject(LoggerService);
+  private readonly config = inject(PAYMENTS_INFRA_CONFIG);
   readonly providerId: PaymentProviderId = 'stripe' as const;
-
-  private static readonly API_BASE = STRIPE_API_BASE;
 
   constructor() {
     super();
@@ -36,7 +35,7 @@ export class StripeConfirmIntentGateway extends PaymentOperationPort<
     };
 
     return this.http.post<StripePaymentIntentDto>(
-      `${StripeConfirmIntentGateway.API_BASE}/intents/${request.intentId.value}/confirm`,
+      `${this.config.stripe.baseUrl}/intents/${request.intentId.value}/confirm`,
       stripeRequest,
       {
         headers: getIdempotencyHeaders(request.intentId.value, 'confirm', request.idempotencyKey),

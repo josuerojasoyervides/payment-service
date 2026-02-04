@@ -9,8 +9,8 @@ import type {
   StripePaymentIntentDto,
   StripeSpeiSourceDto,
 } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import { STRIPE_API_BASE } from '@app/features/payments/infrastructure/stripe/shared/constants/base-api.constant';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
+import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { SpeiSourceMapper } from '@payments/infrastructure/stripe/payment-methods/spei/mappers/spei-source.mapper';
 import { getIdempotencyHeaders } from '@payments/infrastructure/stripe/shared/idempotency/get-idempotency-headers';
 import { mapPaymentIntent } from '@payments/infrastructure/stripe/workflows/intent/mappers/payment-intent.mapper';
@@ -24,8 +24,8 @@ export class StripeCreateIntentGateway extends PaymentOperationPort<
 > {
   private readonly http = inject(HttpClient);
   private readonly logger = inject(LoggerService);
+  private readonly config = inject(PAYMENTS_INFRA_CONFIG);
   readonly providerId: PaymentProviderId = 'stripe' as const;
-  private static readonly API_BASE = STRIPE_API_BASE;
 
   constructor() {
     super();
@@ -35,20 +35,17 @@ export class StripeCreateIntentGateway extends PaymentOperationPort<
     request: CreatePaymentRequest,
   ): Observable<StripePaymentIntentDto | StripeSpeiSourceDto> {
     const stripeRequest = this.buildStripeCreateRequest(request);
+    const baseUrl = this.config.stripe.baseUrl;
 
     if (request.method.type === 'spei') {
-      return this.http.post<StripeSpeiSourceDto>(
-        `${StripeCreateIntentGateway.API_BASE}/sources`,
-        stripeRequest,
-        { headers: getIdempotencyHeaders(request.orderId.value, 'create', request.idempotencyKey) },
-      );
+      return this.http.post<StripeSpeiSourceDto>(`${baseUrl}/sources`, stripeRequest, {
+        headers: getIdempotencyHeaders(request.orderId.value, 'create', request.idempotencyKey),
+      });
     }
 
-    return this.http.post<StripePaymentIntentDto>(
-      `${StripeCreateIntentGateway.API_BASE}/intents`,
-      stripeRequest,
-      { headers: getIdempotencyHeaders(request.orderId.value, 'create', request.idempotencyKey) },
-    );
+    return this.http.post<StripePaymentIntentDto>(`${baseUrl}/intents`, stripeRequest, {
+      headers: getIdempotencyHeaders(request.orderId.value, 'create', request.idempotencyKey),
+    });
   }
   protected mapResponse(dto: StripePaymentIntentDto | StripeSpeiSourceDto): PaymentIntent {
     if ('spei' in dto) {

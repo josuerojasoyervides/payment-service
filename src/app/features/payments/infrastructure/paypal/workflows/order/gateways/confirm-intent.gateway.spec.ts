@@ -4,6 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
 import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/confirm-intent.gateway';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
@@ -17,6 +19,23 @@ describe('PaypalConfirmIntentGateway', () => {
     info: vi.fn(),
     debug: vi.fn(),
   };
+  const infraConfigInput: PaymentsInfraConfigInput = {
+    paymentsBackendBaseUrl: '/test/payments',
+    timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
+    paypal: {
+      defaults: {
+        brand_name: 'Test Brand',
+        landing_page: 'NO_PREFERENCE',
+        user_action: 'PAY_NOW',
+      },
+    },
+    spei: {
+      displayConfig: {
+        receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+        beneficiaryName: 'Payment Service',
+      },
+    },
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -26,6 +45,7 @@ describe('PaypalConfirmIntentGateway', () => {
         PaypalConfirmIntentGateway,
         IdempotencyKeyFactory,
         { provide: LoggerService, useValue: loggerMock },
+        providePaymentsInfraConfig(infraConfigInput),
       ],
     });
 
@@ -49,7 +69,7 @@ describe('PaypalConfirmIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/paypal/orders/ORDER_1/capture');
+    const httpReq = httpMock.expectOne('/test/payments/paypal/orders/ORDER_1/capture');
     expect(httpReq.request.method).toBe('POST');
     expect(httpReq.request.body).toEqual({});
     expect(httpReq.request.headers.get('PayPal-Request-Id')).toBe('paypal:confirm:ORDER_1');
@@ -80,7 +100,7 @@ describe('PaypalConfirmIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/paypal/orders/ORDER_ERROR/capture');
+    const httpReq = httpMock.expectOne('/test/payments/paypal/orders/ORDER_ERROR/capture');
     expect(httpReq.request.method).toBe('POST');
 
     httpReq.flush(

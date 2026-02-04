@@ -5,6 +5,8 @@ import {
   createOrderId,
   createPaymentIntentId,
 } from '@payments/application/api/testing/vo-test-helpers';
+import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { PaypalProviderFactory } from '@payments/infrastructure/paypal/core/factories/paypal-provider.factory';
 import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/order.facade';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
@@ -16,6 +18,23 @@ describe('PaypalProviderFactory', () => {
     providerId: 'paypal',
     createIntent: vi.fn(),
   } satisfies Partial<PaypalIntentFacade>;
+  const infraConfigInput: PaymentsInfraConfigInput = {
+    paymentsBackendBaseUrl: '/api/payments',
+    timeouts: { stripeMs: 15_000, paypalMs: 15_000 },
+    paypal: {
+      defaults: {
+        brand_name: 'Payment Service',
+        landing_page: 'NO_PREFERENCE',
+        user_action: 'PAY_NOW',
+      },
+    },
+    spei: {
+      displayConfig: {
+        receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+        beneficiaryName: 'Payment Service',
+      },
+    },
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -24,6 +43,7 @@ describe('PaypalProviderFactory', () => {
         { provide: PaypalIntentFacade, useValue: gatewayStub },
         // Factory now exposes finalize capability via DI; stub is enough for these unit tests.
         { provide: PaypalFinalizeHandler, useValue: { providerId: 'paypal', execute: vi.fn() } },
+        providePaymentsInfraConfig(infraConfigInput),
       ],
     });
 
