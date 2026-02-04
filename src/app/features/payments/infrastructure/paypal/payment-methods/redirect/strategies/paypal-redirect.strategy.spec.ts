@@ -71,4 +71,12 @@ describe('PaypalRedirectStrategy', () => {
 
     expect(result.id?.value ?? result.id).toBe('pi_1');
   });
+
+  it('warns without logging token when token is provided', () => {
+    expect(() => strategy.validate(req)).not.toThrow();
+    expect(loggerMock.warn).toHaveBeenCalled();
+    const meta = loggerMock.warn.mock.calls.at(-1)?.[2] as Record<string, unknown>;
+    expect(meta).toEqual(expect.objectContaining({ hasToken: true }));
+    expect(meta).not.toHaveProperty('token');
+  });
 });

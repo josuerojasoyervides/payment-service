@@ -104,8 +104,10 @@ describe('SpeiStrategy', () => {
       expect(loggerMock.warn).toHaveBeenCalledWith(
         'Token provided but will be ignored for SPEI payments',
         'SpeiStrategy',
-        { token: 'tok_ignored' },
+        expect.objectContaining({ hasToken: true }),
       );
+      const meta = loggerMock.warn.mock.calls[0][2] as Record<string, unknown>;
+      expect(meta).not.toHaveProperty('token');
 
       consoleSpy.mockRestore();
     });

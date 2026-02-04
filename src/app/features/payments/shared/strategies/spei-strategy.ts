@@ -92,7 +92,7 @@ export class SpeiStrategy implements PaymentStrategy {
 
     if (req.method.token) {
       this.logger.warn('Token provided but will be ignored for SPEI payments', 'SpeiStrategy', {
-        token: req.method.token,
+        hasToken: true,
       });
     }
   }

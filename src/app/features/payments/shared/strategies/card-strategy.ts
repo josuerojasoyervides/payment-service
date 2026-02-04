@@ -129,7 +129,7 @@ export class CardStrategy implements PaymentStrategy {
       orderId: req.orderId.value,
       amount: req.money.amount,
       currency: req.money.currency,
-      tokenPrefix: req.method.token?.substring(0, 6),
+      hasToken: Boolean(req.method.token),
       metadata,
     });
 

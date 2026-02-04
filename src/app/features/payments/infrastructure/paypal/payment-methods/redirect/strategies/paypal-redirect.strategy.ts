@@ -88,7 +88,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
         '[PaypalRedirectStrategy] Token provided but PayPal uses its own checkout flow',
         'PaypalRedirectStrategy',
         {
-          token: req.method.token,
+          hasToken: true,
         },
       );
     }

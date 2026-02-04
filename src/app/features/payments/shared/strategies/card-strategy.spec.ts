@@ -162,6 +162,18 @@ describe('CardStrategy', () => {
       expect(result.id?.value ?? result.id).toBe('pi_1');
     });
 
+    it('logs without token prefix', async () => {
+      await firstValueFrom(strategy.start(validReq));
+
+      const startLog = loggerMock.info.mock.calls.find(
+        ([message]) => message === 'Starting payment',
+      );
+      expect(startLog).toBeTruthy();
+      const meta = startLog?.[2] as Record<string, unknown>;
+      expect(meta).toEqual(expect.objectContaining({ hasToken: true }));
+      expect(meta).not.toHaveProperty('tokenPrefix');
+    });
+
     it('throws validation error before calling gateway', () => {
       const invalidReq = { ...validReq, method: { type: 'card' as const } };
 
