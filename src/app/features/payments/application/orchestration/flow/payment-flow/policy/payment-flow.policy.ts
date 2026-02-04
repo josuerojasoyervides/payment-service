@@ -53,6 +53,9 @@ export const DEFAULT_PAYMENT_FLOW_CONFIG: PaymentFlowConfig = {
   },
 };
 
+/**
+ * Resolves the final flow config with defaults + overrides.
+ */
 export function resolvePaymentFlowConfig(
   overrides: PaymentFlowConfigOverrides = {},
 ): PaymentFlowConfig {
@@ -160,6 +163,9 @@ export function isPollingExhaustedPolicy(
  *
  * This is intentionally conservative: either exceeding the maximum number of
  * polling attempts **or** the maximum processing duration will trigger a timeout.
+ */
+/**
+ * Determines whether processing has exceeded timing/attempt bounds.
  */
 export function hasProcessingTimedOutPolicy(
   config: PaymentFlowConfig,

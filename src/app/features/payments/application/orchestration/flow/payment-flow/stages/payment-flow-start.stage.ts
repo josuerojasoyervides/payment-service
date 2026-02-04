@@ -3,6 +3,9 @@ import type {
   PaymentFlowStatesConfig,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 
+/**
+ * Start and post-start routing states.
+ */
 export const startStates = {
   starting: {
     tags: ['loading', 'starting'],

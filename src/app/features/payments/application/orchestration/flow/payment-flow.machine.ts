@@ -138,6 +138,9 @@ const createPaymentFlowSetup = (deps: PaymentFlowDeps, config: PaymentFlowConfig
   return machineSetup.extend({ actions });
 };
 
+/**
+ * Builds the payment flow XState machine with injected deps and config.
+ */
 export const createPaymentFlowMachine = (
   deps: PaymentFlowDeps,
   configOverrides: PaymentFlowConfigOverrides = {},

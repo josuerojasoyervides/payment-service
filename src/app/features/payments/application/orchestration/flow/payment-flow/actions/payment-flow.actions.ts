@@ -376,6 +376,9 @@ const createTrackingActions = <TActor extends ProvidedActor>(assignFlow: AssignF
   }),
 });
 
+/**
+ * Creates assigners and action handlers for the payment flow machine.
+ */
 export const createPaymentFlowActions = <TActor extends ProvidedActor>(
   assignFlow: AssignFn<TActor>,
   config: PaymentFlowConfig,

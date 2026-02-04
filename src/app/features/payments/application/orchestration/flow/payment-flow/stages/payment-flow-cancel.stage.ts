@@ -4,6 +4,9 @@ import type {
   PaymentFlowStatesConfig,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 
+/**
+ * Cancel invocation states.
+ */
 export const cancelStates = {
   cancelling: {
     tags: ['loading', 'cancelling'],

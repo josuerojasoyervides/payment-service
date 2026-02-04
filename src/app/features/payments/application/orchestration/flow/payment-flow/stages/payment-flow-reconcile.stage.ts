@@ -14,6 +14,9 @@ function toPaymentIntentIdOrNull(
   return result.ok ? result.value : null;
 }
 
+/**
+ * External event reconciliation states.
+ */
 export const reconcileStates = {
   reconciling: {
     tags: ['loading', 'reconciling'],

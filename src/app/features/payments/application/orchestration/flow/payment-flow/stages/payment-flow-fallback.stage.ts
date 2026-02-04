@@ -1,5 +1,8 @@
 import type { PaymentFlowStatesConfig } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 
+/**
+ * Fallback candidate and failure handling states.
+ */
 export const fallbackStates = {
   failed: {
     tags: ['error', 'failed'],

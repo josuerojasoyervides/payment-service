@@ -9,6 +9,9 @@ import type { FlowContextStore } from '@payments/application/orchestration/flow/
 import { toFlowContext } from '@payments/application/orchestration/flow/payment-flow/persistence/payment-flow.persistence';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 
+/**
+ * Rehydrates initial machine context from persisted flow data.
+ */
 export function buildInitialMachineContext(
   store: FlowContextStore,
 ): Partial<PaymentFlowMachineContext> | undefined {
@@ -79,6 +82,9 @@ export function flowContextToRefs(
   return refs as FlowTelemetryRefs;
 }
 
+/**
+ * Builds shared telemetry refs from the current snapshot.
+ */
 export function snapshotTelemetryBase(snapshot: PaymentFlowSnapshot): {
   flowId?: string;
   providerId?: string;

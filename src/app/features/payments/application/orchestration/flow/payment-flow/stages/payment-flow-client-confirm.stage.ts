@@ -9,6 +9,9 @@ import type {
  * Semantics: onDone => CLIENT_CONFIRM_SUCCEEDED -> reconciling; onError => CLIENT_CONFIRM_FAILED -> failed.
  * No REFRESH fallback; errors normalized to PaymentError in setError.
  */
+/**
+ * Client confirm invocation states.
+ */
 export const clientConfirmStates = {
   clientConfirming: {
     tags: ['loading', 'clientConfirming'],

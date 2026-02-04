@@ -23,6 +23,9 @@ export const defaultFlowIdGenerator: FlowIdGenerator = (nowMs) => {
   return built.ok ? built.value.value : `flow_${nowMs.toString(36)}_${createRandomSuffix()}`;
 };
 
+/**
+ * Builds a flow context with stable ids, timestamps, and provider references.
+ */
 export function createFlowContext(params: {
   providerId: PaymentProviderId;
   request: CreatePaymentRequest;
@@ -70,6 +73,9 @@ export function mergeProviderRefs(
   return result;
 }
 
+/**
+ * Merges provider references into an existing flow context.
+ */
 export function updateFlowContextProviderRefs(params: {
   context: PaymentFlowContext | null;
   providerId: PaymentProviderId;
@@ -88,6 +94,9 @@ export function updateFlowContextProviderRefs(params: {
   };
 }
 
+/**
+ * Resolves the most reliable reference id for status checks.
+ */
 export function resolveStatusReference(
   context: PaymentFlowContext | null,
   providerId: PaymentProviderId | null,

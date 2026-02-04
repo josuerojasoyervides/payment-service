@@ -3,6 +3,9 @@ import type {
   PaymentFlowStatesConfig,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 
+/**
+ * Polling loop and status refresh states.
+ */
 export const pollingStates = {
   polling: {
     tags: ['ready', 'polling'],

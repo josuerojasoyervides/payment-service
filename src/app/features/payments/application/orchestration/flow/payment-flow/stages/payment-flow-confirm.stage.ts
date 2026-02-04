@@ -4,6 +4,9 @@ import type {
   PaymentFlowStatesConfig,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 
+/**
+ * Confirm intent and post-confirm routing states.
+ */
 export const confirmStates = {
   confirming: {
     tags: ['loading', 'confirming'],

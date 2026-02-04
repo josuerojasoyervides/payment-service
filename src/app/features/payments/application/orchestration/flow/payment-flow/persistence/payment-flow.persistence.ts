@@ -23,6 +23,9 @@ export interface PersistedFlowContext {
   persistedAt: number;
 }
 
+/**
+ * Storage wrapper for flow context persistence and TTL cleanup.
+ */
 export class FlowContextStore {
   private readonly storageKey: string;
   private readonly now: () => number;
@@ -100,6 +103,9 @@ export class FlowContextStore {
   }
 }
 
+/**
+ * Restores a runtime flow context from persisted data.
+ */
 export function toFlowContext(persisted: PersistedFlowContext): PaymentFlowContext {
   return {
     flowId: persisted.flowId,

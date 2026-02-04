@@ -12,6 +12,9 @@ import type {
 
 type SnapshotTelemetryBase = ReturnType<typeof snapshotTelemetryBase>;
 
+/**
+ * Records a public command emission for telemetry.
+ */
 export function recordCommandSent(
   telemetry: FlowTelemetrySink,
   snapshot: PaymentFlowSnapshot,
@@ -27,6 +30,9 @@ export function recordCommandSent(
   });
 }
 
+/**
+ * Records a system event emission with correlation refs if available.
+ */
 export function recordSystemEventSent(
   telemetry: FlowTelemetrySink,
   snapshot: PaymentFlowSnapshot,
@@ -51,6 +57,9 @@ export function recordSystemEventSent(
   });
 }
 
+/**
+ * Emits effect start/finish boundaries based on snapshot tags.
+ */
 export function recordEffectTelemetry(
   telemetry: FlowTelemetrySink,
   snapshot: PaymentFlowSnapshot,
@@ -78,6 +87,9 @@ export function recordEffectTelemetry(
   }
 }
 
+/**
+ * Emits error telemetry with simple dedupe by error code.
+ */
 export function recordErrorTelemetry(
   telemetry: FlowTelemetrySink,
   snapshot: PaymentFlowSnapshot,
@@ -99,6 +111,9 @@ export function recordErrorTelemetry(
   return lastErrorCodeForTelemetry;
 }
 
+/**
+ * Records state transitions with tags and status.
+ */
 export function recordStateTelemetry(
   telemetry: FlowTelemetrySink,
   snapshot: PaymentFlowSnapshot,

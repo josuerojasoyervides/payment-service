@@ -171,6 +171,15 @@ done
 
 ---
 
+## Actor snapshot pipeline (order matters)
+
+- ActorService hosts the XState actor and wires inspect logging with redaction.
+- Snapshot subscription order: `signal snapshot` → `telemetry` → `prevSnapshot update` → `side-effects`.
+- Side-effects run in order: `persist flowContext` → `fallback bridge` (report failure / notify success).
+- Fallback auto-execute stream bridges to `sendSystem(FALLBACK_EXECUTE)`.
+
+---
+
 ## Where to look in code
 
 - Machine: `src/app/features/payments/application/orchestration/flow/payment-flow.machine.ts`

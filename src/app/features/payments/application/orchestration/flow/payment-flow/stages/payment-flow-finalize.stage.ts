@@ -3,6 +3,9 @@ import type {
   PaymentFlowStatesConfig,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 
+/**
+ * Finalize invocation states after external returns.
+ */
 export const finalizeStates = {
   finalizing: {
     tags: ['loading', 'finalizing'],
