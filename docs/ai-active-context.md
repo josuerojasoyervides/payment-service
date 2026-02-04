@@ -4,11 +4,11 @@
 
 ---
 
-## 🕒 Last Sync: 2026-02-02
+## 🕒 Last Sync: 2026-02-04
 
 ## 📍 Mission State
 
-- **Current mission:** Domain sanitized (UI-agnostic, fallback naming); Value Objects adopted in core contracts: Money, PaymentIntentId, OrderId. Domain agnostic of UI vocabulary; error keys in `shared/constants/`; SpeiDisplayConfig in `presentation/contracts/` (deprecated re-export in `application/api/contracts/`); depcruise `shared-no-core` enforced.
+- **Current mission:** Domain sanitized (UI-agnostic, fallback naming); Value Objects adopted in core contracts: Money, PaymentIntentId, OrderId. Domain agnostic of UI vocabulary; error keys in `shared/constants/`; SpeiDisplayConfig in `presentation/contracts/` (deprecated re-export in `application/api/contracts/`); depcruise `shared-no-core` enforced. PaymentFlow actor host decomposed into dedicated collaborators (telemetry, persistence, fallback, inspection) under `application/orchestration/flow/actor/` with a snapshot pipeline that preserves ordering.
 - **Key folders:** Domain `domain/**` (policies: `requires-user-action.policy.ts`), Shared `shared/constants/payment-error-keys.ts`, Application `application/orchestration/**` + `application/api/**` (ports/tokens/contracts), Presentation `presentation/contracts/**`, Config `config/payment.providers.ts`, Infra constants `infrastructure/fake/shared/constants/spei-display.constants.ts`.
 
 ## 🖥️ UI surface & boundaries (UI-01)
