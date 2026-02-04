@@ -1,9 +1,15 @@
 import type { Signal } from '@angular/core';
-import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import type { FlowTelemetryRefs } from '@app/features/payments/application/adapters/telemetry/types/flow-telemetry.types';
 import { FLOW_CONTEXT_STORAGE } from '@app/features/payments/application/api/tokens/flow/flow-context-storage.token';
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
+import {
+  recordCommandSent,
+  recordEffectTelemetry,
+  recordErrorTelemetry,
+  recordStateTelemetry,
+  recordSystemEventSent,
+} from '@app/features/payments/application/orchestration/flow/payment-flow/deps/payment-flow.actor.telemetry';
 import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import { NextActionOrchestratorService } from '@app/features/payments/application/orchestration/services/next-action/next-action-orchestrator.service';
 import { CancelPaymentUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/cancel-payment.use-case';
@@ -11,10 +17,15 @@ import { ConfirmPaymentUseCase } from '@app/features/payments/application/orches
 import { GetPaymentStatusUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@app/features/payments/application/orchestration/use-cases/intent/start-payment.use-case';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
-import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
-import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
 import { LoggerService } from '@core/logging';
+import { deepComputed } from '@ngrx/signals';
 import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
+import {
+  buildInitialMachineContext,
+  redactFlowContext,
+  redactIntent,
+  snapshotTelemetryBase,
+} from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.actor.utils';
 import type {
   PaymentFlowActorRef,
   PaymentFlowCommandEvent,
@@ -28,108 +39,14 @@ import {
   PAYMENT_FLOW_CONFIG_OVERRIDES,
   PAYMENT_FLOW_INITIAL_CONTEXT,
 } from '@payments/application/orchestration/flow/payment-flow/payment-flow-config.token';
-import {
-  FlowContextStore,
-  toFlowContext,
-} from '@payments/application/orchestration/flow/payment-flow/persistence/payment-flow.persistence';
+import { FlowContextStore } from '@payments/application/orchestration/flow/payment-flow/persistence/payment-flow.persistence';
 import {
   isPaymentFlowSnapshot,
   isSnapshotInspectionEventWithSnapshot,
 } from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.guards';
-import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
+import type { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { firstValueFrom } from 'rxjs';
 import { createActor } from 'xstate';
-// TODO : extract to a separate file
-function buildInitialMachineContext(
-  store: FlowContextStore,
-): Partial<PaymentFlowMachineContext> | undefined {
-  const persisted = store?.load();
-  if (!persisted) return undefined;
-
-  const flowContext = toFlowContext(persisted);
-  const providerId = flowContext.providerId ?? null;
-  const raw =
-    providerId != null ? (flowContext.providerRefs?.[providerId]?.intentId ?? null) : null;
-  const fromRaw = raw != null ? PaymentIntentId.from(raw) : null;
-  const intentId = fromRaw?.ok ? fromRaw.value : null;
-
-  return {
-    flowContext,
-    providerId,
-    intentId,
-  };
-}
-
-// TODO : extract to a separate file
-function redactNextAction(action?: NextAction): NextAction | undefined {
-  if (!action) return action;
-  if (action.kind !== 'client_confirm') return action;
-  return { ...action, token: '[redacted]' };
-}
-
-// TODO : extract to a separate file
-function redactFlowContext(context: PaymentFlowContext | null): PaymentFlowContext | null {
-  return context ?? null;
-}
-
-// TODO : extract to a separate file
-function redactIntent(
-  intent: PaymentFlowSnapshot['context']['intent'],
-): PaymentFlowSnapshot['context']['intent'] {
-  if (!intent) return intent;
-  return {
-    ...intent,
-    clientSecret: intent.clientSecret ? '[redacted]' : intent.clientSecret,
-    nextAction: redactNextAction(intent.nextAction),
-    raw: undefined,
-  };
-}
-
-// Effect phases are defined by tags on the machine states (stable across refactors).
-const EFFECT_TAGS = [
-  'starting',
-  'fetchingStatusInvoke',
-  'reconciling',
-  'finalizing',
-  'clientConfirming',
-] as const;
-
-type EffectTag = (typeof EFFECT_TAGS)[number];
-
-function resolveEffectTag(snapshot: PaymentFlowSnapshot): EffectTag | null {
-  for (const tag of EFFECT_TAGS) {
-    if (snapshot.hasTag(tag)) return tag;
-  }
-  return null;
-}
-
-// TODO : extract to a separate file
-function flowContextToRefs(
-  flowContext: PaymentFlowContext | null,
-  providerId: string | null,
-): FlowTelemetryRefs | undefined {
-  if (!flowContext?.providerRefs || !providerId) return undefined;
-  const refs = flowContext.providerRefs[providerId as keyof typeof flowContext.providerRefs];
-  if (!refs || typeof refs !== 'object') return undefined;
-  return refs as FlowTelemetryRefs;
-}
-
-// TODO : extract to a separate file
-function snapshotTelemetryBase(snapshot: PaymentFlowSnapshot): {
-  flowId?: string;
-  providerId?: string;
-  refs?: FlowTelemetryRefs;
-} {
-  const flowContext = snapshot.context.flowContext;
-  const providerId = snapshot.context.providerId ?? undefined;
-  return {
-    flowId: flowContext?.flowId,
-    providerId: providerId ?? undefined,
-    refs: flowContext
-      ? flowContextToRefs(flowContext, snapshot.context.providerId ?? null)
-      : undefined,
-  };
-}
 
 @Injectable()
 export class PaymentFlowActorService {
@@ -215,120 +132,30 @@ export class PaymentFlowActorService {
   readonly snapshot: Signal<PaymentFlowSnapshot> = this._snapshot.asReadonly();
   readonly lastSentEvent = signal<PaymentFlowEvent | null>(null);
 
-  readonly isIdle = computed(() => this.snapshot().hasTag('idle'));
-  readonly isLoading = computed(() => this.snapshot().hasTag('loading'));
-  readonly isReady = computed(() => this.snapshot().hasTag('ready'));
-  readonly hasError = computed(() => this.snapshot().hasTag('error'));
+  readonly actorStatuses = deepComputed(() => ({
+    isIdle: this.snapshot().hasTag('idle'),
+    isLoading: this.snapshot().hasTag('loading'),
+    isReady: this.snapshot().hasTag('ready'),
+    hasError: this.snapshot().hasTag('error'),
+  }));
 
   constructor() {
-    this.actor.start();
-
-    this.prevSnapshot = this.actor.getSnapshot() as PaymentFlowSnapshot;
-    this.actor.subscribe((snapshot) => {
-      const prev = this.prevSnapshot;
-      const stateStr = String(snapshot.value);
-      const base = snapshotTelemetryBase(snapshot);
-      const atMs = Date.now();
-
-      this._snapshot.set(snapshot);
-
-      const prevEffect = prev ? resolveEffectTag(prev) : null;
-      const nowEffect = resolveEffectTag(snapshot);
-      if (prevEffect && prevEffect !== nowEffect) {
-        this.telemetry.record({
-          kind: 'EFFECT_FINISH',
-          effect: prevEffect,
-          atMs,
-          ...base,
-        });
-      }
-      if (nowEffect && prevEffect !== nowEffect) {
-        this.telemetry.record({
-          kind: 'EFFECT_START',
-          effect: nowEffect,
-          atMs,
-          ...base,
-        });
-      }
-
-      const error = snapshot.context.error;
-      if (error?.code && error.code !== this.lastErrorCodeForTelemetry) {
-        this.lastErrorCodeForTelemetry = error.code;
-        this.telemetry.record({
-          kind: 'ERROR_RAISED',
-          errorCode: error.code,
-          atMs,
-          ...base,
-        });
-      }
-      if (!error) this.lastErrorCodeForTelemetry = null;
-
-      this.telemetry.record({
-        kind: 'STATE_CHANGED',
-        state: stateStr,
-        tags: Array.from(snapshot.tags ?? []),
-        errorCode: error?.code,
-        status: snapshot.context.intent?.status,
-        atMs,
-        ...base,
-      });
-      this.prevSnapshot = snapshot;
-      this.persistFlowContext(snapshot);
-      this.maybeReportFallback(snapshot);
-      this.maybeNotifyFallbackSuccess(snapshot);
-    });
-
-    this.fallbackOrchestrator.fallbackExecute$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ provider, request, fromProvider }) => {
-        this.sendSystem({
-          type: 'FALLBACK_EXECUTE',
-          providerId: provider,
-          request,
-          failedProviderId: fromProvider,
-        });
-      });
-    this.destroyRef.onDestroy(() => {
-      this.logger.info('Stopping payment flow actor', 'PaymentFlowActorService');
-      this.actor.stop();
-    });
+    this.startActor();
+    this.subscribeToSnapshots();
+    this.wireFallbackExecute();
+    this.wireDestroy();
   }
 
   send(event: PaymentFlowCommandEvent): boolean {
     const snap = this.snapshot();
 
-    const prevState = this.prevSnapshot?.value ?? null;
-    const changed = false; // No transition when the event is ignored
-    const tags = snap.tags ? Array.from(snap.tags) : undefined;
-
-    if (!snap.can(event)) {
-      this.logger.warn(
-        'Event ignored by machine (cannot transition)',
-        'PaymentFlowActorService',
-        {
-          event,
-          state: snap.value,
-          prevState,
-          changed,
-          ...(tags && { tags }),
-          context: snap.context,
-        },
-        this.logger.getCorrelationId(),
-      );
+    if (!this.canSendEvent(event, snap)) {
       return false;
     }
 
-    if (event.type === 'RESET') {
-      this.flowContextStore?.clear();
-    }
-
+    this.handleResetEvent(event);
     this.lastSentEvent.set(event);
-    this.telemetry.record({
-      kind: 'COMMAND_SENT',
-      eventType: event.type,
-      atMs: Date.now(),
-      ...snapshotTelemetryBase(snap),
-    });
+    recordCommandSent(this.telemetry, snap, event);
     this.actor.send(event);
     return true;
   }
@@ -336,21 +163,7 @@ export class PaymentFlowActorService {
   /** Internal/system events (fallback orchestration). */
   sendSystem(event: PaymentFlowSystemEvent): void {
     const snap = this.snapshot();
-    const base = snapshotTelemetryBase(snap);
-    const payloadRefs: FlowTelemetryRefs | undefined =
-      'payload' in event && event.payload && typeof event.payload === 'object'
-        ? {
-            referenceId: (event.payload as { referenceId?: string }).referenceId,
-            eventId: (event.payload as { eventId?: string }).eventId,
-          }
-        : undefined;
-    this.telemetry.record({
-      kind: 'SYSTEM_EVENT_SENT',
-      eventType: event.type,
-      atMs: Date.now(),
-      ...base,
-      refs: payloadRefs ?? base.refs,
-    });
+    recordSystemEventSent(this.telemetry, snap, event);
     this.actor.send(event);
   }
 
@@ -402,5 +215,97 @@ export class PaymentFlowActorService {
 
     this.lastSuccessIntentId = intentId;
     this.fallbackOrchestrator.notifySuccess();
+  }
+
+  private startActor(): void {
+    this.actor.start();
+    this.prevSnapshot = this.actor.getSnapshot() as PaymentFlowSnapshot;
+  }
+
+  private subscribeToSnapshots(): void {
+    this.actor.subscribe((snapshot) => {
+      const prev = this.prevSnapshot;
+      this._snapshot.set(snapshot);
+      this.handleSnapshotTelemetry(snapshot, prev);
+      this.prevSnapshot = snapshot;
+      this.handleSnapshotSideEffects(snapshot);
+    });
+  }
+
+  private canSendEvent(event: PaymentFlowCommandEvent, snapshot: PaymentFlowSnapshot): boolean {
+    if (!snapshot.can(event)) {
+      this.logIgnoredEvent(event, snapshot);
+      return false;
+    }
+    return true;
+  }
+
+  private logIgnoredEvent(event: PaymentFlowCommandEvent, snapshot: PaymentFlowSnapshot): void {
+    const prevState = this.prevSnapshot?.value ?? null;
+    const changed = false; // No transition when the event is ignored
+    const tags = snapshot.tags ? Array.from(snapshot.tags) : undefined;
+
+    this.logger.warn(
+      'Event ignored by machine (cannot transition)',
+      'PaymentFlowActorService',
+      {
+        event,
+        state: snapshot.value,
+        prevState,
+        changed,
+        ...(tags && { tags }),
+        context: snapshot.context,
+      },
+      this.logger.getCorrelationId(),
+    );
+  }
+
+  private handleResetEvent(event: PaymentFlowCommandEvent): void {
+    if (event.type !== 'RESET') return;
+    this.flowContextStore?.clear();
+  }
+
+  private handleSnapshotTelemetry(
+    snapshot: PaymentFlowSnapshot,
+    prevSnapshot: PaymentFlowSnapshot | null,
+  ): void {
+    const base = snapshotTelemetryBase(snapshot);
+    const atMs = Date.now();
+
+    recordEffectTelemetry(this.telemetry, snapshot, prevSnapshot, atMs, base);
+    this.lastErrorCodeForTelemetry = recordErrorTelemetry(
+      this.telemetry,
+      snapshot,
+      this.lastErrorCodeForTelemetry,
+      atMs,
+      base,
+    );
+    recordStateTelemetry(this.telemetry, snapshot, atMs, base);
+  }
+
+  private handleSnapshotSideEffects(snapshot: PaymentFlowSnapshot): void {
+    this.persistFlowContext(snapshot);
+    this.maybeReportFallback(snapshot);
+    this.maybeNotifyFallbackSuccess(snapshot);
+  }
+
+  private wireFallbackExecute(): void {
+    this.fallbackOrchestrator.fallbackExecute$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ provider, request, fromProvider }) => {
+        this.sendSystem({
+          type: 'FALLBACK_EXECUTE',
+          providerId: provider,
+          request,
+          failedProviderId: fromProvider,
+        });
+      });
+  }
+
+  private wireDestroy(): void {
+    this.destroyRef.onDestroy(() => {
+      this.logger.info('Stopping payment flow actor', 'PaymentFlowActorService');
+      this.actor.stop();
+    });
   }
 }

@@ -35,10 +35,7 @@ export class PaymentFlowMachineDriver {
   readonly providerId = computed(() => this.snapshot().context.providerId);
 
   // flags macro
-  readonly isIdle = this.flow.isIdle;
-  readonly isLoading = this.flow.isLoading;
-  readonly isReady = this.flow.isReady;
-  readonly hasError = this.flow.hasError;
+  readonly actorStatuses = this.flow.actorStatuses;
 
   // helpers UI (debug/demo only — UI should prefer the port)
   readonly redirectUrl = computed(() => this.intent()?.redirectUrl ?? null);

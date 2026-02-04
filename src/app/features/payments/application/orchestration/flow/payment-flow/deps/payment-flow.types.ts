@@ -25,6 +25,9 @@ import type {
 
 export type ActorId = 'start' | 'confirm' | 'cancel' | 'status' | 'clientConfirm' | 'finalize';
 
+/**
+ * XState actor lifecycle events.
+ */
 export interface DoneEvent<TActor extends ActorId, TOutput> {
   type: `xstate.done.actor.${TActor}`;
   output: TOutput;
@@ -35,6 +38,9 @@ export interface ErrorEvent<TActor extends ActorId> {
   error: unknown;
 }
 
+/**
+ * Commands (public).
+ */
 export type PaymentFlowCommandEvent =
   | {
       type: 'START';
@@ -52,6 +58,9 @@ export type PaymentFlowCommandEvent =
   | { type: 'REFRESH'; providerId?: PaymentProviderId; intentId?: PaymentIntentId }
   | { type: 'RESET' };
 
+/**
+ * System/internal events.
+ */
 export type PaymentFlowSystemEvent =
   | {
       type: 'FALLBACK_REQUESTED';
@@ -76,6 +85,9 @@ export type PaymentFlowSystemEvent =
   | { type: 'EXTERNAL_STATUS_UPDATED'; payload: ExternalStatusUpdatedPayload }
   | { type: 'WEBHOOK_RECEIVED'; payload: WebhookReceivedPayload };
 
+/**
+ * Full event union for the machine.
+ */
 export type PaymentFlowEvent =
   | PaymentFlowCommandEvent
   | PaymentFlowSystemEvent
@@ -96,6 +108,9 @@ export type PaymentFlowEvent =
 
 export type PaymentFlowPublicEvent = PaymentFlowCommandEvent;
 
+/**
+ * Context.
+ */
 export interface PaymentFlowFallbackContext {
   eligible: boolean;
   mode: FallbackMode;
@@ -117,7 +132,6 @@ export interface PaymentFlowMachineContext {
   request: CreatePaymentRequest | null;
   flowContext: PaymentFlowContext | null;
   intent: PaymentIntent | null;
-
   intentId: PaymentIntentId | null;
   error: PaymentError | null;
   fallback: PaymentFlowFallbackContext;
@@ -125,6 +139,9 @@ export interface PaymentFlowMachineContext {
   statusRetry: PaymentFlowStatusRetryState;
 }
 
+/**
+ * Actor inputs.
+ */
 export interface StartInput {
   providerId: PaymentProviderId;
   request: CreatePaymentRequest;
@@ -158,6 +175,9 @@ export interface FinalizeInput {
   flowContext: PaymentFlowContext;
 }
 
+/**
+ * XState config types.
+ */
 export type PaymentFlowStatesConfig = StatesConfig<
   PaymentFlowMachineContext,
   PaymentFlowEvent,

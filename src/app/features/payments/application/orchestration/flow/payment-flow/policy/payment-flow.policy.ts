@@ -27,6 +27,9 @@ export interface PaymentFlowConfig {
   };
 }
 
+/**
+ * Configuration.
+ */
 export type PaymentFlowConfigOverrides = Partial<{
   polling: Partial<PaymentFlowConfig['polling']>;
   statusRetry: Partial<PaymentFlowConfig['statusRetry']>;
@@ -69,6 +72,9 @@ export function resolvePaymentFlowConfig(
   };
 }
 
+/**
+ * Intent helpers.
+ */
 export function isFinalStatus(status?: string) {
   return status === 'succeeded' || status === 'failed' || status === 'canceled';
 }
@@ -88,6 +94,9 @@ export function needsFinalize(intent?: PaymentIntent | null): boolean {
   return intent?.finalizeRequired === true;
 }
 
+/**
+ * Context policies.
+ */
 export function hasIntentPolicy(context: PaymentFlowMachineContext): boolean {
   return !!context.intent;
 }
@@ -125,6 +134,13 @@ export function canPollPolicy(
   return context.polling.attempt < config.polling.maxAttempts;
 }
 
+export function canRetryStatusPolicy(
+  config: PaymentFlowConfig,
+  context: PaymentFlowMachineContext,
+): boolean {
+  return context.statusRetry.count < config.statusRetry.maxRetries;
+}
+
 /**
  * True when polling limit is reached and intent is still processing.
  * Used from the polling state so we only transition to failed when we're
@@ -137,13 +153,6 @@ export function isPollingExhaustedPolicy(
   const exhausted = context.polling.attempt >= config.polling.maxAttempts;
   const stillProcessing = context.intent?.status === 'processing';
   return exhausted && !!stillProcessing;
-}
-
-export function canRetryStatusPolicy(
-  config: PaymentFlowConfig,
-  context: PaymentFlowMachineContext,
-): boolean {
-  return context.statusRetry.count < config.statusRetry.maxRetries;
 }
 
 /**
@@ -166,6 +175,9 @@ export function hasProcessingTimedOutPolicy(
   return exceededAttempts || exceededDuration;
 }
 
+/**
+ * Backoff utilities.
+ */
 export function getPollingDelayMs(config: PaymentFlowConfig, attempt: number): number {
   const delay = config.polling.baseDelayMs * Math.pow(2, Math.max(0, attempt));
   return Math.min(delay, config.polling.maxDelayMs);
