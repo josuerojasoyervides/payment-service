@@ -6,7 +6,7 @@ import type { PaymentProviderId } from '@app/features/payments/domain/subdomains
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
-import { SPEI_DISPLAY_CONFIG } from '@payments/presentation/tokens/spei-display-config.token';
+import { SPEI_DISPLAY_CONFIG } from '@payments/application/api/tokens/spei-display-config.token';
 import { ShowcaseComponent } from '@payments/ui/pages/showcase/showcase.page';
 
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [

@@ -11,9 +11,9 @@ import type { PaymentProviderId } from '@app/features/payments/domain/subdomains
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
-import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { FallbackStatusBannerComponent } from '@payments/ui/components/fallback-status-banner/fallback-status-banner.component';
 import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';

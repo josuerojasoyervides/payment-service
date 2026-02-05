@@ -24,7 +24,7 @@ import type {
   RootPathTree,
   TextModel,
 } from '@app/features/payments/ui/forms/payment-options/types/payment-options-form.types';
-import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 
 @Injectable()
 export class PaymentOptionsForm {

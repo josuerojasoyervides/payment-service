@@ -88,7 +88,7 @@ Tests PR0
 
 ---
 
-### PR1 — Config & Contracts cleanup (infra ↔ application)
+### PR1 — Config & Contracts cleanup (infra ↔ application) ✅
 
 Meta: centralizar config detrás de tokens y mover contracts al lugar correcto.
 

@@ -8,11 +8,11 @@ import type { PaymentMethodType } from '@app/features/payments/domain/subdomains
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys } from '@core/i18n';
-import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
 import type {
   FieldRequirements,
   FieldType,
-} from '@payments/presentation/contracts/checkout-field-requirements.types';
+} from '@payments/application/api/contracts/checkout-field-requirements.types';
+import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
 
 /**
  * Order item shown in summary.

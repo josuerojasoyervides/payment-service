@@ -5,7 +5,7 @@ import type { FieldTree } from '@angular/forms/signals';
 import { By } from '@angular/platform-browser';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import { I18nService } from '@core/i18n';
-import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 import { PaymentFormComponent } from '@payments/ui/components/payment-form/payment-form.component';
 
 const mockI18n: Pick<I18nService, 't'> = {

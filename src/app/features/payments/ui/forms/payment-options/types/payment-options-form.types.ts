@@ -1,5 +1,5 @@
 import type { FieldTree, SchemaPath, SchemaPathTree } from '@angular/forms/signals';
-import type { FieldRequirement } from '@payments/presentation/contracts/checkout-field-requirements.types';
+import type { FieldRequirement } from '@payments/application/api/contracts/checkout-field-requirements.types';
 
 export type TextModel = Record<string, string>;
 export type FlagModel = Record<string, boolean>;

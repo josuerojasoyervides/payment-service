@@ -14,6 +14,7 @@ import type { PaymentProviderId } from '@app/features/payments/domain/subdomains
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 import type {
   PaymentCheckoutCatalogPort,
   PaymentFlowPort,
@@ -25,7 +26,6 @@ import {
 } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
-import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
   {
