@@ -7,13 +7,13 @@ import { PaypalRedirectStrategy } from '@app/features/payments/infrastructure/pa
 import { PaypalIntentFacade } from '@app/features/payments/infrastructure/paypal/workflows/order/order.facade';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
 import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
-import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 
 /**
  * PayPal provider factory.

@@ -4,6 +4,7 @@ import type { PaymentProviderId } from '@app/features/payments/domain/subdomains
 import type { StripeSpeiSourceDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { SpeiStatusMapper } from '@payments/infrastructure/stripe/payment-methods/spei/mappers/spei-status.mapper';
+import { SPEI_RAW_KEYS } from '@payments/infrastructure/stripe/shared/constants/spei-raw-keys.constants';
 
 function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
   const result = PaymentIntentId.from(raw);
@@ -12,20 +13,28 @@ function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
 }
 
 export class SpeiSourceMapper {
-  constructor(private readonly providerId: PaymentProviderId) {}
+  constructor(
+    private readonly providerId: PaymentProviderId,
+    private readonly beneficiaryName: string,
+  ) {}
 
   mapSpeiSource(dto: StripeSpeiSourceDto): PaymentIntent {
+    const spei = dto[SPEI_RAW_KEYS.SPEI];
+    const speiBank = spei[SPEI_RAW_KEYS.BANK];
+    const speiClabe = spei[SPEI_RAW_KEYS.CLABE];
+    const speiReference = spei[SPEI_RAW_KEYS.REFERENCE];
+
     const speiAction: NextActionManualStep = {
       kind: 'manual_step',
-      instructions: ['Make a bank transfer using the details below.'],
-      details: [
-        { label: 'CLABE', value: dto.spei.clabe },
-        { label: 'Reference', value: dto.spei.reference },
-        { label: 'Bank', value: dto.spei.bank },
-        { label: 'Beneficiary', value: 'Stripe Payments Mexico' },
-        { label: 'Amount', value: `${dto.amount / 100} ${dto.currency.toUpperCase()}` },
-        { label: 'Expires At', value: new Date(dto.expires_at * 1000).toISOString() },
-      ],
+      details: {
+        bankCode: speiBank?.trim() ?? '',
+        clabe: speiClabe,
+        beneficiaryName: this.beneficiaryName,
+        reference: speiReference,
+        amount: dto.amount / 100,
+        currency: dto.currency.toUpperCase(),
+        expiresAt: new Date(dto.expires_at * 1000).toISOString(),
+      },
     };
 
     const status = new SpeiStatusMapper().mapSpeiStatus(dto.status);

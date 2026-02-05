@@ -1,6 +1,8 @@
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { I18nService } from '@core/i18n';
+import { LoggerService } from '@core/logging';
+import { SPEI_DISPLAY_CONFIG } from '@payments/presentation/tokens/spei-display-config.token';
 import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
 
 describe('NextActionCardComponent', () => {
@@ -17,7 +19,17 @@ describe('NextActionCardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [NextActionCardComponent],
-      providers: [{ provide: I18nService, useValue: mockI18n }],
+      providers: [
+        { provide: I18nService, useValue: mockI18n },
+        { provide: LoggerService, useValue: { error: vi.fn() } },
+        {
+          provide: SPEI_DISPLAY_CONFIG,
+          useValue: {
+            receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+            beneficiaryName: 'Payment Service',
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(NextActionCardComponent);
@@ -49,22 +61,23 @@ describe('NextActionCardComponent', () => {
     expect(button?.textContent).toContain('ui.confirm_button');
   });
 
-  it('renders manual step details and instructions', () => {
+  it('renders manual step details with SPEI instructions component', () => {
     fixture.componentRef.setInput('nextAction', {
       kind: 'manual_step',
-      instructions: ['Step one', 'Step two'],
-      details: [
-        { label: 'Reference', value: 'REF123' },
-        { label: 'Amount', value: '100 MXN' },
-      ],
+      details: {
+        bankCode: 'STP',
+        clabe: '646180111812345678',
+        beneficiaryName: 'Payment Service',
+        reference: 'REF123',
+        amount: 100,
+        currency: 'MXN',
+      },
     });
     fixture.detectChanges();
 
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Reference');
     expect(el.textContent).toContain('REF123');
-    expect(el.textContent).toContain('Step one');
-    expect(el.textContent).toContain('Step two');
+    expect(el.textContent).toContain('STP (Transfers and Payments System)');
   });
 
   it('renders external wait hint', () => {

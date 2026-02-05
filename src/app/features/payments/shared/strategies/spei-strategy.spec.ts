@@ -7,10 +7,7 @@ import {
 } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
-import {
-  PAYMENT_ERROR_KEYS,
-  PAYMENT_MESSAGE_KEYS,
-} from '@payments/shared/constants/payment-error-keys';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 import { firstValueFrom, of } from 'rxjs';
 
@@ -38,6 +35,11 @@ describe('SpeiStrategy', () => {
     },
   };
 
+  const displayConfig = {
+    receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+    beneficiaryName: 'Payment Service',
+  };
+
   const loggerMock = {
     debug: vi.fn(),
     info: vi.fn(),
@@ -55,7 +57,7 @@ describe('SpeiStrategy', () => {
       providers: [{ provide: LoggerService, useValue: loggerMock }],
     });
 
-    strategy = new SpeiStrategy(gatewayMock as any, loggerMock as any);
+    strategy = new SpeiStrategy(gatewayMock as any, loggerMock as any, displayConfig);
   });
 
   describe('validate()', () => {
@@ -163,7 +165,7 @@ describe('SpeiStrategy', () => {
       expect(gatewayMock.createIntent).not.toHaveBeenCalled();
     });
 
-    it('enriches intent with SPEI instructions', async () => {
+    it('enriches intent with SPEI details', async () => {
       const result = await firstValueFrom(strategy.start(validReq));
 
       expect(result.status).toBe('requires_action');
@@ -172,7 +174,15 @@ describe('SpeiStrategy', () => {
       if (nextAction?.kind !== 'manual_step') {
         throw new Error('Expected manual_step next action');
       }
-      expect(nextAction.details?.length).toBeGreaterThan(0);
+      expect(nextAction.details).toEqual(
+        expect.objectContaining({
+          bankCode: 'STP',
+          clabe: '646180111812345678',
+          beneficiaryName: displayConfig.beneficiaryName,
+          amount: 100,
+          currency: 'MXN',
+        }),
+      );
     });
 
     it('removes token from prepared request', async () => {
@@ -191,8 +201,11 @@ describe('SpeiStrategy', () => {
         ...intentResponse,
         nextAction: {
           kind: 'manual_step',
-          instructions: ['Transfer'],
-          details: [{ label: 'CLABE', value: '123' }],
+          details: {
+            bankCode: 'STP',
+            clabe: '646180111812345678',
+            beneficiaryName: displayConfig.beneficiaryName,
+          },
         },
       };
       expect(strategy.requiresUserAction(intent)).toBe(true);
@@ -203,30 +216,50 @@ describe('SpeiStrategy', () => {
     });
   });
 
-  describe('getUserInstructions()', () => {
-    it('returns SPEI instruction keys (UI translates when rendering)', () => {
-      const intent: PaymentIntent = {
-        ...intentResponse,
-        nextAction: {
-          kind: 'manual_step',
-          instructions: ['Transfer'],
-          details: [
-            { label: 'ui.clabe_label', value: '646180111812345678' },
-            { label: 'ui.reference', value: '1234567' },
-          ],
-        },
-      };
+  describe('SPEI data validation', () => {
+    it('throws when gateway response is missing clabe', async () => {
+      gatewayMock.createIntent = vi.fn(() =>
+        of({
+          ...intentResponse,
+          raw: { spei: { bank: 'STP', reference: '1234567' } },
+        }),
+      );
 
-      const instructions = strategy.getUserInstructions(intent);
-
-      expect(instructions).toContain(PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_COMPLETE_TRANSFER);
-      expect(instructions).toContain(PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_TRANSFER_EXACT);
-      expect(instructions).toContain(PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_KEEP_RECEIPT);
+      await expect(firstValueFrom(strategy.start(validReq))).rejects.toMatchObject({
+        code: 'provider_error',
+        messageKey: PAYMENT_ERROR_KEYS.UNKNOWN_ERROR,
+        params: { reason: 'missing_spei_clabe' },
+      });
     });
 
-    it('returns null when not a SPEI intent', () => {
-      const intent: PaymentIntent = { ...intentResponse, nextAction: undefined };
-      expect(strategy.getUserInstructions(intent)).toBeNull();
+    it('throws when gateway response is missing bank code', async () => {
+      gatewayMock.createIntent = vi.fn(() =>
+        of({
+          ...intentResponse,
+          raw: { spei: { clabe: '646180111812345678', reference: '1234567' } },
+        }),
+      );
+
+      await expect(firstValueFrom(strategy.start(validReq))).rejects.toMatchObject({
+        code: 'provider_error',
+        messageKey: PAYMENT_ERROR_KEYS.UNKNOWN_ERROR,
+        params: { reason: 'missing_spei_bank_code' },
+      });
+    });
+
+    it('throws when bank code is not in receivingBanks map', async () => {
+      gatewayMock.createIntent = vi.fn(() =>
+        of({
+          ...intentResponse,
+          raw: { spei: { clabe: '646180111812345678', reference: '1234567', bank: 'ZZZ' } },
+        }),
+      );
+
+      await expect(firstValueFrom(strategy.start(validReq))).rejects.toMatchObject({
+        code: 'provider_error',
+        messageKey: PAYMENT_ERROR_KEYS.UNKNOWN_ERROR,
+        params: { reason: 'unknown_spei_bank_code', bankCode: 'ZZZ' },
+      });
     });
   });
 });

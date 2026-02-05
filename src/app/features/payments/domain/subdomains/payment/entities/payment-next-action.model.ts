@@ -21,15 +21,20 @@ export interface NextActionRedirect {
   url: string;
 }
 
-export interface NextActionManualStepDetail {
-  label: string;
-  value: string;
+export interface NextActionManualStepDetails {
+  bankCode: string;
+  clabe: string;
+  beneficiaryName: string;
+  reference?: string;
+  amount?: number;
+  currency?: string;
+  expiresAt?: string;
 }
 
 export interface NextActionManualStep {
   kind: 'manual_step';
-  instructions: string[];
-  details?: NextActionManualStepDetail[];
+  instructions?: string[];
+  details?: NextActionManualStepDetails;
 }
 
 export interface NextActionClientConfirm {

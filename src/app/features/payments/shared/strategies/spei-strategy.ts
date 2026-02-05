@@ -1,7 +1,10 @@
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { NextActionManualStep } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
-import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
+import {
+  createPaymentError,
+  invalidRequestError,
+} from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { intentRequiresUserAction } from '@app/features/payments/domain/subdomains/payment/policies/requires-user-action.policy';
 import {
@@ -15,18 +18,14 @@ import {
 } from '@app/features/payments/domain/subdomains/payment/rules/spei-concept.rule';
 import { SPEI_DEFAULT_EXPIRY_HOURS } from '@app/features/payments/domain/subdomains/payment/rules/spei-expiry.rule';
 import type { LoggerService } from '@core/logging';
+import type { SpeiDisplayConfig } from '@payments/application/api/contracts/spei-display-config.types';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
-import type { SpeiDisplayConfig } from '@payments/presentation/contracts/spei-display-config.types';
-import {
-  PAYMENT_ERROR_KEYS,
-  PAYMENT_MESSAGE_KEYS,
-  PAYMENT_SPEI_DETAIL_LABEL_KEYS,
-} from '@payments/shared/constants/payment-error-keys';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
 
@@ -40,25 +39,14 @@ import { map, tap } from 'rxjs';
  * - Requires polling to verify payment
  * - Minimum and maximum amounts according to regulation
  */
-/** Defaults when no display config is injected (e.g. in tests). */
-const DEFAULT_DISPLAY_CONFIG: SpeiDisplayConfig = {
-  receivingBanks: {},
-  beneficiaryName: 'Beneficiary',
-  testClabe: '646180111812345678',
-};
-
 export class SpeiStrategy implements PaymentStrategy {
   readonly type: PaymentMethodType = 'spei';
-
-  private readonly displayConfig: SpeiDisplayConfig;
 
   constructor(
     private readonly gateway: PaymentGatewayPort,
     private readonly logger: LoggerService,
-    displayConfig?: SpeiDisplayConfig,
-  ) {
-    this.displayConfig = displayConfig ?? DEFAULT_DISPLAY_CONFIG;
-  }
+    private readonly displayConfig: SpeiDisplayConfig,
+  ) {}
 
   /**
    * Validates the request for SPEI payments.
@@ -165,18 +153,8 @@ export class SpeiStrategy implements PaymentStrategy {
     return intentRequiresUserAction(intent) && intent.nextAction?.kind === 'manual_step';
   }
 
-  /**
-   * Generates detailed instructions for the user (i18n keys; UI translates when rendering).
-   */
-  getUserInstructions(intent: PaymentIntent): string[] | null {
-    if (!intent.nextAction || intent.nextAction.kind !== 'manual_step') {
-      return null;
-    }
-    return [
-      PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_COMPLETE_TRANSFER,
-      PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_TRANSFER_EXACT,
-      PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_KEEP_RECEIPT,
-    ];
+  getUserInstructions(_intent: PaymentIntent): string[] | null {
+    return null;
   }
 
   /**
@@ -187,35 +165,39 @@ export class SpeiStrategy implements PaymentStrategy {
     req: CreatePaymentRequest,
     metadata: Record<string, unknown>,
   ): PaymentIntent {
-    const details = [
-      { label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.CLABE, value: this.extractClabeFromRaw(intent) },
-      {
-        label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.REFERENCE,
-        value: generateSpeiReference(req.orderId),
-      },
-      {
-        label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.BANK,
-        value: this.displayConfig.receivingBanks[intent.provider] ?? 'STP',
-      },
-      {
-        label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.BENEFICIARY,
-        value: this.displayConfig.beneficiaryName,
-      },
-      {
-        label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.AMOUNT,
-        value: `${req.money.amount} ${req.money.currency}`,
-      },
-      {
-        label: PAYMENT_SPEI_DETAIL_LABEL_KEYS.EXPIRES_AT,
-        value: metadata['expires_at'] as string,
-      },
-    ];
+    const clabe = this.extractClabeFromRaw(intent);
+    if (!clabe) {
+      throw createPaymentError('provider_error', PAYMENT_ERROR_KEYS.UNKNOWN_ERROR, {
+        reason: 'missing_spei_clabe',
+      });
+    }
+
+    const bankCode = this.extractBankCodeFromRaw(intent);
+    if (!bankCode) {
+      throw createPaymentError('provider_error', PAYMENT_ERROR_KEYS.UNKNOWN_ERROR, {
+        reason: 'missing_spei_bank_code',
+      });
+    }
+
+    if (!this.displayConfig.receivingBanks[bankCode]) {
+      throw createPaymentError('provider_error', PAYMENT_ERROR_KEYS.UNKNOWN_ERROR, {
+        reason: 'unknown_spei_bank_code',
+        bankCode,
+      });
+    }
+
+    const details = {
+      bankCode,
+      clabe,
+      beneficiaryName: this.displayConfig.beneficiaryName,
+      reference: generateSpeiReference(req.orderId),
+      amount: req.money.amount,
+      currency: req.money.currency,
+      expiresAt: metadata['expires_at'] as string,
+    };
 
     const speiAction: NextActionManualStep = {
       kind: 'manual_step',
-      instructions: this.getUserInstructions(intent) ?? [
-        PAYMENT_MESSAGE_KEYS.SPEI_INSTRUCTION_MAKE_TRANSFER,
-      ],
       details,
     };
 
@@ -229,12 +211,21 @@ export class SpeiStrategy implements PaymentStrategy {
   /**
    * Attempts to extract CLABE from gateway raw response.
    */
-  private extractClabeFromRaw(intent: PaymentIntent): string {
+  private extractClabeFromRaw(intent: PaymentIntent): string | null {
     const clabe =
       this.getStringFromUnknown(intent.raw, ['spei', 'clabe']) ??
       this.getStringFromUnknown(intent.raw, ['payment_method', 'clabe']);
 
-    return clabe ?? this.displayConfig.testClabe;
+    return clabe ?? null;
+  }
+
+  private extractBankCodeFromRaw(intent: PaymentIntent): string | null {
+    const bankCode =
+      this.getStringFromUnknown(intent.raw, ['spei', 'bank']) ??
+      this.getStringFromUnknown(intent.raw, ['payment_method', 'bank']);
+
+    const trimmed = bankCode?.trim();
+    return trimmed ? trimmed : null;
   }
 
   private getStringFromUnknown(obj: unknown, path: string[]): string | null {

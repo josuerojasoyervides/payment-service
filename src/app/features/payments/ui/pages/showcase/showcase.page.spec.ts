@@ -4,7 +4,9 @@ import { provideRouter, RouterLink } from '@angular/router';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys } from '@core/i18n';
+import { LoggerService } from '@core/logging';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
+import { SPEI_DISPLAY_CONFIG } from '@payments/presentation/tokens/spei-display-config.token';
 import { ShowcaseComponent } from '@payments/ui/pages/showcase/showcase.page';
 
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
@@ -31,15 +33,33 @@ const mockCatalog = {
   getFieldRequirements: () => null,
   buildCreatePaymentRequest: () => ({}) as any,
 };
+const loggerMock = {
+  warn: vi.fn(),
+  error: vi.fn(),
+};
 
 describe('ShowcaseComponent', () => {
   let component: ShowcaseComponent;
   let fixture: ComponentFixture<ShowcaseComponent>;
 
   beforeEach(async () => {
+    loggerMock.warn.mockClear();
+    loggerMock.error.mockClear();
+
     await TestBed.configureTestingModule({
       imports: [ShowcaseComponent, RouterLink],
-      providers: [provideRouter([]), { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog }],
+      providers: [
+        provideRouter([]),
+        { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog },
+        { provide: LoggerService, useValue: loggerMock },
+        {
+          provide: SPEI_DISPLAY_CONFIG,
+          useValue: {
+            receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+            beneficiaryName: 'Payment Service',
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ShowcaseComponent);
@@ -106,7 +126,7 @@ describe('ShowcaseComponent', () => {
     it('should have speiInstructions configured', () => {
       expect(component.speiInstructions.clabe).toBeTruthy();
       expect(component.speiInstructions.reference).toBeTruthy();
-      expect(component.speiInstructions.bank).toBe('STP');
+      expect(component.speiInstructions.bankCode).toBe('STP');
       expect(component.speiInstructions.amount).toBe(499.99);
       expect(component.speiInstructions.currency).toBe('MXN');
     });
@@ -138,56 +158,43 @@ describe('ShowcaseComponent', () => {
 
   describe('Handlers', () => {
     it('should handle onPayClick', () => {
-      const consoleSpy = vi.spyOn(console, 'warn');
       component.onPayClick();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ShowcaseComponent] Pay button clicked'),
-      );
-      consoleSpy.mockRestore();
+      expect(loggerMock.warn).toHaveBeenCalledWith('Pay button clicked', 'ShowcaseComponent');
     });
 
     it('should handle onRetry', () => {
-      const consoleSpy = vi.spyOn(console, 'warn');
       component.onRetry();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ShowcaseComponent] Retry button clicked'),
-      );
-      consoleSpy.mockRestore();
+      expect(loggerMock.warn).toHaveBeenCalledWith('Retry button clicked', 'ShowcaseComponent');
     });
 
     it('should handle onNewPayment', () => {
-      const consoleSpy = vi.spyOn(console, 'warn');
       component.onNewPayment();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ShowcaseComponent] New payment button clicked'),
+      expect(loggerMock.warn).toHaveBeenCalledWith(
+        'New payment button clicked',
+        'ShowcaseComponent',
       );
-      consoleSpy.mockRestore();
     });
 
     it('should handle onIntentAction with parameters', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
       component.onIntentAction('confirm', 'pi_test_123');
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ShowcaseComponent] Intent action: confirm, ID: pi_test_123'),
+      expect(loggerMock.warn).toHaveBeenCalledWith(
+        'Intent action: confirm, ID: pi_test_123',
+        'ShowcaseComponent',
         { action: 'confirm', intentId: 'pi_test_123' },
       );
-
-      consoleSpy.mockRestore();
     });
 
     it('should handle onFallbackConfirm and close modal', () => {
       component.fallbackModalOpen = true;
-      const consoleSpy = vi.spyOn(console, 'warn');
       const altProvider = component.catalogProviderIds().p1 ?? component.catalogProviderIds().p0;
       component.onFallbackConfirm(altProvider);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ShowcaseComponent] Fallback confirmed with:'),
+      expect(loggerMock.warn).toHaveBeenCalledWith(
+        `Fallback confirmed with: ${altProvider}`,
+        'ShowcaseComponent',
         { provider: altProvider },
       );
       expect(component.fallbackModalOpen).toBe(false);
-      consoleSpy.mockRestore();
     });
   });
 

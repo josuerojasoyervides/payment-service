@@ -56,9 +56,14 @@ import {
   type PaymentsProvidersMode,
   type PaymentsProvidersOptions,
 } from '@payments/config/payments-providers.types';
-import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
+import type {
+  PaymentsInfraConfig,
+  PaymentsInfraConfigInput,
+} from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { ProviderDescriptorRegistry } from '@payments/presentation/registry/provider-descriptor/provider-descriptor.registry';
+import { SPEI_DISPLAY_CONFIG } from '@payments/presentation/tokens/spei-display-config.token';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 function selectProviderConfigs(mode: PaymentsProvidersMode): Provider[] {
@@ -99,6 +104,16 @@ function selectExternalNavigator(): ExternalNavigatorPort {
   const hasWindow = typeof window !== 'undefined' && !!window.location;
   if (hasWindow) return new BrowserExternalNavigator();
   return isDevMode() ? new ThrowingExternalNavigator() : new NoopExternalNavigator();
+}
+
+function selectPresentationProviders(): Provider[] {
+  return [
+    {
+      provide: SPEI_DISPLAY_CONFIG,
+      useFactory: (config: PaymentsInfraConfig) => config.spei.displayConfig,
+      deps: [PAYMENTS_INFRA_CONFIG],
+    },
+  ];
 }
 
 const DEFAULT_PAYMENTS_INFRA_CONFIG: PaymentsInfraConfigInput = {
@@ -181,6 +196,7 @@ function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provide
     ...SHARED_PROVIDERS,
     ...ENV_PROVIDERS,
     ...UI_PROVIDERS,
+    ...selectPresentationProviders(),
     {
       provide: WEBHOOK_NORMALIZER_REGISTRY,
       useValue: {

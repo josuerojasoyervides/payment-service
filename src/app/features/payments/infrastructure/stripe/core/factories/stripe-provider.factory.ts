@@ -6,13 +6,13 @@ import { StripeTokenValidatorPolicy } from '@app/features/payments/infrastructur
 import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
-import { SPEI_DISPLAY_CONSTANTS } from '@payments/infrastructure/fake/shared/constants/spei-display.constants';
+import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/card/builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/spei/builders/stripe-spei-request.builder';
-import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 
@@ -35,6 +35,7 @@ export class StripeProviderFactory implements ProviderFactory {
 
   private readonly gateway = inject(StripeIntentFacade);
   private readonly logger = inject(LoggerService);
+  private readonly infraConfig = inject(PAYMENTS_INFRA_CONFIG);
 
   /**
    * Strategy cache to avoid recreating them.
@@ -167,7 +168,7 @@ export class StripeProviderFactory implements ProviderFactory {
       case 'card':
         return new CardStrategy(this.gateway, new StripeTokenValidatorPolicy(), this.logger);
       case 'spei':
-        return new SpeiStrategy(this.gateway, this.logger, SPEI_DISPLAY_CONSTANTS);
+        return new SpeiStrategy(this.gateway, this.logger, this.infraConfig.spei.displayConfig);
       default:
         throw invalidRequestError(I18nKeys.errors.invalid_request, {
           reason: 'unexpected_payment_method_type',

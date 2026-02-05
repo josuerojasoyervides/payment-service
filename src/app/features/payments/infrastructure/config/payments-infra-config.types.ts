@@ -1,3 +1,5 @@
+import type { SpeiDisplayConfig } from '@payments/application/api/contracts/spei-display-config.types';
+
 export type PaypalLandingPage = 'LOGIN' | 'BILLING' | 'NO_PREFERENCE';
 export type PaypalUserAction = 'PAY_NOW' | 'CONTINUE';
 
@@ -5,11 +7,6 @@ export interface PaypalAppContextDefaults {
   brand_name: string;
   landing_page: PaypalLandingPage;
   user_action: PaypalUserAction;
-}
-
-export interface SpeiDisplayConfig {
-  receivingBanks: Record<string, string>;
-  beneficiaryName: string;
 }
 
 export interface PaymentsInfraConfig {

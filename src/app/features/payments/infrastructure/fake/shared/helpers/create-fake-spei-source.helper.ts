@@ -2,6 +2,7 @@ import type { CreatePaymentRequest } from '@app/features/payments/domain/subdoma
 import { generateId } from '@app/features/payments/infrastructure/fake/shared/helpers/get-id.helper';
 import { hashString } from '@app/features/payments/infrastructure/fake/shared/helpers/hash-string.helper';
 import type { StripeSpeiSourceDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import { SPEI_RAW_KEYS } from '@payments/infrastructure/stripe/shared/constants/spei-raw-keys.constants';
 
 export function createFakeSpeiSource(req: CreatePaymentRequest): StripeSpeiSourceDto {
   const sourceId = generateId('src');
@@ -9,11 +10,11 @@ export function createFakeSpeiSource(req: CreatePaymentRequest): StripeSpeiSourc
 
   // Deterministic CLABE based on orderId hash
   const orderHash = hashString(req.orderId.value);
-  const clabe = '646180' + String(orderHash).padStart(12, '0').substring(0, 12);
+  const speiClabe = '646180' + String(orderHash).padStart(12, '0').substring(0, 12);
 
   // Deterministic reference based on orderId hash
   const referenceHash = Math.abs(hashString(req.orderId.value + '_ref'));
-  const reference = String(referenceHash % 10000000).padStart(7, '0');
+  const speiReference = String(referenceHash % 10000000).padStart(7, '0');
 
   const expiresAt = Math.floor(Date.now() / 1000) + 72 * 60 * 60;
 
@@ -27,9 +28,9 @@ export function createFakeSpeiSource(req: CreatePaymentRequest): StripeSpeiSourc
     created: Math.floor(Date.now() / 1000),
     livemode: false,
     spei: {
-      bank: 'STP',
-      clabe,
-      reference,
+      [SPEI_RAW_KEYS.BANK]: 'STP',
+      [SPEI_RAW_KEYS.CLABE]: speiClabe,
+      [SPEI_RAW_KEYS.REFERENCE]: speiReference,
     },
     expires_at: expiresAt,
   };

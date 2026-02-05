@@ -57,6 +57,7 @@ module.exports = defineConfig([
       '@typescript-eslint/no-unused-vars': 'off',
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/consistent-type-assertions": "error",
+      '@typescript-eslint/no-explicit-any': 'error',
 
       'no-restricted-imports': [
         'error',
@@ -171,6 +172,9 @@ module.exports = defineConfig([
   {
     files: ['src/app/**/*.html'],
     extends: [...angular.configs.templateRecommended, ...angular.configs.templateAccessibility],
+    rules: {
+      '@angular-eslint/template/no-any': 'error',
+    },
   },
 
   eslintConfigPrettier,

@@ -7,7 +7,6 @@ import type {
   PaypalAppContextDefaults,
   PaypalLandingPage,
   PaypalUserAction,
-  SpeiDisplayConfig,
 } from './payments-infra-config.types';
 
 const PAYPAL_LANDING_PAGES: readonly PaypalLandingPage[] = ['LOGIN', 'BILLING', 'NO_PREFERENCE'];
@@ -40,8 +39,10 @@ function validatePaypalDefaults(defaults: PaypalAppContextDefaults): void {
   }
 }
 
-function validateSpeiDisplayConfig(displayConfig: SpeiDisplayConfig): void {
-  const banks = displayConfig.receivingBanks ?? {};
+function validateSpeiDisplayConfig(
+  displayConfig: PaymentsInfraConfigInput['spei']['displayConfig'],
+): void {
+  const banks = displayConfig.receivingBanks;
   if (Object.keys(banks).length === 0) {
     throw new Error('[PaymentsInfraConfig] spei.displayConfig.receivingBanks must be non-empty');
   }

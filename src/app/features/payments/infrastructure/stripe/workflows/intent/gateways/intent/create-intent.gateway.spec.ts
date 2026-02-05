@@ -8,6 +8,7 @@ import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
+import { SPEI_RAW_KEYS } from '@payments/infrastructure/stripe/shared/constants/spei-raw-keys.constants';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
 
 describe('StripeCreateIntentGateway', () => {
@@ -120,17 +121,19 @@ describe('StripeCreateIntentGateway', () => {
     const httpReq = httpMock.expectOne('/test/payments/stripe/sources');
     expect(httpReq.request.method).toBe('POST');
 
+    const spei = {
+      [SPEI_RAW_KEYS.REFERENCE]: '123456',
+      [SPEI_RAW_KEYS.CLABE]: '646180157000000000',
+      [SPEI_RAW_KEYS.BANK]: 'STP',
+    };
+
     httpReq.flush({
       id: 'src_1',
       status: 'pending',
       amount: 20000,
       currency: 'mxn',
       expires_at: 1234567890,
-      spei: {
-        reference: '123456',
-        clabe: '646180157000000000',
-        bank: 'STP',
-      },
+      spei,
     });
   });
 

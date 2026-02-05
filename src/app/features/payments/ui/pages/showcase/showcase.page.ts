@@ -156,7 +156,7 @@ export class ShowcaseComponent {
   speiInstructions = {
     clabe: '646180157034567890',
     reference: '1234567',
-    bank: 'STP',
+    bankCode: 'STP',
     beneficiary: 'Payment Service Demo',
     amount: 499.99,
     currency: 'MXN',

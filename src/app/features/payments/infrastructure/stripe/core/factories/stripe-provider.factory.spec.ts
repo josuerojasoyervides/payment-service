@@ -6,6 +6,8 @@ import {
   createOrderId,
   createPaymentIntentId,
 } from '@payments/application/api/testing/vo-test-helpers';
+import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 import { firstValueFrom, of } from 'rxjs';
@@ -17,10 +19,31 @@ describe('StripeProviderFactory', () => {
     providerId: 'stripe',
     createIntent: vi.fn(),
   } satisfies Partial<StripeIntentFacade>;
+  const infraConfigInput: PaymentsInfraConfigInput = {
+    paymentsBackendBaseUrl: '/api/payments',
+    timeouts: { stripeMs: 15_000, paypalMs: 15_000 },
+    paypal: {
+      defaults: {
+        brand_name: 'Payment Service',
+        landing_page: 'NO_PREFERENCE',
+        user_action: 'PAY_NOW',
+      },
+    },
+    spei: {
+      displayConfig: {
+        receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+        beneficiaryName: 'Payment Service',
+      },
+    },
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [StripeProviderFactory, { provide: StripeIntentFacade, useValue: gatewayStub }],
+      providers: [
+        StripeProviderFactory,
+        { provide: StripeIntentFacade, useValue: gatewayStub },
+        providePaymentsInfraConfig(infraConfigInput),
+      ],
     });
 
     factory = TestBed.inject(StripeProviderFactory);

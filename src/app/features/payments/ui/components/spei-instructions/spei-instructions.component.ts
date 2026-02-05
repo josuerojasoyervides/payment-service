@@ -2,6 +2,7 @@ import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import { SPEI_DISPLAY_CONFIG } from '@payments/presentation/tokens/spei-display-config.token';
 import { ClabeFormatPipe } from '@shared/pipes/clabe-format.pipe';
 
 /**
@@ -15,7 +16,7 @@ import { ClabeFormatPipe } from '@shared/pipes/clabe-format.pipe';
  * <app-spei-instructions
  *   [clabe]="'646180157000000001'"
  *   [reference]="'1234567'"
- *   [bank]="'STP'"
+ *   [bankCode]="'STP'"
  *   [beneficiary]="'Mi Empresa'"
  *   [amount]="499.99"
  *   [currency]="'MXN'"
@@ -32,6 +33,7 @@ import { ClabeFormatPipe } from '@shared/pipes/clabe-format.pipe';
 export class SpeiInstructionsComponent {
   private readonly i18n = inject(I18nService);
   private readonly logger = inject(LoggerService);
+  private readonly displayConfig = inject(SPEI_DISPLAY_CONFIG);
 
   /** Interbank CLABE */
   readonly clabe = input.required<string>();
@@ -39,8 +41,8 @@ export class SpeiInstructionsComponent {
   /** Reference number */
   readonly reference = input.required<string>();
 
-  /** Bank name */
-  readonly bank = input.required<string>();
+  /** Bank code (SPEI) */
+  readonly bankCode = input.required<string>();
 
   /** Beneficiary name */
   readonly beneficiary = input<string>();
@@ -81,6 +83,11 @@ export class SpeiInstructionsComponent {
   readonly paymentMayTakeText = computed(() => this.i18n.t(I18nKeys.ui.payment_may_take));
 
   readonly keepReceiptText = computed(() => this.i18n.t(I18nKeys.ui.keep_receipt));
+
+  readonly bankDisplayName = computed(() => {
+    const code = this.bankCode();
+    return this.displayConfig.receivingBanks[code] ?? code;
+  });
 
   /** Copies text to clipboard */
   async copyToClipboard(text: string, field: string): Promise<void> {

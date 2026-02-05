@@ -49,7 +49,10 @@ export class StripeCreateIntentGateway extends PaymentOperationPort<
   }
   protected mapResponse(dto: StripePaymentIntentDto | StripeSpeiSourceDto): PaymentIntent {
     if ('spei' in dto) {
-      const mapper = new SpeiSourceMapper(this.providerId);
+      const mapper = new SpeiSourceMapper(
+        this.providerId,
+        this.config.spei.displayConfig.beneficiaryName,
+      );
       return mapper.mapSpeiSource(dto as StripeSpeiSourceDto);
     }
     return mapPaymentIntent(dto as StripePaymentIntentDto, this.providerId);

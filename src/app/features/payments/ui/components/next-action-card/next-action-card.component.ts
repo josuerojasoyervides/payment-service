@@ -1,12 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
-import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
+import type {
+  NextAction,
+  NextActionManualStepDetails,
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
 import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
+import { SpeiInstructionsComponent } from '@payments/ui/components/spei-instructions/spei-instructions.component';
 
 @Component({
   selector: 'app-next-action-card',
   standalone: true,
-  imports: [CommonModule, I18nPipe],
+  imports: [CommonModule, I18nPipe, SpeiInstructionsComponent],
   templateUrl: './next-action-card.component.html',
 })
 export class NextActionCardComponent {
@@ -24,6 +28,23 @@ export class NextActionCardComponent {
   readonly continueLabel = computed(() => this.i18n.t(I18nKeys.ui.continue_action));
   readonly confirmLabel = computed(() => this.i18n.t(I18nKeys.ui.confirm_button));
   readonly processingLabel = computed(() => this.i18n.t(I18nKeys.ui.processing));
+  readonly redirectUrl = computed(() => {
+    const action = this.nextAction();
+    return action?.kind === 'redirect' ? action.url : null;
+  });
+  readonly manualStepDetails = computed<NextActionManualStepDetails | null>(() => {
+    const action = this.nextAction();
+    return action?.kind === 'manual_step' ? (action.details ?? null) : null;
+  });
+  readonly manualStepInstructions = computed<string[]>(() => {
+    const action = this.nextAction();
+    return action?.kind === 'manual_step' ? (action.instructions ?? []) : [];
+  });
+  readonly externalWaitHint = computed(() => {
+    const action = this.nextAction();
+    return action?.kind === 'external_wait' ? (action.hint ?? null) : null;
+  });
+  readonly actionKindLabel = computed(() => this.nextAction()?.kind ?? 'unknown');
 
   onActionRequested(): void {
     const action = this.nextAction();
