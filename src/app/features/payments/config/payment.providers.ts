@@ -52,6 +52,7 @@ import { CLIENT_CONFIRM_PORTS } from '@payments/application/api/tokens/operation
 import { FINALIZE_PORTS } from '@payments/application/api/tokens/operations/finalize.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
+import { PAYMENT_UI_PROVIDERS } from '@payments/config/payment-ui.providers';
 import {
   type PaymentsProvidersMode,
   type PaymentsProvidersOptions,
@@ -108,6 +109,7 @@ function selectExternalNavigator(): ExternalNavigatorPort {
 
 function selectPresentationProviders(): Provider[] {
   return [
+    ...PAYMENT_UI_PROVIDERS,
     {
       provide: SPEI_DISPLAY_CONFIG,
       useFactory: (config: PaymentsInfraConfig) => config.spei.displayConfig,

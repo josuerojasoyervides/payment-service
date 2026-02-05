@@ -1,3 +1,4 @@
+import { buildStripe3dsAuthUrl } from '@app/features/payments/infrastructure/fake/shared/constants/fake-external-urls';
 import type { FakeIntentState } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 
@@ -28,7 +29,7 @@ export function buildStripeDtoFromFakeState(
       next_action = {
         type: 'redirect_to_url',
         redirect_to_url: {
-          url: `https://hooks.stripe.com/3d_secure_2/authenticate/${state.intentId}`,
+          url: buildStripe3dsAuthUrl(state.intentId),
           return_url: `${typeof window !== 'undefined' ? window.location.origin : ''}/payments/return`,
         },
       };

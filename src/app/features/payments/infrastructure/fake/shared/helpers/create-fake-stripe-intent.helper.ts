@@ -1,6 +1,7 @@
 // ============ FAKE STRIPE RESPONSES ============
 
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import { buildStripe3dsAuthUrl } from '@app/features/payments/infrastructure/fake/shared/constants/fake-external-urls';
 import { SPECIAL_TOKENS } from '@app/features/payments/infrastructure/fake/shared/constants/special-tokens';
 import { generateId } from '@app/features/payments/infrastructure/fake/shared/helpers/get-id.helper';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
@@ -41,7 +42,7 @@ export function createFakeStripeIntent(
       next_action = {
         type: 'redirect_to_url',
         redirect_to_url: {
-          url: `https://hooks.stripe.com/3d_secure_2/authenticate/${intentId}`,
+          url: buildStripe3dsAuthUrl(intentId),
           return_url: `${typeof window !== 'undefined' ? window.location.origin : ''}/payments/return`,
         },
       };

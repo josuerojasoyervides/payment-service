@@ -1,6 +1,11 @@
 // ============ FAKE PAYPAL RESPONSES ============
 
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import {
+  buildPaypalSandboxApproveUrl,
+  buildPaypalSandboxCaptureUrl,
+  buildPaypalSandboxOrderUrl,
+} from '@app/features/payments/infrastructure/fake/shared/constants/fake-external-urls';
 import { generateId } from '@app/features/payments/infrastructure/fake/shared/helpers/get-id.helper';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 
@@ -15,17 +20,17 @@ export function createFakePaypalOrder(req: CreatePaymentRequest): PaypalOrderDto
     update_time: new Date().toISOString(),
     links: [
       {
-        href: `https://api.sandbox.paypal.com/v2/checkout/orders/${orderId}`,
+        href: buildPaypalSandboxOrderUrl(orderId),
         rel: 'self',
         method: 'GET',
       },
       {
-        href: `https://www.sandbox.paypal.com/checkoutnow?token=${orderId}`,
+        href: buildPaypalSandboxApproveUrl(orderId),
         rel: 'approve',
         method: 'GET',
       },
       {
-        href: `https://api.sandbox.paypal.com/v2/checkout/orders/${orderId}/capture`,
+        href: buildPaypalSandboxCaptureUrl(orderId),
         rel: 'capture',
         method: 'POST',
       },
