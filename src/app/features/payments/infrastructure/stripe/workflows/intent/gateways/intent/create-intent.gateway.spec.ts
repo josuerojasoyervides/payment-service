@@ -14,7 +14,7 @@ import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-
 
 describe('StripeCreateIntentGateway', () => {
   let gateway: StripeCreateIntentGateway;
-  let httpMock: HttpTestingController;
+  let transportMock: HttpTestingController;
 
   const loggerMock = {
     error: vi.fn(),
@@ -53,11 +53,11 @@ describe('StripeCreateIntentGateway', () => {
     });
 
     gateway = TestBed.inject(StripeCreateIntentGateway);
-    httpMock = TestBed.inject(HttpTestingController);
+    transportMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpMock.verify();
+    transportMock.verify();
   });
 
   it('POST /intents for card payments with correct payload and headers', () => {
@@ -78,10 +78,10 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/stripe/intents');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne('/test/payments/stripe/intents');
+    expect(transportReq.request.method).toBe('POST');
 
-    expect(httpReq.request.body).toEqual({
+    expect(transportReq.request.body).toEqual({
       amount: 100 * 100,
       currency: 'mxn',
       payment_method_types: ['card'],
@@ -93,9 +93,9 @@ describe('StripeCreateIntentGateway', () => {
       description: 'Order order_1',
     });
 
-    expect(httpReq.request.headers.get('Idempotency-Key')).toBe('idem_123');
+    expect(transportReq.request.headers.get('Idempotency-Key')).toBe('idem_123');
 
-    httpReq.flush({
+    transportReq.flush({
       id: 'pi_1',
       status: 'requires_confirmation',
       amount: 10000,
@@ -120,8 +120,8 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/stripe/sources');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne('/test/payments/stripe/sources');
+    expect(transportReq.request.method).toBe('POST');
 
     const spei = {
       [SPEI_RAW_KEYS.REFERENCE]: '123456',
@@ -129,7 +129,7 @@ describe('StripeCreateIntentGateway', () => {
       [SPEI_RAW_KEYS.BANK]: 'STP',
     };
 
-    httpReq.flush({
+    transportReq.flush({
       id: 'src_1',
       status: 'pending',
       amount: 20000,
@@ -157,10 +157,10 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/stripe/intents');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne('/test/payments/stripe/intents');
+    expect(transportReq.request.method).toBe('POST');
 
-    httpReq.flush(
+    transportReq.flush(
       { message: 'Stripe error' },
       { status: 500, statusText: 'Internal Server Error' },
     );
@@ -184,10 +184,10 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/stripe/intents');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne('/test/payments/stripe/intents');
+    expect(transportReq.request.method).toBe('POST');
 
-    httpReq.flush(
+    transportReq.flush(
       { error: { code: 'card_declined', type: 'card_error', message: 'Card declined' } },
       { status: 402, statusText: 'Payment Required' },
     );

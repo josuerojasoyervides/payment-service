@@ -12,7 +12,7 @@ import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-
 
 describe('StripeCancelIntentGateway', () => {
   let gateway: StripeCancelIntentGateway;
-  let httpMock: HttpTestingController;
+  let transportMock: HttpTestingController;
 
   const loggerMock = {
     error: vi.fn(),
@@ -51,11 +51,11 @@ describe('StripeCancelIntentGateway', () => {
     });
 
     gateway = TestBed.inject(StripeCancelIntentGateway);
-    httpMock = TestBed.inject(HttpTestingController);
+    transportMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpMock.verify();
+    transportMock.verify();
   });
 
   it('POST /intents/:id/cancel with idempotency headers', () => {
@@ -75,14 +75,14 @@ describe('StripeCancelIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/stripe/intents/pi_123/cancel');
+    const transportReq = transportMock.expectOne('/test/payments/stripe/intents/pi_123/cancel');
 
-    expect(httpReq.request.method).toBe('POST');
-    expect(httpReq.request.body).toEqual({});
+    expect(transportReq.request.method).toBe('POST');
+    expect(transportReq.request.body).toEqual({});
 
-    expect(httpReq.request.headers.get('Idempotency-Key')).toBe('idem_cancel_123');
+    expect(transportReq.request.headers.get('Idempotency-Key')).toBe('idem_cancel_123');
 
-    httpReq.flush({
+    transportReq.flush({
       id: 'pi_123',
       status: 'canceled',
       amount: 10000,
@@ -106,10 +106,10 @@ describe('StripeCancelIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/stripe/intents/pi_error/cancel');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne('/test/payments/stripe/intents/pi_error/cancel');
+    expect(transportReq.request.method).toBe('POST');
 
-    httpReq.flush(
+    transportReq.flush(
       { message: 'Stripe error' },
       { status: 500, statusText: 'Internal Server Error' },
     );

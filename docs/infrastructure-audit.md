@@ -177,6 +177,10 @@ export interface FieldRequirements {
   - **Que es:** config de UI para SPEI (receivingBanks + beneficiaryName).
   - **Donde se provee:** `selectPresentationProviders()` en `src/app/features/payments/config/payment.providers.ts`.
   - **Quien lo consume:** UI (resuelve bankCode -> displayName) y tests de UI.
+- `PAYMENT_PROVIDER_UI_META` / `PAYMENT_PROVIDER_DESCRIPTORS`
+  - **Que es:** metadata de UI + descriptores de proveedor (i18n keys, estilos, iconos, métodos soportados).
+  - **Donde se provee:** `PAYMENT_UI_PROVIDERS` en `src/app/features/payments/config/payment-ui.providers.ts`.
+  - **Quien lo consume:** UI (botones/catalogo) vía registries en Application.
 
 ### `src/app/features/payments/presentation/contracts/checkout-field-requirements.types.ts`
 
@@ -347,42 +351,42 @@ export const PAYMENT_UI_KEYS = {
 
 ```ts
 import type { Provider } from '@angular/core';
-import { PAYMENT_PROVIDER_DESCRIPTORS } from '@payments/presentation/tokens/provider/payment-provider-descriptors.token';
+import { I18nKeys } from '@core/i18n';
+import { PAYMENT_PROVIDER_DESCRIPTORS } from '@payments/application/api/tokens/provider/payment-provider-descriptors.token';
 import {
   PAYMENT_PROVIDER_UI_META,
   type PaymentProviderUiMeta,
-} from '@payments/presentation/tokens/provider/payment-provider-ui-meta.token';
-import { PAYMENT_UI_KEYS } from '@payments/shared/constants/payment-ui-keys';
+} from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
 
-const STRIPE_UI_META: PaymentProviderUiMeta = {
+const STRIPE_UI_META = {
   providerId: 'stripe',
-  displayNameKey: PAYMENT_UI_KEYS.PROVIDER_STRIPE,
+  displayNameKey: I18nKeys.ui.provider_stripe,
   buttonClasses: 'bg-stripe-primary hover:opacity-90 text-white focus:ring-stripe-primary',
-};
+} as const satisfies PaymentProviderUiMeta;
 
-const PAYPAL_UI_META: PaymentProviderUiMeta = {
+const PAYPAL_UI_META = {
   providerId: 'paypal',
-  displayNameKey: PAYMENT_UI_KEYS.PROVIDER_PAYPAL,
+  displayNameKey: I18nKeys.ui.provider_paypal,
   buttonClasses: 'bg-paypal-primary hover:opacity-90 text-white focus:ring-paypal-primary',
-};
+} as const satisfies PaymentProviderUiMeta;
 
 const STRIPE_DESCRIPTOR = {
   id: 'stripe' as const,
-  labelKey: PAYMENT_UI_KEYS.PROVIDER_STRIPE,
-  descriptionKey: PAYMENT_UI_KEYS.PROVIDER_STRIPE_DESCRIPTION,
+  labelKey: I18nKeys.ui.provider_stripe,
+  descriptionKey: I18nKeys.ui.provider_stripe_description,
   icon: '💳',
   supportedMethods: ['card', 'spei'] as const,
 };
 
 const PAYPAL_DESCRIPTOR = {
   id: 'paypal' as const,
-  labelKey: PAYMENT_UI_KEYS.PROVIDER_PAYPAL,
-  descriptionKey: PAYMENT_UI_KEYS.PROVIDER_PAYPAL_DESCRIPTION,
+  labelKey: I18nKeys.ui.provider_paypal,
+  descriptionKey: I18nKeys.ui.provider_paypal_description,
   icon: '🅿️',
   supportedMethods: ['card', 'spei'] as const,
 };
 
-export const PAYMENT_UI_PROVIDER_PROVIDERS: Provider[] = [
+export const PAYMENT_UI_PROVIDERS: Provider[] = [
   { provide: PAYMENT_PROVIDER_UI_META, useValue: STRIPE_UI_META, multi: true },
   { provide: PAYMENT_PROVIDER_UI_META, useValue: PAYPAL_UI_META, multi: true },
   { provide: PAYMENT_PROVIDER_DESCRIPTORS, useValue: STRIPE_DESCRIPTOR, multi: true },
@@ -393,11 +397,11 @@ export const PAYMENT_UI_PROVIDER_PROVIDERS: Provider[] = [
 ### `src/app/features/payments/config/payment.providers.ts`
 
 - **Problemas puntuales:** UI meta/descriptors no estan en config.
-- **Nuevo diseno:** agregar `PAYMENT_UI_PROVIDER_PROVIDERS`.
+- **Nuevo diseno:** agregar `PAYMENT_UI_PROVIDERS`.
 - **Codigo propuesto:**
 
 ```ts
-import { PAYMENT_UI_PROVIDER_PROVIDERS } from '@payments/config/payment-ui.providers';
+import { PAYMENT_UI_PROVIDERS } from '@payments/config/payment-ui.providers';
 
 function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provider[] {
   const mode = options.mode ?? 'fake';
@@ -409,7 +413,7 @@ function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provide
     ...APPLICATION_PROVIDERS,
     ...SHARED_PROVIDERS,
     ...ENV_PROVIDERS,
-    ...PAYMENT_UI_PROVIDER_PROVIDERS,
+    ...PAYMENT_UI_PROVIDERS,
     ...UI_PROVIDERS,
     {
       provide: WEBHOOK_NORMALIZER_REGISTRY,

@@ -10,7 +10,7 @@ import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/workflow
 
 describe('PaypalGetIntentGateway', () => {
   let gateway: PaypalGetIntentGateway;
-  let httpMock: HttpTestingController;
+  let transportMock: HttpTestingController;
 
   const loggerMock = {
     error: vi.fn(),
@@ -48,11 +48,11 @@ describe('PaypalGetIntentGateway', () => {
     });
 
     gateway = TestBed.inject(PaypalGetIntentGateway);
-    httpMock = TestBed.inject(HttpTestingController);
+    transportMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpMock.verify();
+    transportMock.verify();
   });
 
   it('GET /orders/:id and maps payment intent correctly', () => {
@@ -69,7 +69,7 @@ describe('PaypalGetIntentGateway', () => {
       },
     });
 
-    const req = httpMock.expectOne('/test/payments/paypal/orders/pi_123');
+    const req = transportMock.expectOne('/test/payments/paypal/orders/pi_123');
     expect(req.request.method).toBe('GET');
 
     req.flush({
@@ -98,7 +98,7 @@ describe('PaypalGetIntentGateway', () => {
       },
     });
 
-    const req = httpMock.expectOne('/test/payments/paypal/orders/pi_error');
+    const req = transportMock.expectOne('/test/payments/paypal/orders/pi_error');
     expect(req.request.method).toBe('GET');
 
     req.flush({ message: 'Paypal error' }, { status: 500, statusText: 'Internal Server Error' });

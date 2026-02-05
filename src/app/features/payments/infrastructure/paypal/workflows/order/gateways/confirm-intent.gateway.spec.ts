@@ -11,7 +11,7 @@ import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-
 
 describe('PaypalConfirmIntentGateway', () => {
   let gateway: PaypalConfirmIntentGateway;
-  let httpMock: HttpTestingController;
+  let transportMock: HttpTestingController;
 
   const loggerMock = {
     error: vi.fn(),
@@ -50,11 +50,11 @@ describe('PaypalConfirmIntentGateway', () => {
     });
 
     gateway = TestBed.inject(PaypalConfirmIntentGateway);
-    httpMock = TestBed.inject(HttpTestingController);
+    transportMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpMock.verify();
+    transportMock.verify();
   });
 
   it('POST /orders/:id/capture with idempotency header', () => {
@@ -69,12 +69,12 @@ describe('PaypalConfirmIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/paypal/orders/ORDER_1/capture');
-    expect(httpReq.request.method).toBe('POST');
-    expect(httpReq.request.body).toEqual({});
-    expect(httpReq.request.headers.get('PayPal-Request-Id')).toBe('paypal:confirm:ORDER_1');
+    const transportReq = transportMock.expectOne('/test/payments/paypal/orders/ORDER_1/capture');
+    expect(transportReq.request.method).toBe('POST');
+    expect(transportReq.request.body).toEqual({});
+    expect(transportReq.request.headers.get('PayPal-Request-Id')).toBe('paypal:confirm:ORDER_1');
 
-    httpReq.flush({
+    transportReq.flush({
       id: 'ORDER_1',
       status: 'COMPLETED',
       purchase_units: [
@@ -100,10 +100,12 @@ describe('PaypalConfirmIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/paypal/orders/ORDER_ERROR/capture');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne(
+      '/test/payments/paypal/orders/ORDER_ERROR/capture',
+    );
+    expect(transportReq.request.method).toBe('POST');
 
-    httpReq.flush(
+    transportReq.flush(
       { message: 'Paypal error' },
       { status: 500, statusText: 'Internal Server Error' },
     );

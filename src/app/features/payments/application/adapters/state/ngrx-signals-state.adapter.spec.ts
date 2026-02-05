@@ -7,9 +7,9 @@ import {
   createOrderId,
   createPaymentIntentId,
 } from '@payments/application/api/testing/vo-test-helpers';
+import { ProviderDescriptorRegistry } from '@payments/application/orchestration/registry/provider-descriptor/provider-descriptor.registry';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
-import { ProviderDescriptorRegistry } from '@payments/presentation/registry/provider-descriptor/provider-descriptor.registry';
 
 describe('NgRxSignalsStateAdapter', () => {
   let adapter: NgRxSignalsStateAdapter;

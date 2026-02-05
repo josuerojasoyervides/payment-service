@@ -11,7 +11,7 @@ import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-
 
 describe('StripeGetIntentGateway', () => {
   let gateway: StripeGetIntentGateway;
-  let httpMock: HttpTestingController;
+  let transportMock: HttpTestingController;
 
   const loggerMock = {
     error: vi.fn(),
@@ -50,11 +50,11 @@ describe('StripeGetIntentGateway', () => {
     });
 
     gateway = TestBed.inject(StripeGetIntentGateway);
-    httpMock = TestBed.inject(HttpTestingController);
+    transportMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpMock.verify();
+    transportMock.verify();
   });
 
   it('GET /intents/:id and maps payment intent correctly', () => {
@@ -71,7 +71,7 @@ describe('StripeGetIntentGateway', () => {
       },
     });
 
-    const req = httpMock.expectOne('/test/payments/stripe/intents/pi_123');
+    const req = transportMock.expectOne('/test/payments/stripe/intents/pi_123');
     expect(req.request.method).toBe('GET');
     expect(req.request.headers.get('Idempotency-Key')).toBe('stripe:get:pi_123');
 
@@ -97,7 +97,7 @@ describe('StripeGetIntentGateway', () => {
       },
     });
 
-    const req = httpMock.expectOne('/test/payments/stripe/intents/pi_error');
+    const req = transportMock.expectOne('/test/payments/stripe/intents/pi_error');
     expect(req.request.method).toBe('GET');
     expect(req.request.headers.get('Idempotency-Key')).toBe('stripe:get:pi_error');
 
@@ -120,7 +120,7 @@ describe('StripeGetIntentGateway', () => {
       },
     });
 
-    const req = httpMock.expectOne('/test/payments/stripe/intents/pi_timeout');
+    const req = transportMock.expectOne('/test/payments/stripe/intents/pi_timeout');
     expect(req.request.method).toBe('GET');
 
     vi.advanceTimersByTime(infraConfigInput.timeouts.stripeMs + 1);

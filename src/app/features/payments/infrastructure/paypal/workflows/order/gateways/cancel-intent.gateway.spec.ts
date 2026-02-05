@@ -10,7 +10,7 @@ import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/workf
 
 describe('PaypalCancelIntentGateway', () => {
   let gateway: PaypalCancelIntentGateway;
-  let httpMock: HttpTestingController;
+  let transportMock: HttpTestingController;
 
   const loggerMock = {
     error: vi.fn(),
@@ -48,11 +48,11 @@ describe('PaypalCancelIntentGateway', () => {
     });
 
     gateway = TestBed.inject(PaypalCancelIntentGateway);
-    httpMock = TestBed.inject(HttpTestingController);
+    transportMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpMock.verify();
+    transportMock.verify();
   });
 
   it('POST /orders/:id/void and maps payment intent correctly', () => {
@@ -67,11 +67,11 @@ describe('PaypalCancelIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/paypal/orders/ORDER_1/void');
-    expect(httpReq.request.method).toBe('POST');
-    expect(httpReq.request.body).toEqual({});
+    const transportReq = transportMock.expectOne('/test/payments/paypal/orders/ORDER_1/void');
+    expect(transportReq.request.method).toBe('POST');
+    expect(transportReq.request.body).toEqual({});
 
-    httpReq.flush({
+    transportReq.flush({
       id: 'ORDER_1',
       status: 'VOIDED',
       purchase_units: [
@@ -97,10 +97,10 @@ describe('PaypalCancelIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/paypal/orders/ORDER_ERROR/void');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne('/test/payments/paypal/orders/ORDER_ERROR/void');
+    expect(transportReq.request.method).toBe('POST');
 
-    httpReq.flush(
+    transportReq.flush(
       { message: 'Paypal error' },
       { status: 500, statusText: 'Internal Server Error' },
     );

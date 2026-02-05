@@ -13,7 +13,7 @@ import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-
 
 describe('StripeConfirmIntentGateway', () => {
   let gateway: StripeConfirmIntentGateway;
-  let httpMock: HttpTestingController;
+  let transportMock: HttpTestingController;
 
   const loggerMock = {
     error: vi.fn(),
@@ -52,11 +52,11 @@ describe('StripeConfirmIntentGateway', () => {
     });
 
     gateway = TestBed.inject(StripeConfirmIntentGateway);
-    httpMock = TestBed.inject(HttpTestingController);
+    transportMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpMock.verify();
+    transportMock.verify();
   });
 
   it('POST /intents/:id/confirm with correct payload and headers', () => {
@@ -76,17 +76,17 @@ describe('StripeConfirmIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/stripe/intents/pi_123/confirm');
+    const transportReq = transportMock.expectOne('/test/payments/stripe/intents/pi_123/confirm');
 
-    expect(httpReq.request.method).toBe('POST');
+    expect(transportReq.request.method).toBe('POST');
 
-    expect(httpReq.request.body).toEqual({
+    expect(transportReq.request.body).toEqual({
       return_url: TEST_RETURN_URL,
     });
 
-    expect(httpReq.request.headers.get('Idempotency-Key')).toBe('idem_confirm_123');
+    expect(transportReq.request.headers.get('Idempotency-Key')).toBe('idem_confirm_123');
 
-    httpReq.flush({
+    transportReq.flush({
       id: 'pi_123',
       status: 'succeeded',
       amount: 10000,
@@ -110,10 +110,10 @@ describe('StripeConfirmIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/stripe/intents/pi_error/confirm');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne('/test/payments/stripe/intents/pi_error/confirm');
+    expect(transportReq.request.method).toBe('POST');
 
-    httpReq.flush(
+    transportReq.flush(
       { message: 'Stripe error' },
       { status: 500, statusText: 'Internal Server Error' },
     );

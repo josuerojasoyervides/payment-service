@@ -18,7 +18,7 @@ import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-
 
 describe('PaypalCreateIntentGateway', () => {
   let gateway: PaypalCreateIntentGateway;
-  let httpMock: HttpTestingController;
+  let transportMock: HttpTestingController;
 
   const loggerMock = {
     error: vi.fn(),
@@ -57,11 +57,11 @@ describe('PaypalCreateIntentGateway', () => {
     });
 
     gateway = TestBed.inject(PaypalCreateIntentGateway);
-    httpMock = TestBed.inject(HttpTestingController);
+    transportMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpMock.verify();
+    transportMock.verify();
   });
 
   it('POST /orders with correct payload and headers', () => {
@@ -85,14 +85,14 @@ describe('PaypalCreateIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/paypal/orders');
-    expect(httpReq.request.method).toBe('POST');
-    expect(httpReq.request.headers.get('PayPal-Request-Id')).toBe(
+    const transportReq = transportMock.expectOne('/test/payments/paypal/orders');
+    expect(transportReq.request.method).toBe('POST');
+    expect(transportReq.request.headers.get('PayPal-Request-Id')).toBe(
       'paypal:start:order_1:100:MXN:card',
     );
-    expect(httpReq.request.headers.get('Prefer')).toBe('return=representation');
+    expect(transportReq.request.headers.get('Prefer')).toBe('return=representation');
 
-    expect(httpReq.request.body).toEqual({
+    expect(transportReq.request.body).toEqual({
       intent: 'CAPTURE',
       purchase_units: [
         {
@@ -114,7 +114,7 @@ describe('PaypalCreateIntentGateway', () => {
       },
     });
 
-    httpReq.flush({
+    transportReq.flush({
       id: 'ORDER_1',
       status: 'CREATED',
       purchase_units: [
@@ -169,10 +169,10 @@ describe('PaypalCreateIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/paypal/orders');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne('/test/payments/paypal/orders');
+    expect(transportReq.request.method).toBe('POST');
 
-    httpReq.flush(
+    transportReq.flush(
       { message: 'Paypal error' },
       { status: 500, statusText: 'Internal Server Error' },
     );
@@ -196,10 +196,10 @@ describe('PaypalCreateIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/test/payments/paypal/orders');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne('/test/payments/paypal/orders');
+    expect(transportReq.request.method).toBe('POST');
 
-    httpReq.flush(
+    transportReq.flush(
       { name: 'INSTRUMENT_DECLINED', message: 'Declined', debug_id: 'dbg_1' },
       { status: 422, statusText: 'Unprocessable Entity' },
     );
