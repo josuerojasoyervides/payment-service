@@ -51,6 +51,7 @@ import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ng
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
 import { CLIENT_CONFIRM_PORTS } from '@payments/application/api/tokens/operations/client-confirm.token';
 import { FINALIZE_PORTS } from '@payments/application/api/tokens/operations/finalize.token';
+import { SPEI_DISPLAY_CONFIG } from '@payments/application/api/tokens/spei-display-config.token';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
 import { PAYMENT_UI_PROVIDERS } from '@payments/config/payment-ui.providers';
@@ -64,7 +65,6 @@ import type {
   PaymentsInfraConfigInput,
 } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
-import { SPEI_DISPLAY_CONFIG } from '@payments/presentation/tokens/spei-display-config.token';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 function selectProviderConfigs(mode: PaymentsProvidersMode): Provider[] {

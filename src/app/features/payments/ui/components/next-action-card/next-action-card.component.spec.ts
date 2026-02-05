@@ -2,7 +2,7 @@ import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { SPEI_DISPLAY_CONFIG } from '@payments/presentation/tokens/spei-display-config.token';
+import { SPEI_DISPLAY_CONFIG } from '@payments/application/api/tokens/spei-display-config.token';
 import { NextActionCardComponent } from '@payments/ui/components/next-action-card/next-action-card.component';
 
 describe('NextActionCardComponent', () => {

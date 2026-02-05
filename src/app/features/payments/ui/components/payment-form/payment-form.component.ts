@@ -6,7 +6,7 @@ import { I18nKeys, I18nPipe, I18nService } from '@core/i18n';
 import type {
   FieldRequirement,
   FieldRequirements,
-} from '@payments/presentation/contracts/checkout-field-requirements.types';
+} from '@payments/application/api/contracts/checkout-field-requirements.types';
 import { PaymentOptionsForm } from '@payments/ui/forms/payment-options/payment-options-form';
 import { AutofocusDirective } from '@shared/directives/autofocus.directive';
 

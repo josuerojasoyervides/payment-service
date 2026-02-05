@@ -3,7 +3,7 @@ import type { PaymentOptions } from '@app/features/payments/domain/subdomains/pa
 import type {
   FieldRequirement,
   FieldRequirements,
-} from '@payments/presentation/contracts/checkout-field-requirements.types';
+} from '@payments/application/api/contracts/checkout-field-requirements.types';
 import type {
   FlagFieldName,
   NormalizedFlagField,

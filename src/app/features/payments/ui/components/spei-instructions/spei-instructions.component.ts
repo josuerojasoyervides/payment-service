@@ -2,7 +2,7 @@ import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { SPEI_DISPLAY_CONFIG } from '@payments/presentation/tokens/spei-display-config.token';
+import { SPEI_DISPLAY_CONFIG } from '@payments/application/api/tokens/spei-display-config.token';
 import { ClabeFormatPipe } from '@shared/pipes/clabe-format.pipe';
 
 /**
