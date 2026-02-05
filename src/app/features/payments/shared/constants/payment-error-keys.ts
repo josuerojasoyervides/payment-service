@@ -11,15 +11,35 @@ export const PAYMENT_ERROR_KEYS = {
   // Card errors
   CARD_TOKEN_REQUIRED: 'errors.card_token_required',
   CARD_TOKEN_INVALID_FORMAT: 'errors.card_token_invalid_format',
+  CARD_DECLINED: 'errors.card_declined',
+  INSUFFICIENT_FUNDS: 'errors.insufficient_funds',
+  EXPIRED_CARD: 'errors.expired_card',
+  INCORRECT_CVC: 'errors.incorrect_cvc',
+  INCORRECT_NUMBER: 'errors.incorrect_number',
+  AUTHENTICATION_REQUIRED: 'errors.authentication_required',
+  PROCESSING_ERROR: 'errors.processing_error',
 
   // Amount errors (shared across methods)
   MIN_AMOUNT: 'errors.min_amount',
   MAX_AMOUNT: 'errors.max_amount',
+  AMOUNT_INVALID: 'errors.amount_invalid',
+  CURRENCY_REQUIRED: 'errors.currency_required',
+  CURRENCY_NOT_SUPPORTED: 'errors.currency_not_supported',
 
   // Request errors
+  ORDER_ID_REQUIRED: 'errors.order_id_required',
   INVALID_REQUEST: 'errors.invalid_request',
+  METHOD_TYPE_REQUIRED: 'errors.method_type_required',
+  RETURN_URL_REQUIRED: 'errors.return_url_required',
+  RETURN_URL_INVALID: 'errors.return_url_invalid',
+  CANCEL_URL_INVALID: 'errors.cancel_url_invalid',
+  CUSTOMER_EMAIL_REQUIRED: 'errors.customer_email_required',
+  CUSTOMER_EMAIL_INVALID: 'errors.customer_email_invalid',
 
   // Generic
+  PROVIDER_ERROR: 'errors.provider_error',
+  TIMEOUT: 'errors.timeout',
+  STRIPE_ERROR: 'errors.stripe_error',
   UNKNOWN_ERROR: 'errors.unknown_error',
 } as const;
 
@@ -32,6 +52,9 @@ export const PAYMENT_ERROR_KEYS = {
 export const PAYMENT_MESSAGE_KEYS = {
   BANK_VERIFICATION_REQUIRED: 'messages.bank_verification_required',
   SPEI_INSTRUCTIONS: 'messages.spei_instructions',
+  PAY_WITH_PAYPAL: 'ui.pay_with_paypal',
+  PAYPAL_REDIRECT_SECURE_MESSAGE: 'ui.paypal_redirect_secure_message',
+  REDIRECTED_TO_PAYPAL: 'ui.redirected_to_paypal',
 
   // SPEI manual step instructions (displayed in order)
   SPEI_INSTRUCTION_COMPLETE_TRANSFER: 'messages.spei_instruction_complete_transfer',

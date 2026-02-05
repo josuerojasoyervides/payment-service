@@ -1,15 +1,15 @@
 import type { StripeErrorResponse } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import { I18nKeys } from '@core/i18n';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 
 export class ErrorKeyMapper {
   mapErrorKey(error: StripeErrorResponse['error']): string {
     const errorKeyMap: Partial<Record<string, string>> = {
-      card_declined: I18nKeys.errors.card_declined,
-      expired_card: I18nKeys.errors.expired_card,
-      incorrect_cvc: I18nKeys.errors.incorrect_cvc,
-      processing_error: I18nKeys.errors.processing_error,
-      incorrect_number: I18nKeys.errors.incorrect_number,
-      authentication_required: I18nKeys.errors.authentication_required,
+      card_declined: PAYMENT_ERROR_KEYS.CARD_DECLINED,
+      expired_card: PAYMENT_ERROR_KEYS.EXPIRED_CARD,
+      incorrect_cvc: PAYMENT_ERROR_KEYS.INCORRECT_CVC,
+      processing_error: PAYMENT_ERROR_KEYS.PROCESSING_ERROR,
+      incorrect_number: PAYMENT_ERROR_KEYS.INCORRECT_NUMBER,
+      authentication_required: PAYMENT_ERROR_KEYS.AUTHENTICATION_REQUIRED,
     };
 
     const translationKey = errorKeyMap[error.code];
@@ -17,6 +17,6 @@ export class ErrorKeyMapper {
       return translationKey;
     }
 
-    return I18nKeys.errors.stripe_error;
+    return PAYMENT_ERROR_KEYS.STRIPE_ERROR;
   }
 }

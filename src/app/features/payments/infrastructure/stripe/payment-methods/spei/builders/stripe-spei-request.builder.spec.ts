@@ -1,5 +1,5 @@
-import { I18nKeys } from '@core/i18n';
 import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/spei/builders/stripe-spei-request.builder';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import { TEST_RETURN_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 export function expectSyncPaymentError(fn: () => unknown, expected: any) {
@@ -73,7 +73,7 @@ describe('StripeSpeiRequestBuilder', () => {
           builder.withAmount(100, 'MXN').withOptions({ customerEmail: 'test@example.com' }).build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.order_id_required,
+          messageKey: PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED,
           params: { field: 'orderId' },
         },
       );
@@ -86,7 +86,7 @@ describe('StripeSpeiRequestBuilder', () => {
           builder.forOrder('order_123').withOptions({ customerEmail: 'test@example.com' }).build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.currency_required,
+          messageKey: PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED,
           params: { field: 'currency' },
         },
       );
@@ -101,7 +101,7 @@ describe('StripeSpeiRequestBuilder', () => {
             .build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.amount_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.AMOUNT_INVALID,
           params: { field: 'amount', min: 1 },
           raw: { amount: 0 },
         },
@@ -118,7 +118,7 @@ describe('StripeSpeiRequestBuilder', () => {
             .build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.currency_required,
+          messageKey: PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED,
           params: { field: 'currency' },
         },
       );
@@ -127,7 +127,7 @@ describe('StripeSpeiRequestBuilder', () => {
     it('throws PaymentError when customerEmail is missing (SPEI requires email)', () => {
       expectSyncPaymentError(() => builder.forOrder('order_123').withAmount(100, 'MXN').build(), {
         code: 'invalid_request',
-        messageKey: I18nKeys.errors.customer_email_required,
+        messageKey: PAYMENT_ERROR_KEYS.CUSTOMER_EMAIL_REQUIRED,
         params: { field: 'customerEmail' },
       });
     });
@@ -142,7 +142,7 @@ describe('StripeSpeiRequestBuilder', () => {
             .build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.customer_email_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.CUSTOMER_EMAIL_INVALID,
           params: { field: 'customerEmail' },
           raw: { customerEmail: 'invalid-email' },
         },

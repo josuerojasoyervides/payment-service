@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { StripeProviderFactory } from '@app/features/payments/infrastructure/stripe/core/factories/stripe-provider.factory';
 import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
-import { I18nKeys } from '@core/i18n';
 import {
   createOrderId,
   createPaymentIntentId,
 } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
@@ -67,7 +67,7 @@ describe('StripeProviderFactory', () => {
     expect(() => factory.createStrategy('unsupported' as any)).toThrow(
       expect.objectContaining({
         code: 'invalid_request',
-        messageKey: I18nKeys.errors.invalid_request,
+        messageKey: PAYMENT_ERROR_KEYS.INVALID_REQUEST,
         params: {
           reason: 'unsupported_payment_method',
           supportedMethods: 'card, spei',
@@ -132,7 +132,7 @@ describe('StripeProviderFactory', () => {
       expect(() => factory.getFieldRequirements('unsupported' as any)).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.invalid_request,
+          messageKey: PAYMENT_ERROR_KEYS.INVALID_REQUEST,
           params: {
             reason: 'unsupported_payment_method',
             supportedMethods: 'card, spei',

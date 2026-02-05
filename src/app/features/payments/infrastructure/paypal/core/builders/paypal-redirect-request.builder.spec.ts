@@ -1,5 +1,5 @@
 import { PaypalRedirectRequestBuilder } from '@app/features/payments/infrastructure/paypal/core/builders/paypal-redirect-request.builder';
-import { I18nKeys } from '@core/i18n';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import {
   TEST_CANCEL_URL,
   TEST_ORIGIN_URL,
@@ -102,7 +102,7 @@ describe('PaypalRedirectRequestBuilder', () => {
         () => builder.withAmount(100, 'MXN').withOptions({ returnUrl: TEST_RETURN_URL }).build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.order_id_required,
+          messageKey: PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED,
           params: { field: 'orderId' },
         },
       );
@@ -118,7 +118,7 @@ describe('PaypalRedirectRequestBuilder', () => {
             .build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.amount_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.AMOUNT_INVALID,
           params: { field: 'amount' },
         },
       );
@@ -134,7 +134,7 @@ describe('PaypalRedirectRequestBuilder', () => {
             .build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.currency_required,
+          messageKey: PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED,
           params: { field: 'currency' },
         },
       );
@@ -159,7 +159,7 @@ describe('PaypalRedirectRequestBuilder', () => {
             .build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.return_url_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.RETURN_URL_INVALID,
           params: { field: 'returnUrl' },
         },
       );
@@ -178,7 +178,7 @@ describe('PaypalRedirectRequestBuilder', () => {
             .build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.cancel_url_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.CANCEL_URL_INVALID,
           params: { field: 'cancelUrl' },
         },
       );

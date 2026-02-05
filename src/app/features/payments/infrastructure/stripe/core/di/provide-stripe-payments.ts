@@ -6,7 +6,6 @@ import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/pro
 import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
 import { REDIRECT_RETURN_NORMALIZERS } from '@payments/application/api/tokens/redirect/redirect-return-normalizers.token';
 import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
-import { FakeIntentStore } from '@payments/infrastructure/fake/shared/state/fake-intent.store';
 import { FakeStripeCancelIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-cancel-intent.gateway';
 import { FakeStripeClientConfirmPort } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-client-confirm.port';
 import { FakeStripeConfirmIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-confirm-intent.gateway';
@@ -50,7 +49,6 @@ const stripeFakeFactoryProviders: Provider[] = [
 ];
 
 const stripeFakeProviders: Provider[] = [
-  FakeIntentStore,
   FakeStripeClientConfirmPort,
   FakeStripeCreateIntentGateway,
   FakeStripeConfirmIntentGateway,

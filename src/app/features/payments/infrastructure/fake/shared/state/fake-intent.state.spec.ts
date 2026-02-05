@@ -1,6 +1,11 @@
-import { TestBed } from '@angular/core/testing';
 import { SPECIAL_TOKENS } from '@app/features/payments/infrastructure/fake/shared/constants/special-tokens';
-import { FakeIntentStore } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
+import {
+  createFakeIntentState,
+  getFakeIntentState,
+  markFakeIntentClientConfirmed,
+  refreshFakeIntentState,
+  resetFakeIntentState,
+} from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.state';
 import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
@@ -14,18 +19,14 @@ function createRequest(overrides: Partial<CreatePaymentRequest> = {}): CreatePay
   };
 }
 
-describe('FakeIntentStore', () => {
-  let store: FakeIntentStore;
-
+describe('fake-intent.state', () => {
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [FakeIntentStore] });
-    store = TestBed.inject(FakeIntentStore);
-    store.reset();
+    resetFakeIntentState();
   });
 
-  describe('createIntent', () => {
+  describe('createFakeIntentState', () => {
     it('creates processing intent with remainingRefreshesToSucceed', () => {
-      const state = store.createIntent({
+      const state = createFakeIntentState({
         providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.PROCESSING } }),
       });
@@ -37,7 +38,7 @@ describe('FakeIntentStore', () => {
     });
 
     it('creates client_confirm intent with requires_action and nextActionKind', () => {
-      const state = store.createIntent({
+      const state = createFakeIntentState({
         providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.CLIENT_CONFIRM } }),
       });
@@ -49,17 +50,17 @@ describe('FakeIntentStore', () => {
 
     it('throws for timeout token (do not store)', () => {
       expect(() =>
-        store.createIntent({
+        createFakeIntentState({
           providerId: PAYMENT_PROVIDER_IDS.stripe,
           request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.TIMEOUT } }),
         }),
       ).toThrow(/cannot create for error behavior "timeout"/);
-      expect(store.get('any')).toBeNull();
+      expect(getFakeIntentState('any')).toBeNull();
     });
 
     it('throws for decline token', () => {
       expect(() =>
-        store.createIntent({
+        createFakeIntentState({
           providerId: PAYMENT_PROVIDER_IDS.stripe,
           request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.DECLINE } }),
         }),
@@ -67,7 +68,7 @@ describe('FakeIntentStore', () => {
     });
 
     it('creates success intent with succeeded status', () => {
-      const state = store.createIntent({
+      const state = createFakeIntentState({
         providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.SUCCESS } }),
       });
@@ -76,83 +77,83 @@ describe('FakeIntentStore', () => {
     });
   });
 
-  describe('refresh', () => {
+  describe('refreshFakeIntentState', () => {
     it('processing: transitions processing -> processing -> succeeded after N refreshes', () => {
-      const created = store.createIntent({
+      const created = createFakeIntentState({
         providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.PROCESSING } }),
       });
       expect(created.remainingRefreshesToSucceed).toBe(2);
 
-      const r1 = store.refresh(created.intentId);
+      const r1 = refreshFakeIntentState(created.intentId);
       expect(r1?.currentStatus).toBe('processing');
       expect(r1?.remainingRefreshesToSucceed).toBe(1);
       expect(r1?.stepCount).toBe(1);
 
-      const r2 = store.refresh(created.intentId);
+      const r2 = refreshFakeIntentState(created.intentId);
       expect(r2?.currentStatus).toBe('succeeded');
       expect(r2?.remainingRefreshesToSucceed).toBe(0);
       expect(r2?.stepCount).toBe(2);
     });
 
     it('client_confirm: requires_action -> markClientConfirmed -> refresh -> succeeded', () => {
-      const created = store.createIntent({
+      const created = createFakeIntentState({
         providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.CLIENT_CONFIRM } }),
       });
       expect(created.currentStatus).toBe('requires_action');
 
-      store.markClientConfirmed(created.intentId);
-      const afterRefresh = store.refresh(created.intentId);
+      markFakeIntentClientConfirmed(created.intentId);
+      const afterRefresh = refreshFakeIntentState(created.intentId);
       expect(afterRefresh?.currentStatus).toBe('succeeded');
       expect(afterRefresh?.clientConfirmed).toBe(true);
     });
 
     it('returns null for unknown intentId', () => {
-      expect(store.refresh('pi_unknown')).toBeNull();
+      expect(refreshFakeIntentState('pi_unknown')).toBeNull();
     });
   });
 
-  describe('markClientConfirmed', () => {
+  describe('markFakeIntentClientConfirmed', () => {
     it('sets clientConfirmed for client_confirm scenario', () => {
-      const created = store.createIntent({
+      const created = createFakeIntentState({
         providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.CLIENT_CONFIRM } }),
       });
-      const updated = store.markClientConfirmed(created.intentId);
+      const updated = markFakeIntentClientConfirmed(created.intentId);
       expect(updated?.clientConfirmed).toBe(true);
       expect(updated?.scenarioId).toBe('client_confirm');
     });
 
     it('returns null for unknown intentId', () => {
-      expect(store.markClientConfirmed('pi_unknown')).toBeNull();
+      expect(markFakeIntentClientConfirmed('pi_unknown')).toBeNull();
     });
   });
 
-  describe('get', () => {
+  describe('getFakeIntentState', () => {
     it('returns state by intentId', () => {
-      const created = store.createIntent({
+      const created = createFakeIntentState({
         providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.SUCCESS } }),
       });
-      const got = store.get(created.intentId);
+      const got = getFakeIntentState(created.intentId);
       expect(got).toEqual(created);
     });
 
     it('returns null for unknown intentId', () => {
-      expect(store.get('pi_unknown')).toBeNull();
+      expect(getFakeIntentState('pi_unknown')).toBeNull();
     });
   });
 
-  describe('reset', () => {
+  describe('resetFakeIntentState', () => {
     it('clears all stored intents', () => {
-      const created = store.createIntent({
+      const created = createFakeIntentState({
         providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.SUCCESS } }),
       });
-      expect(store.get(created.intentId)).toBeTruthy();
-      store.reset();
-      expect(store.get(created.intentId)).toBeNull();
+      expect(getFakeIntentState(created.intentId)).toBeTruthy();
+      resetFakeIntentState();
+      expect(getFakeIntentState(created.intentId)).toBeNull();
     });
   });
 });

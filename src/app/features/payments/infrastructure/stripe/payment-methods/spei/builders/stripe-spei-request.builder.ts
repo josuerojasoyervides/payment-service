@@ -2,9 +2,9 @@ import { BasePaymentRequestBuilder } from '@app/features/payments/application/ap
 import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
-import { I18nKeys } from '@core/i18n/i18n.keys';
 import type { OrderId } from '@payments/domain/common/primitives/ids/order-id.vo';
 import type { Money } from '@payments/domain/common/primitives/money/money.vo';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 
 /**
  * Builder for SPEI payments via Stripe.
@@ -46,15 +46,15 @@ export class StripeSpeiRequestBuilder extends BasePaymentRequestBuilder {
   }
 
   protected override validateRequired(): void {
-    this.orderIdVo = this.createOrderIdOrThrow(this.orderId, I18nKeys.errors.order_id_required);
-    this.requireDefinedWithKey('currency', this.currency, I18nKeys.errors.currency_required);
+    this.orderIdVo = this.createOrderIdOrThrow(this.orderId, PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED);
+    this.requireDefinedWithKey('currency', this.currency, PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED);
     this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
 
     this.requireEmailWithKey(
       'customerEmail',
       this.customerEmail,
-      I18nKeys.errors.customer_email_required,
-      I18nKeys.errors.customer_email_invalid,
+      PAYMENT_ERROR_KEYS.CUSTOMER_EMAIL_REQUIRED,
+      PAYMENT_ERROR_KEYS.CUSTOMER_EMAIL_INVALID,
     );
   }
 
