@@ -14,6 +14,7 @@ import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workf
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
+import { TEST_RETURN_URL } from '@payments/infrastructure/testing/fixtures/test-urls';
 import { of } from 'rxjs';
 
 describe('IntentFacade (adapter)', () => {
@@ -33,7 +34,7 @@ describe('IntentFacade (adapter)', () => {
 
   const confirmReq: ConfirmPaymentRequest = {
     intentId: createPaymentIntentId('pi_1'),
-    returnUrl: 'https://example.com/return',
+    returnUrl: TEST_RETURN_URL,
   };
 
   const cancelReq: CancelPaymentRequest = {

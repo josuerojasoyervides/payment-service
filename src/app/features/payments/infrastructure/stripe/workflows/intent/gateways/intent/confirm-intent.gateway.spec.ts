@@ -8,6 +8,7 @@ import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
+import { TEST_RETURN_URL } from '@payments/infrastructure/testing/fixtures/test-urls';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 describe('StripeConfirmIntentGateway', () => {
@@ -61,7 +62,7 @@ describe('StripeConfirmIntentGateway', () => {
   it('POST /intents/:id/confirm with correct payload and headers', () => {
     const req: ConfirmPaymentRequest = {
       intentId: createPaymentIntentId('pi_123'),
-      returnUrl: 'https://example.com/return',
+      returnUrl: TEST_RETURN_URL,
       idempotencyKey: 'idem_confirm_123',
     };
 
@@ -80,7 +81,7 @@ describe('StripeConfirmIntentGateway', () => {
     expect(httpReq.request.method).toBe('POST');
 
     expect(httpReq.request.body).toEqual({
-      return_url: 'https://example.com/return',
+      return_url: TEST_RETURN_URL,
     });
 
     expect(httpReq.request.headers.get('Idempotency-Key')).toBe('idem_confirm_123');

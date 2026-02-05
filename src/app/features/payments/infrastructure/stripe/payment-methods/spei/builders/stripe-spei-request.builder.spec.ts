@@ -1,5 +1,6 @@
 import { I18nKeys } from '@core/i18n';
 import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/spei/builders/stripe-spei-request.builder';
+import { TEST_RETURN_URL } from '@payments/infrastructure/testing/fixtures/test-urls';
 
 export function expectSyncPaymentError(fn: () => unknown, expected: any) {
   try {
@@ -56,7 +57,7 @@ describe('StripeSpeiRequestBuilder', () => {
         .withOptions({
           customerEmail: 'test@example.com',
           token: 'tok_should_be_ignored',
-          returnUrl: 'https://example.com/return',
+          returnUrl: TEST_RETURN_URL,
         })
         .build();
 

@@ -10,15 +10,19 @@ import type {
   StripeSpeiSourceDto,
 } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 
-export function mapIntent(dto: any, providerId: PaymentProviderId): PaymentIntent {
-  if ('object' in dto && dto.object === 'payment_intent') {
-    return mapStripeIntent(dto as StripePaymentIntentDto);
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object';
+}
+
+export function mapIntent(dto: unknown, providerId: PaymentProviderId): PaymentIntent {
+  if (isRecord(dto) && dto['object'] === 'payment_intent') {
+    return mapStripeIntent(dto as unknown as StripePaymentIntentDto);
   }
-  if ('object' in dto && dto.object === 'source') {
-    return mapStripeSpeiSource(dto as StripeSpeiSourceDto);
+  if (isRecord(dto) && dto['object'] === 'source') {
+    return mapStripeSpeiSource(dto as unknown as StripeSpeiSourceDto);
   }
-  if ('intent' in dto && dto.intent === 'CAPTURE') {
-    return mapPaypalOrder(dto as PaypalOrderDto);
+  if (isRecord(dto) && dto['intent'] === 'CAPTURE') {
+    return mapPaypalOrder(dto as unknown as PaypalOrderDto);
   }
 
   return mapGeneric(dto, providerId);

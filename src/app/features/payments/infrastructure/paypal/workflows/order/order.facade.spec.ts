@@ -14,6 +14,7 @@ import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/work
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/create-intent.gateway';
 import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/get-intent.gateway';
 import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/order.facade';
+import { TEST_RETURN_URL } from '@payments/infrastructure/testing/fixtures/test-urls';
 import { of } from 'rxjs';
 
 describe('IntentFacade (adapter)', () => {
@@ -33,7 +34,7 @@ describe('IntentFacade (adapter)', () => {
 
   const confirmReq: ConfirmPaymentRequest = {
     intentId: createPaymentIntentId('pi_1'),
-    returnUrl: 'https://example.com/return',
+    returnUrl: TEST_RETURN_URL,
   };
 
   const cancelReq: CancelPaymentRequest = {

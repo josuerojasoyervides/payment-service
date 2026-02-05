@@ -43,7 +43,7 @@ function addFakeDebug(
 @Injectable()
 export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
   CreatePaymentRequest,
-  any,
+  unknown,
   PaymentIntent
 > {
   private readonly http = inject(HttpClient);
@@ -52,7 +52,7 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
 
   abstract override readonly providerId: PaymentProviderId;
 
-  protected override executeRaw(request: CreatePaymentRequest): Observable<any> {
+  protected override executeRaw(request: CreatePaymentRequest): Observable<unknown> {
     this.logger.warn(`[FakeGateway] Creating intent for ${this.providerId}`, this.logContext, {
       request,
     });
@@ -99,7 +99,7 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
     return simulateNetworkDelay(dto);
   }
 
-  protected override mapResponse(dto: any): PaymentIntent {
+  protected override mapResponse(dto: unknown): PaymentIntent {
     return mapIntent(dto, this.providerId);
   }
 

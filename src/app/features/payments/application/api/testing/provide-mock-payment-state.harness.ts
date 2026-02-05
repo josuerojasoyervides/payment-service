@@ -20,6 +20,7 @@ import type {
   CreatePaymentRequest,
   GetPaymentStatusRequest,
 } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 import type { RedirectReturnRaw } from '@payments/application/api/contracts/redirect-return.contract';
 import type { RedirectReturnedPayload } from '@payments/application/api/contracts/redirect-return-normalized.contract';
 import type {
@@ -34,7 +35,6 @@ import type {
   PaymentFlowStatus,
   PaymentsState,
 } from '@payments/application/orchestration/store/types/payment-store-state';
-import type { FieldRequirements } from '@payments/presentation/contracts/checkout-field-requirements.types';
 
 export interface MockPaymentStateOverrides {
   status?: PaymentFlowStatus;

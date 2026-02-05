@@ -3,8 +3,13 @@ import { StripeProviderFactory } from '@app/features/payments/infrastructure/str
 import { StripeProviderMethodPolicy } from '@app/features/payments/infrastructure/stripe/shared/policies/stripe-provider-method.policy';
 import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
 import { I18nKeys } from '@core/i18n';
+import { PAYMENT_PROVIDER_DESCRIPTORS } from '@payments/application/api/tokens/provider/payment-provider-descriptors.token';
 import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
+import {
+  PAYMENT_PROVIDER_UI_META,
+  type PaymentProviderUiMeta,
+} from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
 import { REDIRECT_RETURN_NORMALIZERS } from '@payments/application/api/tokens/redirect/redirect-return-normalizers.token';
 import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
 import { FakeIntentStore } from '@payments/infrastructure/fake/shared/state/fake-intent.store';
@@ -20,11 +25,6 @@ import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workf
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
 import { StripeRedirectReturnNormalizer } from '@payments/infrastructure/stripe/workflows/redirect/stripe-redirect-return.normalizer';
 import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-intent-facade.factory';
-import { PAYMENT_PROVIDER_DESCRIPTORS } from '@payments/presentation/tokens/provider/payment-provider-descriptors.token';
-import {
-  PAYMENT_PROVIDER_UI_META,
-  type PaymentProviderUiMeta,
-} from '@payments/presentation/tokens/provider/payment-provider-ui-meta.token';
 export { StripeWebhookNormalizer } from '@payments/infrastructure/stripe/workflows/webhook/stripe-webhook.normalizer';
 
 const STRIPE_FACTORY_PROVIDERS: Provider[] = [

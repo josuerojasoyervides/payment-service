@@ -10,6 +10,10 @@ import { providePaymentsInfraConfig } from '@payments/infrastructure/config/prov
 import { PaypalProviderFactory } from '@payments/infrastructure/paypal/core/factories/paypal-provider.factory';
 import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/order.facade';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
+import {
+  TEST_PAYMENTS_CANCEL_URL,
+  TEST_PAYMENTS_RETURN_URL,
+} from '@payments/infrastructure/testing/fixtures/test-urls';
 import { firstValueFrom, of } from 'rxjs';
 
 describe('PaypalProviderFactory', () => {
@@ -81,8 +85,8 @@ describe('PaypalProviderFactory', () => {
 
     const strategy = factory.createStrategy('card');
     const context = {
-      returnUrl: 'https://example.com/payments/return',
-      cancelUrl: 'https://example.com/payments/cancel',
+      returnUrl: TEST_PAYMENTS_RETURN_URL,
+      cancelUrl: TEST_PAYMENTS_CANCEL_URL,
       isTest: true,
     };
     const result = await firstValueFrom(

@@ -90,22 +90,6 @@ module.exports = defineConfig([
 
   },
 
-  // ✅ infra fake: se permite any
-  {
-    files: ['src/app/features/**/infrastructure/fake/**/*.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-    },
-  },
-
-  // ✅ core testing helpers: se permite any
-  {
-    files: ['src/app/core/testing/**/*.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-    },
-  },
-
   // ✅ Runtime only: api/testing/** allowed only in specs (order: UI override must come after so it wins for UI files)
   {
     files: ['src/**/!(*.spec|*.test|*.harness).ts'],

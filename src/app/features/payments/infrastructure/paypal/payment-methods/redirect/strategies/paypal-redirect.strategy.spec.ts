@@ -7,6 +7,10 @@ import {
   createPaymentIntentId,
 } from '@payments/application/api/testing/vo-test-helpers';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import {
+  TEST_PAYMENTS_CANCEL_URL,
+  TEST_PAYMENTS_RETURN_URL,
+} from '@payments/infrastructure/testing/fixtures/test-urls';
 import { firstValueFrom, of } from 'rxjs';
 
 describe('PaypalRedirectStrategy', () => {
@@ -21,8 +25,8 @@ describe('PaypalRedirectStrategy', () => {
   };
 
   const context = {
-    returnUrl: 'https://example.com/payments/return',
-    cancelUrl: 'https://example.com/payments/cancel',
+    returnUrl: TEST_PAYMENTS_RETURN_URL,
+    cancelUrl: TEST_PAYMENTS_CANCEL_URL,
     isTest: true,
   };
 

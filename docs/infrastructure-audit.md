@@ -167,6 +167,17 @@ export interface FieldRequirements {
 }
 ```
 
+## 5) Config tokens (post-refactor notes)
+
+- `PAYMENTS_INFRA_CONFIG`
+  - **Que es:** fuente tipada de endpoints, timeouts y defaults de PayPal/SPEI.
+  - **Donde se provee:** `src/app/features/payments/config/payment.providers.ts` via `providePaymentsInfraConfig(...)`.
+  - **Quien lo consume:** gateways Stripe/PayPal + config/presentation providers.
+- `SPEI_DISPLAY_CONFIG`
+  - **Que es:** config de UI para SPEI (receivingBanks + beneficiaryName).
+  - **Donde se provee:** `selectPresentationProviders()` en `src/app/features/payments/config/payment.providers.ts`.
+  - **Quien lo consume:** UI (resuelve bankCode -> displayName) y tests de UI.
+
 ### `src/app/features/payments/presentation/contracts/checkout-field-requirements.types.ts`
 
 - **Problemas puntuales:** fuente real en Presentation genera acoplamiento infra->UI.

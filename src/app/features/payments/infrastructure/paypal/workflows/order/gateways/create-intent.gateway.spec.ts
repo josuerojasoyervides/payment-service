@@ -9,6 +9,11 @@ import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/m
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/create-intent.gateway';
+import {
+  TEST_CANCEL_URL_ALT,
+  TEST_PAYPAL_APPROVE_URL,
+  TEST_RETURN_URL_ALT,
+} from '@payments/infrastructure/testing/fixtures/test-urls';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 describe('PaypalCreateIntentGateway', () => {
@@ -64,8 +69,8 @@ describe('PaypalCreateIntentGateway', () => {
       orderId: createOrderId('order_1'),
       money: { amount: 100, currency: 'MXN' },
       method: { type: 'card' },
-      returnUrl: 'https://return.test',
-      cancelUrl: 'https://cancel.test',
+      returnUrl: TEST_RETURN_URL_ALT,
+      cancelUrl: TEST_CANCEL_URL_ALT,
     };
 
     gateway.execute(req).subscribe({
@@ -73,7 +78,7 @@ describe('PaypalCreateIntentGateway', () => {
         expect(intent.provider).toBe('paypal');
         expect(intent.id.value).toBe('ORDER_1');
         expect(intent.status).toBe('requires_action');
-        expect(intent.redirectUrl).toBe('https://paypal.test/approve');
+        expect(intent.redirectUrl).toBe(TEST_PAYPAL_APPROVE_URL);
       },
       error: (error: PaymentError) => {
         throw error;
@@ -104,8 +109,8 @@ describe('PaypalCreateIntentGateway', () => {
         brand_name: 'Test Brand',
         landing_page: 'NO_PREFERENCE',
         user_action: 'PAY_NOW',
-        return_url: 'https://return.test',
-        cancel_url: 'https://cancel.test',
+        return_url: TEST_RETURN_URL_ALT,
+        cancel_url: TEST_CANCEL_URL_ALT,
       },
     });
 
@@ -123,7 +128,7 @@ describe('PaypalCreateIntentGateway', () => {
       links: [
         {
           rel: 'approve',
-          href: 'https://paypal.test/approve',
+          href: TEST_PAYPAL_APPROVE_URL,
         },
       ],
     });
@@ -151,7 +156,7 @@ describe('PaypalCreateIntentGateway', () => {
       orderId: createOrderId('order_3'),
       money: { amount: 140, currency: 'MXN' },
       method: { type: 'card' },
-      returnUrl: 'https://return.test',
+      returnUrl: TEST_RETURN_URL_ALT,
     };
 
     gateway.execute(req).subscribe({
@@ -178,7 +183,7 @@ describe('PaypalCreateIntentGateway', () => {
       orderId: createOrderId('order_4'),
       money: { amount: 150, currency: 'MXN' },
       method: { type: 'card' },
-      returnUrl: 'https://return.test',
+      returnUrl: TEST_RETURN_URL_ALT,
     };
 
     gateway.execute(req).subscribe({

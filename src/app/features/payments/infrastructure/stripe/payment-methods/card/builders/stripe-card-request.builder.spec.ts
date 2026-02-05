@@ -1,5 +1,9 @@
 import { I18nKeys } from '@core/i18n';
 import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/card/builders/stripe-card-request.builder';
+import {
+  TEST_CANCEL_URL,
+  TEST_RETURN_URL,
+} from '@payments/infrastructure/testing/fixtures/test-urls';
 
 describe('StripeCardRequestBuilder', () => {
   let builder: StripeCardRequestBuilder;
@@ -39,8 +43,8 @@ describe('StripeCardRequestBuilder', () => {
         .withAmount(100, 'MXN')
         .withOptions({
           token: 'tok_test1234567890abc',
-          returnUrl: 'https://example.com/return',
-          cancelUrl: 'https://example.com/cancel',
+          returnUrl: TEST_RETURN_URL,
+          cancelUrl: TEST_CANCEL_URL,
         })
         .build();
 

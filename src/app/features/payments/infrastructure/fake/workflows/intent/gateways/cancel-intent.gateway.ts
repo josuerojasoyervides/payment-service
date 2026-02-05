@@ -14,7 +14,7 @@ import type { Observable } from 'rxjs';
 @Injectable()
 export abstract class FakeCancelIntentGateway extends PaymentOperationPort<
   CancelPaymentRequest,
-  any,
+  unknown,
   PaymentIntent
 > {
   private readonly http = inject(HttpClient);
@@ -22,7 +22,7 @@ export abstract class FakeCancelIntentGateway extends PaymentOperationPort<
 
   abstract override readonly providerId: PaymentProviderId;
 
-  protected override executeRaw(request: CancelPaymentRequest): Observable<any> {
+  protected override executeRaw(request: CancelPaymentRequest): Observable<unknown> {
     const id = request.intentId.value;
     this.logger.warn(`[FakeGateway] Canceling intent ${id}`, this.logContext, {
       request,
@@ -35,7 +35,7 @@ export abstract class FakeCancelIntentGateway extends PaymentOperationPort<
     return simulateNetworkDelay(createCanceledStripeIntent(id));
   }
 
-  protected override mapResponse(dto: any): PaymentIntent {
+  protected override mapResponse(dto: unknown): PaymentIntent {
     return mapIntent(dto, this.providerId);
   }
 }

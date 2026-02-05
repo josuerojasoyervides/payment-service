@@ -16,7 +16,7 @@ import type { Observable } from 'rxjs';
 @Injectable()
 export abstract class FakeGetIntentGateway extends PaymentOperationPort<
   GetPaymentStatusRequest,
-  any,
+  unknown,
   PaymentIntent
 > {
   private readonly http = inject(HttpClient);
@@ -25,7 +25,7 @@ export abstract class FakeGetIntentGateway extends PaymentOperationPort<
 
   abstract override readonly providerId: PaymentProviderId;
 
-  protected override executeRaw(request: GetPaymentStatusRequest): Observable<any> {
+  protected override executeRaw(request: GetPaymentStatusRequest): Observable<unknown> {
     const id = request.intentId.value;
     this.logger.warn(`[FakeGateway] Getting status for ${id}`, this.logContext, {
       request,
@@ -45,7 +45,7 @@ export abstract class FakeGetIntentGateway extends PaymentOperationPort<
 
     return simulateNetworkDelay(createFakeStripeIntentStatus(id));
   }
-  protected override mapResponse(dto: any): PaymentIntent {
+  protected override mapResponse(dto: unknown): PaymentIntent {
     return mapIntent(dto, this.providerId);
   }
 }
