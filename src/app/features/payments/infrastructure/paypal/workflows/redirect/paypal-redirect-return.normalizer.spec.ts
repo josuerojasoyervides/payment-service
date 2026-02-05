@@ -1,4 +1,5 @@
 import { PaypalRedirectReturnNormalizer } from '@payments/infrastructure/paypal/workflows/redirect/paypal-redirect-return.normalizer';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 describe('PaypalRedirectReturnNormalizer', () => {
   let normalizer: PaypalRedirectReturnNormalizer;
@@ -14,11 +15,11 @@ describe('PaypalRedirectReturnNormalizer', () => {
 
   it('maps token to referenceId', () => {
     const result = normalizer.normalize({ query: { token: 'ORDER_123' } });
-    expect(result).toEqual({ providerId: 'paypal', referenceId: 'ORDER_123' });
+    expect(result).toEqual({ providerId: PAYMENT_PROVIDER_IDS.paypal, referenceId: 'ORDER_123' });
   });
 
   it('uses last value when token is repeated', () => {
     const result = normalizer.normalize({ query: { token: ['first', 'last'] } });
-    expect(result).toEqual({ providerId: 'paypal', referenceId: 'last' });
+    expect(result).toEqual({ providerId: PAYMENT_PROVIDER_IDS.paypal, referenceId: 'last' });
   });
 });

@@ -2,6 +2,7 @@ import type { PaymentIntent } from '@app/features/payments/domain/subdomains/pay
 import type { StripeSpeiSourceDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { SPEI_RAW_KEYS } from '@payments/infrastructure/stripe/shared/constants/spei-raw-keys.constants';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
   const result = PaymentIntentId.from(raw);
@@ -17,7 +18,7 @@ export function mapStripeSpeiSource(dto: StripeSpeiSourceDto): PaymentIntent {
 
   return {
     id: toPaymentIntentIdOrThrow(dto.id),
-    provider: 'stripe',
+    provider: PAYMENT_PROVIDER_IDS.stripe,
     status: 'requires_action',
     money: {
       amount: dto.amount / 100,

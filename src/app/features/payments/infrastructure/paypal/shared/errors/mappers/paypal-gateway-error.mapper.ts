@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentErrorCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type { PaypalErrorResponse } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { TimeoutError } from 'rxjs';
 
 import { ERROR_MAP } from './error.mapper';
@@ -50,7 +51,7 @@ export function mapPaypalGatewayError(err: unknown, timeoutMs: number): PaymentE
     return {
       code: mappedCode,
       raw: {
-        provider: 'paypal',
+        provider: PAYMENT_PROVIDER_IDS.paypal,
         status: err.status,
         name,
         debugId,

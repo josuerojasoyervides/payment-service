@@ -4,6 +4,7 @@ import type {
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
   const result = PaymentIntentId.from(raw);
@@ -39,7 +40,7 @@ export function mapStripeIntent(dto: StripePaymentIntentDto): PaymentIntent {
 
   return {
     id: toPaymentIntentIdOrThrow(dto.id),
-    provider: 'stripe',
+    provider: PAYMENT_PROVIDER_IDS.stripe,
     status: statusMap[dto.status],
     money: {
       amount: dto.amount / 100,

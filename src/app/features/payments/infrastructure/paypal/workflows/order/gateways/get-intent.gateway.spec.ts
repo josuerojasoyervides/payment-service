@@ -7,6 +7,8 @@ import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/get-intent.gateway';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
+import { TEST_PAYMENTS_BASE_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 describe('PaypalGetIntentGateway', () => {
   let gateway: PaypalGetIntentGateway;
@@ -19,7 +21,7 @@ describe('PaypalGetIntentGateway', () => {
     debug: vi.fn(),
   };
   const infraConfigInput: PaymentsInfraConfigInput = {
-    paymentsBackendBaseUrl: '/test/payments',
+    paymentsBackendBaseUrl: TEST_PAYMENTS_BASE_URL,
     timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
     paypal: {
       defaults: {
@@ -59,7 +61,7 @@ describe('PaypalGetIntentGateway', () => {
     gateway.execute({ intentId: createPaymentIntentId('pi_123') }).subscribe({
       next: (intent: PaymentIntent) => {
         expect(intent.id.value).toBe('pi_123');
-        expect(intent.provider).toBe('paypal');
+        expect(intent.provider).toBe(PAYMENT_PROVIDER_IDS.paypal);
         expect(intent.money.amount).toBe(200);
         expect(intent.money.currency).toBe('MXN');
         expect(intent.status).toBeDefined();
@@ -69,7 +71,9 @@ describe('PaypalGetIntentGateway', () => {
       },
     });
 
-    const req = transportMock.expectOne('/test/payments/paypal/orders/pi_123');
+    const req = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.paypal}/orders/pi_123`,
+    );
     expect(req.request.method).toBe('GET');
 
     req.flush({
@@ -98,7 +102,9 @@ describe('PaypalGetIntentGateway', () => {
       },
     });
 
-    const req = transportMock.expectOne('/test/payments/paypal/orders/pi_error');
+    const req = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.paypal}/orders/pi_error`,
+    );
     expect(req.request.method).toBe('GET');
 
     req.flush({ message: 'Paypal error' }, { status: 500, statusText: 'Internal Server Error' });

@@ -5,6 +5,7 @@ import { invalidRequestError } from '@app/features/payments/domain/subdomains/pa
 import { PaypalIntentFacade } from '@app/features/payments/infrastructure/paypal/workflows/order/order.facade';
 import type { FinalizePort, FinalizeRequest } from '@payments/application/api/ports/finalize.port';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import type { Observable } from 'rxjs';
 
 /**
@@ -15,7 +16,7 @@ import type { Observable } from 'rxjs';
  */
 @Injectable()
 export class PaypalFinalizeHandler implements FinalizePort {
-  readonly providerId: PaymentProviderId = 'paypal' as const;
+  readonly providerId: PaymentProviderId = PAYMENT_PROVIDER_IDS.paypal;
 
   private readonly gateway = inject(PaypalIntentFacade);
 

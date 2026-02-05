@@ -4,14 +4,15 @@ import type {
   ProviderMethodPolicy,
   ProviderMethodPolicyPort,
 } from '@payments/application/api/ports/provider-method-policy.port';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 export class StripeProviderMethodPolicy implements ProviderMethodPolicyPort {
-  readonly providerId: PaymentProviderId = 'stripe';
+  readonly providerId: PaymentProviderId = PAYMENT_PROVIDER_IDS.stripe;
 
   getPolicy(method: PaymentMethodType): ProviderMethodPolicy {
     if (method === 'card') {
       return {
-        providerId: 'stripe',
+        providerId: PAYMENT_PROVIDER_IDS.stripe,
         method: 'card',
         requires: {
           token: true,
@@ -31,7 +32,7 @@ export class StripeProviderMethodPolicy implements ProviderMethodPolicyPort {
 
     if (method === 'spei') {
       return {
-        providerId: 'stripe',
+        providerId: PAYMENT_PROVIDER_IDS.stripe,
         method: 'spei',
         requires: {
           token: false,
@@ -49,6 +50,8 @@ export class StripeProviderMethodPolicy implements ProviderMethodPolicyPort {
       };
     }
 
-    throw new Error(`Unsupported method "${method}" for provider "stripe".`);
+    throw new Error(
+      `Unsupported method "${method}" for provider "${PAYMENT_PROVIDER_IDS.stripe}".`,
+    );
   }
 }

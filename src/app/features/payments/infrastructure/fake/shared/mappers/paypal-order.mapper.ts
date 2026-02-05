@@ -4,6 +4,7 @@ import type {
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
   const result = PaymentIntentId.from(raw);
@@ -26,7 +27,7 @@ export function mapPaypalOrder(dto: PaypalOrderDto): PaymentIntent {
 
   return {
     id: toPaymentIntentIdOrThrow(dto.id),
-    provider: 'paypal',
+    provider: PAYMENT_PROVIDER_IDS.paypal,
     status: statusMap[dto.status],
     money: {
       amount: parseFloat(purchaseUnit?.amount?.value ?? '0'),

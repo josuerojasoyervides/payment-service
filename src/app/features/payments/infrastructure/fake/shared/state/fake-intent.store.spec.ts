@@ -3,6 +3,7 @@ import { SPECIAL_TOKENS } from '@app/features/payments/infrastructure/fake/share
 import { FakeIntentStore } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
 import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 function createRequest(overrides: Partial<CreatePaymentRequest> = {}): CreatePaymentRequest {
   return {
@@ -25,7 +26,7 @@ describe('FakeIntentStore', () => {
   describe('createIntent', () => {
     it('creates processing intent with remainingRefreshesToSucceed', () => {
       const state = store.createIntent({
-        providerId: 'stripe',
+        providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.PROCESSING } }),
       });
       expect(state.scenarioId).toBe('processing');
@@ -37,7 +38,7 @@ describe('FakeIntentStore', () => {
 
     it('creates client_confirm intent with requires_action and nextActionKind', () => {
       const state = store.createIntent({
-        providerId: 'stripe',
+        providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.CLIENT_CONFIRM } }),
       });
       expect(state.scenarioId).toBe('client_confirm');
@@ -49,7 +50,7 @@ describe('FakeIntentStore', () => {
     it('throws for timeout token (do not store)', () => {
       expect(() =>
         store.createIntent({
-          providerId: 'stripe',
+          providerId: PAYMENT_PROVIDER_IDS.stripe,
           request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.TIMEOUT } }),
         }),
       ).toThrow(/cannot create for error behavior "timeout"/);
@@ -59,7 +60,7 @@ describe('FakeIntentStore', () => {
     it('throws for decline token', () => {
       expect(() =>
         store.createIntent({
-          providerId: 'stripe',
+          providerId: PAYMENT_PROVIDER_IDS.stripe,
           request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.DECLINE } }),
         }),
       ).toThrow(/cannot create for error behavior "decline"/);
@@ -67,7 +68,7 @@ describe('FakeIntentStore', () => {
 
     it('creates success intent with succeeded status', () => {
       const state = store.createIntent({
-        providerId: 'stripe',
+        providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.SUCCESS } }),
       });
       expect(state.scenarioId).toBe('success');
@@ -78,7 +79,7 @@ describe('FakeIntentStore', () => {
   describe('refresh', () => {
     it('processing: transitions processing -> processing -> succeeded after N refreshes', () => {
       const created = store.createIntent({
-        providerId: 'stripe',
+        providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.PROCESSING } }),
       });
       expect(created.remainingRefreshesToSucceed).toBe(2);
@@ -96,7 +97,7 @@ describe('FakeIntentStore', () => {
 
     it('client_confirm: requires_action -> markClientConfirmed -> refresh -> succeeded', () => {
       const created = store.createIntent({
-        providerId: 'stripe',
+        providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.CLIENT_CONFIRM } }),
       });
       expect(created.currentStatus).toBe('requires_action');
@@ -115,7 +116,7 @@ describe('FakeIntentStore', () => {
   describe('markClientConfirmed', () => {
     it('sets clientConfirmed for client_confirm scenario', () => {
       const created = store.createIntent({
-        providerId: 'stripe',
+        providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.CLIENT_CONFIRM } }),
       });
       const updated = store.markClientConfirmed(created.intentId);
@@ -131,7 +132,7 @@ describe('FakeIntentStore', () => {
   describe('get', () => {
     it('returns state by intentId', () => {
       const created = store.createIntent({
-        providerId: 'stripe',
+        providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.SUCCESS } }),
       });
       const got = store.get(created.intentId);
@@ -146,7 +147,7 @@ describe('FakeIntentStore', () => {
   describe('reset', () => {
     it('clears all stored intents', () => {
       const created = store.createIntent({
-        providerId: 'stripe',
+        providerId: PAYMENT_PROVIDER_IDS.stripe,
         request: createRequest({ method: { type: 'card', token: SPECIAL_TOKENS.SUCCESS } }),
       });
       expect(store.get(created.intentId)).toBeTruthy();

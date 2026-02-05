@@ -13,6 +13,7 @@ import type { ProviderFactory } from '@payments/application/api/ports/provider-f
 import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/card/builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/spei/builders/stripe-spei-request.builder';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 
@@ -31,7 +32,7 @@ import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
  */
 @Injectable()
 export class StripeProviderFactory implements ProviderFactory {
-  readonly providerId = 'stripe' as const;
+  readonly providerId = PAYMENT_PROVIDER_IDS.stripe;
 
   private readonly gateway = inject(StripeIntentFacade);
   private readonly logger = inject(LoggerService);

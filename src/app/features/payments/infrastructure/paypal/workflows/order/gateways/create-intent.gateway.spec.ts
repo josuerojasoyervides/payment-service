@@ -9,9 +9,11 @@ import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/m
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/create-intent.gateway';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import {
   TEST_CANCEL_URL_ALT,
+  TEST_PAYMENTS_BASE_URL,
   TEST_PAYPAL_APPROVE_URL,
   TEST_RETURN_URL_ALT,
 } from '@payments/shared/testing/fixtures/test-urls';
@@ -27,7 +29,7 @@ describe('PaypalCreateIntentGateway', () => {
     debug: vi.fn(),
   };
   const infraConfigInput: PaymentsInfraConfigInput = {
-    paymentsBackendBaseUrl: '/test/payments',
+    paymentsBackendBaseUrl: TEST_PAYMENTS_BASE_URL,
     timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
     paypal: {
       defaults: {
@@ -75,7 +77,7 @@ describe('PaypalCreateIntentGateway', () => {
 
     gateway.execute(req).subscribe({
       next: (intent: PaymentIntent) => {
-        expect(intent.provider).toBe('paypal');
+        expect(intent.provider).toBe(PAYMENT_PROVIDER_IDS.paypal);
         expect(intent.id.value).toBe('ORDER_1');
         expect(intent.status).toBe('requires_action');
         expect(intent.redirectUrl).toBe(TEST_PAYPAL_APPROVE_URL);
@@ -85,10 +87,12 @@ describe('PaypalCreateIntentGateway', () => {
       },
     });
 
-    const transportReq = transportMock.expectOne('/test/payments/paypal/orders');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.paypal}/orders`,
+    );
     expect(transportReq.request.method).toBe('POST');
     expect(transportReq.request.headers.get('PayPal-Request-Id')).toBe(
-      'paypal:start:order_1:100:MXN:card',
+      `${PAYMENT_PROVIDER_IDS.paypal}:start:order_1:100:MXN:card`,
     );
     expect(transportReq.request.headers.get('Prefer')).toBe('return=representation');
 
@@ -169,7 +173,9 @@ describe('PaypalCreateIntentGateway', () => {
       },
     });
 
-    const transportReq = transportMock.expectOne('/test/payments/paypal/orders');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.paypal}/orders`,
+    );
     expect(transportReq.request.method).toBe('POST');
 
     transportReq.flush(
@@ -196,7 +202,9 @@ describe('PaypalCreateIntentGateway', () => {
       },
     });
 
-    const transportReq = transportMock.expectOne('/test/payments/paypal/orders');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.paypal}/orders`,
+    );
     expect(transportReq.request.method).toBe('POST');
 
     transportReq.flush(

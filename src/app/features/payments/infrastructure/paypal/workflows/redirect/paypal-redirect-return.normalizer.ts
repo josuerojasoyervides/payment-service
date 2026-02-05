@@ -2,11 +2,10 @@ import type { RedirectReturnRaw } from '@app/features/payments/application/api/c
 import type { RedirectReturnedPayload } from '@app/features/payments/application/api/contracts/redirect-return-normalized.contract';
 import type { RedirectReturnNormalizerPort } from '@app/features/payments/application/api/ports/redirect-return-normalizer.port';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
-
-const PAYPAL_PROVIDER_ID: PaymentProviderId = 'paypal';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 export class PaypalRedirectReturnNormalizer implements RedirectReturnNormalizerPort {
-  readonly providerId: PaymentProviderId = PAYPAL_PROVIDER_ID;
+  readonly providerId: PaymentProviderId = PAYMENT_PROVIDER_IDS.paypal;
 
   normalize(raw: RedirectReturnRaw): RedirectReturnedPayload | null {
     const query = raw?.query;
@@ -16,7 +15,7 @@ export class PaypalRedirectReturnNormalizer implements RedirectReturnNormalizerP
     if (!referenceId) return null;
 
     return {
-      providerId: PAYPAL_PROVIDER_ID,
+      providerId: PAYMENT_PROVIDER_IDS.paypal,
       referenceId,
     };
   }

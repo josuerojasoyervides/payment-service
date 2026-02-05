@@ -19,6 +19,7 @@ import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workf
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
 import { StripeRedirectReturnNormalizer } from '@payments/infrastructure/stripe/workflows/redirect/stripe-redirect-return.normalizer';
 import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-intent-facade.factory';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 export { StripeWebhookNormalizer } from '@payments/infrastructure/stripe/workflows/webhook/stripe-webhook.normalizer';
 
 const STRIPE_FACTORY_PROVIDERS: Provider[] = [
@@ -56,7 +57,7 @@ const STRIPE_FAKE_PROVIDERS: Provider[] = [
   FakeStripeCancelIntentGateway,
   FakeStripeGetIntentGateway,
   fakeIntentFacadeFactory(
-    'stripe',
+    PAYMENT_PROVIDER_IDS.stripe,
     StripeIntentFacade,
     FakeStripeCreateIntentGateway,
     FakeStripeConfirmIntentGateway,

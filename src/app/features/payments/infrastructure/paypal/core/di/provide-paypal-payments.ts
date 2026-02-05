@@ -17,6 +17,7 @@ import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workf
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
 import { PaypalRedirectReturnNormalizer } from '@payments/infrastructure/paypal/workflows/redirect/paypal-redirect-return.normalizer';
 import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-intent-facade.factory';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 export { PaypalWebhookNormalizer } from '@payments/infrastructure/paypal/workflows/webhook/paypal-webhook.normalizer';
 
 const PAYPAL_FACTORY_PROVIDERS: Provider[] = [
@@ -50,7 +51,7 @@ const PAYPAL_FAKE_PROVIDERS: Provider[] = [
   FakePaypalGetIntentGateway,
   PaypalFinalizeHandler,
   fakeIntentFacadeFactory(
-    'paypal',
+    PAYMENT_PROVIDER_IDS.paypal,
     PaypalIntentFacade,
     FakePaypalCreateIntentGateway,
     FakePaypalConfirmIntentGateway,

@@ -10,7 +10,9 @@ import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/p
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { SPEI_RAW_KEYS } from '@payments/infrastructure/stripe/shared/constants/spei-raw-keys.constants';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
+import { TEST_PAYMENTS_BASE_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 describe('StripeCreateIntentGateway', () => {
   let gateway: StripeCreateIntentGateway;
@@ -23,7 +25,7 @@ describe('StripeCreateIntentGateway', () => {
     debug: vi.fn(),
   };
   const infraConfigInput: PaymentsInfraConfigInput = {
-    paymentsBackendBaseUrl: '/test/payments',
+    paymentsBackendBaseUrl: TEST_PAYMENTS_BASE_URL,
     timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
     paypal: {
       defaults: {
@@ -70,7 +72,7 @@ describe('StripeCreateIntentGateway', () => {
 
     gateway.execute(req).subscribe({
       next: (intent: PaymentIntent) => {
-        expect(intent.provider).toBe('stripe');
+        expect(intent.provider).toBe(PAYMENT_PROVIDER_IDS.stripe);
         expect(intent.id.value).toBe('pi_1');
       },
       error: (error: PaymentError) => {
@@ -78,7 +80,9 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
 
-    const transportReq = transportMock.expectOne('/test/payments/stripe/intents');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents`,
+    );
     expect(transportReq.request.method).toBe('POST');
 
     expect(transportReq.request.body).toEqual({
@@ -120,7 +124,9 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
 
-    const transportReq = transportMock.expectOne('/test/payments/stripe/sources');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/sources`,
+    );
     expect(transportReq.request.method).toBe('POST');
 
     const spei = {
@@ -157,7 +163,9 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
 
-    const transportReq = transportMock.expectOne('/test/payments/stripe/intents');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents`,
+    );
     expect(transportReq.request.method).toBe('POST');
 
     transportReq.flush(
@@ -184,7 +192,9 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
 
-    const transportReq = transportMock.expectOne('/test/payments/stripe/intents');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents`,
+    );
     expect(transportReq.request.method).toBe('POST');
 
     transportReq.flush(

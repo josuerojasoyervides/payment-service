@@ -11,6 +11,7 @@ import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workf
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import type { Observable } from 'rxjs';
 
 /**
@@ -26,7 +27,7 @@ import type { Observable } from 'rxjs';
  */
 @Injectable()
 export class StripeIntentFacade implements PaymentGatewayPort {
-  readonly providerId = 'stripe' as const;
+  readonly providerId = PAYMENT_PROVIDER_IDS.stripe;
 
   private readonly createIntentOp = inject(StripeCreateIntentGateway);
   private readonly confirmIntentOp = inject(StripeConfirmIntentGateway);

@@ -10,7 +10,9 @@ import { providePaymentsInfraConfig } from '@payments/infrastructure/config/prov
 import { PaypalProviderFactory } from '@payments/infrastructure/paypal/core/factories/paypal-provider.factory';
 import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/order.facade';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import {
+  TEST_PAYMENTS_API_BASE_URL,
   TEST_PAYMENTS_CANCEL_URL,
   TEST_PAYMENTS_RETURN_URL,
 } from '@payments/shared/testing/fixtures/test-urls';
@@ -19,11 +21,11 @@ import { firstValueFrom, of } from 'rxjs';
 describe('PaypalProviderFactory', () => {
   let factory: PaypalProviderFactory;
   const gatewayStub = {
-    providerId: 'paypal',
+    providerId: PAYMENT_PROVIDER_IDS.paypal,
     createIntent: vi.fn(),
   } satisfies Partial<PaypalIntentFacade>;
   const infraConfigInput: PaymentsInfraConfigInput = {
-    paymentsBackendBaseUrl: '/api/payments',
+    paymentsBackendBaseUrl: TEST_PAYMENTS_API_BASE_URL,
     timeouts: { stripeMs: 15_000, paypalMs: 15_000 },
     paypal: {
       defaults: {
@@ -46,7 +48,10 @@ describe('PaypalProviderFactory', () => {
         PaypalProviderFactory,
         { provide: PaypalIntentFacade, useValue: gatewayStub },
         // Factory now exposes finalize capability via DI; stub is enough for these unit tests.
-        { provide: PaypalFinalizeHandler, useValue: { providerId: 'paypal', execute: vi.fn() } },
+        {
+          provide: PaypalFinalizeHandler,
+          useValue: { providerId: PAYMENT_PROVIDER_IDS.paypal, execute: vi.fn() },
+        },
         providePaymentsInfraConfig(infraConfigInput),
       ],
     });
@@ -77,7 +82,7 @@ describe('PaypalProviderFactory', () => {
     gatewayStub.createIntent = vi.fn(() =>
       of({
         id: createPaymentIntentId('pi_1'),
-        provider: 'paypal',
+        provider: PAYMENT_PROVIDER_IDS.paypal,
         status: 'requires_payment_method',
         money: { amount: 100, currency: 'MXN' },
       }),
@@ -101,7 +106,7 @@ describe('PaypalProviderFactory', () => {
     );
 
     expect(gatewayStub.createIntent).toHaveBeenCalledTimes(1);
-    expect(result.provider).toBe('paypal');
+    expect(result.provider).toBe(PAYMENT_PROVIDER_IDS.paypal);
   });
 
   describe('getFieldRequirements', () => {

@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentErrorCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type { StripeErrorResponse } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { TimeoutError } from 'rxjs';
 
 import { ERROR_CODE_MAP } from './error-code.mapper';
@@ -51,7 +52,7 @@ export function mapStripeGatewayError(err: unknown, timeoutMs: number): PaymentE
     return {
       code: mappedCode,
       raw: {
-        provider: 'stripe',
+        provider: PAYMENT_PROVIDER_IDS.stripe,
         status: err.status,
         code: stripeCode,
         type: stripeType,

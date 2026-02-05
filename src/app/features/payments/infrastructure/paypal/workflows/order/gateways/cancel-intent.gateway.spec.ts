@@ -7,6 +7,8 @@ import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/cancel-intent.gateway';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
+import { TEST_PAYMENTS_BASE_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 describe('PaypalCancelIntentGateway', () => {
   let gateway: PaypalCancelIntentGateway;
@@ -19,7 +21,7 @@ describe('PaypalCancelIntentGateway', () => {
     debug: vi.fn(),
   };
   const infraConfigInput: PaymentsInfraConfigInput = {
-    paymentsBackendBaseUrl: '/test/payments',
+    paymentsBackendBaseUrl: TEST_PAYMENTS_BASE_URL,
     timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
     paypal: {
       defaults: {
@@ -59,7 +61,7 @@ describe('PaypalCancelIntentGateway', () => {
     gateway.execute({ intentId: createPaymentIntentId('ORDER_1') }).subscribe({
       next: (intent: PaymentIntent) => {
         expect(intent.id.value).toBe('ORDER_1');
-        expect(intent.provider).toBe('paypal');
+        expect(intent.provider).toBe(PAYMENT_PROVIDER_IDS.paypal);
         expect(intent.status).toBe('canceled');
       },
       error: () => {
@@ -67,7 +69,9 @@ describe('PaypalCancelIntentGateway', () => {
       },
     });
 
-    const transportReq = transportMock.expectOne('/test/payments/paypal/orders/ORDER_1/void');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.paypal}/orders/ORDER_1/void`,
+    );
     expect(transportReq.request.method).toBe('POST');
     expect(transportReq.request.body).toEqual({});
 
@@ -97,7 +101,9 @@ describe('PaypalCancelIntentGateway', () => {
       },
     });
 
-    const transportReq = transportMock.expectOne('/test/payments/paypal/orders/ORDER_ERROR/void');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.paypal}/orders/ORDER_ERROR/void`,
+    );
     expect(transportReq.request.method).toBe('POST');
 
     transportReq.flush(

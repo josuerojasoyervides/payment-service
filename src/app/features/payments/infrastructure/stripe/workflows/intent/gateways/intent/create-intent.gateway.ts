@@ -15,6 +15,7 @@ import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-
 import { SpeiSourceMapper } from '@payments/infrastructure/stripe/payment-methods/spei/mappers/spei-source.mapper';
 import { mapStripeGatewayError } from '@payments/infrastructure/stripe/shared/errors/mappers/stripe-gateway-error.mapper';
 import { mapPaymentIntent } from '@payments/infrastructure/stripe/workflows/intent/mappers/payment-intent.mapper';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import type { Observable } from 'rxjs';
 import { timeout } from 'rxjs';
@@ -29,7 +30,7 @@ export class StripeCreateIntentGateway extends PaymentOperationPort<
   private readonly logger = inject(LoggerService);
   private readonly idempotencyKeyFactory = inject(IdempotencyKeyFactory);
   private readonly config = inject(PAYMENTS_INFRA_CONFIG);
-  readonly providerId: PaymentProviderId = 'stripe' as const;
+  readonly providerId: PaymentProviderId = PAYMENT_PROVIDER_IDS.stripe;
 
   constructor() {
     super();

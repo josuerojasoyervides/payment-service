@@ -8,7 +8,9 @@ import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/m
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/cancel-intent.gateway';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
+import { TEST_PAYMENTS_BASE_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 describe('StripeCancelIntentGateway', () => {
   let gateway: StripeCancelIntentGateway;
@@ -21,7 +23,7 @@ describe('StripeCancelIntentGateway', () => {
     debug: vi.fn(),
   };
   const infraConfigInput: PaymentsInfraConfigInput = {
-    paymentsBackendBaseUrl: '/test/payments',
+    paymentsBackendBaseUrl: TEST_PAYMENTS_BASE_URL,
     timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
     paypal: {
       defaults: {
@@ -66,7 +68,7 @@ describe('StripeCancelIntentGateway', () => {
 
     gateway.execute(req).subscribe({
       next: (intent: PaymentIntent) => {
-        expect(intent.provider).toBe('stripe');
+        expect(intent.provider).toBe(PAYMENT_PROVIDER_IDS.stripe);
         expect(intent.id.value).toBe('pi_123');
         expect(intent.status).toBeDefined();
       },
@@ -75,7 +77,9 @@ describe('StripeCancelIntentGateway', () => {
       },
     });
 
-    const transportReq = transportMock.expectOne('/test/payments/stripe/intents/pi_123/cancel');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents/pi_123/cancel`,
+    );
 
     expect(transportReq.request.method).toBe('POST');
     expect(transportReq.request.body).toEqual({});
@@ -106,7 +110,9 @@ describe('StripeCancelIntentGateway', () => {
       },
     });
 
-    const transportReq = transportMock.expectOne('/test/payments/stripe/intents/pi_error/cancel');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents/pi_error/cancel`,
+    );
     expect(transportReq.request.method).toBe('POST');
 
     transportReq.flush(

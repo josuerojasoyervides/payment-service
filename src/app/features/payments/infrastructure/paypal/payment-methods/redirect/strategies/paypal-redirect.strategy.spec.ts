@@ -7,6 +7,7 @@ import {
   createPaymentIntentId,
 } from '@payments/application/api/testing/vo-test-helpers';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import {
   TEST_PAYMENTS_CANCEL_URL,
   TEST_PAYMENTS_RETURN_URL,
@@ -39,11 +40,11 @@ describe('PaypalRedirectStrategy', () => {
 
   beforeEach(() => {
     gatewayMock = {
-      providerId: 'paypal',
+      providerId: PAYMENT_PROVIDER_IDS.paypal,
       createIntent: vi.fn(() =>
         of({
           id: createPaymentIntentId('pi_1'),
-          provider: 'paypal',
+          provider: PAYMENT_PROVIDER_IDS.paypal,
           status: 'requires_payment_method',
           money: { amount: 100, currency: 'MXN' },
         }),

@@ -2,6 +2,7 @@ import type { PaymentProviderId } from '@app/features/payments/domain/subdomains
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { I18nKeys } from '@core/i18n';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 export function validateCreate(req: CreatePaymentRequest, providerId: PaymentProviderId) {
   if (!req.orderId) throw invalidRequestError('errors.order_id_required', { field: 'orderId' });
@@ -11,7 +12,7 @@ export function validateCreate(req: CreatePaymentRequest, providerId: PaymentPro
     throw invalidRequestError('errors.amount_invalid', { field: 'amount' });
   if (!req.method?.type)
     throw invalidRequestError(I18nKeys.errors.method_type_required, { field: 'method.type' });
-  if (providerId === 'paypal') return;
+  if (providerId === PAYMENT_PROVIDER_IDS.paypal) return;
   if (req.method.type === 'card' && !req.method.token)
     throw invalidRequestError('errors.card_token_required', { field: 'method.token' });
 }

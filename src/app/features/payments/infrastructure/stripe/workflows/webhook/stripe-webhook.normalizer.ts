@@ -1,5 +1,4 @@
 import type { PaymentIntentStatus } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { ProviderReferences } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider-references.types';
 import type { NormalizedWebhookEvent } from '@app/features/payments/domain/subdomains/payment/messages/payment-webhook.event';
 import type { WebhookNormalizer } from '@app/features/payments/domain/subdomains/payment/ports/payment-webhook-normalizer/payment-webhook-normalizer.port';
@@ -7,6 +6,7 @@ import type {
   StripePaymentIntentDto,
   StripePaymentIntentStatus,
 } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 /**
  * Minimal Stripe webhook event DTO for PaymentIntent events.
@@ -25,8 +25,6 @@ export interface StripePaymentIntentWebhookEvent {
 
 type StripeWebhookHeaders = Record<string, string | string[]>;
 
-const STRIPE_PROVIDER_ID: PaymentProviderId = 'stripe';
-
 export class StripeWebhookNormalizer implements WebhookNormalizer<
   StripePaymentIntentWebhookEvent,
   StripeWebhookHeaders
@@ -44,7 +42,7 @@ export class StripeWebhookNormalizer implements WebhookNormalizer<
     if (object.object !== 'payment_intent') return null;
 
     const providerRefs: ProviderReferences = {
-      [STRIPE_PROVIDER_ID]: {
+      [PAYMENT_PROVIDER_IDS.stripe]: {
         intentId: object.id,
       },
     };
@@ -55,7 +53,7 @@ export class StripeWebhookNormalizer implements WebhookNormalizer<
 
     return {
       eventId: payload.id,
-      providerId: STRIPE_PROVIDER_ID,
+      providerId: PAYMENT_PROVIDER_IDS.stripe,
       providerRefs,
       status,
       occurredAt: occurredAtMs,

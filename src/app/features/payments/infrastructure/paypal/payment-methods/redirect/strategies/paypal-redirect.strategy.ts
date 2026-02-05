@@ -17,6 +17,7 @@ import type {
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
 import type { PaypalAppContextDefaults } from '@payments/infrastructure/config/payments-infra-config.types';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
 
@@ -57,7 +58,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
         I18nKeys.errors.currency_not_supported,
         {
           field: 'currency',
-          provider: 'paypal',
+          provider: PAYMENT_PROVIDER_IDS.paypal,
           supportedCount: supportedCurrencies.length,
           currency: req.money.currency,
         },
@@ -107,7 +108,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     if (!context?.returnUrl) {
       throw invalidRequestError(
         I18nKeys.errors.return_url_required,
-        { field: 'returnUrl', provider: 'paypal' },
+        { field: 'returnUrl', provider: PAYMENT_PROVIDER_IDS.paypal },
         { returnUrl: context?.returnUrl },
       );
     }

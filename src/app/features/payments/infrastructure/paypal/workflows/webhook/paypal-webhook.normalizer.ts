@@ -1,8 +1,8 @@
 import type { PaymentIntentStatus } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { ProviderReferences } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider-references.types';
 import type { NormalizedWebhookEvent } from '@app/features/payments/domain/subdomains/payment/messages/payment-webhook.event';
 import type { WebhookNormalizer } from '@app/features/payments/domain/subdomains/payment/ports/payment-webhook-normalizer/payment-webhook-normalizer.port';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 /**
  * Minimal PayPal webhook event DTO for Orders/Captures events.
@@ -22,8 +22,6 @@ export interface PaypalWebhookEvent {
 
 type PaypalWebhookHeaders = Record<string, string | string[]>;
 
-const PAYPAL_PROVIDER_ID: PaymentProviderId = 'paypal';
-
 export class PaypalWebhookNormalizer implements WebhookNormalizer<
   PaypalWebhookEvent,
   PaypalWebhookHeaders
@@ -42,7 +40,7 @@ export class PaypalWebhookNormalizer implements WebhookNormalizer<
     if (!isOrderEvent && !isCaptureEvent) return null;
 
     const providerRefs: ProviderReferences = {
-      [PAYPAL_PROVIDER_ID]: {
+      [PAYMENT_PROVIDER_IDS.paypal]: {
         orderId: payload.resource.id,
       },
     };
@@ -53,7 +51,7 @@ export class PaypalWebhookNormalizer implements WebhookNormalizer<
 
     return {
       eventId: payload.id,
-      providerId: PAYPAL_PROVIDER_ID,
+      providerId: PAYMENT_PROVIDER_IDS.paypal,
       providerRefs,
       status,
       occurredAt: Number.isNaN(occurredAt) ? Date.now() : occurredAt,

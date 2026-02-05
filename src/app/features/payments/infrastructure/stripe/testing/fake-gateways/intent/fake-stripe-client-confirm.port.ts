@@ -9,6 +9,7 @@ import { resolveStatusReference } from '@payments/application/orchestration/flow
 import { buildStripeDtoFromFakeState } from '@payments/infrastructure/fake/shared/helpers/build-stripe-dto-from-fake-state.helper';
 import { mapIntent } from '@payments/infrastructure/fake/shared/mappers/intent.mapper';
 import { FakeIntentStore } from '@payments/infrastructure/fake/shared/state/fake-intent.store';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import type { Observable } from 'rxjs';
 import { of, throwError } from 'rxjs';
 
@@ -18,7 +19,7 @@ import { of, throwError } from 'rxjs';
  */
 @Injectable()
 export class FakeStripeClientConfirmPort implements ClientConfirmPort {
-  readonly providerId: PaymentProviderId = 'stripe';
+  readonly providerId: PaymentProviderId = PAYMENT_PROVIDER_IDS.stripe;
 
   private readonly fakeIntentStore = inject(FakeIntentStore);
 
@@ -37,7 +38,7 @@ export class FakeStripeClientConfirmPort implements ClientConfirmPort {
       );
     }
     const dto = buildStripeDtoFromFakeState(state, 0);
-    const intent = mapIntent(dto, 'stripe');
+    const intent = mapIntent(dto, PAYMENT_PROVIDER_IDS.stripe);
     return of(intent);
   }
 }

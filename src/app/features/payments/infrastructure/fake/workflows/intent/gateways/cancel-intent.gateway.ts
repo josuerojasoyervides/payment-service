@@ -9,6 +9,7 @@ import { createVoidedPaypalOrder } from '@app/features/payments/infrastructure/f
 import { simulateNetworkDelay } from '@app/features/payments/infrastructure/fake/shared/helpers/simulate-network-delay.helper';
 import { mapIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/intent.mapper';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import type { Observable } from 'rxjs';
 
 @Injectable()
@@ -28,7 +29,7 @@ export abstract class FakeCancelIntentGateway extends PaymentOperationPort<
       request,
     });
 
-    if (this.providerId === 'paypal') {
+    if (this.providerId === PAYMENT_PROVIDER_IDS.paypal) {
       return simulateNetworkDelay(createVoidedPaypalOrder(id));
     }
 

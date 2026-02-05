@@ -11,6 +11,7 @@ import { simulateNetworkDelay } from '@app/features/payments/infrastructure/fake
 import { mapIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/intent.mapper';
 import { FakeIntentStore } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import type { Observable } from 'rxjs';
 
 @Injectable()
@@ -30,7 +31,7 @@ export abstract class FakeGetIntentGateway extends PaymentOperationPort<
     this.logger.warn(`[FakeGateway] Getting status for ${id}`, this.logContext, {
       request,
     });
-    if (this.providerId === 'paypal') {
+    if (this.providerId === PAYMENT_PROVIDER_IDS.paypal) {
       return simulateNetworkDelay(createFakePaypalOrderStatus(id));
     }
 

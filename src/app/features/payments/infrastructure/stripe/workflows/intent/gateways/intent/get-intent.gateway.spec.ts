@@ -7,7 +7,9 @@ import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
+import { TEST_PAYMENTS_BASE_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 describe('StripeGetIntentGateway', () => {
   let gateway: StripeGetIntentGateway;
@@ -20,7 +22,7 @@ describe('StripeGetIntentGateway', () => {
     debug: vi.fn(),
   };
   const infraConfigInput: PaymentsInfraConfigInput = {
-    paymentsBackendBaseUrl: '/test/payments',
+    paymentsBackendBaseUrl: TEST_PAYMENTS_BASE_URL,
     timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
     paypal: {
       defaults: {
@@ -61,7 +63,7 @@ describe('StripeGetIntentGateway', () => {
     gateway.execute({ intentId: createPaymentIntentId('pi_123') }).subscribe({
       next: (intent: PaymentIntent) => {
         expect(intent.id?.value ?? intent.id).toBe('pi_123');
-        expect(intent.provider).toBe('stripe');
+        expect(intent.provider).toBe(PAYMENT_PROVIDER_IDS.stripe);
         expect(intent.money.amount).toBe(200);
         expect(intent.money.currency).toBe('MXN');
         expect(intent.status).toBeDefined();
@@ -71,9 +73,13 @@ describe('StripeGetIntentGateway', () => {
       },
     });
 
-    const req = transportMock.expectOne('/test/payments/stripe/intents/pi_123');
+    const req = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents/pi_123`,
+    );
     expect(req.request.method).toBe('GET');
-    expect(req.request.headers.get('Idempotency-Key')).toBe('stripe:get:pi_123');
+    expect(req.request.headers.get('Idempotency-Key')).toBe(
+      `${PAYMENT_PROVIDER_IDS.stripe}:get:pi_123`,
+    );
 
     req.flush({
       id: 'pi_123',
@@ -97,9 +103,13 @@ describe('StripeGetIntentGateway', () => {
       },
     });
 
-    const req = transportMock.expectOne('/test/payments/stripe/intents/pi_error');
+    const req = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents/pi_error`,
+    );
     expect(req.request.method).toBe('GET');
-    expect(req.request.headers.get('Idempotency-Key')).toBe('stripe:get:pi_error');
+    expect(req.request.headers.get('Idempotency-Key')).toBe(
+      `${PAYMENT_PROVIDER_IDS.stripe}:get:pi_error`,
+    );
 
     req.flush({ message: 'Stripe error' }, { status: 500, statusText: 'Internal Server Error' });
   });
@@ -120,7 +130,9 @@ describe('StripeGetIntentGateway', () => {
       },
     });
 
-    const req = transportMock.expectOne('/test/payments/stripe/intents/pi_timeout');
+    const req = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents/pi_timeout`,
+    );
     expect(req.request.method).toBe('GET');
 
     vi.advanceTimersByTime(infraConfigInput.timeouts.stripeMs + 1);

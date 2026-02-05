@@ -10,6 +10,7 @@ import type { PaymentError } from '@payments/domain/subdomains/payment/entities/
 import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { mapPaypalGatewayError } from '@payments/infrastructure/paypal/shared/errors/mappers/paypal-gateway-error.mapper';
 import { mapOrder } from '@payments/infrastructure/paypal/workflows/order/mappers/map-order.mapper';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import type { Observable } from 'rxjs';
 import { timeout } from 'rxjs';
 
@@ -23,7 +24,7 @@ export class PaypalGetIntentGateway extends PaymentOperationPort<
   private readonly logger = inject(LoggerService);
   private readonly config = inject(PAYMENTS_INFRA_CONFIG);
 
-  readonly providerId: PaymentProviderId = 'paypal' as const;
+  readonly providerId: PaymentProviderId = PAYMENT_PROVIDER_IDS.paypal;
   protected executeRaw(request: GetPaymentStatusRequest): Observable<PaypalOrderDto> {
     return this.http
       .get<PaypalOrderDto>(`${this.config.paypal.baseUrl}/orders/${request.intentId.value}`)

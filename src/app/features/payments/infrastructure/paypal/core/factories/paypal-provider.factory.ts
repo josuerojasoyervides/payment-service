@@ -14,6 +14,7 @@ import type { PaymentStrategy } from '@payments/application/api/ports/payment-st
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
 import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 /**
  * PayPal provider factory.
@@ -29,7 +30,7 @@ import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows
  */
 @Injectable()
 export class PaypalProviderFactory implements ProviderFactory {
-  readonly providerId = 'paypal' as const;
+  readonly providerId = PAYMENT_PROVIDER_IDS.paypal;
 
   private readonly gateway = inject(PaypalIntentFacade);
   private readonly logger = inject(LoggerService);

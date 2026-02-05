@@ -8,19 +8,21 @@ import {
 } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
+import { TEST_PAYMENTS_API_BASE_URL } from '@payments/shared/testing/fixtures/test-urls';
 import { firstValueFrom, of } from 'rxjs';
 
 describe('StripeProviderFactory', () => {
   let factory: StripeProviderFactory;
 
   const gatewayStub = {
-    providerId: 'stripe',
+    providerId: PAYMENT_PROVIDER_IDS.stripe,
     createIntent: vi.fn(),
   } satisfies Partial<StripeIntentFacade>;
   const infraConfigInput: PaymentsInfraConfigInput = {
-    paymentsBackendBaseUrl: '/api/payments',
+    paymentsBackendBaseUrl: TEST_PAYMENTS_API_BASE_URL,
     timeouts: { stripeMs: 15_000, paypalMs: 15_000 },
     paypal: {
       defaults: {
@@ -78,7 +80,7 @@ describe('StripeProviderFactory', () => {
     gatewayStub.createIntent = vi.fn(() =>
       of({
         id: createPaymentIntentId('pi_1'),
-        provider: 'stripe',
+        provider: PAYMENT_PROVIDER_IDS.stripe,
         status: 'requires_payment_method',
         money: { amount: 100, currency: 'MXN' },
       }),
@@ -94,7 +96,7 @@ describe('StripeProviderFactory', () => {
     );
 
     expect(gatewayStub.createIntent).toHaveBeenCalledTimes(1);
-    expect(result.provider).toBe('stripe');
+    expect(result.provider).toBe(PAYMENT_PROVIDER_IDS.stripe);
   });
 
   describe('getFieldRequirements', () => {

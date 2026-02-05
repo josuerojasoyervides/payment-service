@@ -1,9 +1,10 @@
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { buildPaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
+import { TEST_PAYMENTS_API_BASE_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 describe('buildPaymentsInfraConfig', () => {
   const baseInput: PaymentsInfraConfigInput = {
-    paymentsBackendBaseUrl: '/api/payments/',
+    paymentsBackendBaseUrl: `${TEST_PAYMENTS_API_BASE_URL}/`,
     timeouts: { stripeMs: 10_000, paypalMs: 12_000 },
     paypal: {
       defaults: {
@@ -23,9 +24,9 @@ describe('buildPaymentsInfraConfig', () => {
   it('derives provider baseUrls and timeouts', () => {
     const config = buildPaymentsInfraConfig(baseInput);
 
-    expect(config.paymentsBackendBaseUrl).toBe('/api/payments');
-    expect(config.stripe.baseUrl).toBe('/api/payments/stripe');
-    expect(config.paypal.baseUrl).toBe('/api/payments/paypal');
+    expect(config.paymentsBackendBaseUrl).toBe(TEST_PAYMENTS_API_BASE_URL);
+    expect(config.stripe.baseUrl).toBe(`${TEST_PAYMENTS_API_BASE_URL}/stripe`);
+    expect(config.paypal.baseUrl).toBe(`${TEST_PAYMENTS_API_BASE_URL}/paypal`);
     expect(config.stripe.timeoutMs).toBe(10_000);
     expect(config.paypal.timeoutMs).toBe(12_000);
   });

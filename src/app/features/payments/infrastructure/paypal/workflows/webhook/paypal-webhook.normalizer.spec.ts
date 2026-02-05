@@ -3,6 +3,7 @@ import {
   type PaypalWebhookEvent,
   PaypalWebhookNormalizer,
 } from '@payments/infrastructure/paypal/workflows/webhook/paypal-webhook.normalizer';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 describe('PaypalWebhookNormalizer', () => {
   let normalizer: PaypalWebhookNormalizer;
@@ -28,8 +29,8 @@ describe('PaypalWebhookNormalizer', () => {
     const event = result as NormalizedWebhookEvent;
 
     expect(event.eventId).toBe('WH-ORDER-1');
-    expect(event.providerId).toBe('paypal');
-    expect(event.providerRefs?.['paypal']?.orderId).toBe('ORDER_123');
+    expect(event.providerId).toBe(PAYMENT_PROVIDER_IDS.paypal);
+    expect(event.providerRefs?.[PAYMENT_PROVIDER_IDS.paypal]?.orderId).toBe('ORDER_123');
     expect(event.status).toBe('processing');
   });
 
@@ -50,8 +51,8 @@ describe('PaypalWebhookNormalizer', () => {
     const event = result as NormalizedWebhookEvent;
 
     expect(event.eventId).toBe('WH-CAPTURE-1');
-    expect(event.providerId).toBe('paypal');
-    expect(event.providerRefs?.['paypal']?.orderId).toBe('ORDER_456');
+    expect(event.providerId).toBe(PAYMENT_PROVIDER_IDS.paypal);
+    expect(event.providerRefs?.[PAYMENT_PROVIDER_IDS.paypal]?.orderId).toBe('ORDER_456');
     expect(event.status).toBe('succeeded');
   });
 

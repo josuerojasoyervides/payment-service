@@ -16,6 +16,7 @@ import { mapIntent } from '@app/features/payments/infrastructure/fake/shared/map
 import { FakeIntentStore } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import { isPaymentError } from '@payments/application/orchestration/store/projection/payment-store.errors';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import type { Observable } from 'rxjs';
 import { delay, mergeMap, of, throwError } from 'rxjs';
 
@@ -83,7 +84,7 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
       return simulateNetworkDelay(dto);
     }
 
-    if (this.providerId === 'paypal') {
+    if (this.providerId === PAYMENT_PROVIDER_IDS.paypal) {
       const dto = createFakePaypalOrder(request) as unknown as Record<string, unknown>;
       addFakeDebug(dto, behavior, DEFAULT_DELAY_MS, request.orderId.value);
       return simulateNetworkDelay(dto);
