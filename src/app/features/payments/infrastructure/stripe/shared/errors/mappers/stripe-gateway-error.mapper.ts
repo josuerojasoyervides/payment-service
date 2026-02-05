@@ -62,6 +62,9 @@ export function mapStripeGatewayError(err: unknown, timeoutMs: number): PaymentE
 
   return {
     code: 'provider_error',
-    raw: err,
+    raw: {
+      provider: PAYMENT_PROVIDER_IDS.stripe,
+      reason: 'unexpected_error',
+    },
   };
 }

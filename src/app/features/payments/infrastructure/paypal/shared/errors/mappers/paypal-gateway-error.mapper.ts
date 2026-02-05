@@ -61,6 +61,9 @@ export function mapPaypalGatewayError(err: unknown, timeoutMs: number): PaymentE
 
   return {
     code: 'provider_error',
-    raw: err,
+    raw: {
+      provider: PAYMENT_PROVIDER_IDS.paypal,
+      reason: 'unexpected_error',
+    },
   };
 }

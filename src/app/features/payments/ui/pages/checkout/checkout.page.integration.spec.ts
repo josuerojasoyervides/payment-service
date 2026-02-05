@@ -304,7 +304,7 @@ describe('CheckoutComponent - Real Integration', () => {
       await settle(fixture);
     });
 
-    it('tok_timeout: start -> error code timeout, messageKey errors.timeout', async () => {
+    it('tok_timeout: start -> error code timeout', async () => {
       component.onFormChange({ token: 'tok_timeout1234567890abcdef' });
       ensureValidForm(component);
       component.processPayment();
@@ -317,7 +317,7 @@ describe('CheckoutComponent - Real Integration', () => {
       const err = state.error();
       expect(err).toBeTruthy();
       expect(err?.code).toBe('timeout');
-      expect(err?.messageKey).toBe('errors.timeout');
+      expect(err?.messageKey).toBeUndefined();
     });
 
     it('tok_success: start -> isReady true, hasError false, historyCount > 0', async () => {

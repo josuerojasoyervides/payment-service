@@ -106,7 +106,7 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
     validateCreateHelper(request, this.providerId);
   }
 
-  /** Preserve FAKE_ERRORS (timeout, decline, etc.) so integration tests see correct code/messageKey. */
+  /** Preserve FAKE_ERRORS (timeout, decline, etc.) so integration tests see correct error codes. */
   protected override handleError(err: unknown): PaymentError {
     if (isPaymentError(err)) return err;
     return super.handleError(err);
