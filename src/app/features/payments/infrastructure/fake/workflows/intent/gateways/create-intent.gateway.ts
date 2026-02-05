@@ -13,7 +13,7 @@ import { getTokenBehavior } from '@app/features/payments/infrastructure/fake/sha
 import { simulateNetworkDelay } from '@app/features/payments/infrastructure/fake/shared/helpers/simulate-network-delay.helper';
 import { validateCreate as validateCreateHelper } from '@app/features/payments/infrastructure/fake/shared/helpers/validate-create.helper';
 import { mapIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/intent.mapper';
-import { FakeIntentStore } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
+import { createFakeIntentState } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.state';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import { isPaymentError } from '@payments/application/orchestration/store/projection/payment-store.errors';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
@@ -49,8 +49,6 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
 > {
   private readonly http = inject(HttpClient);
   private readonly logger = inject(LoggerService);
-  private readonly fakeIntentStore = inject(FakeIntentStore);
-
   abstract override readonly providerId: PaymentProviderId;
 
   protected override executeRaw(request: CreatePaymentRequest): Observable<unknown> {
@@ -90,8 +88,8 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
       return simulateNetworkDelay(dto);
     }
 
-    // Stripe card: use FakeIntentStore for deterministic processing/client_confirm/refresh
-    const state = this.fakeIntentStore.createIntent({
+    // Stripe card: use shared fake intent state for deterministic processing/client_confirm/refresh
+    const state = createFakeIntentState({
       token: request.method?.token,
       providerId: this.providerId,
       request,

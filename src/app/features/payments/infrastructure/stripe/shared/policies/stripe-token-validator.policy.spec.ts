@@ -1,5 +1,5 @@
 import { StripeTokenValidatorPolicy } from '@app/features/payments/infrastructure/stripe/shared/policies/stripe-token-validator.policy';
-import { I18nKeys } from '@core/i18n';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 
 describe('StripeTokenValidatorPolicy', () => {
   let policy: StripeTokenValidatorPolicy;
@@ -34,19 +34,19 @@ describe('StripeTokenValidatorPolicy', () => {
       expect(() => policy.validate('tok_short')).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.card_token_invalid_format,
+          messageKey: PAYMENT_ERROR_KEYS.CARD_TOKEN_INVALID_FORMAT,
         }),
       );
       expect(() => policy.validate('pm_123')).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.card_token_invalid_format,
+          messageKey: PAYMENT_ERROR_KEYS.CARD_TOKEN_INVALID_FORMAT,
         }),
       );
       expect(() => policy.validate('card_abc')).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.card_token_invalid_format,
+          messageKey: PAYMENT_ERROR_KEYS.CARD_TOKEN_INVALID_FORMAT,
         }),
       );
     });
@@ -55,13 +55,13 @@ describe('StripeTokenValidatorPolicy', () => {
       expect(() => policy.validate('invalid_token1234567890')).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.card_token_invalid_format,
+          messageKey: PAYMENT_ERROR_KEYS.CARD_TOKEN_INVALID_FORMAT,
         }),
       );
       expect(() => policy.validate('stripe_1234567890abcd')).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.card_token_invalid_format,
+          messageKey: PAYMENT_ERROR_KEYS.CARD_TOKEN_INVALID_FORMAT,
         }),
       );
     });
@@ -70,7 +70,7 @@ describe('StripeTokenValidatorPolicy', () => {
       expect(() => policy.validate('')).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.card_token_required,
+          messageKey: PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED,
         }),
       );
     });
@@ -79,13 +79,13 @@ describe('StripeTokenValidatorPolicy', () => {
       expect(() => policy.validate(null as any)).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.card_token_required,
+          messageKey: PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED,
         }),
       );
       expect(() => policy.validate(undefined as any)).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.card_token_required,
+          messageKey: PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED,
         }),
       );
     });

@@ -1,12 +1,12 @@
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { TokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/token-validator.port';
-import { I18nKeys } from '@core/i18n';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 
 /**
  * Base validator for provider-specific token formats.
  *
  * Lives in Infrastructure (Stripe) — not in Domain — because it throws
- * PaymentError with i18n keys. Domain only exposes the TokenValidator port.
+ * PaymentError with UI-facing error keys. Domain only exposes the TokenValidator port.
  */
 export abstract class BaseTokenValidator implements TokenValidator {
   protected abstract readonly patterns: RegExp[];
@@ -18,11 +18,11 @@ export abstract class BaseTokenValidator implements TokenValidator {
     }
 
     if (!token) {
-      throw invalidRequestError(I18nKeys.errors.card_token_required);
+      throw invalidRequestError(PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED);
     }
 
     if (!this.isValid(token)) {
-      throw invalidRequestError(I18nKeys.errors.card_token_invalid_format, {
+      throw invalidRequestError(PAYMENT_ERROR_KEYS.CARD_TOKEN_INVALID_FORMAT, {
         expected: this.patternDescriptions.join(' or '),
         got: this.maskToken(token),
       });

@@ -5,7 +5,7 @@ import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
 import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
-import { FakeIntentStore } from '@payments/infrastructure/fake/shared/state/fake-intent.store';
+import { resetFakeIntentState } from '@payments/infrastructure/fake/shared/state/fake-intent.state';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 
 import {
@@ -292,12 +292,9 @@ describe('CheckoutComponent - Real Integration', () => {
     });
   });
 
-  describe('Scenario matrix (fake tokens) — FakeIntentStore deterministic', () => {
-    let fakeIntentStore: FakeIntentStore;
-
+  describe('Scenario matrix (fake tokens) — fake intent state deterministic', () => {
     beforeEach(async () => {
-      fakeIntentStore = TestBed.inject(FakeIntentStore);
-      fakeIntentStore.reset();
+      resetFakeIntentState();
       state.reset();
       await fixture.whenStable();
       await waitUntilIdle(state, 800);

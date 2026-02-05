@@ -3,8 +3,8 @@ import type { Money } from '@app/features/payments/domain/common/primitives/mone
 import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
-import { I18nKeys } from '@core/i18n';
 import type { OrderId } from '@payments/domain/common/primitives/ids/order-id.vo';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 
 /**
  * Builder for payments via PayPal (redirect flow).
@@ -57,8 +57,8 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
   }
 
   protected override validateRequired(): void {
-    this.orderIdVo = this.createOrderIdOrThrow(this.orderId, I18nKeys.errors.order_id_required);
-    this.requireDefinedWithKey('currency', this.currency, I18nKeys.errors.currency_required);
+    this.orderIdVo = this.createOrderIdOrThrow(this.orderId, PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED);
+    this.requireDefinedWithKey('currency', this.currency, PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED);
     this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
 
     // returnUrl and cancelUrl are optional in builder - they can come from StrategyContext

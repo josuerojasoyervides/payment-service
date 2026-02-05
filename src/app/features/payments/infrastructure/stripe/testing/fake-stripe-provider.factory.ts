@@ -5,7 +5,7 @@ import type { ClientConfirmPort } from '@payments/application/api/ports/client-c
 
 /**
  * Stripe provider factory for fake mode.
- * Extends StripeProviderFactory and adds getClientConfirmHandler for FakeIntentStore client_confirm flow.
+ * Extends StripeProviderFactory and adds getClientConfirmHandler for fake intent client_confirm flow.
  */
 @Injectable()
 export class FakeStripeProviderFactory extends StripeProviderFactory {

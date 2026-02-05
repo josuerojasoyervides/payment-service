@@ -73,7 +73,7 @@ Centralizar configuración y validaciones, normalizar errores y contratos, y añ
 Nombres orientativos (ajusta a tu numeración real).
 Cada PR debe incluir: tests + verificación final.
 
-### PR0 — Baseline / Sanitización inicial
+### PR0 — Baseline / Sanitización inicial ✅
 
 Meta: preparar terreno para cambios grandes sin romper boundaries.
 
@@ -552,9 +552,10 @@ afterStart --> pendingManualReview: FINALIZE_EXHAUSTED
 
 | Check           | Comando                                      |
 | --------------- | -------------------------------------------- |
-| Lint            | bun run lint                                 |
+| Lint            | bun run lint:fix                             |
 | Build           | bun run build                                |
 | Tests           | bun run test:ci                              |
+| Dependencies    | bun run dep:check                            |
 | i18n grep       | grep -r "@core/i18n" infrastructure/ → vacío |
 | FakeIntentStore | No debe existir después de PR0               |
 | Coverage        | 100% paths críticos                          |

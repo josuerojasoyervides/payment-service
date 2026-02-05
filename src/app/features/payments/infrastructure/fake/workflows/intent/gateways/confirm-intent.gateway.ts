@@ -9,7 +9,11 @@ import { createConfirmedPaypalOrder } from '@app/features/payments/infrastructur
 import { createConfirmedStripeIntent } from '@app/features/payments/infrastructure/fake/shared/helpers/create-confirmed-stripe-intent.helper';
 import { simulateNetworkDelay } from '@app/features/payments/infrastructure/fake/shared/helpers/simulate-network-delay.helper';
 import { mapIntent } from '@app/features/payments/infrastructure/fake/shared/mappers/intent.mapper';
-import { FakeIntentStore } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
+import {
+  getFakeIntentState,
+  markFakeIntentClientConfirmed,
+  refreshFakeIntentState,
+} from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.state';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import type { Observable } from 'rxjs';
@@ -22,8 +26,6 @@ export abstract class FakeConfirmIntentGateway extends PaymentOperationPort<
 > {
   private readonly http = inject(HttpClient);
   private readonly logger = inject(LoggerService);
-  private readonly fakeIntentStore = inject(FakeIntentStore);
-
   abstract override readonly providerId: PaymentProviderId;
 
   protected override executeRaw(request: ConfirmPaymentRequest): Observable<unknown> {
@@ -36,10 +38,10 @@ export abstract class FakeConfirmIntentGateway extends PaymentOperationPort<
       return simulateNetworkDelay(createConfirmedPaypalOrder(id));
     }
 
-    const state = this.fakeIntentStore.get(id);
+    const state = getFakeIntentState(id);
     if (state?.scenarioId === 'client_confirm') {
-      this.fakeIntentStore.markClientConfirmed(id);
-      const updated = this.fakeIntentStore.refresh(id);
+      markFakeIntentClientConfirmed(id);
+      const updated = refreshFakeIntentState(id);
       const dto = buildStripeDtoFromFakeState(updated ?? state);
       return simulateNetworkDelay(dto);
     }

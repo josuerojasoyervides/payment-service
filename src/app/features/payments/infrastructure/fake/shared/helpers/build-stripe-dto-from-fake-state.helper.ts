@@ -1,4 +1,4 @@
-import type { FakeIntentState } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
+import type { FakeIntentState } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.state';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import { buildStripe3dsAuthUrl } from '@payments/shared/constants/fake-external-urls';
 

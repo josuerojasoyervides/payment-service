@@ -1,5 +1,5 @@
-import { I18nKeys } from '@core/i18n';
 import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/card/builders/stripe-card-request.builder';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import { TEST_CANCEL_URL, TEST_RETURN_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 describe('StripeCardRequestBuilder', () => {
@@ -58,7 +58,7 @@ describe('StripeCardRequestBuilder', () => {
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.order_id_required,
+          messageKey: PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED,
           params: { field: 'orderId' },
         });
       }
@@ -74,7 +74,7 @@ describe('StripeCardRequestBuilder', () => {
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.amount_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.AMOUNT_INVALID,
           params: { field: 'amount' },
         });
       }
@@ -92,7 +92,7 @@ describe('StripeCardRequestBuilder', () => {
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.amount_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.AMOUNT_INVALID,
           params: { field: 'amount', min: 1 },
           raw: { amount: 0 },
         });
@@ -111,7 +111,7 @@ describe('StripeCardRequestBuilder', () => {
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.amount_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.AMOUNT_INVALID,
           params: { field: 'amount', min: 1 },
           raw: { amount: -100 },
         });
@@ -130,7 +130,7 @@ describe('StripeCardRequestBuilder', () => {
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.currency_required,
+          messageKey: PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED,
           params: { field: 'currency' },
         });
       }
@@ -143,7 +143,7 @@ describe('StripeCardRequestBuilder', () => {
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.card_token_required,
+          messageKey: PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED,
           params: { field: 'token' },
         });
       }

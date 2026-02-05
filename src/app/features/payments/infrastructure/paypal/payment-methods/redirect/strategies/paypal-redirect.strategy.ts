@@ -8,7 +8,6 @@ import type { CreatePaymentRequest } from '@app/features/payments/domain/subdoma
 import { intentRequiresUserAction } from '@app/features/payments/domain/subdomains/payment/policies/requires-user-action.policy';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { findPaypalLink } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
-import { I18nKeys } from '@core/i18n';
 import type { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type {
@@ -17,6 +16,10 @@ import type {
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
 import type { PaypalAppContextDefaults } from '@payments/infrastructure/config/payments-infra-config.types';
+import {
+  PAYMENT_ERROR_KEYS,
+  PAYMENT_MESSAGE_KEYS,
+} from '@payments/shared/constants/payment-error-keys';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
@@ -55,7 +58,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     // but we keep PayPal-specific rules here.
     if (!req.money.currency || !supportedCurrencies.includes(req.money.currency)) {
       throw invalidRequestError(
-        I18nKeys.errors.currency_not_supported,
+        PAYMENT_ERROR_KEYS.CURRENCY_NOT_SUPPORTED,
         {
           field: 'currency',
           provider: PAYMENT_PROVIDER_IDS.paypal,
@@ -76,7 +79,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     // Invalid amount or below PayPal minimum for the currency
     if (!Number.isFinite(req.money.amount) || req.money.amount < minAmount) {
       throw invalidRequestError(
-        I18nKeys.errors.amount_invalid,
+        PAYMENT_ERROR_KEYS.AMOUNT_INVALID,
         { field: 'amount', min: minAmount, currency: req.money.currency },
         { amount: req.money.amount, currency: req.money.currency, minAmount },
       );
@@ -107,7 +110,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     // Do not invent URLs - if returnUrl is missing, fail fast
     if (!context?.returnUrl) {
       throw invalidRequestError(
-        I18nKeys.errors.return_url_required,
+        PAYMENT_ERROR_KEYS.RETURN_URL_REQUIRED,
         { field: 'returnUrl', provider: PAYMENT_PROVIDER_IDS.paypal },
         { returnUrl: context?.returnUrl },
       );
@@ -181,7 +184,10 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
       return null;
     }
 
-    return [I18nKeys.ui.paypal_redirect_secure_message, I18nKeys.ui.redirected_to_paypal];
+    return [
+      PAYMENT_MESSAGE_KEYS.PAYPAL_REDIRECT_SECURE_MESSAGE,
+      PAYMENT_MESSAGE_KEYS.REDIRECTED_TO_PAYPAL,
+    ];
   }
 
   /**

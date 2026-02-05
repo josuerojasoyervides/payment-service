@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { PaypalRedirectStrategy } from '@app/features/payments/infrastructure/paypal/payment-methods/redirect/strategies/paypal-redirect.strategy';
-import { I18nKeys } from '@core/i18n';
 import {
   createOrderId,
   createPaymentIntentId,
@@ -10,6 +9,7 @@ import { providePaymentsInfraConfig } from '@payments/infrastructure/config/prov
 import { PaypalProviderFactory } from '@payments/infrastructure/paypal/core/factories/paypal-provider.factory';
 import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/order.facade';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import {
   TEST_PAYMENTS_API_BASE_URL,
@@ -69,7 +69,7 @@ describe('PaypalProviderFactory', () => {
     expect(() => factory.createStrategy('spei' as any)).toThrow(
       expect.objectContaining({
         code: 'invalid_request',
-        messageKey: I18nKeys.errors.invalid_request,
+        messageKey: PAYMENT_ERROR_KEYS.INVALID_REQUEST,
         params: {
           reason: 'unsupported_payment_method',
           supportedMethods: 'card',
@@ -133,7 +133,7 @@ describe('PaypalProviderFactory', () => {
       expect(() => factory.getFieldRequirements('spei' as any)).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.invalid_request,
+          messageKey: PAYMENT_ERROR_KEYS.INVALID_REQUEST,
           params: {
             reason: 'unsupported_payment_method',
             supportedMethods: 'card',
