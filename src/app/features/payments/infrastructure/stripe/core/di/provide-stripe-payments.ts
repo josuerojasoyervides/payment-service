@@ -22,34 +22,34 @@ import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-i
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 export { StripeWebhookNormalizer } from '@payments/infrastructure/stripe/workflows/webhook/stripe-webhook.normalizer';
 
-const STRIPE_FACTORY_PROVIDERS: Provider[] = [
+const stripeFactoryProviders: Provider[] = [
   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: StripeProviderFactory, multi: true },
 ];
 
-const STRIPE_POLICY_PROVIDERS: Provider[] = [
+const stripePolicyProviders: Provider[] = [
   { provide: PAYMENT_PROVIDER_METHOD_POLICIES, useClass: StripeProviderMethodPolicy, multi: true },
 ];
 
-const STRIPE_REDIRECT_RETURN_PROVIDERS: Provider[] = [
+const stripeRedirectReturnProviders: Provider[] = [
   { provide: REDIRECT_RETURN_NORMALIZERS, useClass: StripeRedirectReturnNormalizer, multi: true },
 ];
 
-const STRIPE_REAL_PROVIDERS: Provider[] = [
+const stripeRealProviders: Provider[] = [
   StripeIntentFacade,
   StripeCreateIntentGateway,
   StripeConfirmIntentGateway,
   StripeCancelIntentGateway,
   StripeGetIntentGateway,
-  ...STRIPE_FACTORY_PROVIDERS,
-  ...STRIPE_POLICY_PROVIDERS,
-  ...STRIPE_REDIRECT_RETURN_PROVIDERS,
+  ...stripeFactoryProviders,
+  ...stripePolicyProviders,
+  ...stripeRedirectReturnProviders,
 ];
 
-const STRIPE_FAKE_FACTORY_PROVIDERS: Provider[] = [
+const stripeFakeFactoryProviders: Provider[] = [
   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: FakeStripeProviderFactory, multi: true },
 ];
 
-const STRIPE_FAKE_PROVIDERS: Provider[] = [
+const stripeFakeProviders: Provider[] = [
   FakeIntentStore,
   FakeStripeClientConfirmPort,
   FakeStripeCreateIntentGateway,
@@ -64,15 +64,15 @@ const STRIPE_FAKE_PROVIDERS: Provider[] = [
     FakeStripeCancelIntentGateway,
     FakeStripeGetIntentGateway,
   ),
-  ...STRIPE_FAKE_FACTORY_PROVIDERS,
-  ...STRIPE_POLICY_PROVIDERS,
-  ...STRIPE_REDIRECT_RETURN_PROVIDERS,
+  ...stripeFakeFactoryProviders,
+  ...stripePolicyProviders,
+  ...stripeRedirectReturnProviders,
 ];
 
 export function provideStripePayments(mode: PaymentsProvidersMode): Provider[] {
   if (mode === 'real') {
-    return STRIPE_REAL_PROVIDERS;
+    return stripeRealProviders;
   }
 
-  return STRIPE_FAKE_PROVIDERS;
+  return stripeFakeProviders;
 }

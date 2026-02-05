@@ -20,31 +20,31 @@ import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-i
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 export { PaypalWebhookNormalizer } from '@payments/infrastructure/paypal/workflows/webhook/paypal-webhook.normalizer';
 
-const PAYPAL_FACTORY_PROVIDERS: Provider[] = [
+const paypalFactoryProviders: Provider[] = [
   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: PaypalProviderFactory, multi: true },
 ];
 
-const PAYPAL_POLICY_PROVIDERS: Provider[] = [
+const paypalPolicyProviders: Provider[] = [
   { provide: PAYMENT_PROVIDER_METHOD_POLICIES, useClass: PaypalProviderMethodPolicy, multi: true },
 ];
 
-const PAYPAL_REDIRECT_RETURN_PROVIDERS: Provider[] = [
+const paypalRedirectReturnProviders: Provider[] = [
   { provide: REDIRECT_RETURN_NORMALIZERS, useClass: PaypalRedirectReturnNormalizer, multi: true },
 ];
 
-const PAYPAL_REAL_PROVIDERS: Provider[] = [
+const paypalRealProviders: Provider[] = [
   PaypalIntentFacade,
   PaypalCreateIntentGateway,
   PaypalConfirmIntentGateway,
   PaypalCancelIntentGateway,
   PaypalGetIntentGateway,
   PaypalFinalizeHandler,
-  ...PAYPAL_FACTORY_PROVIDERS,
-  ...PAYPAL_POLICY_PROVIDERS,
-  ...PAYPAL_REDIRECT_RETURN_PROVIDERS,
+  ...paypalFactoryProviders,
+  ...paypalPolicyProviders,
+  ...paypalRedirectReturnProviders,
 ];
 
-const PAYPAL_FAKE_PROVIDERS: Provider[] = [
+const paypalFakeProviders: Provider[] = [
   FakePaypalCreateIntentGateway,
   FakePaypalConfirmIntentGateway,
   FakePaypalCancelIntentGateway,
@@ -58,15 +58,15 @@ const PAYPAL_FAKE_PROVIDERS: Provider[] = [
     FakePaypalCancelIntentGateway,
     FakePaypalGetIntentGateway,
   ),
-  ...PAYPAL_FACTORY_PROVIDERS,
-  ...PAYPAL_POLICY_PROVIDERS,
-  ...PAYPAL_REDIRECT_RETURN_PROVIDERS,
+  ...paypalFactoryProviders,
+  ...paypalPolicyProviders,
+  ...paypalRedirectReturnProviders,
 ];
 
 export function providePaypalPayments(mode: PaymentsProvidersMode): Provider[] {
   if (mode === 'real') {
-    return PAYPAL_REAL_PROVIDERS;
+    return paypalRealProviders;
   }
 
-  return PAYPAL_FAKE_PROVIDERS;
+  return paypalFakeProviders;
 }
