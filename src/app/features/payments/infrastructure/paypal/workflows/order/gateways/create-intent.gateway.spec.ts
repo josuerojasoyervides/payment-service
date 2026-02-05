@@ -2,7 +2,6 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
-import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
@@ -143,7 +142,7 @@ describe('PaypalCreateIntentGateway', () => {
     } catch (err) {
       const error = err as PaymentError;
       expect(error.code).toBe('invalid_request');
-      expect(error.messageKey).toBe(I18nKeys.errors.invalid_request);
+      expect(error.messageKey).toBeUndefined();
     }
   });
 
@@ -160,7 +159,7 @@ describe('PaypalCreateIntentGateway', () => {
         expect.fail('Expected error');
       },
       error: (err) => {
-        expect(err.code).toBe('provider_error');
+        expect(err.code).toBe('provider_unavailable');
         expect(err.raw).toBeDefined();
       },
     });
@@ -171,6 +170,33 @@ describe('PaypalCreateIntentGateway', () => {
     httpReq.flush(
       { message: 'Paypal error' },
       { status: 500, statusText: 'Internal Server Error' },
+    );
+  });
+
+  it('maps PayPal error names to payment error codes without messageKey', () => {
+    const req: CreatePaymentRequest = {
+      orderId: createOrderId('order_4'),
+      money: { amount: 150, currency: 'MXN' },
+      method: { type: 'card' },
+      returnUrl: 'https://return.test',
+    };
+
+    gateway.execute(req).subscribe({
+      next: () => {
+        expect.fail('Expected error');
+      },
+      error: (err: PaymentError) => {
+        expect(err.code).toBe('card_declined');
+        expect(err.messageKey).toBeUndefined();
+      },
+    });
+
+    const httpReq = httpMock.expectOne('/test/payments/paypal/orders');
+    expect(httpReq.request.method).toBe('POST');
+
+    httpReq.flush(
+      { name: 'INSTRUMENT_DECLINED', message: 'Declined', debug_id: 'dbg_1' },
+      { status: 422, statusText: 'Unprocessable Entity' },
     );
   });
 });

@@ -8,6 +8,7 @@ import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/m
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/cancel-intent.gateway';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 describe('StripeCancelIntentGateway', () => {
   let gateway: StripeCancelIntentGateway;
@@ -43,6 +44,7 @@ describe('StripeCancelIntentGateway', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         StripeCancelIntentGateway,
+        IdempotencyKeyFactory,
         { provide: LoggerService, useValue: loggerMock },
         providePaymentsInfraConfig(infraConfigInput),
       ],
@@ -78,7 +80,7 @@ describe('StripeCancelIntentGateway', () => {
     expect(httpReq.request.method).toBe('POST');
     expect(httpReq.request.body).toEqual({});
 
-    expect(httpReq.request.headers.has('Idempotency-Key')).toBe(true);
+    expect(httpReq.request.headers.get('Idempotency-Key')).toBe('idem_cancel_123');
 
     httpReq.flush({
       id: 'pi_123',
@@ -99,7 +101,7 @@ describe('StripeCancelIntentGateway', () => {
         expect.fail('Expected error');
       },
       error: (err) => {
-        expect(err.code).toBe('provider_error');
+        expect(err.code).toBe('provider_unavailable');
         expect(err.raw).toBeDefined();
       },
     });

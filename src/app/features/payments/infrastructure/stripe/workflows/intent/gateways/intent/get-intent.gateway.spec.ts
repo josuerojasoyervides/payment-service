@@ -7,6 +7,7 @@ import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 describe('StripeGetIntentGateway', () => {
   let gateway: StripeGetIntentGateway;
@@ -42,6 +43,7 @@ describe('StripeGetIntentGateway', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         StripeGetIntentGateway,
+        IdempotencyKeyFactory,
         { provide: LoggerService, useValue: loggerMock },
         providePaymentsInfraConfig(infraConfigInput),
       ],
@@ -71,6 +73,7 @@ describe('StripeGetIntentGateway', () => {
 
     const req = httpMock.expectOne('/test/payments/stripe/intents/pi_123');
     expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('stripe:get:pi_123');
 
     req.flush({
       id: 'pi_123',
@@ -89,14 +92,42 @@ describe('StripeGetIntentGateway', () => {
         expect.fail('Expected error');
       },
       error: (err) => {
-        expect(err.code).toBe('provider_error');
+        expect(err.code).toBe('provider_unavailable');
         expect(err.raw).toBeDefined();
       },
     });
 
     const req = httpMock.expectOne('/test/payments/stripe/intents/pi_error');
     expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('stripe:get:pi_error');
 
     req.flush({ message: 'Stripe error' }, { status: 500, statusText: 'Internal Server Error' });
+  });
+
+  it('maps timeout errors from gateway', () => {
+    vi.useFakeTimers();
+    let capturedCode: string | null = null;
+    let capturedMessageKey: unknown = 'unset';
+
+    gateway.execute({ intentId: createPaymentIntentId('pi_timeout') }).subscribe({
+      next: () => {
+        expect.fail('Expected timeout error');
+      },
+      error: (err) => {
+        const parsed = err as { code?: string; messageKey?: string };
+        capturedCode = parsed.code ?? null;
+        capturedMessageKey = parsed.messageKey;
+      },
+    });
+
+    const req = httpMock.expectOne('/test/payments/stripe/intents/pi_timeout');
+    expect(req.request.method).toBe('GET');
+
+    vi.advanceTimersByTime(infraConfigInput.timeouts.stripeMs + 1);
+
+    expect(capturedCode).toBe('timeout');
+    expect(capturedMessageKey).toBeUndefined();
+    expect(req.cancelled).toBe(true);
+    vi.useRealTimers();
   });
 });

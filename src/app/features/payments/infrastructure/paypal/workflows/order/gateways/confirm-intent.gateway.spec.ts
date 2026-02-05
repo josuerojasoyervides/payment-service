@@ -95,7 +95,7 @@ describe('PaypalConfirmIntentGateway', () => {
         expect.fail('Expected error');
       },
       error: (err) => {
-        expect(err.code).toBe('provider_error');
+        expect(err.code).toBe('provider_unavailable');
         expect(err.raw).toBeDefined();
       },
     });

@@ -8,6 +8,7 @@ import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 describe('StripeConfirmIntentGateway', () => {
   let gateway: StripeConfirmIntentGateway;
@@ -43,6 +44,7 @@ describe('StripeConfirmIntentGateway', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         StripeConfirmIntentGateway,
+        IdempotencyKeyFactory,
         { provide: LoggerService, useValue: loggerMock },
         providePaymentsInfraConfig(infraConfigInput),
       ],
@@ -81,7 +83,7 @@ describe('StripeConfirmIntentGateway', () => {
       return_url: 'https://example.com/return',
     });
 
-    expect(httpReq.request.headers.has('Idempotency-Key')).toBe(true);
+    expect(httpReq.request.headers.get('Idempotency-Key')).toBe('idem_confirm_123');
 
     httpReq.flush({
       id: 'pi_123',
@@ -102,7 +104,7 @@ describe('StripeConfirmIntentGateway', () => {
         expect.fail('Expected error');
       },
       error: (err) => {
-        expect(err.code).toBe('provider_error');
+        expect(err.code).toBe('provider_unavailable');
         expect(err.raw).toBeDefined();
       },
     });

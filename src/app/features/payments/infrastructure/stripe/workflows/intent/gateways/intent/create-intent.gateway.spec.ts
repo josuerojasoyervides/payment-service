@@ -10,6 +10,7 @@ import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/p
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { SPEI_RAW_KEYS } from '@payments/infrastructure/stripe/shared/constants/spei-raw-keys.constants';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 describe('StripeCreateIntentGateway', () => {
   let gateway: StripeCreateIntentGateway;
@@ -45,6 +46,7 @@ describe('StripeCreateIntentGateway', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         StripeCreateIntentGateway,
+        IdempotencyKeyFactory,
         { provide: LoggerService, useValue: loggerMock },
         providePaymentsInfraConfig(infraConfigInput),
       ],
@@ -91,7 +93,7 @@ describe('StripeCreateIntentGateway', () => {
       description: 'Order order_1',
     });
 
-    expect(httpReq.request.headers.get('Idempotency-Key')).toContain('idem_123');
+    expect(httpReq.request.headers.get('Idempotency-Key')).toBe('idem_123');
 
     httpReq.flush({
       id: 'pi_1',
@@ -150,7 +152,7 @@ describe('StripeCreateIntentGateway', () => {
         expect.fail('Expected error');
       },
       error: (err: PaymentError) => {
-        expect(err.code).toBe('provider_error');
+        expect(err.code).toBe('provider_unavailable');
         expect(err.raw).toBeDefined();
       },
     });
@@ -161,6 +163,33 @@ describe('StripeCreateIntentGateway', () => {
     httpReq.flush(
       { message: 'Stripe error' },
       { status: 500, statusText: 'Internal Server Error' },
+    );
+  });
+
+  it('maps Stripe error codes to payment error codes without messageKey', () => {
+    const req: CreatePaymentRequest = {
+      orderId: createOrderId('order_error_code'),
+      money: { amount: 100, currency: 'MXN' },
+      method: { type: 'card', token: 'tok_123' },
+      idempotencyKey: 'idem_error_code',
+    };
+
+    gateway.execute(req).subscribe({
+      next: () => {
+        expect.fail('Expected error');
+      },
+      error: (err: PaymentError) => {
+        expect(err.code).toBe('card_declined');
+        expect(err.messageKey).toBeUndefined();
+      },
+    });
+
+    const httpReq = httpMock.expectOne('/test/payments/stripe/intents');
+    expect(httpReq.request.method).toBe('POST');
+
+    httpReq.flush(
+      { error: { code: 'card_declined', type: 'card_error', message: 'Card declined' } },
+      { status: 402, statusText: 'Payment Required' },
     );
   });
 });

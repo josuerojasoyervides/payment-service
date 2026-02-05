@@ -6,9 +6,12 @@ import type { PaymentProviderId } from '@app/features/payments/domain/subdomains
 import type { CancelPaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
+import type { PaymentError } from '@payments/domain/subdomains/payment/entities/payment-error.model';
 import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
+import { mapPaypalGatewayError } from '@payments/infrastructure/paypal/shared/errors/mappers/paypal-gateway-error.mapper';
 import { mapOrder } from '@payments/infrastructure/paypal/workflows/order/mappers/map-order.mapper';
 import type { Observable } from 'rxjs';
+import { timeout } from 'rxjs';
 
 @Injectable()
 export class PaypalCancelIntentGateway extends PaymentOperationPort<
@@ -23,12 +26,18 @@ export class PaypalCancelIntentGateway extends PaymentOperationPort<
   readonly providerId: PaymentProviderId = 'paypal' as const;
 
   protected override executeRaw(request: CancelPaymentRequest): Observable<PaypalOrderDto> {
-    return this.http.post<PaypalOrderDto>(
-      `${this.config.paypal.baseUrl}/orders/${request.intentId.value}/void`,
-      {},
-    );
+    return this.http
+      .post<PaypalOrderDto>(
+        `${this.config.paypal.baseUrl}/orders/${request.intentId.value}/void`,
+        {},
+      )
+      .pipe(timeout({ each: this.config.paypal.timeoutMs }));
   }
   protected override mapResponse(dto: PaypalOrderDto): PaymentIntent {
     return mapOrder(dto, this.providerId);
+  }
+
+  protected override handleError(err: unknown): PaymentError {
+    return mapPaypalGatewayError(err, this.config.paypal.timeoutMs);
   }
 }

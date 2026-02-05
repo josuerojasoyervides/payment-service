@@ -6,20 +6,20 @@ import type {
 
 export function createPaymentError(
   code: PaymentErrorCode,
-  messageKey: string,
+  messageKey?: string,
   params?: PaymentErrorParams,
   raw?: unknown,
 ): PaymentError {
   return {
     code,
-    messageKey,
+    ...(messageKey ? { messageKey } : {}),
     ...(params ? { params } : {}),
     ...(raw !== undefined ? { raw } : { raw: undefined }),
   };
 }
 
 export function invalidRequestError(
-  messageKey: string,
+  messageKey?: string,
   params?: PaymentErrorParams,
   raw?: unknown,
 ): PaymentError {

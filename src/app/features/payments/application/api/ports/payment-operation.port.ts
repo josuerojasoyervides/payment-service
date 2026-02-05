@@ -34,7 +34,6 @@ export abstract class PaymentOperationPort<
   protected handleError(err: unknown): PaymentError {
     return {
       code: 'provider_error',
-      messageKey: 'errors.provider_error',
       raw: err,
     };
   }

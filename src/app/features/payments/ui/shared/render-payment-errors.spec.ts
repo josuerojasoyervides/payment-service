@@ -26,6 +26,18 @@ describe('renderPaymentError', () => {
     expect(renderPaymentError(i18n, error)).toBe(I18nKeys.errors.unknown_error);
   });
 
+  it('maps known error codes when messageKey is missing', () => {
+    const i18n = { t: (key: string) => key } as I18nService;
+    const error = { code: 'card_declined' };
+    expect(renderPaymentError(i18n, error)).toBe(I18nKeys.errors.card_declined);
+  });
+
+  it('prefers code mapping when messageKey is invalid', () => {
+    const i18n = { t: (key: string) => key } as I18nService;
+    const error = { code: 'timeout', messageKey: 'not a key' };
+    expect(renderPaymentError(i18n, error)).toBe(I18nKeys.errors.timeout);
+  });
+
   it('sanitizes params before calling i18n', () => {
     const t = vi.fn((key: string) => key);
     const i18n = { t } as unknown as I18nService;

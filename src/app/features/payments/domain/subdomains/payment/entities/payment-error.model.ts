@@ -13,7 +13,7 @@ import type {
  */
 export interface PaymentError {
   code: PaymentErrorCode;
-  messageKey: string;
+  messageKey?: string;
   params?: PaymentErrorParams;
   raw: unknown;
 }
