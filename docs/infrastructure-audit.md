@@ -1,1558 +1,571 @@
-# Auditoria Infrastructure - Payments (Antes de Refactor)
+# Infrastructure Production-Ready Plan — Payments
 
-Fecha: 2026-02-03
-Scope: `src/app/features/payments/infrastructure/**` + ports referenciados + wiring de providers.
-Branch: `refactor/infrastructure-sanitize`
+> Documento consolidado y limpio.
+> Objetivo: llevar la capa Infrastructure (y wiring relacionado) a un estado “production-ready” sin romper Clean Architecture: UI y Domain no conocen frastructure; UI consume Application API (ports/tokens/contracts) y Infrastructure implementa detalles de providers.
 
-## 1) Mapa rapido del slice (lo que entendi)
+---
 
-- `config/payment.providers.ts` actua como composition root y alterna providers reales/fake.
-- Infra Stripe: DTOs, gateways HTTP (intent), mappers, policies, builders, strategies, normalizers (redirect/webhook), provider factory.
-- Infra PayPal: DTOs, gateways (orders), redirect strategy, finalize handler, mappers, policies, normalizers.
-- Infra browser: adapters para storage y navegacion externa.
-- Infra fake: store y gateways simulados, helpers/mappers para escenarios y tests.
+## 0) North Star
 
-## 2) Hallazgos priorizados (P0/P1/P2)
+### Objetivo (1 frase)
 
-### P0 — Infra y Application dependen de Presentation/UI
+Centralizar configuración y validaciones, normalizar errores y contratos, y añadir resilience + security + observability con PRs pequeños, testeables y splegables.
 
-- **Que pasa:**
-  - `provide-*-payments.ts` y `*ProviderFactory` importan tokens/contratos desde `@payments/presentation`.
-  - `ProviderFactory`/`PaymentStorePort` dependen de `FieldRequirements` desde Presentation.
-  - `application/api/contracts/checkout-field-requirements.types.ts` y `spei-display-config.types.ts` son re-exportes de Presentation.
-- **Por que importa:** rompe el limite infra->application->domain y provoca que Infrastructure filtre UI hacia arriba.
-- **Arreglo recomendado:**
-  - Mover contratos a `application/api/contracts` (fuente real) y que Presentation re-exporte.
-  - Sacar `PAYMENT_PROVIDER_UI_META`/`PAYMENT_PROVIDER_DESCRIPTORS` de infra hacia config.
-- **Archivos afectados:**
-  - `src/app/features/payments/infrastructure/stripe/core/di/provide-stripe-payments.ts`
-  - `src/app/features/payments/infrastructure/paypal/core/di/provide-paypal-payments.ts`
-  - `src/app/features/payments/infrastructure/stripe/core/factories/stripe-provider.factory.ts`
-  - `src/app/features/payments/infrastructure/paypal/core/factories/paypal-provider.factory.ts`
-  - `src/app/features/payments/application/api/ports/provider-factory.port.ts`
-  - `src/app/features/payments/application/api/ports/payment-store.port.ts`
-  - `src/app/features/payments/application/api/contracts/checkout-field-requirements.types.ts`
-  - `src/app/features/payments/presentation/contracts/checkout-field-requirements.types.ts`
-  - `src/app/features/payments/application/api/contracts/spei-display-config.types.ts`
-  - `src/app/features/payments/presentation/contracts/spei-display-config.types.ts`
-  - `src/app/features/payments/config/payment.providers.ts`
+### Principios / Guardrails
 
-### P0 — Logging de tokens en claro
+- Domain: puro (sin Angular/RxJS/HTTP/i18n). Tipos/reglas/VOs/errores genéricos.
+- Application: orquesta y define contratos/ports/tokens; no depende de providers.
+- Infrastructure: implementa ports; contiene lógica provider-specific; sin i18n.
+- UI: renderiza; traduce/mapea error codes; no importa Infrastructure.
+- Prohibido: branching por provider en UI/runtime (salvo wiring/composition root).
+- Logs/telemetry: sin secretos; sanitización obligatoria.
+- PRs incrementales <500 LOC, cada PR con tests.
 
-- **Que pasa:** `PaypalRedirectStrategy` loguea el token completo si viene en la request.
-- **Por que importa:** riesgo de exponer credenciales/PII en logs.
-- **Arreglo recomendado:** enmascarar o eliminar el token en logs (usar prefijo o `***`).
-- **Archivos afectados:**
-  - `src/app/features/payments/infrastructure/paypal/payment-methods/redirect/strategies/paypal-redirect.strategy.ts`
+---
 
-### P1 — Normalizacion de errores provider-specific no esta conectada
+## 1) Alcance
 
-- **Que pasa:** Stripe tiene mappers (`error-code`, `error-key`, `error-response`) pero los gateways siguen devolviendo `provider_error` generico; PayPal no normaliza errores.
-- **Por que importa:** la App pierde codigos estables y mensajes consistentes para UI/telemetry/tests.
-- **Arreglo recomendado:** crear `StripeOperationPort`/`PaypalOperationPort` que sobreescriban `handleError` y actualizar gateways a esas bases.
-- **Archivos afectados:**
-  - `src/app/features/payments/infrastructure/stripe/shared/errors/mappers/*`
-  - `src/app/features/payments/infrastructure/stripe/workflows/intent/gateways/intent/*.gateway.ts`
-  - `src/app/features/payments/infrastructure/paypal/workflows/order/gateways/*.gateway.ts`
+### Incluye
 
-### P1 — Claves i18n acopladas a infra
+- src/app/features/payments/infrastructure/\*\*
+- Wiring / composition root del feature (ej. payment.providers.ts)
+- Contracts que hoy estén en lugares incorrectos y deban vivir en Application API
+- Resilience states (máquina), policy y UI contracts necesarios
 
-- **Que pasa:** infra importa `@core/i18n` para errores e instrucciones.
-- **Por que importa:** hace a Infrastructure dependiente de UI/catalogo de traducciones; complica tests y refactors.
-- **Arreglo recomendado:** centralizar claves en `payments/shared/constants` y usar strings constantes, no `I18nKeys` en infra.
-- **Archivos afectados:**
-  - `src/app/features/payments/infrastructure/**/*` (builders, strategies, policies, fakes)
+### No incluye (por ahora)
 
-### P2 — UI strings hardcoded y config SPEI mal ubicada
+- Implementación real server-side de verificación de webhooks (solo “shape/port”)
+- Optimización de performance / bundling (salvo que caiga como efecto colateral)
+- Provider nuevo (MercadoPago) — este plan lo deja preparado
 
-- **Que pasa:** `SpeiSourceMapper` inyecta instrucciones en ingles y `SPEI_DISPLAY_CONSTANTS` vive en `infrastructure/fake`.
-- **Por que importa:** rompe i18n y mezcla fake/real.
-- **Arreglo recomendado:** `SpeiSourceMapper` solo mapea datos y `SPEI_DISPLAY_CONSTANTS` se mueve a `stripe/shared/constants`.
-- **Archivos afectados:**
-  - `src/app/features/payments/infrastructure/stripe/payment-methods/spei/mappers/spei-source.mapper.ts`
-  - `src/app/features/payments/infrastructure/fake/shared/constants/spei-display.constants.ts`
+---
 
-### P2 — Throw genericos en policies
+## 2) Organización objetivo (high level)
 
-- **Que pasa:** `StripeProviderMethodPolicy` y `PaypalProviderMethodPolicy` usan `new Error`.
-- **Por que importa:** rompe el patron de errores tipados.
-- **Arreglo recomendado:** usar `invalidRequestError` con claves compartidas.
-- **Archivos afectados:**
-  - `src/app/features/payments/infrastructure/stripe/shared/policies/stripe-provider-method.policy.ts`
-  - `src/app/features/payments/infrastructure/paypal/shared/policies/paypal-provider-method.policy.ts`
+### Infrastructure (por provider)
 
-## 3) Plan de refactor incremental (max 5 pasos)
+- infrastructure/{provider}/
+- core/dto/ → DTOs tipados
+- shared/constants/ → constantes con prefijo por provider (ej. PAYPAL_STATUS_MAP)
+- shared/guards/ → type guards / validaciones provider-specific
+- config/ → config provider-only (si aplica)
+- gateways/ → adapters HTTP/SDK implementando ports
+- mappers/ → mapping DTO ↔ domain/application
+- strategies/ → estrategias provider-specific
+- builders/ → construcción de requests provider-specific (si aplica)
 
-1. **Objetivo:** re-anclar contratos UI en `application/api/contracts` y eliminar imports a Presentation desde infra.
-   - **Archivos:** `src/app/features/payments/application/api/contracts/*.types.ts`, `src/app/features/payments/presentation/contracts/*.types.ts`, `src/app/features/payments/application/api/ports/*.ts`, `src/app/features/payments/infrastructure/**/*`.
-   - **DoD:** `rg -n "@payments/presentation" src/app/features/payments/infrastructure` sin resultados.
-2. **Objetivo:** sacar UI meta/descriptors de infra hacia config.
-   - **Archivos:** `src/app/features/payments/config/payment-ui.providers.ts` (nuevo), `src/app/features/payments/config/payment.providers.ts`, `src/app/features/payments/infrastructure/*/core/di/provide-*.ts`.
-   - **DoD:** `rg -n "PAYMENT_PROVIDER_UI_META|PAYMENT_PROVIDER_DESCRIPTORS" src/app/features/payments/infrastructure` sin resultados.
-3. **Objetivo:** centralizar claves i18n en `payments/shared/constants` y reemplazar `I18nKeys` en infra.
-   - **Archivos:** `src/app/features/payments/shared/constants/payment-error-keys.ts`, `src/app/features/payments/shared/constants/payment-ui-keys.ts` (nuevo), builders/strategies/policies/fakes infra.
-   - **DoD:** `rg -n "@core/i18n" src/app/features/payments/infrastructure` sin resultados.
-4. **Objetivo:** normalizar errores por provider y actualizar gateways.
-   - **Archivos:** `src/app/features/payments/infrastructure/stripe/shared/errors/stripe-operation.port.ts` (nuevo), `src/app/features/payments/infrastructure/paypal/shared/errors/paypal-operation.port.ts` (nuevo), gateways Stripe/PayPal.
-   - **DoD:** errores HTTP mapean a `PaymentError` con `code` y `messageKey` estables.
-5. **Objetivo:** limpiar SPEI mapper y mover config de display.
-   - **Archivos:** `src/app/features/payments/infrastructure/stripe/payment-methods/spei/mappers/spei-source.mapper.ts`, `src/app/features/payments/infrastructure/stripe/shared/constants/spei-display.constants.ts` (nuevo), `src/app/features/payments/infrastructure/fake/shared/constants/spei-display.constants.ts` (borrar o re-export).
-   - **DoD:** sin instrucciones hardcoded en mapper, sin config real en `fake`.
+### Infrastructure (shared cross-provider)
 
-## 4) Cambios propuestos por archivo (sin diffs)
+- infrastructure/shared/validation/ → validaciones genéricas (ej. amount/currency)
+- infrastructure/health/ → health ports/adapters (mock en tests)
 
-### `src/app/features/payments/application/api/contracts/checkout-field-requirements.types.ts`
+### Application API (source of truth para UI)
 
-- **Problemas puntuales:** re-exporta desde Presentation, creando dependencia inversa.
-- **Nuevo diseno:** el contrato vive aqui; Presentation re-exporta.
-- **Codigo propuesto:**
+- application/api/ports/\*\*
+- application/api/tokens/\*\*
+- application/api/contracts/\*\* (si aún se usa; idealmente contracts aquí o cerca)
+- application/api/testing/\*\* (harnesses para integration tests)
 
-```ts
-import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
+---
 
-/**
- * HTML input types supported in checkout forms.
- * UI schema contract — not domain logic.
- */
-export const FIELD_TYPES = ['text', 'email', 'hidden', 'url'] as const;
-export type FieldType = (typeof FIELD_TYPES)[number];
+## 3) Roadmap por PRs (incremental, deployable)
 
-/**
- * Autocomplete hints for form fields (HTML autocomplete attribute values).
- * UI schema contract — not domain logic.
- */
-export const AUTOCOMPLETE_HINTS = [
-  'email',
-  'name',
-  'given-name',
-  'family-name',
-  'tel',
-  'street-address',
-  'postal-code',
-  'cc-number',
-  'cc-exp',
-  'cc-exp-month',
-  'cc-exp-year',
-  'cc-csc',
-  'off',
-  'current-url',
-] as const;
+Nombres orientativos (ajusta a tu numeración real).
+Cada PR debe incluir: tests + verificación final.
 
-export type AutoCompleteHint = (typeof AUTOCOMPLETE_HINTS)[number];
+### PR0 — Baseline / Sanitización inicial
 
-/**
- * Field requirements for a specific provider/method.
- *
- * The UI queries this BEFORE rendering the form
- * to know which fields to show.
- */
-export interface FieldRequirement {
-  name: keyof PaymentOptions;
-  labelKey: string;
-  placeholderKey?: string;
-  descriptionKey?: string;
-  instructionsKey?: string;
+Meta: preparar terreno para cambios grandes sin romper boundaries.
 
-  required: boolean;
-  type: FieldType;
+- Eliminar/evitar dependencias incorrectas.
+- Asegurar que infra no importa i18n.
+- Borrar FakeIntentStore si existe (o migrarlo a mapas internos por fake gateway).
+- Añadir comandos/verificación en docs.
 
-  autoComplete?: AutoCompleteHint;
-  defaultValue?: string;
-}
+Tests PR0
 
-export interface FieldRequirements {
-  descriptionKey?: string;
-  instructionsKey?: string;
-  fields: FieldRequirement[];
-}
+- Smoke: compila, tests pasan, lint pasa.
+
+---
+
+### PR1 — Config & Contracts cleanup (infra ↔ application)
+
+Meta: centralizar config detrás de tokens y mover contracts al lugar correcto.
+
+- Introducir token de config unificada (infra) y helper de provision.
+- Mover contracts que UI consume a application/api/\*\* (sin deprecations si no hace falta).
+- UI consume Application API; infra consume config vía DI.
+
+Tests PR1
+
+- Unit: providers registry / config resolution
+- Integration: un flow happy path para asegurar wiring
+
+---
+
+### PR2 — Error normalization + mapping cross-provider
+
+Meta: estandarizar errores para que UI y resilience trabajen igual con cualquier provider.
+
+- Definir/usar PaymentErrorCode genérico (domain/application).
+- Infra mapea errores provider-specific → PaymentErrorCode (+ metadata safe).
+- UI traduce PaymentErrorCode → texto via pipe/mapper (UI-only).
+
+Tests PR2
+
+- Unit: mapping por provider
+- Unit: “no secrets in raw / metadata”
+- Integration: falla controlada produce el mismo error code en UI
+
+---
+
+### PR3 — Shared validation + provider validation config
+
+Meta: reglas consistentes de validación (montos/moneda/métodos/urls) sin duplicación.
+
+- ProviderValidationConfig completa (currencies, min/max por currency, métodos, urls).
+- validateAmount(money, config) en infrastructure/shared/validation/:
+- currency soportada
+- min por currency
+- max por currency
+- error codes: currency_not_supported, amount_below_minimum, amount_above_maximum
+
+validateAmount (ejemplo esperado)
+
+```typescript
+export function validateAmount(money: Money, config: ProviderValidationConfig): void;
 ```
 
-## 5) Config tokens (post-refactor notes)
+Tests PR3
 
-- `PAYMENTS_INFRA_CONFIG`
-  - **Que es:** fuente tipada de endpoints, timeouts y defaults de PayPal/SPEI.
-  - **Donde se provee:** `src/app/features/payments/config/payment.providers.ts` via `providePaymentsInfraConfig(...)`.
-  - **Quien lo consume:** gateways Stripe/PayPal + config/presentation providers.
-- `SPEI_DISPLAY_CONFIG`
-  - **Que es:** config de UI para SPEI (receivingBanks + beneficiaryName).
-  - **Donde se provee:** `selectPresentationProviders()` en `src/app/features/payments/config/payment.providers.ts`.
-  - **Quien lo consume:** UI (resuelve bankCode -> displayName) y tests de UI.
-- `PAYMENT_PROVIDER_UI_META` / `PAYMENT_PROVIDER_DESCRIPTORS`
-  - **Que es:** metadata de UI + descriptores de proveedor (i18n keys, estilos, iconos, métodos soportados).
-  - **Donde se provee:** `PAYMENT_UI_PROVIDERS` en `src/app/features/payments/config/payment-ui.providers.ts`.
-  - **Quien lo consume:** UI (botones/catalogo) vía registries en Application.
+- Unit: validateAmount paths críticos (min/max/currency)
+- Unit: config missing/invalid → error code claro
+- Integration: provider real + fake usan misma validación
 
-### `src/app/features/payments/presentation/contracts/checkout-field-requirements.types.ts`
+---
 
-- **Problemas puntuales:** fuente real en Presentation genera acoplamiento infra->UI.
-- **Nuevo diseno:** Presentation re-exporta el contrato de Application.
-- **Codigo propuesto:**
+## 4) Resilience
 
-```ts
-/** @deprecated Use application contract to avoid infra->presentation coupling. */
-export * from '@payments/application/api/contracts/checkout-field-requirements.types';
-```
+### PR4a: Resilience Foundation
 
-### `src/app/features/payments/application/api/contracts/spei-display-config.types.ts`
+Scope: ~300 LOC | Depende de: PR3
 
-- **Problemas puntuales:** re-exporta desde Presentation.
-- **Nuevo diseno:** contrato vive aqui.
-- **Codigo propuesto:**
+#### 4.A.5: Fallback Rules
 
-```ts
-/**
- * Configuration for SPEI manual-step display (bank names, beneficiary, fallback CLABE).
- */
-export interface SpeiDisplayConfig {
-  /** Map provider id -> receiving bank display name. */
-  receivingBanks: Record<string, string>;
-  /** Beneficiary name shown in SPEI transfer details. */
-  beneficiaryName: string;
-  /** Fallback CLABE when gateway does not return one (e.g. test/demo). */
-  testClabe: string;
-}
-```
+Errores que activan fallback
 
-### `src/app/features/payments/presentation/contracts/spei-display-config.types.ts`
-
-- **Problemas puntuales:** fuente real en Presentation.
-- **Nuevo diseno:** re-export desde Application.
-- **Codigo propuesto:**
-
-```ts
-/** @deprecated Use application contract to avoid infra->presentation coupling. */
-export * from '@payments/application/api/contracts/spei-display-config.types';
-```
-
-### `src/app/features/payments/shared/constants/payment-error-keys.ts`
-
-- **Problemas puntuales:** faltan claves usadas por infra; obliga a `I18nKeys`.
-- **Nuevo diseno:** concentrar claves de errores y mensajes aqui.
-- **Codigo propuesto:**
-
-```ts
-/**
- * Error and message keys for payment flows.
- *
- * These are opaque strings that the UI layer translates via i18n.
- * Convention: keys must match entries in en.ts/es.ts translation files.
- *
- * Kept in Shared (not Domain) so Domain stays agnostic of UI vocabulary.
- */
-export const PAYMENT_ERROR_KEYS = {
-  // Card errors
-  CARD_TOKEN_REQUIRED: 'errors.card_token_required',
-  CARD_TOKEN_INVALID_FORMAT: 'errors.card_token_invalid_format',
-
-  // Amount errors (shared across methods)
-  MIN_AMOUNT: 'errors.min_amount',
-  MAX_AMOUNT: 'errors.max_amount',
-  AMOUNT_INVALID: 'errors.amount_invalid',
-
-  // Request errors
-  INVALID_REQUEST: 'errors.invalid_request',
-  ORDER_ID_REQUIRED: 'errors.order_id_required',
-  ORDER_ID_INVALID: 'errors.order_id_invalid',
-  ORDER_ID_TOO_LONG: 'errors.order_id_too_long',
-  CURRENCY_REQUIRED: 'errors.currency_required',
-  CURRENCY_NOT_SUPPORTED: 'errors.currency_not_supported',
-  METHOD_TYPE_REQUIRED: 'errors.method_type_required',
-  RETURN_URL_REQUIRED: 'errors.return_url_required',
-  CANCEL_URL_REQUIRED: 'errors.cancel_url_required',
-  PAYMENT_METHOD_AMBIGUOUS: 'errors.payment_method_ambiguous',
-  PAYMENT_METHOD_NOT_SUPPORTED: 'errors.payment_method_not_supported',
-  CUSTOMER_EMAIL_REQUIRED: 'errors.customer_email_required',
-  CUSTOMER_EMAIL_INVALID: 'errors.customer_email_invalid',
-
-  // Provider/runtime
-  PROVIDER_ERROR: 'errors.provider_error',
-  TIMEOUT: 'errors.timeout',
-  UNKNOWN_ERROR: 'errors.unknown_error',
-
-  // Card/provider specific
-  CARD_DECLINED: 'errors.card_declined',
-  INSUFFICIENT_FUNDS: 'errors.insufficient_funds',
-  EXPIRED_CARD: 'errors.expired_card',
-  INCORRECT_CVC: 'errors.incorrect_cvc',
-  INCORRECT_NUMBER: 'errors.incorrect_number',
-  PROCESSING_ERROR: 'errors.processing_error',
-  AUTHENTICATION_REQUIRED: 'errors.authentication_required',
-  STRIPE_ERROR: 'errors.stripe_error',
-} as const;
-
-/**
- * Message keys for user-facing instructions (not errors).
- *
- * Used by strategies to communicate next steps to the user.
- * The UI translates these keys to localized text.
- */
-export const PAYMENT_MESSAGE_KEYS = {
-  BANK_VERIFICATION_REQUIRED: 'messages.bank_verification_required',
-  SPEI_INSTRUCTIONS: 'messages.spei_instructions',
-
-  // SPEI manual step instructions (displayed in order)
-  SPEI_INSTRUCTION_COMPLETE_TRANSFER: 'messages.spei_instruction_complete_transfer',
-  SPEI_INSTRUCTION_TRANSFER_EXACT: 'ui.transfer_exact_amount',
-  SPEI_INSTRUCTION_KEEP_RECEIPT: 'ui.keep_receipt',
-  SPEI_INSTRUCTION_MAKE_TRANSFER: 'messages.spei_instruction_make_transfer',
-
-  // PayPal redirect flow
-  PAYPAL_REDIRECT_SECURE_MESSAGE: 'ui.paypal_redirect_secure_message',
-  REDIRECTED_TO_PAYPAL: 'ui.redirected_to_paypal',
-} as const;
-
-/**
- * UI label keys for SPEI manual step details (CLABE, Reference, Bank, etc.).
- *
- * The strategy uses these as detail.label; the UI translates via i18n when rendering.
- */
-export const PAYMENT_SPEI_DETAIL_LABEL_KEYS = {
-  CLABE: 'ui.clabe_label',
-  REFERENCE: 'ui.reference',
-  BANK: 'ui.destination_bank',
-  BENEFICIARY: 'ui.beneficiary',
-  AMOUNT: 'ui.amount_label',
-  EXPIRES_AT: 'ui.reference_expires',
-} as const;
-```
-
-### `src/app/features/payments/shared/constants/payment-ui-keys.ts`
-
-- **Problemas puntuales:** UI keys dispersas en infra.
-- **Nuevo diseno:** centralizar keys de UI usadas por infra/config.
-- **Codigo propuesto:**
-
-```ts
-export const PAYMENT_UI_KEYS = {
-  PROVIDER_STRIPE: 'ui.provider_stripe',
-  PROVIDER_STRIPE_DESCRIPTION: 'ui.provider_stripe_description',
-  PROVIDER_PAYPAL: 'ui.provider_paypal',
-  PROVIDER_PAYPAL_DESCRIPTION: 'ui.provider_paypal_description',
-
-  CARD_PAYMENT_DESCRIPTION: 'ui.card_payment_description',
-  ENTER_CARD_DATA: 'ui.enter_card_data',
-  CARD_TOKEN: 'ui.card_token',
-  SAVE_CARD_FUTURE: 'ui.save_card_future',
-
-  SPEI_BANK_TRANSFER: 'ui.spei_bank_transfer',
-  SPEI_EMAIL_INSTRUCTIONS: 'ui.spei_email_instructions',
-  EMAIL_LABEL: 'ui.email_label',
-  EMAIL_PLACEHOLDER: 'ui.email_placeholder',
-
-  PAY_WITH_PAYPAL: 'ui.pay_with_paypal',
-} as const;
-```
-
-### `src/app/features/payments/config/payment-ui.providers.ts`
-
-- **Problemas puntuales:** UI meta/descriptors viven en infra.
-- **Nuevo diseno:** mover UI meta/descriptors a config.
-- **Codigo propuesto:**
-
-```ts
-import type { Provider } from '@angular/core';
-import { I18nKeys } from '@core/i18n';
-import { PAYMENT_PROVIDER_DESCRIPTORS } from '@payments/application/api/tokens/provider/payment-provider-descriptors.token';
-import {
-  PAYMENT_PROVIDER_UI_META,
-  type PaymentProviderUiMeta,
-} from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
-
-const STRIPE_UI_META = {
-  providerId: 'stripe',
-  displayNameKey: I18nKeys.ui.provider_stripe,
-  buttonClasses: 'bg-stripe-primary hover:opacity-90 text-white focus:ring-stripe-primary',
-} as const satisfies PaymentProviderUiMeta;
-
-const PAYPAL_UI_META = {
-  providerId: 'paypal',
-  displayNameKey: I18nKeys.ui.provider_paypal,
-  buttonClasses: 'bg-paypal-primary hover:opacity-90 text-white focus:ring-paypal-primary',
-} as const satisfies PaymentProviderUiMeta;
-
-const STRIPE_DESCRIPTOR = {
-  id: 'stripe' as const,
-  labelKey: I18nKeys.ui.provider_stripe,
-  descriptionKey: I18nKeys.ui.provider_stripe_description,
-  icon: '💳',
-  supportedMethods: ['card', 'spei'] as const,
-};
-
-const PAYPAL_DESCRIPTOR = {
-  id: 'paypal' as const,
-  labelKey: I18nKeys.ui.provider_paypal,
-  descriptionKey: I18nKeys.ui.provider_paypal_description,
-  icon: '🅿️',
-  supportedMethods: ['card', 'spei'] as const,
-};
-
-export const PAYMENT_UI_PROVIDERS: Provider[] = [
-  { provide: PAYMENT_PROVIDER_UI_META, useValue: STRIPE_UI_META, multi: true },
-  { provide: PAYMENT_PROVIDER_UI_META, useValue: PAYPAL_UI_META, multi: true },
-  { provide: PAYMENT_PROVIDER_DESCRIPTORS, useValue: STRIPE_DESCRIPTOR, multi: true },
-  { provide: PAYMENT_PROVIDER_DESCRIPTORS, useValue: PAYPAL_DESCRIPTOR, multi: true },
+```typescript
+const FALLBACK_ELIGIBLE_ERRORS: PaymentErrorCode[] = [
+  'provider_unavailable',
+  'timeout',
+  'network_error',
 ];
 ```
 
-### `src/app/features/payments/config/payment.providers.ts`
+Errores que NUNCA activan fallback
 
-- **Problemas puntuales:** UI meta/descriptors no estan en config.
-- **Nuevo diseno:** agregar `PAYMENT_UI_PROVIDERS`.
-- **Codigo propuesto:**
-
-```ts
-import { PAYMENT_UI_PROVIDERS } from '@payments/config/payment-ui.providers';
-
-function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provider[] {
-  const mode = options.mode ?? 'fake';
-
-  return [
-    ...selectProviderConfigs(mode),
-    ...USE_CASE_PROVIDERS,
-    ...ACTION_PORT_PROVIDERS,
-    ...APPLICATION_PROVIDERS,
-    ...SHARED_PROVIDERS,
-    ...ENV_PROVIDERS,
-    ...PAYMENT_UI_PROVIDERS,
-    ...UI_PROVIDERS,
-    {
-      provide: WEBHOOK_NORMALIZER_REGISTRY,
-      useValue: {
-        stripe: new StripeWebhookNormalizer(),
-        paypal: new PaypalWebhookNormalizer(),
-      },
-    },
-    ...(options.extraProviders ?? []),
-  ];
-}
-```
-
-### `src/app/features/payments/infrastructure/stripe/core/di/provide-stripe-payments.ts`
-
-- **Problemas puntuales:** UI meta/descriptors inyectados desde infra.
-- **Nuevo diseno:** infra solo registra gateways/strategies/policies.
-- **Codigo propuesto:**
-
-```ts
-import type { Provider } from '@angular/core';
-import { StripeProviderFactory } from '@app/features/payments/infrastructure/stripe/core/factories/stripe-provider.factory';
-import { StripeProviderMethodPolicy } from '@app/features/payments/infrastructure/stripe/shared/policies/stripe-provider-method.policy';
-import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
-import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
-import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
-import { REDIRECT_RETURN_NORMALIZERS } from '@payments/application/api/tokens/redirect/redirect-return-normalizers.token';
-import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
-import { FakeIntentStore } from '@payments/infrastructure/fake/shared/state/fake-intent.store';
-import { FakeStripeCancelIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-cancel-intent.gateway';
-import { FakeStripeClientConfirmPort } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-client-confirm.port';
-import { FakeStripeConfirmIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-confirm-intent.gateway';
-import { FakeStripeCreateIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-create-intent.gateway';
-import { FakeStripeGetIntentGateway } from '@payments/infrastructure/stripe/testing/fake-gateways/intent/fake-stripe-get-intent.gateway';
-import { FakeStripeProviderFactory } from '@payments/infrastructure/stripe/testing/fake-stripe-provider.factory';
-import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/cancel-intent.gateway';
-import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
-import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
-import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
-import { StripeRedirectReturnNormalizer } from '@payments/infrastructure/stripe/workflows/redirect/stripe-redirect-return.normalizer';
-import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-intent-facade.factory';
-export { StripeWebhookNormalizer } from '@payments/infrastructure/stripe/workflows/webhook/stripe-webhook.normalizer';
-
-const STRIPE_FACTORY_PROVIDERS: Provider[] = [
-  { provide: PAYMENT_PROVIDER_FACTORIES, useClass: StripeProviderFactory, multi: true },
+```typescript
+const FALLBACK_BLOCKED_ERRORS: PaymentErrorCode[] = [
+  'card_declined', // Si decline es por fraude
 ];
+```
 
-const STRIPE_POLICY_PROVIDERS: Provider[] = [
-  { provide: PAYMENT_PROVIDER_METHOD_POLICIES, useClass: StripeProviderMethodPolicy, multi: true },
-];
+Condición adicional: debe haber providers alternativos
 
-const STRIPE_REDIRECT_RETURN_PROVIDERS: Provider[] = [
-  { provide: REDIRECT_RETURN_NORMALIZERS, useClass: StripeRedirectReturnNormalizer, multi: true },
-];
+#### 4.A.6: Feature Flag
 
-const STRIPE_REAL_PROVIDERS: Provider[] = [
-  StripeIntentFacade,
-  StripeCreateIntentGateway,
-  StripeConfirmIntentGateway,
-  StripeCancelIntentGateway,
-  StripeGetIntentGateway,
-  ...STRIPE_FACTORY_PROVIDERS,
-  ...STRIPE_POLICY_PROVIDERS,
-  ...STRIPE_REDIRECT_RETURN_PROVIDERS,
-];
+| Variable                    | Default | Descripción               |
+| --------------------------- | ------- | ------------------------- |
+| PAYMENTS_RESILIENCE_ENABLED | true    | false bypasses resilience |
 
-const STRIPE_FAKE_FACTORY_PROVIDERS: Provider[] = [
-  { provide: PAYMENT_PROVIDER_FACTORIES, useClass: FakeStripeProviderFactory, multi: true },
-];
+Tests PR4a
 
-const STRIPE_FAKE_PROVIDERS: Provider[] = [
-  FakeIntentStore,
-  FakeStripeClientConfirmPort,
-  FakeStripeCreateIntentGateway,
-  FakeStripeConfirmIntentGateway,
-  FakeStripeCancelIntentGateway,
-  FakeStripeGetIntentGateway,
-  fakeIntentFacadeFactory(
-    'stripe',
-    StripeIntentFacade,
-    FakeStripeCreateIntentGateway,
-    FakeStripeConfirmIntentGateway,
-    FakeStripeCancelIntentGateway,
-    FakeStripeGetIntentGateway,
-  ),
-  ...STRIPE_FAKE_FACTORY_PROVIDERS,
-  ...STRIPE_POLICY_PROVIDERS,
-  ...STRIPE_REDIRECT_RETURN_PROVIDERS,
-];
+- Unit: adapter, decorator, fallback policy
+- Coverage: 100% paths críticos
 
-export function provideStripePayments(mode: PaymentsProvidersMode): Provider[] {
-  if (mode === 'real') {
-    return STRIPE_REAL_PROVIDERS;
-  }
-  return STRIPE_FAKE_PROVIDERS;
+---
+
+### PR4b: Resilience Machine States
+
+Scope: ~400 LOC | Depende de: PR4a
+
+#### 4.B.1: Nuevos Estados
+
+| Estado              | Trigger                                 | Comportamiento                                                         |
+| ------------------- | --------------------------------------- | ---------------------------------------------------------------------- |
+| circuitOpen         | Circuit breaker abierto                 | Cooldown configurable → auto-retry en half-open, UI: banner + fallback |
+| rateLimited         | Rate limit alcanzado                    | UI: toast con countdown, bloquea acciones                              |
+| fallbackConfirming  | Error eligible + providers alternativos | UI: modal con 30s timeout                                              |
+| pendingManualReview | 5 retries de finalize fallaron          | UI: link a dashboard provider                                          |
+
+#### 4.B.2: UI por Contexto
+
+| Contexto                     | Estado                  | UI                                       |
+| ---------------------------- | ----------------------- | ---------------------------------------- |
+| Fallo abre circuit           | circuitOpen             | Banner degradado + "Usar otro proveedor" |
+| Checkout con circuit abierto | Provider selector       | Provider deshabilitado + tooltip         |
+| Cooldown termina             | circuitHalfOpen         | "Verificando disponibilidad..."          |
+| Todos los providers down     | allProvidersUnavailable | Modal bloqueante "Intenta más tarde"     |
+
+#### 4.B.3: Fallback Modal Data
+
+interface FallbackConfirmationData
+eligibleProviders: PaymentProviderId[]
+failureReason: PaymentErrorCode
+timeoutMs: 30_000
+
+#### 4.B.4: Manual Review Data
+
+interface ManualReviewData
+intentId: string
+providerId: PaymentProviderId
+dashboardUrl: string // Desde ProviderFactory.getDashboardUrl()
+
+#### 4.B.5: Idempotency + Double-Click Protection
+
+| Mecanismo       | Ubicación         | Descripción                                                  |
+| --------------- | ----------------- | ------------------------------------------------------------ |
+| Idempotency key | Builders/Requests | {sessionId}:{orderId}:{providerId}:{timestamp} - OBLIGATORIO |
+| Debounce        | UI button         | 300ms debounce                                               |
+| State guard     | Machine           | Guard que rechaza si ya está en starting                     |
+
+#### 4.B.6: Retry 3DS
+
+- 1 retry automático después de timeout
+- Luego: botón manual "Reintentar verificación"
+
+#### 4.B.7: Provider Factory Extension
+
+| Método nuevo (opcional)    | Descripción            |
+| -------------------------- | ---------------------- |
+| getResilienceConfig?()     | Config por provider    |
+| getDashboardUrl?(intentId) | URL para manual review |
+
+Tests PR4b
+
+- Integration: flow machine con Vitest + Angular TestBed
+- Scenarios: circuit open → fallback → confirm → execute
+- Coverage: 100% paths críticos
+
+---
+
+## 5) PR5: Security Hardening
+
+Scope: ~250 LOC | Depende de: PR4b
+
+| Paso | Archivo                                             | Descripción                             |
+| ---- | --------------------------------------------------- | --------------------------------------- |
+| 5.1  | application/api/ports/webhook-verifier.port.ts      | Interface para backend                  |
+| 5.2  | shared/logging/sanitize-for-logging.util.ts         | Token → [REDACTED]                      |
+| 5.3  | shared/errors/redact-payment-error.util.ts          | Limpia raw con PII fields inyectables   |
+| 5.4  | application/api/tokens/security/pii-fields.token.ts | Lista inyectable                        |
+| 5.5  | PayPal redirect strategy                            | Usar sanitize antes de loguear          |
+| 5.6  | Webhook normalizers                                 | Placeholder para signature verification |
+| 5.7  | payment.providers.ts                                | Poblar WEBHOOK_NORMALIZER_REGISTRY      |
+
+Example registry wiring (referencial)
+
+```typescript
+provide: WEBHOOK_NORMALIZER_REGISTRY
+useFactory: (stripeNormalizer, paypalNormalizer) => (
+stripe: stripeNormalizer,
+paypal: paypalNormalizer
+)
+deps: [StripeWebhookNormalizer, PaypalWebhookNormalizer]
+```
+
+Tests PR5
+
+- Unit: sanitize con diferentes inputs
+- Coverage: 100% redaction paths
+
+---
+
+## 6) PR6: Full Observability
+
+Scope: ~400 LOC | Depende de: PR5
+
+### 6.A: Sink de Resilience
+
+| Archivo                                    | Descripción   |
+| ------------------------------------------ | ------------- |
+| application/adapters/telemetry/resilience/ | Sink dedicado |
+
+Eventos emitidos:
+
+| Evento            | Metadata                                             |
+| ----------------- | ---------------------------------------------------- |
+| CIRCUIT_OPENED    | providerId, operationType, errorCode, previousState  |
+| CIRCUIT_CLOSED    | providerId, operationType, durationMs                |
+| CIRCUIT_HALF_OPEN | providerId                                           |
+| RETRY_ATTEMPTED   | providerId, operationType, attemptNumber, durationMs |
+| RETRY_EXHAUSTED   | providerId, operationType, attemptNumber, errorCode  |
+| RATE_LIMIT_HIT    | providerId, operationType, retryAfterMs              |
+
+### 6.B: Health Checks Mock
+
+| Archivo                                               | Descripción       |
+| ----------------------------------------------------- | ----------------- |
+| infrastructure/health/provider-health.port.ts         | Interface         |
+| infrastructure/health/mock-provider-health.adapter.ts | Mock para testing |
+
+```typescript
+interface HealthStatus {
+  status: 'healthy' | 'degraded' | 'down';
+  latencyMs?: number;
 }
 ```
 
-### `src/app/features/payments/infrastructure/paypal/core/di/provide-paypal-payments.ts`
+Trigger: Al seleccionar provider en checkout
+UI: Spinner inline (5s timeout → error si no responde)
 
-- **Problemas puntuales:** UI meta/descriptors inyectados desde infra.
-- **Nuevo diseno:** infra solo registra gateways/strategies/policies.
-- **Codigo propuesto:**
+### 6.C: Fake Scenarios Nuevos
 
-```ts
-import type { Provider } from '@angular/core';
-import { PaypalProviderFactory } from '@app/features/payments/infrastructure/paypal/core/factories/paypal-provider.factory';
-import { PaypalProviderMethodPolicy } from '@app/features/payments/infrastructure/paypal/shared/policies/paypal-provider-method.policy';
-import { PaypalCancelIntentGateway } from '@app/features/payments/infrastructure/paypal/workflows/order/gateways/cancel-intent.gateway';
-import { PaypalConfirmIntentGateway } from '@app/features/payments/infrastructure/paypal/workflows/order/gateways/confirm-intent.gateway';
-import { PaypalGetIntentGateway } from '@app/features/payments/infrastructure/paypal/workflows/order/gateways/get-intent.gateway';
-import { PaypalIntentFacade } from '@app/features/payments/infrastructure/paypal/workflows/order/order.facade';
-import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
-import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
-import { REDIRECT_RETURN_NORMALIZERS } from '@payments/application/api/tokens/redirect/redirect-return-normalizers.token';
-import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
-import { FakePaypalCancelIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-cancel-intent.gateway';
-import { FakePaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-confirm-intent.gateway';
-import { FakePaypalCreateIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-create-intent.gateway';
-import { FakePaypalGetIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-get-intent.gateway';
-import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/create-intent.gateway';
-import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
-import { PaypalRedirectReturnNormalizer } from '@payments/infrastructure/paypal/workflows/redirect/paypal-redirect-return.normalizer';
-import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-intent-facade.factory';
-export { PaypalWebhookNormalizer } from '@payments/infrastructure/paypal/workflows/webhook/paypal-webhook.normalizer';
+| Token          | Comportamiento                      |
+| -------------- | ----------------------------------- |
+| CIRCUIT_TRIP   | Fuerza apertura de circuit          |
+| RATE_LIMIT_HIT | Fuerza rate limit                   |
+| RETRY_EXHAUST  | Falla todos los retries             |
+| HALF_OPEN_FAIL | Falla probe de half-open            |
+| SLOW_RESPONSE  | Simula latencia alta (configurable) |
 
-const PAYPAL_FACTORY_PROVIDERS: Provider[] = [
-  { provide: PAYMENT_PROVIDER_FACTORIES, useClass: PaypalProviderFactory, multi: true },
-];
+### 6.D: SPEI Config Migration
 
-const PAYPAL_POLICY_PROVIDERS: Provider[] = [
-  { provide: PAYMENT_PROVIDER_METHOD_POLICIES, useClass: PaypalProviderMethodPolicy, multi: true },
-];
+| Archivo                                             | Descripción    |
+| --------------------------------------------------- | -------------- |
+| infrastructure/stripe/config/spei-display.config.ts | Valores reales |
 
-const PAYPAL_REDIRECT_RETURN_PROVIDERS: Provider[] = [
-  { provide: REDIRECT_RETURN_NORMALIZERS, useClass: PaypalRedirectReturnNormalizer, multi: true },
-];
+### 6.E: i18n Nuevos Namespaces
 
-const PAYPAL_REAL_PROVIDERS: Provider[] = [
-  PaypalIntentFacade,
-  PaypalCreateIntentGateway,
-  PaypalConfirmIntentGateway,
-  PaypalCancelIntentGateway,
-  PaypalGetIntentGateway,
-  PaypalFinalizeHandler,
-  ...PAYPAL_FACTORY_PROVIDERS,
-  ...PAYPAL_POLICY_PROVIDERS,
-  ...PAYPAL_REDIRECT_RETURN_PROVIDERS,
-];
+| Namespace             | Keys                              |
+| --------------------- | --------------------------------- |
+| PAYMENT.ERRORS.\_     | 16+ keys de error                 |
+| PAYMENT.RESILIENCE.\_ | circuit open, rate limit messages |
+| PAYMENT.HEALTH.\_     | disponible, lento, no disponible  |
+| PAYMENT.FALLBACK.\_   | modal texts, botones              |
 
-const PAYPAL_FAKE_PROVIDERS: Provider[] = [
-  FakePaypalCreateIntentGateway,
-  FakePaypalConfirmIntentGateway,
-  FakePaypalCancelIntentGateway,
-  FakePaypalGetIntentGateway,
-  PaypalFinalizeHandler,
-  fakeIntentFacadeFactory(
-    'paypal',
-    PaypalIntentFacade,
-    FakePaypalCreateIntentGateway,
-    FakePaypalConfirmIntentGateway,
-    FakePaypalCancelIntentGateway,
-    FakePaypalGetIntentGateway,
-  ),
-  ...PAYPAL_FACTORY_PROVIDERS,
-  ...PAYPAL_POLICY_PROVIDERS,
-  ...PAYPAL_REDIRECT_RETURN_PROVIDERS,
-];
+Rate limit toast: "Demasiadas solicitudes. Espera {X} segundos." (X desde config centralizada)
 
-export function providePaypalPayments(mode: PaymentsProvidersMode): Provider[] {
-  if (mode === 'real') {
-    return PAYPAL_REAL_PROVIDERS;
-  }
-  return PAYPAL_FAKE_PROVIDERS;
+Tests PR6
+
+- Unit: sink filtra correctamente
+- Unit: mock health adapter
+- Integration: eventos en flow completo
+
+---
+
+## 7) PR7: Operation Contracts (NUEVO)
+
+Scope: ~350 LOC | Depende de: PR6
+
+### 7.A: Nuevos Ports
+
+| Archivo                                       | Descripción                 |
+| --------------------------------------------- | --------------------------- |
+| application/api/ports/refund-gateway.port.ts  | RefundGatewayPort separado  |
+| application/api/ports/capture-gateway.port.ts | CaptureGatewayPort separado |
+| application/api/ports/void-gateway.port.ts    | VoidGatewayPort separado    |
+
+### 7.B: Request Types (Herencia de Interfaces)
+
+| Archivo                                    | Contenido                                          |
+| ------------------------------------------ | -------------------------------------------------- |
+| domain/messages/payment-action.request.ts  | Base interface                                     |
+| domain/messages/refund-payment.request.ts  | RefundPaymentRequest extends PaymentActionRequest  |
+| domain/messages/capture-payment.request.ts | CapturePaymentRequest extends PaymentActionRequest |
+| domain/messages/void-payment.request.ts    | VoidPaymentRequest extends PaymentActionRequest    |
+
+```typescript
+export interface PaymentActionRequest {
+  intentId: string;
+  providerId: PaymentProviderId;
+  idempotencyKey: string; // OBLIGATORIO
+}
+
+export interface RefundPaymentRequest extends PaymentActionRequest {
+  action: 'refund_full' | 'refund_partial';
+  amount?: Money; // Requerido si partial
+  reason?: RefundReason;
+}
+
+export interface CapturePaymentRequest extends PaymentActionRequest {
+  action: 'capture';
+  amount?: Money; // Para captura parcial
+}
+
+export interface VoidPaymentRequest extends PaymentActionRequest {
+  action: 'void' | 'release_authorization';
 }
 ```
 
-### `src/app/features/payments/infrastructure/stripe/core/factories/stripe-provider.factory.ts`
-
-- **Problemas puntuales:** usa `I18nKeys` y `FieldRequirements` de Presentation; usa `SPEI_DISPLAY_CONSTANTS` desde `fake`.
-- **Nuevo diseno:** usar `PAYMENT_ERROR_KEYS`/`PAYMENT_UI_KEYS` y mover `SPEI_DISPLAY_CONSTANTS` a `stripe/shared/constants`.
-- **Codigo propuesto (metodos relevantes):**
-
-```ts
-import { inject, Injectable } from '@angular/core';
-import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
-import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
-import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/payment-request-builder.port';
-import { StripeTokenValidatorPolicy } from '@app/features/payments/infrastructure/stripe/shared/policies/stripe-token-validator.policy';
-import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
-import { LoggerService } from '@core/logging';
-import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
-import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
-import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
-import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/card/builders/stripe-card-request.builder';
-import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/spei/builders/stripe-spei-request.builder';
-import { SPEI_DISPLAY_CONSTANTS } from '@payments/infrastructure/stripe/shared/constants/spei-display.constants';
-import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
-import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
-import { PAYMENT_UI_KEYS } from '@payments/shared/constants/payment-ui-keys';
-import { CardStrategy } from '@payments/shared/strategies/card-strategy';
-import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
-
-@Injectable()
-export class StripeProviderFactory implements ProviderFactory {
-  readonly providerId = 'stripe' as const;
-
-  private readonly gateway = inject(StripeIntentFacade);
-  private readonly logger = inject(LoggerService);
-
-  private readonly strategyCache = new Map<PaymentMethodType, PaymentStrategy>();
-
-  static readonly SUPPORTED_METHODS: PaymentMethodType[] = ['card', 'spei'];
-
-  getGateway(): PaymentGatewayPort {
-    return this.gateway;
-  }
-
-  createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilderPort {
-    this.assertSupported(type);
-
-    switch (type) {
-      case 'card':
-        return new StripeCardRequestBuilder();
-      case 'spei':
-        return new StripeSpeiRequestBuilder();
-      default:
-        throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
-          reason: 'no_builder_for_payment_method',
-          type,
-        });
-    }
-  }
-
-  getFieldRequirements(type: PaymentMethodType): FieldRequirements {
-    this.assertSupported(type);
-
-    switch (type) {
-      case 'card':
-        return {
-          descriptionKey: PAYMENT_UI_KEYS.CARD_PAYMENT_DESCRIPTION,
-          instructionsKey: PAYMENT_UI_KEYS.ENTER_CARD_DATA,
-          fields: [
-            {
-              name: 'token',
-              labelKey: PAYMENT_UI_KEYS.CARD_TOKEN,
-              required: true,
-              type: 'hidden',
-              defaultValue: 'tok_visa1234567890abcdef',
-            },
-            {
-              name: 'saveForFuture',
-              labelKey: PAYMENT_UI_KEYS.SAVE_CARD_FUTURE,
-              required: false,
-              type: 'text',
-              defaultValue: 'false',
-            },
-          ],
-        };
-      case 'spei':
-        return {
-          descriptionKey: PAYMENT_UI_KEYS.SPEI_BANK_TRANSFER,
-          instructionsKey: PAYMENT_UI_KEYS.SPEI_EMAIL_INSTRUCTIONS,
-          fields: [
-            {
-              name: 'customerEmail',
-              labelKey: PAYMENT_UI_KEYS.EMAIL_LABEL,
-              placeholderKey: PAYMENT_UI_KEYS.EMAIL_PLACEHOLDER,
-              required: true,
-              type: 'email',
-            },
-          ],
-        };
-      default:
-        return { fields: [] };
-    }
-  }
-
-  private assertSupported(type: PaymentMethodType): void {
-    if (!this.supportsMethod(type)) {
-      throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
-        reason: 'unsupported_payment_method',
-        supportedMethods: StripeProviderFactory.SUPPORTED_METHODS.join(', '),
-      });
-    }
-  }
-
-  private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
-    switch (type) {
-      case 'card':
-        return new CardStrategy(this.gateway, new StripeTokenValidatorPolicy(), this.logger);
-      case 'spei':
-        return new SpeiStrategy(this.gateway, this.logger, SPEI_DISPLAY_CONSTANTS);
-      default:
-        throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
-          reason: 'unexpected_payment_method_type',
-          type,
-        });
-    }
-  }
-}
-```
-
-### `src/app/features/payments/infrastructure/paypal/core/factories/paypal-provider.factory.ts`
-
-- **Problemas puntuales:** usa `I18nKeys` y `FieldRequirements` desde Presentation.
-- **Nuevo diseno:** usar constantes de shared y contrato en Application.
-- **Codigo propuesto (metodos relevantes):**
-
-```ts
-import { inject, Injectable } from '@angular/core';
-import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
-import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
-import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/payment-request-builder.port';
-import { PaypalRedirectRequestBuilder } from '@app/features/payments/infrastructure/paypal/core/builders/paypal-redirect-request.builder';
-import { PaypalRedirectStrategy } from '@app/features/payments/infrastructure/paypal/payment-methods/redirect/strategies/paypal-redirect.strategy';
-import { PaypalIntentFacade } from '@app/features/payments/infrastructure/paypal/workflows/order/order.facade';
-import { LoggerService } from '@core/logging';
-import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
-import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
-import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
-import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
-import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
-import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
-import {
-  PAYMENT_ERROR_KEYS,
-  PAYMENT_MESSAGE_KEYS,
-} from '@payments/shared/constants/payment-error-keys';
-import { PAYMENT_UI_KEYS } from '@payments/shared/constants/payment-ui-keys';
-
-@Injectable()
-export class PaypalProviderFactory implements ProviderFactory {
-  readonly providerId = 'paypal' as const;
-
-  private readonly gateway = inject(PaypalIntentFacade);
-  private readonly logger = inject(LoggerService);
-  private readonly finalizeHandler = inject(PaypalFinalizeHandler);
-
-  private readonly strategyCache = new Map<PaymentMethodType, PaymentStrategy>();
-
-  static readonly SUPPORTED_METHODS: PaymentMethodType[] = ['card'];
-
-  createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilderPort {
-    this.assertSupported(type);
-    return new PaypalRedirectRequestBuilder();
-  }
-
-  getFieldRequirements(type: PaymentMethodType): FieldRequirements {
-    this.assertSupported(type);
-
-    return {
-      descriptionKey: PAYMENT_UI_KEYS.PAY_WITH_PAYPAL,
-      instructionsKey: PAYMENT_MESSAGE_KEYS.PAYPAL_REDIRECT_SECURE_MESSAGE,
-      fields: [],
-    };
-  }
-
-  getFinalizeHandler(): FinalizePort | null {
-    return this.finalizeHandler;
-  }
-
-  private assertSupported(type: PaymentMethodType): void {
-    if (!this.supportsMethod(type)) {
-      throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
-        reason: 'unsupported_payment_method',
-        supportedMethods: PaypalProviderFactory.SUPPORTED_METHODS.join(', '),
-      });
-    }
-  }
-
-  private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
-    switch (type) {
-      case 'card':
-        return new PaypalRedirectStrategy(this.gateway, this.logger);
-      default:
-        throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
-          reason: 'unexpected_payment_method_type',
-          type,
-        });
-    }
-  }
-}
-```
-
-### `src/app/features/payments/infrastructure/stripe/shared/policies/base-token-validator.ts`
-
-- **Problemas puntuales:** acopla infra a `@core/i18n`.
-- **Nuevo diseno:** usar `PAYMENT_ERROR_KEYS`.
-- **Codigo propuesto:**
-
-```ts
-import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
-import type { TokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/token-validator.port';
-import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
-
-export abstract class BaseTokenValidator implements TokenValidator {
-  protected abstract readonly patterns: RegExp[];
-  protected abstract readonly patternDescriptions: string[];
-
-  validate(token: string): void {
-    if (!this.requiresToken()) {
-      return;
-    }
-
-    if (!token) {
-      throw invalidRequestError(PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED);
-    }
-
-    if (!this.isValid(token)) {
-      throw invalidRequestError(PAYMENT_ERROR_KEYS.CARD_TOKEN_INVALID_FORMAT, {
-        expected: this.patternDescriptions.join(' or '),
-        got: this.maskToken(token),
-      });
-    }
-  }
-
-  isValid(token: string): boolean {
-    if (!this.requiresToken()) {
-      return true;
-    }
-
-    if (!token) {
-      return false;
-    }
-
-    return this.patterns.some((pattern) => pattern.test(token));
-  }
-
-  getAcceptedPatterns(): string[] {
-    return [...this.patternDescriptions];
-  }
-
-  requiresToken(): boolean {
-    return true;
-  }
-
-  protected maskToken(token: string): string {
-    if (!token || token.length < 8) {
-      return '***';
-    }
-    return `${token.substring(0, 4)}...${token.substring(token.length - 4)}`;
-  }
-}
-```
-
-### `src/app/features/payments/infrastructure/stripe/shared/policies/stripe-provider-method.policy.ts`
-
-- **Problemas puntuales:** `throw new Error`.
-- **Nuevo diseno:** usar `invalidRequestError`.
-- **Codigo propuesto:**
-
-```ts
-import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
-import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
-import type {
-  ProviderMethodPolicy,
-  ProviderMethodPolicyPort,
-} from '@payments/application/api/ports/provider-method-policy.port';
-import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
-
-export class StripeProviderMethodPolicy implements ProviderMethodPolicyPort {
-  readonly providerId: PaymentProviderId = 'stripe';
-
-  getPolicy(method: PaymentMethodType): ProviderMethodPolicy {
-    if (method === 'card') {
-      return {
-        providerId: 'stripe',
-        method: 'card',
-        requires: { token: true },
-        flow: { usesRedirect: false, requiresUserAction: true, supportsPolling: true },
-        stages: { authorize: true, capture: true, settle: true },
-      };
-    }
-
-    if (method === 'spei') {
-      return {
-        providerId: 'stripe',
-        method: 'spei',
-        requires: { token: false },
-        flow: { usesRedirect: false, requiresUserAction: false, supportsPolling: true },
-        stages: { authorize: true, capture: false, settle: true },
-      };
-    }
-
-    throw invalidRequestError(PAYMENT_ERROR_KEYS.PAYMENT_METHOD_NOT_SUPPORTED, {
-      provider: 'stripe',
-      method,
-    });
-  }
-}
-```
-
-### `src/app/features/payments/infrastructure/paypal/shared/policies/paypal-provider-method.policy.ts`
-
-- **Problemas puntuales:** `throw new Error`.
-- **Nuevo diseno:** usar `invalidRequestError`.
-- **Codigo propuesto:**
-
-```ts
-import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
-import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
-import type {
-  ProviderMethodPolicy,
-  ProviderMethodPolicyPort,
-} from '@payments/application/api/ports/provider-method-policy.port';
-import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
-
-export class PaypalProviderMethodPolicy implements ProviderMethodPolicyPort {
-  readonly providerId: PaymentProviderId = 'paypal';
-
-  getPolicy(method: PaymentMethodType): ProviderMethodPolicy {
-    if (method === 'card') {
-      return {
-        providerId: 'paypal',
-        method: 'card',
-        requires: { returnUrl: true, cancelUrl: false },
-        flow: { usesRedirect: true, requiresUserAction: true, supportsPolling: true },
-        stages: { authorize: true, capture: true, settle: true },
-      };
-    }
-
-    throw invalidRequestError(PAYMENT_ERROR_KEYS.PAYMENT_METHOD_NOT_SUPPORTED, {
-      provider: 'paypal',
-      method,
-    });
-  }
-}
-```
-
-### `src/app/features/payments/infrastructure/stripe/payment-methods/card/builders/stripe-card-request.builder.ts`
-
-- **Problemas puntuales:** usa `I18nKeys`.
-- **Nuevo diseno:** usar `PAYMENT_ERROR_KEYS`.
-- **Codigo propuesto (metodo completo):**
-
-```ts
-import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
-
-protected override validateRequired(): void {
-  this.orderIdVo = this.createOrderIdOrThrow(this.orderId, PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED);
-  this.requireDefinedWithKey('currency', this.currency, PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED);
-  this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
-  this.requireNonEmptyStringWithKey('token', this.token, PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED);
-}
-```
-
-### `src/app/features/payments/infrastructure/stripe/payment-methods/spei/builders/stripe-spei-request.builder.ts`
-
-- **Problemas puntuales:** usa `I18nKeys`.
-- **Nuevo diseno:** usar `PAYMENT_ERROR_KEYS`.
-- **Codigo propuesto (metodo completo):**
-
-```ts
-import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
-
-protected override validateRequired(): void {
-  this.orderIdVo = this.createOrderIdOrThrow(this.orderId, PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED);
-  this.requireDefinedWithKey('currency', this.currency, PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED);
-  this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
-
-  this.requireEmailWithKey(
-    'customerEmail',
-    this.customerEmail,
-    PAYMENT_ERROR_KEYS.CUSTOMER_EMAIL_REQUIRED,
-    PAYMENT_ERROR_KEYS.CUSTOMER_EMAIL_INVALID,
-  );
-}
-```
-
-### `src/app/features/payments/infrastructure/paypal/core/builders/paypal-redirect-request.builder.ts`
-
-- **Problemas puntuales:** usa `I18nKeys`.
-- **Nuevo diseno:** usar `PAYMENT_ERROR_KEYS`.
-- **Codigo propuesto (metodo completo):**
-
-```ts
-import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
-
-protected override validateRequired(): void {
-  this.orderIdVo = this.createOrderIdOrThrow(this.orderId, PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED);
-  this.requireDefinedWithKey('currency', this.currency, PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED);
-  this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
-
-  this.returnUrl = this.validateOptionalUrl('returnUrl', this.returnUrl);
-  this.cancelUrl = this.validateOptionalUrl('cancelUrl', this.cancelUrl);
-}
-```
-
-### `src/app/features/payments/infrastructure/paypal/payment-methods/redirect/strategies/paypal-redirect.strategy.ts`
-
-- **Problemas puntuales:** usa `I18nKeys` y loguea token completo.
-- **Nuevo diseno:** usar `PAYMENT_ERROR_KEYS`/`PAYMENT_MESSAGE_KEYS` y enmascarar token.
-- **Codigo propuesto (metodos completos):**
-
-```ts
-import { PAYMENT_ERROR_KEYS, PAYMENT_MESSAGE_KEYS } from '@payments/shared/constants/payment-error-keys';
-
-validate(req: CreatePaymentRequest): void {
-  const supportedCurrencies: CurrencyCode[] = ['USD', 'MXN'];
-
-  if (!req.money.currency || !supportedCurrencies.includes(req.money.currency)) {
-    throw invalidRequestError(
-      PAYMENT_ERROR_KEYS.CURRENCY_NOT_SUPPORTED,
-      {
-        field: 'currency',
-        provider: 'paypal',
-        supportedCount: supportedCurrencies.length,
-        currency: req.money.currency,
-      },
-      { currency: req.money.currency },
-    );
-  }
-
-  const minAmounts: Record<CurrencyCode, number> = { USD: 1, MXN: 10 };
-  const minAmount = minAmounts[req.money.currency] ?? 1;
-
-  if (!Number.isFinite(req.money.amount) || req.money.amount < minAmount) {
-    throw invalidRequestError(
-      PAYMENT_ERROR_KEYS.AMOUNT_INVALID,
-      { field: 'amount', min: minAmount, currency: req.money.currency },
-      { amount: req.money.amount, currency: req.money.currency, minAmount },
-    );
-  }
-
-  if (req.method?.token) {
-    this.logger.warn(
-      '[PaypalRedirectStrategy] Token provided but PayPal uses its own checkout flow',
-      'PaypalRedirectStrategy',
-      {
-        token: this.maskToken(req.method.token),
-      },
-    );
-  }
-}
-
-prepare(req: CreatePaymentRequest, context?: StrategyContext): StrategyPrepareResult {
-  if (!context?.returnUrl) {
-    throw invalidRequestError(
-      PAYMENT_ERROR_KEYS.RETURN_URL_REQUIRED,
-      { field: 'returnUrl', provider: 'paypal' },
-      { returnUrl: context?.returnUrl },
-    );
-  }
-
-  const returnUrl = context.returnUrl;
-  const cancelUrl = context.cancelUrl ?? returnUrl;
-
-  const metadata: Record<string, unknown> = {
-    payment_method_type: 'paypal_redirect',
-    return_url: returnUrl,
-    cancel_url: cancelUrl,
-    landing_page: PaypalRedirectStrategy.DEFAULT_LANDING_PAGE,
-    user_action: PaypalRedirectStrategy.DEFAULT_USER_ACTION,
-    brand_name: 'Payment Service',
-    timestamp: new Date().toISOString(),
-    formatted_amount: req.money.amount.toFixed(2),
-  };
-
-  if (context?.deviceData) {
-    metadata['paypal_client_metadata_id'] = this.generateClientMetadataId(context.deviceData);
-  }
-
-  return {
-    preparedRequest: {
-      ...req,
-      method: { type: 'card' },
-      returnUrl,
-      cancelUrl,
-    },
-    metadata,
-  };
-}
-
-getUserInstructions(intent: PaymentIntent): string[] | null {
-  if (intent.status === 'succeeded') {
-    return null;
-  }
-  return [
-    PAYMENT_MESSAGE_KEYS.PAYPAL_REDIRECT_SECURE_MESSAGE,
-    PAYMENT_MESSAGE_KEYS.REDIRECTED_TO_PAYPAL,
-  ];
-}
-
-private maskToken(token: string): string {
-  if (!token || token.length < 8) return '***';
-  return `${token.substring(0, 4)}...${token.substring(token.length - 4)}`;
-}
-```
-
-### `src/app/features/payments/infrastructure/stripe/payment-methods/spei/mappers/spei-source.mapper.ts`
-
-- **Problemas puntuales:** instrucciones hardcoded en ingles.
-- **Nuevo diseno:** mapper solo transforma DTO -> PaymentIntent (sin UI).
-- **Codigo propuesto:**
-
-```ts
-import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
-import type { StripeSpeiSourceDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
-import { SpeiStatusMapper } from '@payments/infrastructure/stripe/payment-methods/spei/mappers/spei-status.mapper';
-
-function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
-  const result = PaymentIntentId.from(raw);
-  if (!result.ok) throw new Error(`Invalid intent id from provider: ${raw}`);
-  return result.value;
-}
-
-export class SpeiSourceMapper {
-  constructor(private readonly providerId: PaymentProviderId) {}
-
-  mapSpeiSource(dto: StripeSpeiSourceDto): PaymentIntent {
-    const status = new SpeiStatusMapper().mapSpeiStatus(dto.status);
-
-    return {
-      id: toPaymentIntentIdOrThrow(dto.id),
-      provider: this.providerId,
-      status,
-      money: {
-        amount: dto.amount / 100,
-        currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
-      },
-      raw: dto,
-    };
-  }
-}
-```
-
-### `src/app/features/payments/infrastructure/stripe/shared/constants/spei-display.constants.ts`
-
-- **Problemas puntuales:** hoy vive en `fake` pero se usa en real.
-- **Nuevo diseno:** mover a `stripe/shared/constants`.
-- **Codigo propuesto:**
-
-```ts
-import type { SpeiDisplayConfig } from '@payments/application/api/contracts/spei-display-config.types';
-
-export const SPEI_DISPLAY_CONSTANTS: SpeiDisplayConfig = {
-  receivingBanks: {
-    stripe: 'STP (Transfers and Payments System)',
-    conekta: 'STP (Transfers and Payments System)',
-    openpay: 'BBVA Mexico',
-  },
-  beneficiaryName: 'Payment Service SA de CV',
-  testClabe: '646180111812345678',
-};
-```
-
-### `src/app/features/payments/infrastructure/stripe/shared/errors/mappers/error-key.mapper.ts`
-
-- **Problemas puntuales:** depende de `I18nKeys`.
-- **Nuevo diseno:** usar `PAYMENT_ERROR_KEYS`.
-- **Codigo propuesto:**
-
-```ts
-import type { StripeErrorResponse } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
-
-export class ErrorKeyMapper {
-  mapErrorKey(error: StripeErrorResponse['error']): string {
-    const errorKeyMap: Partial<Record<string, string>> = {
-      card_declined: PAYMENT_ERROR_KEYS.CARD_DECLINED,
-      expired_card: PAYMENT_ERROR_KEYS.EXPIRED_CARD,
-      incorrect_cvc: PAYMENT_ERROR_KEYS.INCORRECT_CVC,
-      processing_error: PAYMENT_ERROR_KEYS.PROCESSING_ERROR,
-      incorrect_number: PAYMENT_ERROR_KEYS.INCORRECT_NUMBER,
-      authentication_required: PAYMENT_ERROR_KEYS.AUTHENTICATION_REQUIRED,
-    };
-
-    return errorKeyMap[error.code] ?? PAYMENT_ERROR_KEYS.STRIPE_ERROR;
-  }
-}
-```
-
-### `src/app/features/payments/infrastructure/stripe/shared/errors/stripe-operation.port.ts`
-
-- **Problemas puntuales:** los gateways devuelven `provider_error` generico.
-- **Nuevo diseno:** base class por provider que normaliza errores Stripe.
-- **Codigo propuesto:**
-
-```ts
-import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
-import { createPaymentError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
-import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
-import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
-import { ERROR_CODE_MAP } from '@payments/infrastructure/stripe/shared/errors/mappers/error-code.mapper';
-import { ErrorKeyMapper } from '@payments/infrastructure/stripe/shared/errors/mappers/error-key.mapper';
-import { isStripeErrorResponse } from '@payments/infrastructure/stripe/shared/errors/mappers/error-response.mapper';
-
-const keyMapper = new ErrorKeyMapper();
-
-export abstract class StripeOperationPort<TRequest, TDto, TResponse> extends PaymentOperationPort<
-  TRequest,
-  TDto,
-  TResponse
-> {
-  protected override handleError(err: unknown): PaymentError {
-    if (isStripeErrorResponse(err)) {
-      const stripeError = err.error;
-      const code = ERROR_CODE_MAP[stripeError.code] ?? 'provider_error';
-      const messageKey = keyMapper.mapErrorKey(stripeError);
-      return createPaymentError(code, messageKey, undefined, err);
-    }
-
-    return createPaymentError('provider_error', PAYMENT_ERROR_KEYS.PROVIDER_ERROR, undefined, err);
-  }
-}
-```
-
-### `src/app/features/payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway.ts`
-
-- **Problemas puntuales:** extiende `PaymentOperationPort` generico.
-- **Nuevo diseno:** extender `StripeOperationPort` (replicar en confirm/cancel/get).
-- **Codigo propuesto:**
-
-```ts
-import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
-import { LoggerService } from '@app/core';
-import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
-import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
-import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
-import type {
-  StripeCreateIntentRequest,
-  StripePaymentIntentDto,
-  StripeSpeiSourceDto,
-} from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import { STRIPE_API_BASE } from '@app/features/payments/infrastructure/stripe/shared/constants/base-api.constant';
-import { SpeiSourceMapper } from '@payments/infrastructure/stripe/payment-methods/spei/mappers/spei-source.mapper';
-import { getIdempotencyHeaders } from '@payments/infrastructure/stripe/shared/idempotency/get-idempotency-headers';
-import { StripeOperationPort } from '@payments/infrastructure/stripe/shared/errors/stripe-operation.port';
-import { mapPaymentIntent } from '@payments/infrastructure/stripe/workflows/intent/mappers/payment-intent.mapper';
-import type { Observable } from 'rxjs';
-
-@Injectable()
-export class StripeCreateIntentGateway extends StripeOperationPort<
-  CreatePaymentRequest,
-  StripePaymentIntentDto | StripeSpeiSourceDto,
-  PaymentIntent
-> {
-  private readonly http = inject(HttpClient);
-  private readonly logger = inject(LoggerService);
-  readonly providerId: PaymentProviderId = 'stripe' as const;
-  private static readonly API_BASE = STRIPE_API_BASE;
-
-  protected executeRaw(
-    request: CreatePaymentRequest,
-  ): Observable<StripePaymentIntentDto | StripeSpeiSourceDto> {
-    const stripeRequest = this.buildStripeCreateRequest(request);
-
-    if (request.method.type === 'spei') {
-      return this.http.post<StripeSpeiSourceDto>(
-        `${StripeCreateIntentGateway.API_BASE}/sources`,
-        stripeRequest,
-        { headers: getIdempotencyHeaders(request.orderId.value, 'create', request.idempotencyKey) },
-      );
-    }
-
-    return this.http.post<StripePaymentIntentDto>(
-      `${StripeCreateIntentGateway.API_BASE}/intents`,
-      stripeRequest,
-      { headers: getIdempotencyHeaders(request.orderId.value, 'create', request.idempotencyKey) },
-    );
-  }
-
-  protected mapResponse(dto: StripePaymentIntentDto | StripeSpeiSourceDto): PaymentIntent {
-    if ('spei' in dto) {
-      const mapper = new SpeiSourceMapper(this.providerId);
-      return mapper.mapSpeiSource(dto as StripeSpeiSourceDto);
-    }
-    return mapPaymentIntent(dto as StripePaymentIntentDto, this.providerId);
-  }
-
-  private buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreateIntentRequest {
-    return {
-      amount: Math.round(req.money.amount * 100),
-      currency: req.money.currency.toLowerCase(),
-      payment_method_types: [req.method.type === 'spei' ? 'spei' : 'card'],
-      payment_method: req.method.token,
-      metadata: {
-        order_id: req.orderId.value,
-        created_at: new Date().toISOString(),
-      },
-      description: `Order ${req.orderId.value}`,
-    };
-  }
-}
-```
-
-### `src/app/features/payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway.ts`
-
-- **Problemas puntuales:** base generica.
-- **Nuevo diseno:** extender `StripeOperationPort`.
-- **Codigo propuesto (solo cambio de base/import):**
-
-```ts
-import { StripeOperationPort } from '@payments/infrastructure/stripe/shared/errors/stripe-operation.port';
-
-export class StripeConfirmIntentGateway extends StripeOperationPort<
-  ConfirmPaymentRequest,
-  StripePaymentIntentDto,
-  PaymentIntent
-> {
-  /* resto sin cambios */
-}
-```
-
-### `src/app/features/payments/infrastructure/stripe/workflows/intent/gateways/intent/cancel-intent.gateway.ts`
-
-- **Problemas puntuales:** base generica.
-- **Nuevo diseno:** extender `StripeOperationPort`.
-- **Codigo propuesto (solo cambio de base/import):**
-
-```ts
-import { StripeOperationPort } from '@payments/infrastructure/stripe/shared/errors/stripe-operation.port';
-
-export class StripeCancelIntentGateway extends StripeOperationPort<
-  CancelPaymentRequest,
-  StripePaymentIntentDto,
-  PaymentIntent
-> {
-  /* resto sin cambios */
-}
-```
-
-### `src/app/features/payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway.ts`
-
-- **Problemas puntuales:** base generica.
-- **Nuevo diseno:** extender `StripeOperationPort`.
-- **Codigo propuesto (solo cambio de base/import):**
-
-```ts
-import { StripeOperationPort } from '@payments/infrastructure/stripe/shared/errors/stripe-operation.port';
-
-export class StripeGetIntentGateway extends StripeOperationPort<
-  GetPaymentStatusRequest,
-  StripePaymentIntentDto,
-  PaymentIntent
-> {
-  /* resto sin cambios */
-}
-```
-
-### `src/app/features/payments/infrastructure/paypal/shared/errors/paypal-operation.port.ts`
-
-- **Problemas puntuales:** no hay normalizacion PayPal.
-- **Nuevo diseno:** base class por provider.
-- **Codigo propuesto:**
-
-```ts
-import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
-import { createPaymentError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
-import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
-import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
-import type { PaypalErrorResponse } from '@payments/infrastructure/paypal/core/dto/paypal.dto';
-
-function isPaypalErrorResponse(err: unknown): err is PaypalErrorResponse {
-  if (!err || typeof err !== 'object') return false;
-  const value = err as Record<string, unknown>;
-  return typeof value['name'] === 'string' && typeof value['message'] === 'string';
-}
-
-export abstract class PaypalOperationPort<TRequest, TDto, TResponse> extends PaymentOperationPort<
-  TRequest,
-  TDto,
-  TResponse
-> {
-  protected override handleError(err: unknown): PaymentError {
-    if (isPaypalErrorResponse(err)) {
-      const isInvalid = err.name === 'INVALID_REQUEST';
-      return createPaymentError(
-        isInvalid ? 'invalid_request' : 'provider_error',
-        isInvalid ? PAYMENT_ERROR_KEYS.INVALID_REQUEST : PAYMENT_ERROR_KEYS.PROVIDER_ERROR,
-        undefined,
-        err,
-      );
-    }
-
-    return createPaymentError('provider_error', PAYMENT_ERROR_KEYS.PROVIDER_ERROR, undefined, err);
-  }
-}
-```
-
-### `src/app/features/payments/infrastructure/paypal/workflows/order/gateways/create-intent.gateway.ts`
-
-- **Problemas puntuales:** base generica.
-- **Nuevo diseno:** extender `PaypalOperationPort` (replicar en confirm/cancel/get).
-- **Codigo propuesto (solo cambio de base/import):**
-
-```ts
-import { PaypalOperationPort } from '@payments/infrastructure/paypal/shared/errors/paypal-operation.port';
-
-export class PaypalCreateIntentGateway extends PaypalOperationPort<
-  CreatePaymentRequest,
-  PaypalOrderDto,
-  PaymentIntent
-> {
-  /* resto sin cambios */
-}
-```
-
-### `src/app/features/payments/infrastructure/paypal/workflows/order/gateways/confirm-intent.gateway.ts`
-
-- **Problemas puntuales:** base generica.
-- **Nuevo diseno:** extender `PaypalOperationPort`.
-- **Codigo propuesto (solo cambio de base/import):**
-
-```ts
-import { PaypalOperationPort } from '@payments/infrastructure/paypal/shared/errors/paypal-operation.port';
-
-export class PaypalConfirmIntentGateway extends PaypalOperationPort<
-  ConfirmPaymentRequest,
-  PaypalOrderDto,
-  PaymentIntent
-> {
-  /* resto sin cambios */
-}
-```
-
-### `src/app/features/payments/infrastructure/paypal/workflows/order/gateways/cancel-intent.gateway.ts`
-
-- **Problemas puntuales:** base generica.
-- **Nuevo diseno:** extender `PaypalOperationPort`.
-- **Codigo propuesto (solo cambio de base/import):**
-
-```ts
-import { PaypalOperationPort } from '@payments/infrastructure/paypal/shared/errors/paypal-operation.port';
-
-export class PaypalCancelIntentGateway extends PaypalOperationPort<
-  CancelPaymentRequest,
-  PaypalOrderDto,
-  PaymentIntent
-> {
-  /* resto sin cambios */
-}
-```
-
-### `src/app/features/payments/infrastructure/paypal/workflows/order/gateways/get-intent.gateway.ts`
-
-- **Problemas puntuales:** base generica.
-- **Nuevo diseno:** extender `PaypalOperationPort`.
-- **Codigo propuesto (solo cambio de base/import):**
-
-```ts
-import { PaypalOperationPort } from '@payments/infrastructure/paypal/shared/errors/paypal-operation.port';
-
-export class PaypalGetIntentGateway extends PaypalOperationPort<
-  GetPaymentStatusRequest,
-  PaypalOrderDto,
-  PaymentIntent
-> {
-  /* resto sin cambios */
-}
-```
-
-### `src/app/features/payments/infrastructure/fake/shared/constants/fake-errors.ts`
-
-- **Problemas puntuales:** depende de `I18nKeys`.
-- **Nuevo diseno:** usar `PAYMENT_ERROR_KEYS`.
-- **Codigo propuesto:**
-
-```ts
-import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
-import type { FakeScenario } from '@app/features/payments/infrastructure/fake/shared/types/fake-scenario.type';
-import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
-
-export const FAKE_ERRORS: Record<FakeScenario, PaymentError> = {
-  provider_error: {
-    code: 'provider_error',
-    messageKey: PAYMENT_ERROR_KEYS.PROVIDER_ERROR,
-    raw: { scenario: 'provider_error' },
-  },
-
-  decline: {
-    code: 'card_declined',
-    messageKey: PAYMENT_ERROR_KEYS.CARD_DECLINED,
-    raw: { scenario: 'decline' },
-  },
-
-  insufficient: {
-    code: 'insufficient_funds',
-    messageKey: PAYMENT_ERROR_KEYS.INSUFFICIENT_FUNDS,
-    raw: { scenario: 'insufficient' },
-  },
-
-  expired: {
-    code: 'expired_card',
-    messageKey: PAYMENT_ERROR_KEYS.EXPIRED_CARD,
-    raw: { scenario: 'expired' },
-  },
-
-  timeout: {
-    code: 'timeout',
-    messageKey: PAYMENT_ERROR_KEYS.TIMEOUT,
-    raw: { scenario: 'timeout' },
-  },
-};
-```
-
-### `src/app/features/payments/infrastructure/fake/shared/helpers/validate-create.helper.ts`
-
-- **Problemas puntuales:** usa `I18nKeys`.
-- **Nuevo diseno:** usar `PAYMENT_ERROR_KEYS`.
-- **Codigo propuesto (metodo completo):**
-
-```ts
-import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
-
-export function validateCreate(req: CreatePaymentRequest, providerId: PaymentProviderId) {
-  if (!req.orderId)
-    throw invalidRequestError(PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED, { field: 'orderId' });
-  if (!req.money?.currency)
-    throw invalidRequestError(PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED, { field: 'currency' });
-  if (!Number.isFinite(req.money?.amount) || req.money.amount <= 0)
-    throw invalidRequestError(PAYMENT_ERROR_KEYS.AMOUNT_INVALID, { field: 'amount' });
-  if (!req.method?.type)
-    throw invalidRequestError(PAYMENT_ERROR_KEYS.METHOD_TYPE_REQUIRED, { field: 'method.type' });
-  if (providerId === 'paypal') return;
-  if (req.method.type === 'card' && !req.method.token)
-    throw invalidRequestError(PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED, { field: 'method.token' });
-}
-```
-
-## 5) Verificacion (comandos y checks)
-
-- `bun run test:ci` (ejecutado con permisos escalados; OK).
-- `bun run lint:fix`
-- `bun run dep:check` (si existe script)
-- `rg -n "@payments/presentation" src/app/features/payments/infrastructure`
-- `rg -n "@core/i18n" src/app/features/payments/infrastructure`
-- `rg -n "PAYMENT_PROVIDER_UI_META|PAYMENT_PROVIDER_DESCRIPTORS" src/app/features/payments/infrastructure`
-- `rg -n "new Error\(" src/app/features/payments/infrastructure/stripe/shared/policies src/app/features/payments/infrastructure/paypal/shared/policies`
-- `rg -n "Make a bank transfer|instructions: \['" src/app/features/payments/infrastructure/stripe/payment-methods/spei/mappers`
-- `rg -n "token: req.method.token" src/app/features/payments/infrastructure/paypal/payment-methods`
-
-## 6) Riesgos y trade-offs
-
-- Mover contratos desde Presentation a Application puede requerir ajustar imports y tests de boundary; mitigar con re-exports temporales y actualizacion de tests.
-- Cambios de claves i18n implican validar que existan en `en.ts/es.ts`; mitigar con smoke-check de catalogo.
-- Normalizacion de errores puede cambiar mensajes visibles; mitigar actualizando snapshots/tests de UI y flujos de error.
+### 7.C: Result Types
+
+| Archivo                                 | Contenido     |
+| --------------------------------------- | ------------- |
+| domain/entities/refund-result.model.ts  | RefundResult  |
+| domain/entities/capture-result.model.ts | CaptureResult |
+
+### 7.D: Tokens
+
+| Archivo                                            | Contenido                    |
+| -------------------------------------------------- | ---------------------------- |
+| application/api/tokens/operations/refund.token.ts  | REFUND_GATEWAYS multi-token  |
+| application/api/tokens/operations/capture.token.ts | CAPTURE_GATEWAYS multi-token |
+| application/api/tokens/operations/void.token.ts    | VOID_GATEWAYS multi-token    |
+
+### 7.E: Idempotency en Todos los Requests
+
+| Archivo                                   | Cambio                                     |
+| ----------------------------------------- | ------------------------------------------ |
+| domain/messages/create-payment.request.ts | Agregar idempotencyKey: string obligatorio |
+| Todos los builders                        | Método withIdempotencyKey() requerido      |
+
+Tests PR7
+
+- Unit: types compilan correctamente
+- Unit: request validation
+- Nota: sin implementación de gateways, solo contratos
+
+---
+
+## 8) PR8: Documentation
+
+Scope: ~200 LOC | Depende de: PR7
+
+| Archivo                        | Contenido                         |
+| ------------------------------ | --------------------------------- |
+| docs/application-analysis.md   | Sección "Resilience Architecture" |
+| charts/resilience-flow.mermaid | Diagrama de estados               |
+| README.md                      | Overview resilience + fallback    |
+
+---
+
+## 9) Estados en Mermaid
+
+stateDiagram-v2
+[*] --> idle
+idle --> starting: START
+starting --> circuitOpen: CIRCUIT_OPENED
+starting --> rateLimited: RATE_LIMIT_HIT
+starting --> afterStart: SUCCESS
+starting --> failed: ERROR
+
+circuitOpen --> halfOpen: COOLDOWN_EXPIRED
+halfOpen --> starting: RETRY_PROBE
+halfOpen --> circuitOpen: PROBE_FAILED
+
+rateLimited --> idle: RATE_LIMIT_RESET
+
+failed --> fallbackConfirming: FALLBACK_ELIGIBLE
+fallbackConfirming --> starting: FALLBACK_CONFIRMED
+fallbackConfirming --> failed: FALLBACK_CANCELLED
+fallbackConfirming --> failed: FALLBACK_TIMEOUT
+
+afterStart --> pendingManualReview: FINALIZE_EXHAUSTED
+
+---
+
+## 10) Resumen de Decisiones
+
+| Área                           | Decisión                                                                            |
+| ------------------------------ | ----------------------------------------------------------------------------------- |
+| Factories                      | Mantener unificadas, extraer helpers a subcarpeta                                   |
+| Validaciones provider-specific | Type guards en infrastructure/{provider}/shared/guards/                             |
+| Validaciones cross-provider    | Función genérica validateAmount(money, config) en infrastructure/shared/validation/ |
+| Constants                      | Por provider en shared/constants/, con prefijo (ej. PAYPAL_STATUS_MAP)              |
+| Magic strings                  | Const objects con as const                                                          |
+| DTOs metadata                  | Tipados en infrastructure/{provider}/core/dto/                                      |
+| FakeIntentStore                | Eliminar, cada fake gateway tiene Map interno                                       |
+| Webhook registry               | Poblar en composition root (PR5)                                                    |
+| Nuevos ports                   | Separados: RefundGatewayPort, CaptureGatewayPort, VoidGatewayPort                   |
+| Request types                  | Herencia: RefundPaymentRequest extends PaymentActionRequest                         |
+| Action kinds                   | refund_full, refund_partial, capture, void, release_authorization                   |
+| Idempotency                    | Obligatorio en CreatePaymentRequest y todos los action requests                     |
+| Config validation              | ProviderValidationConfig completa (currencies, amounts, methods, urls)              |
+| i18n en infrastructure         | Error codes, mapping en presentation via pipe                                       |
+| Contratos                      | Mover a application/api, sin deprecation                                            |
+| Resilience integration         | Ports desacoplados del state machine                                                |
+| Circuit breaker trigger        | Estado dedicado en máquina con cooldown configurable                                |
+| Circuit breaker key            | Por providerId                                                                      |
+| Cooldown                       | Configurable vía DI (default 60s)                                                   |
+| Fallback                       | Con confirmación modal, 30s timeout                                                 |
+| Fallback errors eligibles      | provider_unavailable, timeout, network_error                                        |
+| Retries                        | En half-open después de cooldown                                                    |
+| Error codes                    | Domain-only genéricos                                                               |
+| Webhooks                       | Solo estructura (port + interface)                                                  |
+| Health checks                  | Mock para testing, trigger al seleccionar provider                                  |
+| Telemetry resilience           | Sink dedicado implementando FlowTelemetrySink                                       |
+| Naming                         | Técnicos (CircuitBreaker, RateLimiter)                                              |
+| Gateway resilience             | Decorador en impl, port intacto                                                     |
+| Modal owner                    | State machine emite, UI renderiza                                                   |
+| PII fields                     | Lista inyectable vía token                                                          |
+| Token redaction                | [REDACTED] completo                                                                 |
+| Tests                          | Unit + Integration con cada PR, 100% paths críticos                                 |
+| Docs                           | Extender docs existentes + nuevo chart                                              |
+| Migration                      | PRs incrementales por área (<500 LOC)                                               |
+| Rollback                       | Env var PAYMENTS_RESILIENCE_ENABLED=false                                           |
+| Monitoring                     | Logs + telemetry local en staging                                                   |
+| Prod toggle                    | On by default                                                                       |
+| Test framework                 | Vitest + Angular TestBed                                                            |
+| PR size                        | <500 LOC                                                                            |
+
+---
+
+## 11) UI Específica por Estado
+
+### Circuit Open (fallo activo)
+
+- Banner degradado + botón "Usar otro proveedor"
+
+### Checkout con Circuit Abierto
+
+- Provider deshabilitado en selector + tooltip explicativo
+
+### Half-Open (verificando)
+
+- Mensaje "Verificando disponibilidad..."
+
+### Todos los Providers Down
+
+- Modal bloqueante "Intenta más tarde"
+
+### Rate Limited
+
+- Toast con countdown: "Demasiadas solicitudes. Espera {X} segundos."
+
+### Health Check en Selector
+
+- Spinner inline, 5s timeout
+
+### Fallback Confirmation
+
+- Modal con opciones: "Reintentar", "Usar otro proveedor", "Cancelar"
+- 30s timeout auto-cancel
+
+### Pending Manual Review
+
+- Link a dashboard de provider
+
+---
+
+## 12) Verificación Final
+
+| Check           | Comando                                      |
+| --------------- | -------------------------------------------- |
+| Lint            | bun run lint                                 |
+| Build           | bun run build                                |
+| Tests           | bun run test:ci                              |
+| i18n grep       | grep -r "@core/i18n" infrastructure/ → vacío |
+| FakeIntentStore | No debe existir después de PR0               |
+| Coverage        | 100% paths críticos                          |
+
+---
+
+## 13) Notas de Implementación
+
+1. Cada PR debe ser autónomo y deployable
+2. Tests van con el código en cada PR
+3. Feature flag permite rollback en cualquier momento
+4. PAYMENTS_RESILIENCE_ENABLED=false
+5. Los contratos de PR7 son solo interfaces, sin implementación
+6. Webhooks quedan preparados, implementación real es backend
