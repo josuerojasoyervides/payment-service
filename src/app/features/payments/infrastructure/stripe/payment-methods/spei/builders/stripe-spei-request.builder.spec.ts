@@ -1,6 +1,6 @@
 import { I18nKeys } from '@core/i18n';
 import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/spei/builders/stripe-spei-request.builder';
-import { TEST_RETURN_URL } from '@payments/infrastructure/testing/fixtures/test-urls';
+import { TEST_RETURN_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 export function expectSyncPaymentError(fn: () => unknown, expected: any) {
   try {

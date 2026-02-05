@@ -1,6 +1,6 @@
 /**
  * DTOs based on PayPal Orders v2 real API
- * @see https://developer.paypal.com/docs/api/orders/v2/
+ * @see PayPal docs (Orders v2 API)
  */
 
 export interface PaypalOrderDto {

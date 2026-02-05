@@ -9,12 +9,12 @@ import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/m
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/create-intent.gateway';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import {
   TEST_CANCEL_URL_ALT,
   TEST_PAYPAL_APPROVE_URL,
   TEST_RETURN_URL_ALT,
-} from '@payments/infrastructure/testing/fixtures/test-urls';
-import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
+} from '@payments/shared/testing/fixtures/test-urls';
 
 describe('PaypalCreateIntentGateway', () => {
   let gateway: PaypalCreateIntentGateway;

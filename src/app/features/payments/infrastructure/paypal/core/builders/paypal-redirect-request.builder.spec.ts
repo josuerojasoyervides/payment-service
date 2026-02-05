@@ -4,7 +4,7 @@ import {
   TEST_CANCEL_URL,
   TEST_ORIGIN_URL,
   TEST_RETURN_URL,
-} from '@payments/infrastructure/testing/fixtures/test-urls';
+} from '@payments/shared/testing/fixtures/test-urls';
 
 export function expectSyncPaymentError(fn: () => unknown, expected: any) {
   try {

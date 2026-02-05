@@ -1,8 +1,8 @@
+import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import {
   buildPaypalSandboxCaptureUrl,
   buildPaypalSandboxOrderUrl,
-} from '@app/features/payments/infrastructure/fake/shared/constants/fake-external-urls';
-import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
+} from '@payments/shared/constants/fake-external-urls';
 
 export function createFakePaypalOrderStatus(orderId: string): PaypalOrderDto {
   return {

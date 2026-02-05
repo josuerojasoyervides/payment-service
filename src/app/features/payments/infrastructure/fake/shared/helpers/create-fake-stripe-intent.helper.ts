@@ -1,10 +1,10 @@
 // ============ FAKE STRIPE RESPONSES ============
 
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
-import { buildStripe3dsAuthUrl } from '@app/features/payments/infrastructure/fake/shared/constants/fake-external-urls';
 import { SPECIAL_TOKENS } from '@app/features/payments/infrastructure/fake/shared/constants/special-tokens';
 import { generateId } from '@app/features/payments/infrastructure/fake/shared/helpers/get-id.helper';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import { buildStripe3dsAuthUrl } from '@payments/shared/constants/fake-external-urls';
 
 export type FakeNextActionKind = 'redirect' | 'client_confirm';
 

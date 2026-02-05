@@ -8,7 +8,7 @@ import type { WebhookNormalizer } from '@app/features/payments/domain/subdomains
  * Minimal PayPal webhook event DTO for Orders/Captures events.
  *
  * Based on:
- * https://developer.paypal.com/docs/api/webhooks/v1/#webhooks-events
+ * PayPal webhooks docs (events)
  */
 export interface PaypalWebhookEvent {
   id: string;

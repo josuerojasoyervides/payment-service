@@ -1,6 +1,6 @@
-import { buildStripe3dsAuthUrl } from '@app/features/payments/infrastructure/fake/shared/constants/fake-external-urls';
 import type { FakeIntentState } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import { buildStripe3dsAuthUrl } from '@payments/shared/constants/fake-external-urls';
 
 const DEFAULT_DELAY_MS = 200;
 

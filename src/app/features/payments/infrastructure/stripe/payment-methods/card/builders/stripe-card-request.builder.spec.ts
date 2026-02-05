@@ -1,9 +1,6 @@
 import { I18nKeys } from '@core/i18n';
 import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/card/builders/stripe-card-request.builder';
-import {
-  TEST_CANCEL_URL,
-  TEST_RETURN_URL,
-} from '@payments/infrastructure/testing/fixtures/test-urls';
+import { TEST_CANCEL_URL, TEST_RETURN_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 describe('StripeCardRequestBuilder', () => {
   let builder: StripeCardRequestBuilder;

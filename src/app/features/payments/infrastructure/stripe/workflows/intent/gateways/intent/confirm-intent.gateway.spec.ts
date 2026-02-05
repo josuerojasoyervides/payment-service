@@ -8,8 +8,8 @@ import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
-import { TEST_RETURN_URL } from '@payments/infrastructure/testing/fixtures/test-urls';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
+import { TEST_RETURN_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 describe('StripeConfirmIntentGateway', () => {
   let gateway: StripeConfirmIntentGateway;

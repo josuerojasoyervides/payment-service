@@ -13,7 +13,7 @@ import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows
 import {
   TEST_PAYMENTS_CANCEL_URL,
   TEST_PAYMENTS_RETURN_URL,
-} from '@payments/infrastructure/testing/fixtures/test-urls';
+} from '@payments/shared/testing/fixtures/test-urls';
 import { firstValueFrom, of } from 'rxjs';
 
 describe('PaypalProviderFactory', () => {

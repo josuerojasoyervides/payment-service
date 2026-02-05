@@ -1,6 +1,6 @@
 /**
  * DTOs based on Stripe real API
- * @see https://stripe.com/docs/api/payment_intents
+ * @see Stripe docs (Payment Intents API)
  */
 
 export interface StripePaymentIntentDto {
