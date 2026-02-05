@@ -103,7 +103,7 @@ Tests PR1
 
 ---
 
-### PR2 — Error normalization + mapping cross-provider
+### PR2 — Error normalization + mapping cross-provider ✅
 
 Meta: estandarizar errores para que UI y resilience trabajen igual con cualquier provider.
 

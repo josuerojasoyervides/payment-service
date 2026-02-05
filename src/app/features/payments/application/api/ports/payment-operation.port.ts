@@ -31,10 +31,10 @@ export abstract class PaymentOperationPort<
     // Optionally override in subclasses to perform request validation.
   }
 
-  protected handleError(err: unknown): PaymentError {
+  protected handleError(_err: unknown): PaymentError {
     return {
       code: 'provider_error',
-      raw: err,
+      raw: { reason: 'unexpected_error' },
     };
   }
 
