@@ -16,6 +16,7 @@ import type { KeyValueStorage } from '@app/features/payments/application/api/con
 import type { ExternalNavigatorPort } from '@app/features/payments/application/api/ports/external-navigator.port';
 import { FLOW_CONTEXT_STORAGE } from '@app/features/payments/application/api/tokens/flow/flow-context-storage.token';
 import { EXTERNAL_NAVIGATOR } from '@app/features/payments/application/api/tokens/navigation/external-navigator.token';
+import { PII_FIELDS } from '@app/features/payments/application/api/tokens/security/pii-fields.token';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import {
@@ -185,6 +186,28 @@ const ENV_PROVIDERS: Provider[] = [
   { provide: FLOW_CONTEXT_STORAGE, useFactory: selectFlowContextStorage },
   { provide: EXTERNAL_NAVIGATOR, useFactory: selectExternalNavigator },
 ];
+const SECURITY_PROVIDERS: Provider[] = [
+  {
+    provide: PII_FIELDS,
+    useValue: [
+      'token',
+      'authorization',
+      'password',
+      'secret',
+      'signature',
+      'clientSecret',
+      'client_secret',
+      'cardNumber',
+      'card_number',
+      'cvc',
+      'cvv',
+      'pan',
+      'email',
+      'customerEmail',
+      'phone',
+    ],
+  },
+];
 
 function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provider[] {
   const mode = options.mode ?? 'fake';
@@ -197,14 +220,18 @@ function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provide
     ...APPLICATION_PROVIDERS,
     ...SHARED_PROVIDERS,
     ...ENV_PROVIDERS,
+    ...SECURITY_PROVIDERS,
     ...UI_PROVIDERS,
     ...selectPresentationProviders(),
+    StripeWebhookNormalizer,
+    PaypalWebhookNormalizer,
     {
       provide: WEBHOOK_NORMALIZER_REGISTRY,
-      useValue: {
-        stripe: new StripeWebhookNormalizer(),
-        paypal: new PaypalWebhookNormalizer(),
-      },
+      useFactory: (stripe: StripeWebhookNormalizer, paypal: PaypalWebhookNormalizer) => ({
+        stripe,
+        paypal,
+      }),
+      deps: [StripeWebhookNormalizer, PaypalWebhookNormalizer],
     },
     ...(options.extraProviders ?? []),
   ];

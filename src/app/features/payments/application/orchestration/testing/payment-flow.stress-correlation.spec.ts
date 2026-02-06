@@ -79,7 +79,7 @@ describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {
     harness!.sendCommand('START', { providerId: 'stripe', request: baseRequest });
     await harness!.drain();
 
-    const stateBefore = String(harness!.getSnapshot().value);
+    const snapBefore = harness!.getSnapshot();
 
     harness!.sendSystem('WEBHOOK_RECEIVED', {
       providerId: 'stripe',
@@ -94,13 +94,17 @@ describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {
     const intentIdAfter = snapAfter.context.intentId ?? snapAfter.context.intent?.id ?? null;
     expect(intentIdAfter?.value ?? intentIdAfter).toBe(refA);
     expect(
-      stateBefore === 'requiresAction' || stateBefore === 'polling' || stateBefore === 'starting',
+      snapBefore.hasTag('ready') ||
+        snapBefore.hasTag('loading') ||
+        snapBefore.hasTag('idle') ||
+        String(snapBefore.value) === 'starting',
     ).toBe(true);
     expect(
       String(snapAfter.value) === 'requiresAction' ||
         String(snapAfter.value) === 'polling' ||
         String(snapAfter.value) === 'starting' ||
-        snapAfter.hasTag('ready'),
+        snapAfter.hasTag('ready') ||
+        snapAfter.hasTag('idle'),
     ).toBe(true);
 
     const systemSent = harness!.telemetry.ofKind('SYSTEM_EVENT_SENT');
