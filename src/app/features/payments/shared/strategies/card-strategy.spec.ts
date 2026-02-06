@@ -25,6 +25,7 @@ describe('CardStrategy', () => {
     orderId: createOrderId('order_1'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: validToken },
+    idempotencyKey: 'idem_card_valid',
   };
 
   const intentResponse: PaymentIntent = {

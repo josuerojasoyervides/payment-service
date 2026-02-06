@@ -31,6 +31,7 @@ describe('StripeSpeiRequestBuilder', () => {
         .forOrder('order_123')
         .withAmount(100, 'MXN')
         .withOptions({ customerEmail: 'test@example.com' })
+        .withIdempotencyKey('idem_spei_builder')
         .build();
 
       expect(request.orderId.value).toBe('order_123');
@@ -45,6 +46,7 @@ describe('StripeSpeiRequestBuilder', () => {
         .forOrder('order_123')
         .withAmount(100, 'MXN')
         .withOptions({ customerEmail: 'test@example.com' })
+        .withIdempotencyKey('idem_spei_builder')
         .build();
 
       expect(request.method.token).toBeUndefined();
@@ -59,6 +61,7 @@ describe('StripeSpeiRequestBuilder', () => {
           token: 'tok_should_be_ignored',
           returnUrl: TEST_RETURN_URL,
         })
+        .withIdempotencyKey('idem_spei_builder')
         .build();
 
       expect(request.method.token).toBeUndefined();
@@ -70,7 +73,11 @@ describe('StripeSpeiRequestBuilder', () => {
     it('throws PaymentError when orderId is missing', () => {
       expectSyncPaymentError(
         () =>
-          builder.withAmount(100, 'MXN').withOptions({ customerEmail: 'test@example.com' }).build(),
+          builder
+            .withAmount(100, 'MXN')
+            .withOptions({ customerEmail: 'test@example.com' })
+            .withIdempotencyKey('idem_spei_builder')
+            .build(),
         {
           code: 'invalid_request',
           messageKey: PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED,
@@ -83,7 +90,11 @@ describe('StripeSpeiRequestBuilder', () => {
       // amount missing (undefined) - currency also missing, so currency_required throws first
       expectSyncPaymentError(
         () =>
-          builder.forOrder('order_123').withOptions({ customerEmail: 'test@example.com' }).build(),
+          builder
+            .forOrder('order_123')
+            .withOptions({ customerEmail: 'test@example.com' })
+            .withIdempotencyKey('idem_spei_builder')
+            .build(),
         {
           code: 'invalid_request',
           messageKey: PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED,
@@ -98,6 +109,7 @@ describe('StripeSpeiRequestBuilder', () => {
             .forOrder('order_123')
             .withAmount(0, 'MXN')
             .withOptions({ customerEmail: 'test@example.com' })
+            .withIdempotencyKey('idem_spei_builder')
             .build(),
         {
           code: 'invalid_request',
@@ -115,6 +127,7 @@ describe('StripeSpeiRequestBuilder', () => {
             .forOrder('order_123')
             .withAmount(100, undefined as any)
             .withOptions({ customerEmail: 'test@example.com' })
+            .withIdempotencyKey('idem_spei_builder')
             .build(),
         {
           code: 'invalid_request',
@@ -125,11 +138,19 @@ describe('StripeSpeiRequestBuilder', () => {
     });
 
     it('throws PaymentError when customerEmail is missing (SPEI requires email)', () => {
-      expectSyncPaymentError(() => builder.forOrder('order_123').withAmount(100, 'MXN').build(), {
-        code: 'invalid_request',
-        messageKey: PAYMENT_ERROR_KEYS.CUSTOMER_EMAIL_REQUIRED,
-        params: { field: 'customerEmail' },
-      });
+      expectSyncPaymentError(
+        () =>
+          builder
+            .forOrder('order_123')
+            .withAmount(100, 'MXN')
+            .withIdempotencyKey('idem_spei_builder')
+            .build(),
+        {
+          code: 'invalid_request',
+          messageKey: PAYMENT_ERROR_KEYS.CUSTOMER_EMAIL_REQUIRED,
+          params: { field: 'customerEmail' },
+        },
+      );
     });
 
     it('throws PaymentError when customerEmail is invalid format', () => {
@@ -139,6 +160,7 @@ describe('StripeSpeiRequestBuilder', () => {
             .forOrder('order_123')
             .withAmount(100, 'MXN')
             .withOptions({ customerEmail: 'invalid-email' })
+            .withIdempotencyKey('idem_spei_builder')
             .build(),
         {
           code: 'invalid_request',
@@ -158,10 +180,12 @@ describe('StripeSpeiRequestBuilder', () => {
       const result1 = builder.forOrder('order_123');
       const result2 = result1.withAmount(100, 'MXN');
       const result3 = result2.withOptions({ customerEmail: 'test@example.com' });
+      const result4 = result3.withIdempotencyKey('idem_spei_builder');
 
       expect(result1).toBe(builder);
       expect(result2).toBe(builder);
       expect(result3).toBe(builder);
+      expect(result4).toBe(builder);
     });
   });
 });

@@ -43,6 +43,7 @@ const baseRequest: CreatePaymentRequest = {
   orderId: createOrderId('o1'),
   money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_123' },
+  idempotencyKey: 'idem_base_request',
 };
 
 const waitForSnapshot = (

@@ -22,6 +22,7 @@ describe('FallbackOrchestratorService', () => {
     orderId: createOrderId('order_123'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_test1234567890abc' },
+    idempotencyKey: 'idem_fallback_1',
   };
 
   const providerUnavailableError: PaymentError = {
@@ -729,6 +730,7 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
     orderId: createOrderId('order_123'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_test1234567890abc' },
+    idempotencyKey: 'idem_fallback_auto',
   };
 
   const providerUnavailableError: PaymentError = {

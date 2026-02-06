@@ -9,6 +9,7 @@ describe('createFakeSpeiSource', () => {
       orderId: createOrderId('order_spei_1'),
       money: { amount: 100, currency: 'MXN' },
       method: { type: 'spei' },
+      idempotencyKey: 'idem_fake_spei',
     };
 
     const dto = createFakeSpeiSource(req);

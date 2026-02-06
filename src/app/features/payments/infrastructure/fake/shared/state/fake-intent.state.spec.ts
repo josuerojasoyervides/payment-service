@@ -15,6 +15,7 @@ function createRequest(overrides: Partial<CreatePaymentRequest> = {}): CreatePay
     orderId: createOrderId('order_test'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_visa' },
+    idempotencyKey: 'idem_fake_state',
     ...overrides,
   };
 }

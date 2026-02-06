@@ -100,6 +100,7 @@ describe('PaypalProviderFactory', () => {
           orderId: createOrderId('o1'),
           money: { amount: 100, currency: 'MXN' },
           method: { type: 'card', token: 'tok' },
+          idempotencyKey: 'idem_paypal_factory',
         },
         context,
       ),

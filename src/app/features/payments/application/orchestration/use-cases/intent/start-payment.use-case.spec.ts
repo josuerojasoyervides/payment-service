@@ -25,6 +25,7 @@ describe('StartPaymentUseCase', () => {
     orderId: createOrderId('o1'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
+    idempotencyKey: 'idem_start_use_case',
   };
 
   const intentResponse: PaymentIntent = {

@@ -18,6 +18,7 @@ const baseRequest: CreatePaymentRequest = {
   orderId: createOrderId('o1'),
   money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_visa1234567890abcdef' },
+  idempotencyKey: 'idem_flow_correlation',
 };
 
 describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {

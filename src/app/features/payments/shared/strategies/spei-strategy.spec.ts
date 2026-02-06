@@ -21,6 +21,7 @@ describe('SpeiStrategy', () => {
     orderId: createOrderId('order_1'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'spei' },
+    idempotencyKey: 'idem_spei_valid',
   };
 
   const intentResponse: PaymentIntent = {

@@ -13,6 +13,7 @@ describe('payment-flow.context', () => {
     orderId: createOrderId('order_123'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
+    idempotencyKey: 'idem_flow_context',
   };
 
   it('creates a deterministic flow context with ids and timestamps', () => {

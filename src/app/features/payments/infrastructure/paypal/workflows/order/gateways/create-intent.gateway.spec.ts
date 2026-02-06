@@ -73,6 +73,7 @@ describe('PaypalCreateIntentGateway', () => {
       orderId: createOrderId('order_1'),
       money: { amount: 100, currency: 'MXN' },
       method: { type: 'card' },
+      idempotencyKey: 'idem_paypal_order_1',
       returnUrl: TEST_RETURN_URL_ALT,
       cancelUrl: TEST_CANCEL_URL_ALT,
       metadata: { sessionId: 'flow_test' },
@@ -147,6 +148,7 @@ describe('PaypalCreateIntentGateway', () => {
       orderId: createOrderId('order_2'),
       money: { amount: 120, currency: 'MXN' },
       method: { type: 'card' },
+      idempotencyKey: 'idem_paypal_order_2',
     };
 
     try {
@@ -164,6 +166,7 @@ describe('PaypalCreateIntentGateway', () => {
       orderId: createOrderId('order_3'),
       money: { amount: 140, currency: 'MXN' },
       method: { type: 'card' },
+      idempotencyKey: 'idem_paypal_order_3',
       returnUrl: TEST_RETURN_URL_ALT,
     };
 
@@ -193,6 +196,7 @@ describe('PaypalCreateIntentGateway', () => {
       orderId: createOrderId('order_4'),
       money: { amount: 150, currency: 'MXN' },
       method: { type: 'card' },
+      idempotencyKey: 'idem_paypal_order_4',
       returnUrl: TEST_RETURN_URL_ALT,
     };
 

@@ -42,6 +42,7 @@ describe('PaymentFlowActorService (PR6 flow telemetry)', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_processing1234567890' },
+        idempotencyKey: 'idem_flow_telemetry',
       },
     });
 

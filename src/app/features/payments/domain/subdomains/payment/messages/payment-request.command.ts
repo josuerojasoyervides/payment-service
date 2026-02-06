@@ -28,7 +28,7 @@ export interface CreatePaymentRequest {
   customerEmail?: string;
 
   /** Idempotency key for safe retries. Typically generated outside Domain. */
-  idempotencyKey?: string;
+  idempotencyKey: string;
 
   metadata?: Record<string, unknown>;
 }
