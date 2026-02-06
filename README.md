@@ -71,7 +71,7 @@ Two maps explain the system: **runtime** (who talks to whom during a payment) an
 ![Payment flow machine map](charts/chart-payment-flow-machine-feb-02.svg)
 
 **Resilience flow: circuit, rate limit, fallback**
-See `charts/payment-flow.mermaid`.
+Included in `charts/payment-flow-machine.mermaid` (Resilience block).
 
 **How to use these maps:** When you feel lost, start at the centre (the **Flow** / state machine), then follow the bridges to the **store**, **UI**, and **providers**. The runtime map shows the live flow; the dependency map shows the rules the repo enforces so the architecture stays consistent.
 

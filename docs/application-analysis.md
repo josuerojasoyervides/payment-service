@@ -69,6 +69,8 @@ The payments flow is intentionally built to survive non-ideal conditions (timeou
 - **Telemetry** captures command/event breadcrumbs with redaction so resilience events are observable and debuggable.
 - **State store** projects the resilience state (circuit open, rate limited, fallback eligibility) for UI rendering.
 
+Diagram: `charts/payment-flow-machine.mermaid` (Resilience block).
+
 ## Prioritized findings
 
 ### P0
