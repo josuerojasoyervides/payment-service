@@ -120,6 +120,10 @@ export interface Translations {
     manual_review_action: string;
     all_providers_unavailable_title: string;
     all_providers_unavailable_hint: string;
+    health_checking: string;
+    health_available: string;
+    health_slow: string;
+    health_unavailable: string;
 
     // Errores y mensajes
     unknown_error: string;

@@ -29,4 +29,14 @@ export const FAKE_ERRORS: Record<FakeScenario, PaymentError> = {
     code: 'timeout',
     raw: { scenario: 'timeout' },
   },
+
+  circuit_open: {
+    code: 'circuit_open',
+    raw: { scenario: 'circuit_open' },
+  },
+
+  rate_limited: {
+    code: 'rate_limited',
+    raw: { scenario: 'rate_limited' },
+  },
 };

@@ -12,9 +12,11 @@ import { CompositeFlowTelemetrySink } from '@app/features/payments/application/a
 import { ConsoleFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/dev-only/console-flow-telemetry-sink';
 import { InMemoryFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/dev-only/in-memory-flow-telemetry-sink';
 import { NoopFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/prod-only/noop-flow-telemetry-sink';
+import { ResilienceFlowTelemetrySink } from '@app/features/payments/application/adapters/telemetry/resilience/resilience-flow-telemetry-sink';
 import type { KeyValueStorage } from '@app/features/payments/application/api/contracts/key-value-storage.contract';
 import type { ExternalNavigatorPort } from '@app/features/payments/application/api/ports/external-navigator.port';
 import { FLOW_CONTEXT_STORAGE } from '@app/features/payments/application/api/tokens/flow/flow-context-storage.token';
+import { PROVIDER_HEALTH_PORT } from '@app/features/payments/application/api/tokens/health/provider-health.token';
 import { EXTERNAL_NAVIGATOR } from '@app/features/payments/application/api/tokens/navigation/external-navigator.token';
 import { PII_FIELDS } from '@app/features/payments/application/api/tokens/security/pii-fields.token';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
@@ -39,10 +41,12 @@ import { BrowserStorageAdapter } from '@app/features/payments/infrastructure/bro
 import { NoopExternalNavigator } from '@app/features/payments/infrastructure/browser/adapters/noop-external-navigator.adapter';
 import { NoopStorageAdapter } from '@app/features/payments/infrastructure/browser/adapters/noop-storage.adapter';
 import { ThrowingExternalNavigator } from '@app/features/payments/infrastructure/browser/adapters/throwing-external-navigator.adapter';
+import { MockProviderHealthAdapter } from '@app/features/payments/infrastructure/health/mock-provider-health.adapter';
 import {
   PaypalWebhookNormalizer,
   providePaypalPayments,
 } from '@app/features/payments/infrastructure/paypal/core/di/provide-paypal-payments';
+import { STRIPE_SPEI_DISPLAY_CONFIG } from '@app/features/payments/infrastructure/stripe/config/spei-display.config';
 import {
   provideStripePayments,
   StripeWebhookNormalizer,
@@ -78,6 +82,7 @@ function selectTelemetryProviders(): Provider[] {
     CompositeFlowTelemetrySink,
     // single sink consumed by the flow
     { provide: FLOW_TELEMETRY_SINK, useExisting: CompositeFlowTelemetrySink },
+    { provide: FLOW_TELEMETRY_SINKS, useClass: ResilienceFlowTelemetrySink, multi: true },
   ];
 
   if (isDevMode()) {
@@ -133,12 +138,7 @@ const DEFAULT_PAYMENTS_INFRA_CONFIG: PaymentsInfraConfigInput = {
     },
   },
   spei: {
-    displayConfig: {
-      receivingBanks: {
-        STP: 'STP (Transfers and Payments System)',
-      },
-      beneficiaryName: 'Payment Service',
-    },
+    displayConfig: STRIPE_SPEI_DISPLAY_CONFIG,
   },
 };
 
@@ -182,6 +182,10 @@ const APPLICATION_PROVIDERS: Provider[] = [
 ];
 
 const SHARED_PROVIDERS: Provider[] = [IdempotencyKeyFactory];
+const HEALTH_PROVIDERS: Provider[] = [
+  MockProviderHealthAdapter,
+  { provide: PROVIDER_HEALTH_PORT, useExisting: MockProviderHealthAdapter },
+];
 const ENV_PROVIDERS: Provider[] = [
   { provide: FLOW_CONTEXT_STORAGE, useFactory: selectFlowContextStorage },
   { provide: EXTERNAL_NAVIGATOR, useFactory: selectExternalNavigator },
@@ -219,6 +223,7 @@ function buildPaymentsProviders(options: PaymentsProvidersOptions = {}): Provide
     ...ACTION_PORT_PROVIDERS,
     ...APPLICATION_PROVIDERS,
     ...SHARED_PROVIDERS,
+    ...HEALTH_PROVIDERS,
     ...ENV_PROVIDERS,
     ...SECURITY_PROVIDERS,
     ...UI_PROVIDERS,

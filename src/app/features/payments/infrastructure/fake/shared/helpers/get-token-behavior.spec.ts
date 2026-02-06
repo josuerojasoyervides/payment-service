@@ -49,6 +49,31 @@ describe('getTokenBehavior', () => {
     expect(getTokenBehavior(SPECIAL_TOKENS.PROCESSING)).toBe('processing');
   });
 
+  it('returns circuit for tok_circuit', () => {
+    expect(getTokenBehavior(SPECIAL_TOKENS.CIRCUIT_TRIP)).toBe('circuit');
+    expect(getTokenBehavior('tok_circuit_abc')).toBe('circuit');
+  });
+
+  it('returns rate_limit for tok_rate_limit', () => {
+    expect(getTokenBehavior(SPECIAL_TOKENS.RATE_LIMIT_HIT)).toBe('rate_limit');
+    expect(getTokenBehavior('tok_rate_limit_abc')).toBe('rate_limit');
+  });
+
+  it('returns retry_exhaust for tok_retry_exhaust', () => {
+    expect(getTokenBehavior(SPECIAL_TOKENS.RETRY_EXHAUST)).toBe('retry_exhaust');
+    expect(getTokenBehavior('tok_retry_exhaust_abc')).toBe('retry_exhaust');
+  });
+
+  it('returns half_open_fail for tok_half_open_fail', () => {
+    expect(getTokenBehavior(SPECIAL_TOKENS.HALF_OPEN_FAIL)).toBe('half_open_fail');
+    expect(getTokenBehavior('tok_half_open_fail_abc')).toBe('half_open_fail');
+  });
+
+  it('returns slow_response for tok_slow', () => {
+    expect(getTokenBehavior(SPECIAL_TOKENS.SLOW_RESPONSE)).toBe('slow_response');
+    expect(getTokenBehavior('tok_slow_abc')).toBe('slow_response');
+  });
+
   it('returns normal for unknown token', () => {
     expect(getTokenBehavior('tok_visa1234567890abcdef')).toBe('normal');
     expect(getTokenBehavior('pm_abc')).toBe('normal');

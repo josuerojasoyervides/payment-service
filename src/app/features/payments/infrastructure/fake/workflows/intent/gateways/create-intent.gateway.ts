@@ -23,6 +23,7 @@ import { delay, mergeMap, of, throwError } from 'rxjs';
 const DEFAULT_DELAY_MS = 200;
 /** Short delay in fake so integration tests get timeout error deterministically without long waits. */
 const TIMEOUT_DELAY_MS = 1;
+const SLOW_DELAY_MS = 1500;
 
 function addFakeDebug(
   dto: Record<string, unknown>,
@@ -75,17 +76,31 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
         mergeMap(() => throwError(() => FAKE_ERRORS['timeout'])),
       );
     }
+    if (behavior === 'circuit') {
+      return throwError(() => FAKE_ERRORS['circuit_open']);
+    }
+    if (behavior === 'rate_limit') {
+      return throwError(() => FAKE_ERRORS['rate_limited']);
+    }
+    if (behavior === 'half_open_fail') {
+      return throwError(() => FAKE_ERRORS['circuit_open']);
+    }
+    if (behavior === 'retry_exhaust') {
+      return throwError(() => ({ code: 'timeout', raw: { scenario: 'retry_exhaust' } }));
+    }
 
     if (request.method.type === 'spei') {
       const dto = createFakeSpeiSource(request) as unknown as Record<string, unknown>;
-      addFakeDebug(dto, behavior, DEFAULT_DELAY_MS, request.orderId.value);
-      return simulateNetworkDelay(dto);
+      const delayMs = behavior === 'slow_response' ? SLOW_DELAY_MS : DEFAULT_DELAY_MS;
+      addFakeDebug(dto, behavior, delayMs, request.orderId.value);
+      return simulateNetworkDelay(dto, delayMs);
     }
 
     if (this.providerId === PAYMENT_PROVIDER_IDS.paypal) {
       const dto = createFakePaypalOrder(request) as unknown as Record<string, unknown>;
-      addFakeDebug(dto, behavior, DEFAULT_DELAY_MS, request.orderId.value);
-      return simulateNetworkDelay(dto);
+      const delayMs = behavior === 'slow_response' ? SLOW_DELAY_MS : DEFAULT_DELAY_MS;
+      addFakeDebug(dto, behavior, delayMs, request.orderId.value);
+      return simulateNetworkDelay(dto, delayMs);
     }
 
     // Stripe card: use shared fake intent state for deterministic processing/client_confirm/refresh
@@ -94,8 +109,9 @@ export abstract class FakeCreateIntentGateway extends PaymentOperationPort<
       providerId: this.providerId,
       request,
     });
-    const dto = buildStripeDtoFromFakeState(state, DEFAULT_DELAY_MS);
-    return simulateNetworkDelay(dto);
+    const delayMs = behavior === 'slow_response' ? SLOW_DELAY_MS : DEFAULT_DELAY_MS;
+    const dto = buildStripeDtoFromFakeState(state, delayMs);
+    return simulateNetworkDelay(dto, delayMs);
   }
 
   protected override mapResponse(dto: unknown): PaymentIntent {

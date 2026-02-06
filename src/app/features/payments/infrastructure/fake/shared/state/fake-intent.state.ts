@@ -35,7 +35,17 @@ export interface FakeIntentCreateInput {
 }
 
 const PROCESSING_REFRESHES = 2;
-const ERROR_BEHAVIORS: TokenBehavior[] = ['fail', 'timeout', 'decline', 'insufficient', 'expired'];
+const ERROR_BEHAVIORS: TokenBehavior[] = [
+  'fail',
+  'timeout',
+  'decline',
+  'insufficient',
+  'expired',
+  'circuit',
+  'rate_limit',
+  'retry_exhaust',
+  'half_open_fail',
+];
 
 const fakeIntentsById = new Map<string, FakeIntentState>();
 

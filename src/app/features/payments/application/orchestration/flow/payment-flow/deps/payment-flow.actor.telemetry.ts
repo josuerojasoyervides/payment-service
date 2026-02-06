@@ -87,6 +87,140 @@ export function recordEffectTelemetry(
   }
 }
 
+const CLIENT_CONFIRM_RETRY_DELAY_MS = 500;
+const FINALIZE_RETRY_DELAY_MS = 1000;
+
+function resolveOperationType(snapshot: PaymentFlowSnapshot): string | undefined {
+  if (snapshot.hasTag('starting')) return 'start';
+  if (snapshot.hasTag('confirming')) return 'confirm';
+  if (snapshot.hasTag('clientConfirming') || snapshot.hasTag('clientConfirmRetrying')) {
+    return 'client_confirm';
+  }
+  if (snapshot.hasTag('finalizing') || snapshot.hasTag('finalizeRetrying')) return 'finalize';
+  if (
+    snapshot.hasTag('polling') ||
+    snapshot.hasTag('fetchingStatus') ||
+    snapshot.hasTag('statusRetrying')
+  ) {
+    return 'status';
+  }
+  return undefined;
+}
+
+/**
+ * Emits resilience telemetry on circuit/rate-limit/retry transitions.
+ */
+export function recordResilienceTelemetry(
+  telemetry: FlowTelemetrySink,
+  snapshot: PaymentFlowSnapshot,
+  prevSnapshot: PaymentFlowSnapshot | null,
+  atMs: number = Date.now(),
+  base: SnapshotTelemetryBase = snapshotTelemetryBase(snapshot),
+): void {
+  const wasCircuitOpen = prevSnapshot?.hasTag('circuitOpen') ?? false;
+  const wasCircuitHalfOpen = prevSnapshot?.hasTag('circuitHalfOpen') ?? false;
+  const isCircuitOpen = snapshot.hasTag('circuitOpen');
+  const isCircuitHalfOpen = snapshot.hasTag('circuitHalfOpen');
+
+  if (!wasCircuitOpen && isCircuitOpen) {
+    telemetry.record({
+      kind: 'RESILIENCE_EVENT',
+      eventType: 'CIRCUIT_OPENED',
+      atMs,
+      ...base,
+      meta: {
+        operationType: resolveOperationType(snapshot),
+        errorCode: snapshot.context.error?.code,
+        previousState: prevSnapshot ? String(prevSnapshot.value) : null,
+      },
+    });
+  }
+
+  if (!wasCircuitHalfOpen && isCircuitHalfOpen) {
+    telemetry.record({
+      kind: 'RESILIENCE_EVENT',
+      eventType: 'CIRCUIT_HALF_OPEN',
+      atMs,
+      ...base,
+    });
+  }
+
+  if ((wasCircuitOpen || wasCircuitHalfOpen) && !isCircuitOpen && !isCircuitHalfOpen) {
+    const openedAt = prevSnapshot?.context.resilience.circuitOpenedAt ?? null;
+    telemetry.record({
+      kind: 'RESILIENCE_EVENT',
+      eventType: 'CIRCUIT_CLOSED',
+      atMs,
+      ...base,
+      meta: {
+        durationMs: openedAt ? Math.max(0, atMs - openedAt) : undefined,
+      },
+    });
+  }
+
+  const wasRateLimited = prevSnapshot?.hasTag('rateLimited') ?? false;
+  const isRateLimited = snapshot.hasTag('rateLimited');
+  if (!wasRateLimited && isRateLimited) {
+    telemetry.record({
+      kind: 'RESILIENCE_EVENT',
+      eventType: 'RATE_LIMIT_HIT',
+      atMs,
+      ...base,
+      meta: {
+        retryAfterMs: snapshot.context.resilience.rateLimitCooldownMs ?? undefined,
+      },
+    });
+  }
+
+  const wasClientRetrying = prevSnapshot?.hasTag('clientConfirmRetrying') ?? false;
+  const isClientRetrying = snapshot.hasTag('clientConfirmRetrying');
+  if (!wasClientRetrying && isClientRetrying) {
+    telemetry.record({
+      kind: 'RESILIENCE_EVENT',
+      eventType: 'RETRY_ATTEMPTED',
+      atMs,
+      ...base,
+      meta: {
+        operationType: 'client_confirm',
+        attemptNumber: snapshot.context.clientConfirmRetry.count,
+        durationMs: CLIENT_CONFIRM_RETRY_DELAY_MS,
+      },
+    });
+  }
+
+  const wasFinalizeRetrying = prevSnapshot?.hasTag('finalizeRetrying') ?? false;
+  const isFinalizeRetrying = snapshot.hasTag('finalizeRetrying');
+  if (!wasFinalizeRetrying && isFinalizeRetrying) {
+    telemetry.record({
+      kind: 'RESILIENCE_EVENT',
+      eventType: 'RETRY_ATTEMPTED',
+      atMs,
+      ...base,
+      meta: {
+        operationType: 'finalize',
+        attemptNumber: snapshot.context.finalizeRetry.count,
+        durationMs: FINALIZE_RETRY_DELAY_MS,
+      },
+    });
+  }
+
+  const wasPendingManualReview = prevSnapshot?.hasTag('pendingManualReview') ?? false;
+  const isPendingManualReview = snapshot.hasTag('pendingManualReview');
+  if (!wasPendingManualReview && isPendingManualReview) {
+    telemetry.record({
+      kind: 'RESILIENCE_EVENT',
+      eventType: 'RETRY_EXHAUSTED',
+      atMs,
+      ...base,
+      meta: {
+        operationType: 'finalize',
+        attemptNumber: snapshot.context.finalizeRetry.count,
+        errorCode: snapshot.context.error?.code,
+      },
+    });
+  }
+}
+
 /**
  * Emits error telemetry with simple dedupe by error code.
  */

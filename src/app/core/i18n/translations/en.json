@@ -145,6 +145,10 @@
     "view_action_details": "View action details",
     "view_full_response": "View full response",
     "view_history": "View history",
-    "view_technical_details": "View technical details"
+    "view_technical_details": "View technical details",
+    "health_checking": "Checking provider health...",
+    "health_available": "Provider available",
+    "health_slow": "Provider responding slowly",
+    "health_unavailable": "Provider unavailable"
   }
 }

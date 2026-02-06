@@ -145,6 +145,10 @@
     "view_action_details": "Ver detalles de la acción",
     "view_full_response": "Ver respuesta completa",
     "view_history": "Ver historial",
-    "view_technical_details": "Ver detalles técnicos"
+    "view_technical_details": "Ver detalles técnicos",
+    "health_checking": "Verificando salud del proveedor...",
+    "health_available": "Proveedor disponible",
+    "health_slow": "Proveedor respondiendo lento",
+    "health_unavailable": "Proveedor no disponible"
   }
 }
