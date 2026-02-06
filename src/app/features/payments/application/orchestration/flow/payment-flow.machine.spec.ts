@@ -153,6 +153,39 @@ describe('PaymentFlowMachine', () => {
     expect(snap.hasTag('ready')).toBe(true);
   });
 
+  it('increments polling attempts across status refreshes (avoids infinite polling)', async () => {
+    const { actor } = setup({
+      startIntent: { ...baseIntent, status: 'processing' },
+      statusIntent: { ...baseIntent, status: 'processing' },
+      config: {
+        polling: { baseDelayMs: 1, maxDelayMs: 1, maxAttempts: 2 },
+        statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 0 },
+        processing: { maxDurationMs: 60_000 },
+      },
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
+        method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
+      },
+    });
+
+    let snap = await waitForSnapshot(actor, (s) => s.value === 'polling');
+    expect(snap.context.polling.attempt).toBe(1);
+
+    snap = await waitForSnapshot(
+      actor,
+      (s) => s.value === 'polling' && s.context.polling.attempt === 2,
+      500,
+    );
+    expect(snap.context.polling.attempt).toBe(2);
+  });
+
   it('START -> requiresAction when intent needs user action', async () => {
     const { actor } = setup({
       startIntent: { ...baseIntent, status: 'requires_action' },

@@ -81,9 +81,6 @@
           <div class="card mb-6" data-testid="processing-panel">
             <h2 class="text-lg font-semibold mb-2">{{ checkoutLabels.processingStatusTitle() }}</h2>
             <p class="text-gray-600 text-sm mb-4">{{ checkoutLabels.processingStatusHint() }}</p>
-            <button type="button" class="btn-primary" (click)="refreshProcessingStatus()">
-              {{ checkoutLabels.refreshStatus() }}
-            </button>
           </div>
         }
         <app-payment-result

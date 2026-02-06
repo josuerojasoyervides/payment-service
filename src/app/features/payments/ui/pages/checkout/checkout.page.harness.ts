@@ -90,7 +90,8 @@ export async function waitForPaymentComplete(
   await waitFor(
     () => {
       const intent = state.intent();
-      const isLoading = state.isLoading();
+      const tags = state.debugTags();
+      const isLoading = state.isLoading() || tags.includes('loading');
       const hasError = state.hasError();
       return (!!intent && !isLoading) || (hasError && !isLoading);
     },
@@ -98,6 +99,7 @@ export async function waitForPaymentComplete(
     () => {
       const snap = state.getSnapshot();
       const summary = state.debugSummary();
+      const tags = state.debugTags();
       return (
         `Payment did not complete within ${maxWaitMs}ms.\n` +
         `Final state: ${JSON.stringify(
@@ -105,6 +107,8 @@ export async function waitForPaymentComplete(
             intent: !!snap.intent,
             status: summary.status,
             isLoading: summary.status === 'loading',
+            machineLoading: tags.includes('loading'),
+            tags,
             isReady: summary.status === 'ready',
             hasError: summary.status === 'error',
           },

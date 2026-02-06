@@ -63,6 +63,7 @@ export class StatusComponent {
     intent: this.state.intent(),
     error: this.state.error(),
     isLoading: this.state.isLoading(),
+    isProcessing: this.state.isProcessing(),
   }));
 
   /** Quick examples derived from catalog (label from descriptor, id from demo list). */
@@ -192,8 +193,12 @@ export class StatusComponent {
     patchState(this.statusPageState, { intentId: value });
   }
 
+  readonly isFormBlocked = computed(
+    () => this.flowState.isLoading() || this.flowState.isProcessing(),
+  );
+
   readonly isSearchDisabled = computed(
-    () => !this.statusPageState.intentId()?.trim() || this.flowState.isLoading(),
+    () => !this.statusPageState.intentId()?.trim() || this.isFormBlocked(),
   );
 
   readonly labels = deepComputed(() => ({

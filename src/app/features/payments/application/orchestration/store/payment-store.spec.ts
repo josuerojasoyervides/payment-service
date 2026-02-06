@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { effect, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
@@ -434,6 +434,46 @@ describe('PaymentsStore', () => {
       await Promise.resolve();
       TestBed.tick();
     };
+
+    it('keeps ready during polling refresh when intent already exists', async () => {
+      const statuses: string[] = [];
+
+      TestBed.runInInjectionContext(() => {
+        effect(() => {
+          statuses.push(store.status());
+        });
+      });
+
+      store.startPayment({ request: req, providerId: 'stripe' });
+      setMachineReady();
+      await flush();
+
+      const baseline = statuses.length;
+
+      machineSnapshot.set(
+        buildSnapshot({
+          value: 'fetchingStatusInvoke',
+          context: {
+            providerId: 'stripe',
+            request: req,
+            flowContext: null,
+            intent: { ...intent, status: 'processing' },
+            error: null,
+          },
+          lastSentEvent: {
+            type: 'REFRESH',
+            providerId: 'stripe',
+            intentId: intent.id,
+          },
+        }),
+      );
+
+      await powerFlush();
+
+      const newStatuses = statuses.slice(baseline);
+      expect(newStatuses).not.toContain('loading');
+      expect(store.status()).toBe('ready');
+    });
 
     it('refreshPayment -> uses XState when accepted', async () => {
       const pi123 = createPaymentIntentId('pi_123');

@@ -38,6 +38,9 @@ export class PaymentIntentCardComponent {
   /** Whether to show actions */
   readonly showActions = input<boolean>(true);
 
+  /** Whether to show manual refresh */
+  readonly showRefresh = input<boolean>(false);
+
   /** Whether expanded */
   readonly expanded = input<boolean>(false);
 
@@ -77,6 +80,16 @@ export class PaymentIntentCardComponent {
   /** Status badge class */
   readonly statusBadgeClass = computed(() => {
     return STATUS_BADGE_MAP[this.intent().status] || 'badge';
+  });
+
+  /** Readable intent id */
+  readonly intentIdText = computed(() => {
+    const id = this.intent().id as unknown;
+    if (typeof id === 'string') return id;
+    if (id && typeof id === 'object' && 'value' in id) {
+      return (id as { value: string }).value;
+    }
+    return String(id ?? '');
   });
 
   toggleExpanded(): void {

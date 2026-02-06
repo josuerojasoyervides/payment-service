@@ -216,6 +216,9 @@ export interface Translations {
     select_language: string;
     spanish: string;
     english: string;
+    theme_toggle: string;
+    theme_dark: string;
+    theme_light: string;
     app_name: string;
 
     processing: string;
