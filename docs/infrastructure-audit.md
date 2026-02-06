@@ -185,7 +185,7 @@ Tests PR4a
 
 ---
 
-### PR4b: Resilience Machine States
+### PR4b: Resilience Machine States ✅
 
 Scope: ~400 LOC | Depende de: PR4a
 

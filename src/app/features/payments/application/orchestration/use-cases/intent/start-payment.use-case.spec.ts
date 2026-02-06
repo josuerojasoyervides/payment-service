@@ -97,7 +97,9 @@ describe('StartPaymentUseCase', () => {
     });
 
     it('calls strategy.start with request (with idempotency key) and context', async () => {
-      const context: StrategyContext = { returnUrl: 'https://return.com' };
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-02-06T00:00:00Z'));
+      const context: StrategyContext = { returnUrl: 'https://return.com', flowId: 'flow_test' };
       await firstValueFrom(useCase.execute(req, 'stripe', context));
 
       expect(strategyMock.start).toHaveBeenCalledTimes(1);
@@ -105,10 +107,11 @@ describe('StartPaymentUseCase', () => {
       expect(strategyMock.start).toHaveBeenCalledWith(
         expect.objectContaining({
           ...req,
-          idempotencyKey: expect.stringContaining('stripe:start:o1:100:MXN:card'),
+          idempotencyKey: 'flow_test:o1:stripe:1770336000000',
         }),
         context,
       );
+      vi.useRealTimers();
     });
 
     it('returns the PaymentIntent from strategy.start', async () => {

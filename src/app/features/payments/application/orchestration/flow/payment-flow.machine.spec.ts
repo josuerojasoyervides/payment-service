@@ -90,6 +90,9 @@ describe('PaymentFlowMachine', () => {
           : (overrides?.statusIntent ?? baseIntent),
       ),
       clientConfirm: vi.fn(async () => {
+        if (overrides?.clientConfirmError) {
+          throw overrides.clientConfirmError;
+        }
         if (overrides?.clientConfirmReject) {
           throw createPaymentError(
             'unsupported_client_confirm',
@@ -291,7 +294,7 @@ describe('PaymentFlowMachine', () => {
     expect(deps.clientConfirm).toHaveBeenCalledTimes(1);
   });
 
-  it('clientConfirming failure transitions to failed with PaymentError (unsupported_client_confirm)', async () => {
+  it('clientConfirming failure returns to requiresAction with PaymentError (unsupported_client_confirm)', async () => {
     const { actor } = setup({
       startIntent: {
         ...baseIntent,
@@ -319,8 +322,8 @@ describe('PaymentFlowMachine', () => {
       intentId: createPaymentIntentId('pi_1'),
     });
 
-    const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
-    expect(snap.hasTag('error')).toBe(true);
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+    expect(snap.hasTag('ready')).toBe(true);
     expect(snap.context.error?.code).toBe('unsupported_client_confirm');
     expect(snap.context.error?.messageKey).toBe('errors.unsupported_client_confirm');
   });
@@ -384,7 +387,7 @@ describe('PaymentFlowMachine', () => {
     );
   });
 
-  it('finalizing failure transitions to failed with error', async () => {
+  it('finalizing failure transitions to finalizeRetrying with error', async () => {
     const { actor } = setup({
       statusIntent: {
         ...baseIntent,
@@ -411,8 +414,10 @@ describe('PaymentFlowMachine', () => {
       payload: { providerId: 'stripe', referenceId: 'pi_1' },
     });
 
-    const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
-    expect(snap.hasTag('error')).toBe(true);
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'finalizeRetrying');
+    expect(snap.hasTag('loading')).toBe(true);
+    expect(snap.context.finalizeRetry.count).toBe(1);
+    expect(snap.context.error).toBeTruthy();
   });
 
   it('finalizing unsupported_finalize transitions to reconciling not failed', async () => {
@@ -603,7 +608,7 @@ describe('PaymentFlowMachine', () => {
     expect(deps.getStatus).not.toHaveBeenCalled();
   });
 
-  it('FALLBACK_REQUESTED -> fallbackCandidate', async () => {
+  it('FALLBACK_REQUESTED -> fallbackConfirming', async () => {
     const { actor } = setup({ startReject: true });
 
     actor.send({
@@ -629,7 +634,7 @@ describe('PaymentFlowMachine', () => {
       mode: 'manual',
     });
 
-    const snap = await waitForSnapshot(actor, (s) => s.value === 'fallbackCandidate');
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'fallbackConfirming');
     expect(snap.hasTag('ready')).toBe(true);
     expect(snap.context.fallback.eligible).toBe(true);
   });
@@ -755,6 +760,84 @@ describe('PaymentFlowMachine', () => {
     expect(snap.context.error?.code).toBe('processing_timeout');
     expect(snap.context.error?.messageKey).toBe('errors.processing_timeout');
 
+    vi.useRealTimers();
+  });
+
+  it('CIRCUIT_OPENED transitions to circuitOpen and then idle after cooldown', async () => {
+    const { actor } = setup();
+
+    actor.send({ type: 'CIRCUIT_OPENED', providerId: 'stripe', cooldownMs: 1 });
+
+    await waitForSnapshot(actor, (s) => s.value === 'circuitOpen');
+    await waitForSnapshot(actor, (s) => s.value === 'idle');
+  });
+
+  it('RATE_LIMITED transitions to rateLimited and then idle after cooldown', async () => {
+    const { actor } = setup();
+
+    actor.send({ type: 'RATE_LIMITED', providerId: 'stripe', cooldownMs: 1 });
+
+    await waitForSnapshot(actor, (s) => s.value === 'rateLimited');
+    await waitForSnapshot(actor, (s) => s.value === 'idle');
+  });
+
+  it('client confirm retries once on timeout before returning to requiresAction', async () => {
+    vi.useFakeTimers();
+    const { actor } = setup({
+      startIntent: {
+        ...baseIntent,
+        status: 'requires_action',
+        nextAction: { kind: 'client_confirm', token: 'tok_retry' },
+      },
+      clientConfirmError: createPaymentError('timeout', 'errors.timeout', undefined, null),
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
+        method: { type: 'card', token: 'tok_123' },
+      },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+
+    actor.send({
+      type: 'CONFIRM',
+      providerId: 'stripe',
+      intentId: createPaymentIntentId('pi_1'),
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'clientConfirmRetrying');
+    vi.advanceTimersByTime(500);
+
+    await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+    vi.useRealTimers();
+  });
+
+  it('finalize retries up to limit before pendingManualReview', async () => {
+    vi.useFakeTimers();
+    const { actor } = setup({
+      finalizeReject: true,
+    });
+
+    actor.send({
+      type: 'REDIRECT_RETURNED',
+      payload: { providerId: 'stripe', referenceId: 'pi_finalize' },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'finalizing');
+
+    // 5 retries (1s delay each) before pending manual review
+    for (let i = 0; i < 5; i += 1) {
+      await waitForSnapshot(actor, (s) => s.value === 'finalizeRetrying');
+      vi.advanceTimersByTime(1000);
+      await waitForSnapshot(actor, (s) => s.value === 'finalizing');
+    }
+
+    await waitForSnapshot(actor, (s) => s.value === 'pendingManualReview', 2000);
     vi.useRealTimers();
   });
 

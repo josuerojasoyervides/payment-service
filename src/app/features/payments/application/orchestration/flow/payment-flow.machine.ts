@@ -39,9 +39,17 @@ import { finalizeStates } from '@payments/application/orchestration/flow/payment
 import { idleStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-idle.stage';
 import { pollingStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-polling.stage';
 import { reconcileStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-reconcile.stage';
+import { resilienceStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-resilience.stage';
 import { startStates } from '@payments/application/orchestration/flow/payment-flow/stages/payment-flow-start.stage';
 import { isPaymentError } from '@payments/application/orchestration/store/projection/payment-store.errors';
 import { fromPromise, setup } from 'xstate';
+
+const DEFAULT_CIRCUIT_COOLDOWN_MS = 30_000;
+const DEFAULT_RATE_LIMIT_COOLDOWN_MS = 15_000;
+const CLIENT_CONFIRM_RETRY_DELAY_MS = 500;
+const FINALIZE_RETRY_DELAY_MS = 1000;
+const MAX_CLIENT_CONFIRM_RETRIES = 1;
+const MAX_FINALIZE_RETRIES = 5;
 
 const createPaymentFlowSetup = (deps: PaymentFlowDeps, config: PaymentFlowConfig) => {
   const machineSetup = setup({
@@ -53,6 +61,12 @@ const createPaymentFlowSetup = (deps: PaymentFlowDeps, config: PaymentFlowConfig
     delays: {
       pollDelay: ({ context }) => getPollingDelayMs(config, context.polling.attempt),
       statusRetryDelay: ({ context }) => getStatusRetryDelayMs(config, context.statusRetry.count),
+      circuitCooldown: ({ context }) =>
+        context.resilience.circuitCooldownMs ?? DEFAULT_CIRCUIT_COOLDOWN_MS,
+      rateLimitCooldown: ({ context }) =>
+        context.resilience.rateLimitCooldownMs ?? DEFAULT_RATE_LIMIT_COOLDOWN_MS,
+      clientConfirmRetryDelay: () => CLIENT_CONFIRM_RETRY_DELAY_MS,
+      finalizeRetryDelay: () => FINALIZE_RETRY_DELAY_MS,
     },
 
     actors: {
@@ -93,6 +107,7 @@ const createPaymentFlowSetup = (deps: PaymentFlowDeps, config: PaymentFlowConfig
 
     guards: {
       hasIntent: ({ context }) => hasIntentPolicy(context),
+      canStart: ({ context }) => !context.request && !context.intent && !context.intentId,
       needsUserAction: ({ context }) => needsUserActionPolicy(context),
       needsClientConfirm: ({ context }) => needsClientConfirmPolicy(context),
       needsFinalize: ({ context }) => needsFinalizePolicy(context),
@@ -105,6 +120,24 @@ const createPaymentFlowSetup = (deps: PaymentFlowDeps, config: PaymentFlowConfig
         const e = (event as { error?: unknown }).error;
         return isPaymentError(e) && e.code === 'unsupported_finalize';
       },
+      isCircuitOpenError: ({ event }) => {
+        const e = (event as { error?: unknown }).error;
+        return isPaymentError(e) && e.code === 'circuit_open';
+      },
+      isRateLimitedError: ({ event }) => {
+        const e = (event as { error?: unknown }).error;
+        return isPaymentError(e) && e.code === 'rate_limited';
+      },
+      shouldRetryClientConfirm: ({ context, event }) => {
+        const e = (event as { error?: unknown }).error;
+        return (
+          isPaymentError(e) &&
+          e.code === 'timeout' &&
+          context.clientConfirmRetry.count < MAX_CLIENT_CONFIRM_RETRIES
+        );
+      },
+      canRetryFinalize: ({ context }) => context.finalizeRetry.count < MAX_FINALIZE_RETRIES,
+      hasPendingRequest: ({ context }) => !!(context.providerId && context.request),
       isReturnCorrelationMismatch: ({ event, context }) => {
         if (event.type !== 'REDIRECT_RETURNED') return false;
         const storedRef = resolveStatusReference(context.flowContext, event.payload.providerId);
@@ -155,6 +188,10 @@ export const createPaymentFlowMachine = (
 
     on: {
       RESET: { target: '.idle', actions: 'clear' },
+      CIRCUIT_OPENED: { target: '.circuitOpen', actions: 'setCircuitOpen' },
+      RATE_LIMITED: { target: '.rateLimited', actions: 'setRateLimited' },
+      ALL_PROVIDERS_UNAVAILABLE: { target: '.allProvidersUnavailable', actions: 'clearError' },
+      MANUAL_REVIEW_REQUIRED: { target: '.pendingManualReview', actions: 'clearError' },
       REDIRECT_RETURNED: [
         {
           guard: 'isReturnCorrelationMismatch',
@@ -208,6 +245,14 @@ export const createPaymentFlowMachine = (
           request: null,
           selectedProviderId: null,
         },
+        resilience: {
+          circuitCooldownMs: DEFAULT_CIRCUIT_COOLDOWN_MS,
+          circuitOpenedAt: null,
+          rateLimitCooldownMs: DEFAULT_RATE_LIMIT_COOLDOWN_MS,
+          rateLimitOpenedAt: null,
+        },
+        clientConfirmRetry: { count: 0, lastErrorCode: null },
+        finalizeRetry: { count: 0 },
         polling: { attempt: 0 },
         statusRetry: { count: 0 },
       };
@@ -225,6 +270,7 @@ export const createPaymentFlowMachine = (
       ...reconcileStates,
       ...cancelStates,
       ...fallbackStates,
+      ...resilienceStates,
       ...doneStates,
     },
   });

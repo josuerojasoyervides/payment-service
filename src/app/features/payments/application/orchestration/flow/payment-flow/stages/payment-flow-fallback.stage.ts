@@ -6,20 +6,20 @@ import type { PaymentFlowStatesConfig } from '@payments/application/orchestratio
 export const fallbackStates = {
   failed: {
     tags: ['error', 'failed'],
-    always: [{ guard: 'canFallback', target: 'fallbackCandidate' }],
+    always: [{ guard: 'canFallback', target: 'fallbackConfirming' }],
     on: {
       RESET: { target: 'idle', actions: 'clear' },
       REFRESH: { target: 'fetchingStatus', actions: 'setRefreshInput' },
       FALLBACK_REQUESTED: {
-        target: 'fallbackCandidate',
+        target: 'fallbackConfirming',
         actions: 'setFallbackRequested',
       },
       FALLBACK_EXECUTE: { target: 'starting', actions: 'setFallbackStartInput' },
     },
   },
 
-  fallbackCandidate: {
-    tags: ['ready', 'fallbackCandidate', 'fallback'],
+  fallbackConfirming: {
+    tags: ['ready', 'fallbackConfirming', 'fallback'],
     on: {
       RESET: { target: 'idle', actions: 'clear' },
       FALLBACK_EXECUTE: { target: 'starting', actions: 'setFallbackStartInput' },

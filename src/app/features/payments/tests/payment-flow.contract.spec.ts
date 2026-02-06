@@ -420,7 +420,7 @@ describe('PaymentFlow contract tests', () => {
     );
   });
 
-  it('failed accepts FALLBACK_REQUESTED -> fallbackCandidate', async () => {
+  it('failed accepts FALLBACK_REQUESTED -> fallbackConfirming', async () => {
     const { actor } = setup({ startReject: true });
 
     actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
@@ -433,8 +433,8 @@ describe('PaymentFlow contract tests', () => {
       mode: 'manual',
     });
 
-    const snap = await waitForSnapshot(actor, (s) => s.value === 'fallbackCandidate');
-    expect(snap.value).toBe('fallbackCandidate');
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'fallbackConfirming');
+    expect(snap.value).toBe('fallbackConfirming');
   });
 
   it('failed ignores START', async () => {
@@ -448,7 +448,7 @@ describe('PaymentFlow contract tests', () => {
     expect(actor.getSnapshot().value).toBe('failed');
   });
 
-  it('fallbackCandidate accepts FALLBACK_ABORT -> done', async () => {
+  it('fallbackConfirming accepts FALLBACK_ABORT -> done', async () => {
     const { actor } = setup({ startReject: true });
 
     actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
@@ -460,14 +460,14 @@ describe('PaymentFlow contract tests', () => {
       request: baseRequest,
       mode: 'manual',
     });
-    await waitForSnapshot(actor, (s) => s.value === 'fallbackCandidate');
+    await waitForSnapshot(actor, (s) => s.value === 'fallbackConfirming');
 
     actor.send({ type: 'FALLBACK_ABORT' });
     const snap = await waitForSnapshot(actor, (s) => s.value === 'done');
     expect(snap.value).toBe('done');
   });
 
-  it('fallbackCandidate ignores CONFIRM', async () => {
+  it('fallbackConfirming ignores CONFIRM', async () => {
     const { actor } = setup({ startReject: true });
 
     actor.send({ type: 'START', providerId: 'stripe', request: baseRequest });
@@ -479,7 +479,7 @@ describe('PaymentFlow contract tests', () => {
       request: baseRequest,
       mode: 'manual',
     });
-    await waitForSnapshot(actor, (s) => s.value === 'fallbackCandidate');
+    await waitForSnapshot(actor, (s) => s.value === 'fallbackConfirming');
 
     actor.send({
       type: 'CONFIRM',
@@ -487,7 +487,7 @@ describe('PaymentFlow contract tests', () => {
       intentId: createPaymentIntentId('pi_fallback'),
     });
     await flush();
-    expect(actor.getSnapshot().value).toBe('fallbackCandidate');
+    expect(actor.getSnapshot().value).toBe('fallbackConfirming');
   });
 
   it('done accepts RESET -> idle', async () => {

@@ -54,7 +54,13 @@ export class PaymentFlowFallbackBridge {
     this.lastReportedError = error;
 
     const handled = this.fallbackOrchestrator.reportFailure(providerId, error, request, false);
-    if (!handled) return;
+    if (!handled) {
+      const decision = this.fallbackOrchestrator.getLastDecision();
+      if (decision.reason === 'no_alternatives') {
+        this.sendSystem({ type: 'ALL_PROVIDERS_UNAVAILABLE' });
+      }
+      return;
+    }
 
     this.sendSystem({
       type: 'FALLBACK_REQUESTED',

@@ -17,7 +17,19 @@ export const startStates = {
         flowContext: context.flowContext ?? undefined,
       }),
       onDone: { target: 'afterStart', actions: 'setIntent' },
-      onError: { target: 'failed', actions: 'setError' },
+      onError: [
+        {
+          guard: 'isCircuitOpenError',
+          target: 'circuitOpen',
+          actions: ['setError', 'setCircuitOpenFromError'],
+        },
+        {
+          guard: 'isRateLimitedError',
+          target: 'rateLimited',
+          actions: ['setError', 'setRateLimitedFromError'],
+        },
+        { target: 'failed', actions: 'setError' },
+      ],
     },
   },
 

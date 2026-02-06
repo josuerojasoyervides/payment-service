@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
-import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
+import type { FallbackConfirmationData } from '@payments/application/api/contracts/resilience.types';
 import type { PaymentCheckoutCatalogPort } from '@payments/application/api/ports/payment-store.port';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
@@ -33,8 +33,8 @@ export class FallbackModalComponent {
   private readonly i18n = inject(I18nService);
   private readonly catalog = inject(PAYMENT_CHECKOUT_CATALOG) as PaymentCheckoutCatalogPort;
 
-  /** Pending fallback event */
-  readonly event = input<FallbackAvailableEvent | null>(null);
+  /** Pending fallback data */
+  readonly data = input<FallbackConfirmationData | null>(null);
 
   /** Whether modal is open */
   readonly open = input<boolean>(false);
@@ -49,7 +49,7 @@ export class FallbackModalComponent {
   readonly selectedProvider = signal<PaymentProviderId | null>(null);
 
   /** Track previous eventId to detect changes */
-  private previousEventId: string | null = null;
+  private previousDataKey: string | null = null;
 
   constructor() {
     // Reset selectedProvider when modal closes
@@ -62,29 +62,30 @@ export class FallbackModalComponent {
 
     // Reset selectedProvider when eventId changes (new fallback event)
     effect(() => {
-      const currentEvent = this.event();
-      const currentEventId = currentEvent?.eventId ?? null;
+      const current = this.data();
+      const key = current
+        ? `${current.failureReason}:${current.eligibleProviders.join(',')}`
+        : null;
 
-      if (this.previousEventId !== null && currentEventId !== this.previousEventId) {
-        // EventId changed - reset selection
+      if (this.previousDataKey !== null && key !== this.previousDataKey) {
         this.selectedProvider.set(null);
       }
 
-      this.previousEventId = currentEventId;
+      this.previousDataKey = key;
     });
   }
 
   /** Error message from event */
   readonly errorMessageText = computed(() => {
-    const e = this.event();
-    return renderPaymentError(this.i18n, e?.error);
+    const d = this.data();
+    return renderPaymentError(this.i18n, d ? { code: d.failureReason } : null);
   });
 
   /** Alternative providers with label/description from catalog */
   readonly alternativeProviders = computed(() => {
-    const e = this.event();
-    if (!e) return [];
-    return e.alternativeProviders
+    const d = this.data();
+    if (!d) return [];
+    return d.eligibleProviders
       .map((id) => this.catalog.getProviderDescriptor(id))
       .filter((d): d is NonNullable<typeof d> => d != null)
       .map((d) => ({

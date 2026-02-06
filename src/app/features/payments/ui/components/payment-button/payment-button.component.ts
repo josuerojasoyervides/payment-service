@@ -129,8 +129,13 @@ export class PaymentButtonComponent {
     return `${base} bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500`;
   });
 
+  private lastClickAt = 0;
+
   handleClick(): void {
     if (!this.disabled() && !this.loading()) {
+      const now = Date.now();
+      if (now - this.lastClickAt < 300) return;
+      this.lastClickAt = now;
       this.pay.emit();
     }
   }

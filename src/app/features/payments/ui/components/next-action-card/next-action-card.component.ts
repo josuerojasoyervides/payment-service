@@ -17,6 +17,7 @@ export class NextActionCardComponent {
   private readonly i18n = inject(I18nService);
 
   readonly nextAction = input<NextAction | null>(null);
+  readonly showRetry = input<boolean>(false);
 
   readonly actionRequested = output<NextAction>();
 
@@ -27,6 +28,7 @@ export class NextActionCardComponent {
   readonly viewActionDetailsLabel = computed(() => this.i18n.t(I18nKeys.ui.view_action_details));
   readonly continueLabel = computed(() => this.i18n.t(I18nKeys.ui.continue_action));
   readonly confirmLabel = computed(() => this.i18n.t(I18nKeys.ui.confirm_button));
+  readonly retryVerificationLabel = computed(() => this.i18n.t(I18nKeys.ui.retry_verification));
   readonly processingLabel = computed(() => this.i18n.t(I18nKeys.ui.processing));
   readonly redirectUrl = computed(() => {
     const action = this.nextAction();
@@ -45,6 +47,9 @@ export class NextActionCardComponent {
     return action?.kind === 'external_wait' ? (action.hint ?? null) : null;
   });
   readonly actionKindLabel = computed(() => this.nextAction()?.kind ?? 'unknown');
+  readonly clientConfirmButtonLabel = computed(() =>
+    this.showRetry() ? this.retryVerificationLabel() : this.confirmLabel(),
+  );
 
   onActionRequested(): void {
     const action = this.nextAction();

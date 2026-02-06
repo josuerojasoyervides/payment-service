@@ -6,6 +6,7 @@ import type {
 // ✅ IMPORTANT: type-only import to avoid runtime circular dependency
 import type { FallbackMode } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-modes.types';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentErrorCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { NextActionClientConfirm } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
@@ -81,6 +82,10 @@ export type PaymentFlowSystemEvent =
   | { type: 'FINALIZE_REQUESTED' }
   | { type: 'FINALIZE_SUCCEEDED' }
   | { type: 'FINALIZE_FAILED' }
+  | { type: 'CIRCUIT_OPENED'; providerId: PaymentProviderId; cooldownMs?: number }
+  | { type: 'RATE_LIMITED'; providerId: PaymentProviderId; cooldownMs?: number }
+  | { type: 'ALL_PROVIDERS_UNAVAILABLE' }
+  | { type: 'MANUAL_REVIEW_REQUIRED' }
   | { type: 'REDIRECT_RETURNED'; payload: RedirectReturnedPayload }
   | { type: 'EXTERNAL_STATUS_UPDATED'; payload: ExternalStatusUpdatedPayload }
   | { type: 'WEBHOOK_RECEIVED'; payload: WebhookReceivedPayload };
@@ -119,6 +124,22 @@ export interface PaymentFlowFallbackContext {
   selectedProviderId: PaymentProviderId | null;
 }
 
+export interface PaymentFlowResilienceContext {
+  circuitCooldownMs: number | null;
+  circuitOpenedAt: number | null;
+  rateLimitCooldownMs: number | null;
+  rateLimitOpenedAt: number | null;
+}
+
+export interface ClientConfirmRetryState {
+  count: number;
+  lastErrorCode: PaymentErrorCode | null;
+}
+
+export interface FinalizeRetryState {
+  count: number;
+}
+
 export interface PaymentFlowPollingState {
   attempt: number;
 }
@@ -135,6 +156,9 @@ export interface PaymentFlowMachineContext {
   intentId: PaymentIntentId | null;
   error: PaymentError | null;
   fallback: PaymentFlowFallbackContext;
+  resilience: PaymentFlowResilienceContext;
+  clientConfirmRetry: ClientConfirmRetryState;
+  finalizeRetry: FinalizeRetryState;
   polling: PaymentFlowPollingState;
   statusRetry: PaymentFlowStatusRetryState;
 }

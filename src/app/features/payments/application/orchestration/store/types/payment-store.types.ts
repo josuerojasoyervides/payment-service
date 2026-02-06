@@ -1,6 +1,7 @@
 import type {
   PaymentFlowStatus,
   PaymentsState,
+  ResilienceState,
 } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
 import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
@@ -24,6 +25,7 @@ export interface PaymentsSelectorsSource {
   selectedProvider: () => PaymentProviderId | null;
   currentRequest: () => CreatePaymentRequest | null;
   fallback: () => FallbackState;
+  resilience: () => ResilienceState;
   history: () => PaymentHistoryEntry[];
 }
 

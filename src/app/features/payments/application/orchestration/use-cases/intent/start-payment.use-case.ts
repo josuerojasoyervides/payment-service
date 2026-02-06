@@ -51,10 +51,19 @@ export class StartPaymentUseCase {
       }
 
       const strategy = factory.createStrategy(request.method.type);
+      const sessionId = context?.flowId ?? null;
 
       const enrichedRequest: CreatePaymentRequest = {
         ...request,
-        idempotencyKey: this.idempotency.generateForStart(providerId, request),
+        metadata: {
+          ...(request.metadata ?? {}),
+          ...(sessionId ? { sessionId } : {}),
+        },
+        idempotencyKey: this.idempotency.generateForStart(
+          providerId,
+          request,
+          sessionId ?? undefined,
+        ),
       };
 
       return strategy.start(enrichedRequest, context);

@@ -67,12 +67,15 @@ describe('PaypalCreateIntentGateway', () => {
   });
 
   it('POST /orders with correct payload and headers', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-02-06T00:00:00Z'));
     const req: CreatePaymentRequest = {
       orderId: createOrderId('order_1'),
       money: { amount: 100, currency: 'MXN' },
       method: { type: 'card' },
       returnUrl: TEST_RETURN_URL_ALT,
       cancelUrl: TEST_CANCEL_URL_ALT,
+      metadata: { sessionId: 'flow_test' },
     };
 
     gateway.execute(req).subscribe({
@@ -92,7 +95,7 @@ describe('PaypalCreateIntentGateway', () => {
     );
     expect(transportReq.request.method).toBe('POST');
     expect(transportReq.request.headers.get('PayPal-Request-Id')).toBe(
-      `${PAYMENT_PROVIDER_IDS.paypal}:start:order_1:100:MXN:card`,
+      `flow_test:order_1:${PAYMENT_PROVIDER_IDS.paypal}:1770336000000`,
     );
     expect(transportReq.request.headers.get('Prefer')).toBe('return=representation');
 
@@ -136,6 +139,7 @@ describe('PaypalCreateIntentGateway', () => {
         },
       ],
     });
+    vi.useRealTimers();
   });
 
   it('throws invalid_request when returnUrl is missing', () => {

@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import type { PaymentCheckoutCatalogPort } from '@app/features/payments/application/api/ports/payment-store.port';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
-import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type {
   CurrencyCode,
@@ -14,7 +13,7 @@ import type { PaymentMethodType } from '@app/features/payments/domain/subdomains
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
-import { OrderId } from '@payments/domain/common/primitives/ids/order-id.vo';
+import type { FallbackConfirmationData } from '@payments/application/api/contracts/resilience.types';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
@@ -189,27 +188,15 @@ export class ShowcaseComponent {
     };
   });
 
-  // Fallback Modal (open mutable; event from catalog; null when no providers)
+  // Fallback Modal (open mutable; data from catalog; null when no providers)
   fallbackModalOpen = false;
-  readonly fallbackModalEvent = computed((): FallbackAvailableEvent | null => {
+  readonly fallbackModalData = computed((): FallbackConfirmationData | null => {
     const { p0, p1 } = this.catalogProviderIds();
     if (!p0) return null;
-    const orderIdResult = OrderId.from('order_123');
     return {
-      failedProvider: p0,
-      error: {
-        code: 'provider_error',
-        messageKey: I18nKeys.errors.provider_error,
-        raw: { source: 'showcase' },
-      },
-      alternativeProviders: p1 ? [p1] : [],
-      originalRequest: {
-        orderId: orderIdResult.ok ? orderIdResult.value : { value: 'order_123' },
-        money: { amount: 499.99, currency: 'MXN' },
-        method: { type: 'card', token: 'tok_xxx' },
-      },
-      timestamp: Date.now(),
-      eventId: 'fb_demo_123',
+      eligibleProviders: p1 ? [p1] : [],
+      failureReason: 'provider_error',
+      timeoutMs: 30_000,
     };
   });
 

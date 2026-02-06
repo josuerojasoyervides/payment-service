@@ -55,6 +55,16 @@ export const pollingStates = {
       onDone: { target: 'afterStatus', actions: 'setIntent' },
       onError: [
         {
+          guard: 'isCircuitOpenError',
+          target: 'circuitOpen',
+          actions: ['setError', 'setCircuitOpenFromError'],
+        },
+        {
+          guard: 'isRateLimitedError',
+          target: 'rateLimited',
+          actions: ['setError', 'setRateLimitedFromError'],
+        },
+        {
           guard: 'canRetryStatus',
           target: 'statusRetrying',
           actions: ['incrementStatusRetry', 'clearError'],

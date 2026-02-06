@@ -6,7 +6,6 @@ import { createMockPaymentState } from '@app/features/payments/application/api/t
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
-import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
 import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
@@ -15,6 +14,7 @@ import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
 import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
+import type { FallbackConfirmationData } from '@payments/application/api/contracts/resilience.types';
 import type {
   PaymentCheckoutCatalogPort,
   PaymentFlowPort,
@@ -93,17 +93,10 @@ describe('CheckoutComponent', () => {
     raw: { originalError: 'declined' },
   };
 
-  const mockFallbackEvent: FallbackAvailableEvent = {
-    eventId: 'fb_test_1',
-    failedProvider: 'stripe',
-    error: mockError,
-    alternativeProviders: ['paypal'],
-    originalRequest: {
-      orderId: createOrderId('order_test'),
-      money: { amount: 499.99, currency: 'MXN' },
-      method: { type: 'card', token: 'tok_test' },
-    },
-    timestamp: Date.now(),
+  const mockFallbackData: FallbackConfirmationData = {
+    eligibleProviders: ['paypal'],
+    failureReason: 'provider_error',
+    timeoutMs: 30_000,
   };
 
   beforeEach(async () => {
@@ -507,19 +500,21 @@ describe('CheckoutComponent', () => {
 
     it('should detect when fallback is pending', () => {
       const fallbackMock = createMockPaymentState({
-        fallback: {
-          ...INITIAL_FALLBACK_STATE,
-          status: 'pending',
-          pendingEvent: mockFallbackEvent,
+        fallback: { ...INITIAL_FALLBACK_STATE, status: 'pending' },
+        resilience: {
+          status: 'fallback_confirming',
+          cooldownUntilMs: null,
+          fallbackConfirmation: mockFallbackData,
+          manualReview: null,
         },
       });
       Object.assign(mockState, {
-        hasPendingFallback: fallbackMock.hasPendingFallback,
-        pendingFallbackEvent: fallbackMock.pendingFallbackEvent,
+        isFallbackConfirming: fallbackMock.isFallbackConfirming,
+        fallbackConfirmation: fallbackMock.fallbackConfirmation,
       });
       fixture.detectChanges();
       expect(component.fallbackState.isPending()).toBe(true);
-      expect(component.fallbackState.pendingEvent()).toEqual(mockFallbackEvent);
+      expect(component.fallbackState.data()).toEqual(mockFallbackData);
     });
   });
 

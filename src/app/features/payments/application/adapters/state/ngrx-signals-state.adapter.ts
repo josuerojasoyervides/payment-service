@@ -60,6 +60,7 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
     selectedProvider: this.store.selectedProvider(),
     currentRequest: this.store.currentRequest(),
     fallback: this.store.fallback(),
+    resilience: this.store.resilience(),
     history: this.store.history(),
   }));
 
@@ -93,6 +94,23 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
   readonly pendingFallbackEvent: Signal<FallbackAvailableEvent | null> =
     this.store.pendingFallbackEvent;
   readonly fallbackState: Signal<FallbackState> = computed(() => this.store.fallback());
+
+  // ============================================================
+  // RESILIENCE STATE
+  // ============================================================
+
+  readonly resilienceState = this.store.resilienceState;
+  readonly resilienceStatus = this.store.resilienceStatus;
+  readonly resilienceCooldownUntilMs = this.store.resilienceCooldownUntilMs;
+  readonly fallbackConfirmation = this.store.fallbackConfirmation;
+  readonly manualReviewData = this.store.manualReviewData;
+  readonly isCircuitOpen = this.store.isCircuitOpen;
+  readonly isCircuitHalfOpen = this.store.isCircuitHalfOpen;
+  readonly isRateLimited = this.store.isRateLimited;
+  readonly isFallbackConfirming = this.store.isFallbackConfirming;
+  readonly isPendingManualReview = this.store.isPendingManualReview;
+  readonly isAllProvidersUnavailable = this.store.isAllProvidersUnavailable;
+  readonly canRetryClientConfirm = this.store.canRetryClientConfirm;
 
   // ============================================================
   // HISTORY

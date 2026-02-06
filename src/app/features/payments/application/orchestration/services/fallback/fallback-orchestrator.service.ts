@@ -56,6 +56,19 @@ import { Subject } from 'rxjs';
  */
 export const FALLBACK_CONFIG = new InjectionToken<Partial<FallbackConfig>>('FALLBACK_CONFIG');
 
+export type FallbackDecisionReason =
+  | 'disabled'
+  | 'ineligible'
+  | 'blocked'
+  | 'max_attempts'
+  | 'no_alternatives'
+  | 'handled';
+
+export interface FallbackDecision {
+  handled: boolean;
+  reason: FallbackDecisionReason;
+}
+
 /**
  * Fallback orchestration service between providers.
  *
@@ -107,6 +120,7 @@ export class FallbackOrchestratorService {
   readonly autoFallbackStarted$ = this._autoFallbackStarted$.asObservable();
 
   private flowId: string | null = null;
+  private lastDecision: FallbackDecision = { handled: false, reason: 'disabled' };
 
   // Computed signals
   readonly state = this._state.asReadonly();
@@ -131,6 +145,10 @@ export class FallbackOrchestratorService {
    */
   getConfig(): Readonly<FallbackConfig> {
     return this.config;
+  }
+
+  getLastDecision(): FallbackDecision {
+    return this.lastDecision;
   }
 
   reportFailure(payload: ReportFailurePayload): boolean;
@@ -161,16 +179,23 @@ export class FallbackOrchestratorService {
     request,
     wasAutoFallback,
   }: ReportFailurePayload): boolean {
-    if (!isFallbackEnabledGuard(this.config)) return false;
+    if (!isFallbackEnabledGuard(this.config)) {
+      this.lastDecision = { handled: false, reason: 'disabled' };
+      return false;
+    }
 
     // ✅ eligibility
-    if (!isEligibleForFallbackPolicy(this.config, error)) return false;
+    if (!isEligibleForFallbackPolicy(this.config, error)) {
+      this.lastDecision = { handled: false, reason: 'ineligible' };
+      return false;
+    }
 
     // ✅ record failed attempt (now exists)
     registerFailureTransition(this._state, providerId, error, !!wasAutoFallback);
 
     if (hasReachedMaxAttemptsPolicy(this.config, this._state())) {
       this.finish('failed');
+      this.lastDecision = { handled: false, reason: 'max_attempts' };
       return false;
     }
 
@@ -186,6 +211,7 @@ export class FallbackOrchestratorService {
     // ✅ no alternatives => terminal
     if (alternatives.length === 0) {
       this.finish('failed');
+      this.lastDecision = { handled: false, reason: 'no_alternatives' };
       return false;
     }
 
@@ -198,6 +224,7 @@ export class FallbackOrchestratorService {
       this.emitManualFallbackEvent(providerId, error, alternatives, request, flowId);
     }
 
+    this.lastDecision = { handled: true, reason: 'handled' };
     return true;
   }
 
