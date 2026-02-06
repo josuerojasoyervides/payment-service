@@ -119,7 +119,7 @@ Tests PR2
 
 ---
 
-### PR3 — Shared validation + provider validation config
+### PR3 — Shared validation + provider validation config ✅
 
 Meta: reglas consistentes de validación (montos/moneda/métodos/urls) sin duplicación.
 

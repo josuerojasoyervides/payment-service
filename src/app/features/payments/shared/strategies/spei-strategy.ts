@@ -46,6 +46,7 @@ export class SpeiStrategy implements PaymentStrategy {
     private readonly gateway: PaymentGatewayPort,
     private readonly logger: LoggerService,
     private readonly displayConfig: SpeiDisplayConfig,
+    private readonly amountValidator?: (money: CreatePaymentRequest['money']) => void,
   ) {}
 
   /**
@@ -57,24 +58,28 @@ export class SpeiStrategy implements PaymentStrategy {
    * - Does not require token (unlike cards)
    */
   validate(req: CreatePaymentRequest): void {
-    const violations = validateSpeiAmount(req.money);
-    for (const v of violations) {
-      switch (v.code) {
-        case 'SPEI_INVALID_CURRENCY':
-          throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
-            reason: 'spei_only_mxn',
-            currency: req.money.currency,
-          });
-        case 'SPEI_AMOUNT_TOO_LOW':
-          throw invalidRequestError(PAYMENT_ERROR_KEYS.MIN_AMOUNT, {
-            amount: SPEI_MIN_AMOUNT_MXN,
-            currency: req.money.currency,
-          });
-        case 'SPEI_AMOUNT_TOO_HIGH':
-          throw invalidRequestError(PAYMENT_ERROR_KEYS.MAX_AMOUNT, {
-            amount: SPEI_MAX_AMOUNT_MXN,
-            currency: req.money.currency,
-          });
+    if (this.amountValidator) {
+      this.amountValidator(req.money);
+    } else {
+      const violations = validateSpeiAmount(req.money);
+      for (const v of violations) {
+        switch (v.code) {
+          case 'SPEI_INVALID_CURRENCY':
+            throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
+              reason: 'spei_only_mxn',
+              currency: req.money.currency,
+            });
+          case 'SPEI_AMOUNT_TOO_LOW':
+            throw invalidRequestError(PAYMENT_ERROR_KEYS.MIN_AMOUNT, {
+              amount: SPEI_MIN_AMOUNT_MXN,
+              currency: req.money.currency,
+            });
+          case 'SPEI_AMOUNT_TOO_HIGH':
+            throw invalidRequestError(PAYMENT_ERROR_KEYS.MAX_AMOUNT, {
+              amount: SPEI_MAX_AMOUNT_MXN,
+              currency: req.money.currency,
+            });
+        }
       }
     }
 

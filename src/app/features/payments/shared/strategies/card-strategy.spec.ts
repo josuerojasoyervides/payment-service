@@ -8,6 +8,8 @@ import {
 } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import { STRIPE_CARD_VALIDATION_CONFIG } from '@payments/infrastructure/shared/validation/provider-validation.config';
+import { validateAmount } from '@payments/infrastructure/shared/validation/validate-amount';
 import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { firstValueFrom, of } from 'rxjs';
@@ -62,7 +64,12 @@ describe('CardStrategy', () => {
       providers: [{ provide: LoggerService, useValue: loggerMock }],
     });
 
-    strategy = new CardStrategy(gatewayMock as any, tokenValidatorMock, loggerMock as any);
+    strategy = new CardStrategy(
+      gatewayMock as any,
+      tokenValidatorMock,
+      loggerMock as any,
+      (money) => validateAmount(money, STRIPE_CARD_VALIDATION_CONFIG),
+    );
   });
 
   describe('validate()', () => {
@@ -97,8 +104,7 @@ describe('CardStrategy', () => {
       const req = { ...validReq, money: { amount: 5, currency: 'MXN' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
-          code: 'invalid_request',
-          messageKey: PAYMENT_ERROR_KEYS.MIN_AMOUNT,
+          code: 'amount_below_minimum',
         }),
       );
     });
@@ -107,8 +113,7 @@ describe('CardStrategy', () => {
       const req = { ...validReq, money: { amount: 0.5, currency: 'USD' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
-          code: 'invalid_request',
-          messageKey: PAYMENT_ERROR_KEYS.MIN_AMOUNT,
+          code: 'amount_below_minimum',
         }),
       );
     });
