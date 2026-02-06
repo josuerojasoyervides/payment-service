@@ -1,5 +1,6 @@
-import type { FakeIntentState } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.store';
+import type { FakeIntentState } from '@app/features/payments/infrastructure/fake/shared/state/fake-intent.state';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import { buildStripe3dsAuthUrl } from '@payments/shared/constants/fake-external-urls';
 
 const DEFAULT_DELAY_MS = 200;
 
@@ -28,7 +29,7 @@ export function buildStripeDtoFromFakeState(
       next_action = {
         type: 'redirect_to_url',
         redirect_to_url: {
-          url: `https://hooks.stripe.com/3d_secure_2/authenticate/${state.intentId}`,
+          url: buildStripe3dsAuthUrl(state.intentId),
           return_url: `${typeof window !== 'undefined' ? window.location.origin : ''}/payments/return`,
         },
       };

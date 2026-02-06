@@ -2,6 +2,7 @@
  * Stress scenario: finalize idempotency under duplicate/out-of-order events (PR6 Phase C).
  * Asserts: finalize side-effect called exactly once; flow converges; telemetry contains expected SYSTEM_EVENT_SENT.
  */
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
 import {
   createPaymentFlowScenarioHarness,
@@ -9,15 +10,15 @@ import {
 } from '@payments/application/orchestration/testing/payment-flow.scenario-harness';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 const baseRequest: CreatePaymentRequest = {
-  orderId: 'o1',
-  amount: 100,
-  currency: 'MXN',
+  orderId: createOrderId('o1'),
+  money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_visa1234567890abcdef' },
+  idempotencyKey: 'idem_flow_stress',
 };
 
 describe('Payment flow stress — finalize idempotency (PR6 Phase C)', () => {
@@ -34,8 +35,7 @@ describe('Payment flow stress — finalize idempotency (PR6 Phase C)', () => {
       id: refId,
       provider: 'stripe' as const,
       status: 'succeeded' as const,
-      amount: 100,
-      currency: 'MXN' as const,
+      money: { amount: 100, currency: 'MXN' as const },
     };
     const requestFinalizeSpy = vi.fn(() => of(succeededIntent));
 

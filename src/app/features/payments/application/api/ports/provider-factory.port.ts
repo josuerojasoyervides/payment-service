@@ -18,18 +18,15 @@
  * others return null.
  */
 
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/payment-request-builder.port';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
+import type { ProviderResilienceConfig } from '@payments/application/api/contracts/resilience.types';
 import type { ClientConfirmPort } from '@payments/application/api/ports/client-confirm.port';
 import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
-import type {
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type {
-  FieldRequirements,
-  PaymentRequestBuilder,
-} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
 
 export interface ProviderFactory {
   /** Unique provider identifier */
@@ -81,7 +78,7 @@ export interface ProviderFactory {
    *     .withOptions({ returnUrl: 'https://...' })
    *     .build();
    */
-  createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilder;
+  createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilderPort;
 
   /**
    * Returns field requirements for a payment method.
@@ -116,4 +113,14 @@ export interface ProviderFactory {
    * Application routing uses this capability; no provider-name branching.
    */
   getFinalizeHandler?(): FinalizePort | null;
+
+  /**
+   * Optional: provider-specific resilience configuration.
+   */
+  getResilienceConfig?(): ProviderResilienceConfig | null;
+
+  /**
+   * Optional: URL to the provider's dashboard for manual review.
+   */
+  getDashboardUrl?(intentId: string): string | null;
 }

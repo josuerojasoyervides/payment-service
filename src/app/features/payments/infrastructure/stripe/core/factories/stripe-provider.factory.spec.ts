@@ -1,22 +1,51 @@
 import { TestBed } from '@angular/core/testing';
 import { StripeProviderFactory } from '@app/features/payments/infrastructure/stripe/core/factories/stripe-provider.factory';
 import { StripeIntentFacade } from '@app/features/payments/infrastructure/stripe/workflows/intent/intent.facade';
-import { I18nKeys } from '@core/i18n';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
+import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
+import { TEST_PAYMENTS_API_BASE_URL } from '@payments/shared/testing/fixtures/test-urls';
 import { firstValueFrom, of } from 'rxjs';
 
 describe('StripeProviderFactory', () => {
   let factory: StripeProviderFactory;
 
   const gatewayStub = {
-    providerId: 'stripe',
+    providerId: PAYMENT_PROVIDER_IDS.stripe,
     createIntent: vi.fn(),
   } satisfies Partial<StripeIntentFacade>;
+  const infraConfigInput: PaymentsInfraConfigInput = {
+    paymentsBackendBaseUrl: TEST_PAYMENTS_API_BASE_URL,
+    timeouts: { stripeMs: 15_000, paypalMs: 15_000 },
+    paypal: {
+      defaults: {
+        brand_name: 'Payment Service',
+        landing_page: 'NO_PREFERENCE',
+        user_action: 'PAY_NOW',
+      },
+    },
+    spei: {
+      displayConfig: {
+        receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+        beneficiaryName: 'Payment Service',
+      },
+    },
+  };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [StripeProviderFactory, { provide: StripeIntentFacade, useValue: gatewayStub }],
+      providers: [
+        StripeProviderFactory,
+        { provide: StripeIntentFacade, useValue: gatewayStub },
+        providePaymentsInfraConfig(infraConfigInput),
+      ],
     });
 
     factory = TestBed.inject(StripeProviderFactory);
@@ -38,7 +67,7 @@ describe('StripeProviderFactory', () => {
     expect(() => factory.createStrategy('unsupported' as any)).toThrow(
       expect.objectContaining({
         code: 'invalid_request',
-        messageKey: I18nKeys.errors.invalid_request,
+        messageKey: PAYMENT_ERROR_KEYS.INVALID_REQUEST,
         params: {
           reason: 'unsupported_payment_method',
           supportedMethods: 'card, spei',
@@ -50,26 +79,25 @@ describe('StripeProviderFactory', () => {
   it('creates a strategy that delegates to the injected gateway', async () => {
     gatewayStub.createIntent = vi.fn(() =>
       of({
-        id: 'pi_1',
-        provider: 'stripe',
+        id: createPaymentIntentId('pi_1'),
+        provider: PAYMENT_PROVIDER_IDS.stripe,
         status: 'requires_payment_method',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
       }),
     );
 
     const strategy = factory.createStrategy('card');
     const result = await firstValueFrom(
       strategy.start({
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_test1234567890abc' },
+        idempotencyKey: 'idem_stripe_factory',
       }),
     );
 
     expect(gatewayStub.createIntent).toHaveBeenCalledTimes(1);
-    expect(result.provider).toBe('stripe');
+    expect(result.provider).toBe(PAYMENT_PROVIDER_IDS.stripe);
   });
 
   describe('getFieldRequirements', () => {
@@ -105,7 +133,7 @@ describe('StripeProviderFactory', () => {
       expect(() => factory.getFieldRequirements('unsupported' as any)).toThrow(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.invalid_request,
+          messageKey: PAYMENT_ERROR_KEYS.INVALID_REQUEST,
           params: {
             reason: 'unsupported_payment_method',
             supportedMethods: 'card, spei',

@@ -1,9 +1,10 @@
 // ============ FAKE STRIPE RESPONSES ============
 
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { SPECIAL_TOKENS } from '@app/features/payments/infrastructure/fake/shared/constants/special-tokens';
 import { generateId } from '@app/features/payments/infrastructure/fake/shared/helpers/get-id.helper';
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { buildStripe3dsAuthUrl } from '@payments/shared/constants/fake-external-urls';
 
 export type FakeNextActionKind = 'redirect' | 'client_confirm';
 
@@ -14,7 +15,7 @@ export function createFakeStripeIntent(
   intentIdOverride?: string,
 ): StripePaymentIntentDto {
   const intentId = intentIdOverride ?? generateId('pi');
-  const amountInCents = Math.round(req.amount * 100);
+  const amountInCents = Math.round(req.money.amount * 100);
   const clientSecret = `${intentId}_secret_${generateId('sec')}`;
 
   let status: StripePaymentIntentDto['status'];
@@ -41,7 +42,7 @@ export function createFakeStripeIntent(
       next_action = {
         type: 'redirect_to_url',
         redirect_to_url: {
-          url: `https://hooks.stripe.com/3d_secure_2/authenticate/${intentId}`,
+          url: buildStripe3dsAuthUrl(intentId),
           return_url: `${typeof window !== 'undefined' ? window.location.origin : ''}/payments/return`,
         },
       };
@@ -53,13 +54,13 @@ export function createFakeStripeIntent(
     object: 'payment_intent',
     amount: amountInCents,
     amount_received: status === 'succeeded' ? amountInCents : 0,
-    currency: req.currency.toLowerCase(),
+    currency: req.money.currency.toLowerCase(),
     status,
     client_secret: clientSecret,
     created: Math.floor(Date.now() / 1000),
     livemode: false,
     metadata: {
-      order_id: req.orderId,
+      order_id: req.orderId.value,
     },
     payment_method: req.method.token ?? null,
     payment_method_types: ['card'],

@@ -5,6 +5,8 @@ import {
   WEBHOOK_NORMALIZER_REGISTRY,
   type WebhookNormalizerRegistry,
 } from '@app/features/payments/application/api/tokens/webhook/webhook-normalizer-registry.token';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type {
   PaymentFlowActorRef,
@@ -12,12 +14,9 @@ import type {
   PaymentFlowSnapshot,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import type { PaymentFlowConfigOverrides } from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.policy';
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { NormalizedWebhookEvent } from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/entities/payment-flow-context.types';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { NormalizedWebhookEvent } from '@payments/domain/subdomains/payment/messages/payment-webhook.event';
 import {
   type StripePaymentIntentWebhookEvent,
   StripeWebhookNormalizer,
@@ -91,11 +90,10 @@ describe('WebhookIngestionService', () => {
 
 describe('WebhookIngestionService integration with PaymentFlowMachine', () => {
   const baseIntent: PaymentIntent = {
-    id: 'pi_webhook',
+    id: createPaymentIntentId('pi_webhook'),
     provider: 'stripe',
     status: 'processing',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
   };
 
   const config: PaymentFlowConfigOverrides = {
@@ -136,7 +134,7 @@ describe('WebhookIngestionService integration with PaymentFlowMachine', () => {
       cancelPayment: vi.fn(async () => ({ ...baseIntent, status: 'canceled' as const })),
       getStatus: vi.fn(async () => ({
         ...baseIntent,
-        id: 'pi_webhook',
+        id: createPaymentIntentId('pi_webhook'),
         status: 'succeeded' as const,
       })),
       clientConfirm: vi.fn(async () => baseIntent),

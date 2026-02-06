@@ -39,7 +39,7 @@
                       stroke-width="2"
                       d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
-                  {{ confirmLabel() }}
+                  {{ clientConfirmButtonLabel() }}
                 </button>
               </div>
             </div>
@@ -80,7 +80,9 @@
                   (click)="onActionRequested()">
                   {{ continueLabel() }}
                 </button>
-                <span class="text-xs text-blue-600 break-all">{{ $any(action).url }}</span>
+                @if (redirectUrl(); as url) {
+                  <span class="text-xs text-blue-600 break-all">{{ url }}</span>
+                }
               </div>
             </div>
           </div>
@@ -96,23 +98,23 @@
             {{ actionRequiresAttentionText() }}
           </p>
 
-          @if ($any(action).details?.length) {
-            <dl class="mt-4 grid grid-cols-1 gap-2 text-sm">
-              @for (detail of $any(action).details; track detail.label) {
-                <div class="flex items-center justify-between gap-2">
-                  <dt class="text-gray-600">{{ detail.label }}</dt>
-                  <dd class="font-mono text-gray-900 break-all text-right">
-                    {{ detail.value }}
-                  </dd>
-                </div>
-              }
-            </dl>
+          @if (manualStepDetails(); as details) {
+            <div class="mt-4">
+              <app-spei-instructions
+                [clabe]="details.clabe"
+                [reference]="details.reference ?? ''"
+                [bankCode]="details.bankCode"
+                [beneficiary]="details.beneficiaryName"
+                [amount]="details.amount ?? 0"
+                [currency]="details.currency ?? 'MXN'"
+                [expiresAt]="details.expiresAt" />
+            </div>
           }
 
-          @if ($any(action).instructions?.length) {
+          @if (manualStepInstructions().length) {
             <ul class="mt-4 list-disc list-inside text-sm text-amber-800 space-y-1">
-              @for (instruction of $any(action).instructions; track instruction) {
-                <li>{{ instruction }}</li>
+              @for (instruction of manualStepInstructions(); track instruction) {
+                <li>{{ instruction | i18n }}</li>
               }
             </ul>
           }
@@ -138,7 +140,7 @@
                 {{ processingLabel() }}
               </h3>
               <p class="text-sm text-gray-600 mt-1">
-                {{ $any(action).hint || actionRequiresAttentionText() }}
+                {{ externalWaitHint() ?? actionRequiresAttentionText() }}
               </p>
             </div>
           </div>
@@ -161,7 +163,7 @@
             </svg>
             <div>
               <h3 class="font-semibold text-gray-900">
-                {{ actionRequiredLabel() }}: {{ $any(action).kind || 'unknown' }}
+                {{ actionRequiredLabel() }}: {{ actionKindLabel() }}
               </h3>
               <p class="text-sm text-gray-600 mt-1">
                 {{ actionRequiresAttentionText() }}

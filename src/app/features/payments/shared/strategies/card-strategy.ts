@@ -1,4 +1,13 @@
-import { I18nKeys } from '@core/i18n';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import { intentRequiresUserAction } from '@app/features/payments/domain/subdomains/payment/policies/requires-user-action.policy';
+import type { TokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/token-validator.port';
+import {
+  getCardMinAmount,
+  validateCardAmount,
+} from '@app/features/payments/domain/subdomains/payment/rules/min-amount-by-currency.rule';
 import type { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type {
@@ -6,14 +15,11 @@ import type {
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
-import type { TokenValidator } from '@payments/domain/common/ports/token-validator.port';
-import { NullTokenValidator } from '@payments/domain/common/ports/token-validator.port';
-import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type {
-  PaymentIntent,
-  PaymentMethodType,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import {
+  PAYMENT_ERROR_KEYS,
+  PAYMENT_MESSAGE_KEYS,
+} from '@payments/shared/constants/payment-error-keys';
+import { NoopTokenValidator } from '@payments/shared/token-validators/noop-token-validator';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
 
@@ -36,8 +42,9 @@ export class CardStrategy implements PaymentStrategy {
 
   constructor(
     private readonly gateway: PaymentGatewayPort,
-    private readonly tokenValidator: TokenValidator = new NullTokenValidator(),
+    private readonly tokenValidator: TokenValidator = new NoopTokenValidator(),
     private readonly logger: LoggerService,
+    private readonly amountValidator?: (money: CreatePaymentRequest['money']) => void,
   ) {}
 
   /**
@@ -45,22 +52,30 @@ export class CardStrategy implements PaymentStrategy {
    *
    * Rules:
    * - Token is mandatory if provider requires it (delegated to TokenValidator)
-   * - Minimum amount of 10 MXN / 1 USD
+   * - Minimum amount from domain rule (10 MXN / 1 USD)
    */
   validate(req: CreatePaymentRequest): void {
     if (this.tokenValidator.requiresToken()) {
       if (!req.method.token) {
-        throw invalidRequestError(I18nKeys.errors.card_token_required);
+        throw invalidRequestError(PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED);
       }
       this.tokenValidator.validate(req.method.token);
     }
 
-    const minAmount = req.currency === 'MXN' ? 10 : 1;
-    if (req.amount < minAmount) {
-      throw invalidRequestError(I18nKeys.errors.min_amount, {
-        amount: minAmount,
-        currency: req.currency,
-      });
+    if (this.amountValidator) {
+      this.amountValidator(req.money);
+      return;
+    }
+
+    const violations = validateCardAmount(req.money);
+    for (const v of violations) {
+      if (v.code === 'CARD_AMOUNT_TOO_LOW') {
+        const minAmount = getCardMinAmount(req.money.currency);
+        throw invalidRequestError(PAYMENT_ERROR_KEYS.MIN_AMOUNT, {
+          amount: minAmount,
+          currency: req.money.currency,
+        });
+      }
     }
   }
 
@@ -117,10 +132,10 @@ export class CardStrategy implements PaymentStrategy {
 
     const { preparedRequest, metadata } = this.prepare(req, context);
     this.logger.info('Starting payment', 'CardStrategy', {
-      orderId: req.orderId,
-      amount: req.amount,
-      currency: req.currency,
-      tokenPrefix: req.method.token?.substring(0, 6),
+      orderId: req.orderId.value,
+      amount: req.money.amount,
+      currency: req.money.currency,
+      hasToken: Boolean(req.method.token),
       metadata,
     });
 
@@ -128,7 +143,7 @@ export class CardStrategy implements PaymentStrategy {
       tap((intent) => {
         if (this.requiresUserAction(intent)) {
           this.logger.info('3DS required for intent', 'CardStrategy', {
-            intentId: intent.id,
+            intentId: intent.id.value,
           });
         }
       }),
@@ -140,7 +155,7 @@ export class CardStrategy implements PaymentStrategy {
    * Determines if the intent requires user action (3DS).
    */
   requiresUserAction(intent: PaymentIntent): boolean {
-    return intent.status === 'requires_action' && intent.nextAction?.kind === 'client_confirm';
+    return intentRequiresUserAction(intent) && intent.nextAction?.kind === 'client_confirm';
   }
 
   /**
@@ -151,7 +166,7 @@ export class CardStrategy implements PaymentStrategy {
       return null;
     }
 
-    return [I18nKeys.messages.bank_verification_required];
+    return [PAYMENT_MESSAGE_KEYS.BANK_VERIFICATION_REQUIRED];
   }
 
   /**

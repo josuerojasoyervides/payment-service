@@ -4,16 +4,16 @@ import type {
   WebhookReceivedPayload,
 } from '@app/features/payments/application/adapters/events/flow/payment-flow.events';
 // ✅ IMPORTANT: type-only import to avoid runtime circular dependency
+import type { FallbackMode } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-modes.types';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentErrorCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { NextActionClientConfirm } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import type { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
-import type { FallbackMode } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { NextActionClientConfirm } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import type {
   ActorRefFrom,
   EventObject,
@@ -26,6 +26,9 @@ import type {
 
 export type ActorId = 'start' | 'confirm' | 'cancel' | 'status' | 'clientConfirm' | 'finalize';
 
+/**
+ * XState actor lifecycle events.
+ */
 export interface DoneEvent<TActor extends ActorId, TOutput> {
   type: `xstate.done.actor.${TActor}`;
   output: TOutput;
@@ -36,6 +39,9 @@ export interface ErrorEvent<TActor extends ActorId> {
   error: unknown;
 }
 
+/**
+ * Commands (public).
+ */
 export type PaymentFlowCommandEvent =
   | {
       type: 'START';
@@ -43,11 +49,19 @@ export type PaymentFlowCommandEvent =
       request: CreatePaymentRequest;
       flowContext?: PaymentFlowContext;
     }
-  | { type: 'CONFIRM'; providerId: PaymentProviderId; intentId: string; returnUrl?: string }
-  | { type: 'CANCEL'; providerId: PaymentProviderId; intentId: string }
-  | { type: 'REFRESH'; providerId?: PaymentProviderId; intentId?: string }
+  | {
+      type: 'CONFIRM';
+      providerId: PaymentProviderId;
+      intentId: PaymentIntentId;
+      returnUrl?: string;
+    }
+  | { type: 'CANCEL'; providerId: PaymentProviderId; intentId: PaymentIntentId }
+  | { type: 'REFRESH'; providerId?: PaymentProviderId; intentId?: PaymentIntentId }
   | { type: 'RESET' };
 
+/**
+ * System/internal events.
+ */
 export type PaymentFlowSystemEvent =
   | {
       type: 'FALLBACK_REQUESTED';
@@ -68,10 +82,17 @@ export type PaymentFlowSystemEvent =
   | { type: 'FINALIZE_REQUESTED' }
   | { type: 'FINALIZE_SUCCEEDED' }
   | { type: 'FINALIZE_FAILED' }
+  | { type: 'CIRCUIT_OPENED'; providerId: PaymentProviderId; cooldownMs?: number }
+  | { type: 'RATE_LIMITED'; providerId: PaymentProviderId; cooldownMs?: number }
+  | { type: 'ALL_PROVIDERS_UNAVAILABLE' }
+  | { type: 'MANUAL_REVIEW_REQUIRED' }
   | { type: 'REDIRECT_RETURNED'; payload: RedirectReturnedPayload }
   | { type: 'EXTERNAL_STATUS_UPDATED'; payload: ExternalStatusUpdatedPayload }
   | { type: 'WEBHOOK_RECEIVED'; payload: WebhookReceivedPayload };
 
+/**
+ * Full event union for the machine.
+ */
 export type PaymentFlowEvent =
   | PaymentFlowCommandEvent
   | PaymentFlowSystemEvent
@@ -92,12 +113,31 @@ export type PaymentFlowEvent =
 
 export type PaymentFlowPublicEvent = PaymentFlowCommandEvent;
 
+/**
+ * Context.
+ */
 export interface PaymentFlowFallbackContext {
   eligible: boolean;
   mode: FallbackMode;
   failedProviderId: PaymentProviderId | null;
   request: CreatePaymentRequest | null;
   selectedProviderId: PaymentProviderId | null;
+}
+
+export interface PaymentFlowResilienceContext {
+  circuitCooldownMs: number | null;
+  circuitOpenedAt: number | null;
+  rateLimitCooldownMs: number | null;
+  rateLimitOpenedAt: number | null;
+}
+
+export interface ClientConfirmRetryState {
+  count: number;
+  lastErrorCode: PaymentErrorCode | null;
+}
+
+export interface FinalizeRetryState {
+  count: number;
 }
 
 export interface PaymentFlowPollingState {
@@ -113,14 +153,19 @@ export interface PaymentFlowMachineContext {
   request: CreatePaymentRequest | null;
   flowContext: PaymentFlowContext | null;
   intent: PaymentIntent | null;
-
-  intentId: string | null;
+  intentId: PaymentIntentId | null;
   error: PaymentError | null;
   fallback: PaymentFlowFallbackContext;
+  resilience: PaymentFlowResilienceContext;
+  clientConfirmRetry: ClientConfirmRetryState;
+  finalizeRetry: FinalizeRetryState;
   polling: PaymentFlowPollingState;
   statusRetry: PaymentFlowStatusRetryState;
 }
 
+/**
+ * Actor inputs.
+ */
 export interface StartInput {
   providerId: PaymentProviderId;
   request: CreatePaymentRequest;
@@ -129,18 +174,18 @@ export interface StartInput {
 
 export interface ConfirmInput {
   providerId: PaymentProviderId;
-  intentId: string;
+  intentId: PaymentIntentId;
   returnUrl?: string;
 }
 
 export interface CancelInput {
   providerId: PaymentProviderId;
-  intentId: string;
+  intentId: PaymentIntentId;
 }
 
 export interface StatusInput {
   providerId: PaymentProviderId;
-  intentId: string;
+  intentId: PaymentIntentId;
 }
 
 export interface ClientConfirmInput {
@@ -154,6 +199,9 @@ export interface FinalizeInput {
   flowContext: PaymentFlowContext;
 }
 
+/**
+ * XState config types.
+ */
 export type PaymentFlowStatesConfig = StatesConfig<
   PaymentFlowMachineContext,
   PaymentFlowEvent,

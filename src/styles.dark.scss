@@ -1,0 +1,318 @@
+/* Dark mode overrides (opt-in via data-theme on <html>) */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --tw-ring-offset-color: #0b1120;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] body {
+  background-color: #0b1120;
+  color: #e2e8f0;
+}
+
+:root[data-theme='dark'] h1,
+:root[data-theme='dark'] h2,
+:root[data-theme='dark'] h3,
+:root[data-theme='dark'] h4,
+:root[data-theme='dark'] h5,
+:root[data-theme='dark'] h6 {
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] .card {
+  background-color: #0f172a;
+  border-color: #1e293b;
+}
+
+:root[data-theme='dark'] .card-header {
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] .btn-secondary {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+:root[data-theme='dark'] .btn-secondary:hover {
+  background-color: #334155;
+}
+
+:root[data-theme='dark'] .btn-secondary:focus {
+  --tw-ring-color: #475569;
+}
+
+:root[data-theme='dark'] .input,
+:root[data-theme='dark'] .input-error {
+  background-color: #0f172a;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+:root[data-theme='dark'] .input::placeholder,
+:root[data-theme='dark'] .input-error::placeholder {
+  color: #64748b;
+}
+
+:root[data-theme='dark'] .input:disabled,
+:root[data-theme='dark'] .input-error:disabled {
+  background-color: #1e293b;
+}
+
+:root[data-theme='dark'] .label {
+  color: #cbd5f5;
+}
+
+:root[data-theme='dark'] .badge-success {
+  background-color: #052e16;
+  color: #bbf7d0;
+}
+
+:root[data-theme='dark'] .badge-error {
+  background-color: #450a0a;
+  color: #fecaca;
+}
+
+:root[data-theme='dark'] .badge-pending {
+  background-color: #3f2d0c;
+  color: #fde68a;
+}
+
+:root[data-theme='dark'] .badge-processing {
+  background-color: #0b274a;
+  color: #bfdbfe;
+}
+
+:root[data-theme='dark'] .badge-canceled {
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+
+:root[data-theme='dark'] .badge-warning {
+  background-color: #3f1d0b;
+  color: #fdba74;
+}
+
+:root[data-theme='dark'] .alert-success {
+  background-color: #052e16;
+  border-color: #14532d;
+  color: #bbf7d0;
+}
+
+:root[data-theme='dark'] .alert-error {
+  background-color: #450a0a;
+  border-color: #7f1d1d;
+  color: #fecaca;
+}
+
+:root[data-theme='dark'] .alert-warning {
+  background-color: #3f2d0c;
+  border-color: #78350f;
+  color: #fde68a;
+}
+
+:root[data-theme='dark'] .alert-info {
+  background-color: #0b274a;
+  border-color: #1e3a8a;
+  color: #bfdbfe;
+}
+
+:root[data-theme='dark'] .modal-content {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Utility overrides for common tailwind classes used in templates */
+:root[data-theme='dark'] .bg-gray-50 {
+  background-color: #0b1120;
+}
+
+:root[data-theme='dark'] .bg-white {
+  background-color: #0f172a;
+}
+
+:root[data-theme='dark'] .bg-gray-100 {
+  background-color: #1e293b;
+}
+
+:root[data-theme='dark'] .bg-gray-200 {
+  background-color: #1e293b;
+}
+
+:root[data-theme='dark'] .border-gray-100 {
+  border-color: #1e293b;
+}
+
+:root[data-theme='dark'] .border-gray-200 {
+  border-color: #1e293b;
+}
+
+:root[data-theme='dark'] .border-gray-300 {
+  border-color: #334155;
+}
+
+:root[data-theme='dark'] .border-gray-400 {
+  border-color: #475569;
+}
+
+:root[data-theme='dark'] .text-gray-900 {
+  color: #f8fafc;
+}
+
+:root[data-theme='dark'] .text-gray-800 {
+  color: #e2e8f0;
+}
+
+:root[data-theme='dark'] .text-gray-700 {
+  color: #cbd5f5;
+}
+
+:root[data-theme='dark'] .text-gray-600 {
+  color: #94a3b8;
+}
+
+:root[data-theme='dark'] .text-gray-500 {
+  color: #94a3b8;
+}
+
+:root[data-theme='dark'] .text-gray-400 {
+  color: #64748b;
+}
+
+:root[data-theme='dark'] .bg-blue-50 {
+  background-color: #0b274a;
+}
+
+:root[data-theme='dark'] .bg-blue-100 {
+  background-color: #0f2a4d;
+  color: #dbeafe;
+}
+
+:root[data-theme='dark'] .border-blue-200 {
+  border-color: #1e3a8a;
+}
+
+:root[data-theme='dark'] .text-blue-900 {
+  color: #bfdbfe;
+}
+
+:root[data-theme='dark'] .text-blue-800 {
+  color: #dbeafe;
+}
+
+:root[data-theme='dark'] .text-blue-700,
+:root[data-theme='dark'] .text-blue-600 {
+  color: #93c5fd;
+}
+
+:root[data-theme='dark'] .bg-amber-50 {
+  background-color: #3f2d0c;
+}
+
+:root[data-theme='dark'] .bg-amber-100 {
+  background-color: #4a2a0a;
+  color: #fde68a;
+}
+
+:root[data-theme='dark'] .border-amber-200 {
+  border-color: #78350f;
+}
+
+:root[data-theme='dark'] .text-amber-900 {
+  color: #fde68a;
+}
+
+:root[data-theme='dark'] .text-amber-800 {
+  color: #fcd34d;
+}
+
+:root[data-theme='dark'] .text-amber-700 {
+  color: #fbbf24;
+}
+
+:root[data-theme='dark'] .text-amber-600 {
+  color: #f59e0b;
+}
+
+:root[data-theme='dark'] .bg-red-50 {
+  background-color: #450a0a;
+}
+
+:root[data-theme='dark'] .bg-red-100 {
+  background-color: #4c0a0a;
+  color: #fee2e2;
+}
+
+:root[data-theme='dark'] .border-red-200 {
+  border-color: #7f1d1d;
+}
+
+:root[data-theme='dark'] .text-red-900 {
+  color: #fee2e2;
+}
+
+:root[data-theme='dark'] .text-red-800,
+:root[data-theme='dark'] .text-red-700 {
+  color: #fecaca;
+}
+
+:root[data-theme='dark'] .text-red-600 {
+  color: #fca5a5;
+}
+
+:root[data-theme='dark'] .bg-green-50 {
+  background-color: #052e16;
+}
+
+:root[data-theme='dark'] .bg-green-100 {
+  background-color: #064e3b;
+  color: #dcfce7;
+}
+
+:root[data-theme='dark'] .border-green-200 {
+  border-color: #14532d;
+}
+
+:root[data-theme='dark'] .text-green-900 {
+  color: #dcfce7;
+}
+
+:root[data-theme='dark'] .text-green-800 {
+  color: #bbf7d0;
+}
+
+:root[data-theme='dark'] .text-green-700 {
+  color: #86efac;
+}
+
+:root[data-theme='dark'] .text-green-600 {
+  color: #4ade80;
+}
+
+:root[data-theme='dark'] .bg-yellow-50 {
+  background-color: #3f2d0c;
+}
+
+:root[data-theme='dark'] .bg-yellow-100 {
+  background-color: #4a2f0b;
+  color: #fef3c7;
+}
+
+:root[data-theme='dark'] .border-yellow-200 {
+  border-color: #78350f;
+}
+
+:root[data-theme='dark'] .text-yellow-900 {
+  color: #fde68a;
+}
+
+:root[data-theme='dark'] .text-yellow-800,
+:root[data-theme='dark'] .text-yellow-700 {
+  color: #fde68a;
+}
+
+:root[data-theme='dark'] .text-yellow-600 {
+  color: #fbbf24;
+}

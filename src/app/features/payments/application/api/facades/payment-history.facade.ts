@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 
 // TODO : Check what this facade is used for and if it's still needed
 @Injectable({ providedIn: 'root' })
@@ -12,15 +13,21 @@ export class PaymentHistoryFacade {
   readonly isLoading = this.state.isLoading;
 
   confirmPayment(intentId: string, provider: PaymentProviderId): void {
-    this.state.confirmPayment({ intentId }, provider);
+    const result = PaymentIntentId.from(intentId);
+    if (!result.ok) return;
+    this.state.confirmPayment({ intentId: result.value }, provider);
   }
 
   cancelPayment(intentId: string, provider: PaymentProviderId): void {
-    this.state.cancelPayment({ intentId }, provider);
+    const result = PaymentIntentId.from(intentId);
+    if (!result.ok) return;
+    this.state.cancelPayment({ intentId: result.value }, provider);
   }
 
   refreshPayment(intentId: string, provider: PaymentProviderId): void {
-    this.state.refreshPayment({ intentId }, provider);
+    const result = PaymentIntentId.from(intentId);
+    if (!result.ok) return;
+    this.state.refreshPayment({ intentId: result.value }, provider);
   }
 
   clearHistory(): void {

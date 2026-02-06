@@ -3,31 +3,31 @@ import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
+import { PROVIDER_HEALTH_PORT } from '@app/features/payments/application/api/tokens/health/provider-health.token';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
+import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
+import type { FallbackConfirmationData } from '@payments/application/api/contracts/resilience.types';
 import type {
   PaymentCheckoutCatalogPort,
   PaymentFlowPort,
   ProviderDescriptor,
 } from '@payments/application/api/ports/payment-store.port';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
-import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type {
-  PaymentIntent,
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import type {
-  FieldRequirements,
-  PaymentOptions,
-} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
-
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
   {
     id: 'stripe',
@@ -56,10 +56,10 @@ function withCheckoutCatalog<T extends PaymentFlowPort & PaymentCheckoutCatalogP
     getSupportedMethods: () => ['card', 'spei'] as PaymentMethodType[],
     getFieldRequirements: () => null,
     buildCreatePaymentRequest: (): CreatePaymentRequest => ({
-      orderId: 'order_test',
-      amount: 499.99,
-      currency: 'MXN',
+      orderId: createOrderId('order_test'),
+      money: { amount: 499.99, currency: 'MXN' },
       method: { type: 'card', token: 'tok_test' },
+      idempotencyKey: 'idem_checkout_mock',
     }),
   };
 }
@@ -80,13 +80,13 @@ describe('CheckoutComponent', () => {
   let mockLogger: any;
   let mockFactory: any;
   let mockBuilder: any;
+  let mockHealthPort: { check: ReturnType<typeof vi.fn> };
 
   const mockIntent: PaymentIntent = {
-    id: 'pi_test_123',
+    id: createPaymentIntentId('pi_test_123'),
     provider: 'stripe',
     status: 'succeeded',
-    amount: 499.99,
-    currency: 'MXN',
+    money: { amount: 499.99, currency: 'MXN' },
     clientSecret: 'secret_test',
   };
 
@@ -96,18 +96,10 @@ describe('CheckoutComponent', () => {
     raw: { originalError: 'declined' },
   };
 
-  const mockFallbackEvent: FallbackAvailableEvent = {
-    eventId: 'fb_test_1',
-    failedProvider: 'stripe',
-    error: mockError,
-    alternativeProviders: ['paypal'],
-    originalRequest: {
-      orderId: 'order_test',
-      amount: 499.99,
-      currency: 'MXN',
-      method: { type: 'card', token: 'tok_test' },
-    },
-    timestamp: Date.now(),
+  const mockFallbackData: FallbackConfirmationData = {
+    eligibleProviders: ['paypal'],
+    failureReason: 'provider_error',
+    timeoutMs: 30_000,
   };
 
   beforeEach(async () => {
@@ -116,11 +108,12 @@ describe('CheckoutComponent', () => {
       forOrder: vi.fn().mockReturnThis(),
       withAmount: vi.fn().mockReturnThis(),
       withOptions: vi.fn().mockReturnThis(),
+      withIdempotencyKey: vi.fn().mockReturnThis(),
       build: vi.fn().mockReturnValue({
-        orderId: 'order_test',
-        amount: 499.99,
-        currency: 'MXN',
+        orderId: createOrderId('order_test'),
+        money: { amount: 499.99, currency: 'MXN' },
         method: { type: 'card', token: 'tok_test' },
+        idempotencyKey: 'idem_checkout_builder',
       }),
     };
 
@@ -193,7 +186,8 @@ describe('CheckoutComponent', () => {
         mockBuilder
           .forOrder(params.orderId)
           .withAmount(params.amount, params.currency)
-          .withOptions(params.options);
+          .withOptions(params.options)
+          .withIdempotencyKey('idem_checkout_request');
         return mockBuilder.build();
       },
     } as (PaymentFlowPort & PaymentCheckoutCatalogPort) & {
@@ -217,6 +211,9 @@ describe('CheckoutComponent', () => {
       endCorrelation: vi.fn(),
       getCorrelationId: vi.fn(() => 'test_corr'),
     };
+    mockHealthPort = {
+      check: vi.fn(async () => ({ status: 'healthy', latencyMs: 120 })),
+    };
 
     await TestBed.configureTestingModule({
       imports: [CheckoutComponent, RouterLink],
@@ -224,6 +221,7 @@ describe('CheckoutComponent', () => {
         { provide: PAYMENT_STATE, useValue: mockState },
         { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockState },
         { provide: LoggerService, useValue: mockLogger },
+        { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
         provideRouter([]),
       ],
     }).compileComponents();
@@ -512,19 +510,21 @@ describe('CheckoutComponent', () => {
 
     it('should detect when fallback is pending', () => {
       const fallbackMock = createMockPaymentState({
-        fallback: {
-          ...INITIAL_FALLBACK_STATE,
-          status: 'pending',
-          pendingEvent: mockFallbackEvent,
+        fallback: { ...INITIAL_FALLBACK_STATE, status: 'pending' },
+        resilience: {
+          status: 'fallback_confirming',
+          cooldownUntilMs: null,
+          fallbackConfirmation: mockFallbackData,
+          manualReview: null,
         },
       });
       Object.assign(mockState, {
-        hasPendingFallback: fallbackMock.hasPendingFallback,
-        pendingFallbackEvent: fallbackMock.pendingFallbackEvent,
+        isFallbackConfirming: fallbackMock.isFallbackConfirming,
+        fallbackConfirmation: fallbackMock.fallbackConfirmation,
       });
       fixture.detectChanges();
       expect(component.fallbackState.isPending()).toBe(true);
-      expect(component.fallbackState.pendingEvent()).toEqual(mockFallbackEvent);
+      expect(component.fallbackState.data()).toEqual(mockFallbackData);
     });
   });
 
@@ -542,6 +542,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: execMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: execMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -566,6 +567,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: autoMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: autoMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -592,6 +594,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: execMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: execMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -619,6 +622,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: loadingMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: loadingMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -637,6 +641,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: readyMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: readyMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -657,6 +662,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: errorMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: errorMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -682,6 +688,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: readyMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: readyMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -700,6 +707,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: errorMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: errorMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -747,6 +755,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: mockWithResume },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockWithResume },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -756,24 +765,22 @@ describe('CheckoutComponent', () => {
       expect(c.showResumeBanner()).toBe(true);
       expect(f.nativeElement.querySelector('[data-testid="resume-banner"]')).toBeTruthy();
       c.resumePayment();
-      expect(refreshPaymentSpy).toHaveBeenCalledWith({ intentId: 'pi_123' }, 'stripe');
+      expect(refreshPaymentSpy).toHaveBeenCalledWith(
+        { intentId: expect.objectContaining({ value: 'pi_123' }) },
+        'stripe',
+      );
     });
 
-    it('showProcessingPanel is true when flowPhase is processing; refreshProcessingStatus calls refreshPayment', () => {
+    it('showProcessingPanel is true when flowPhase is processing and manual refresh is hidden', () => {
       const processingIntent: PaymentIntent = {
-        id: 'pi_123',
+        id: createPaymentIntentId('pi_123'),
         provider: 'stripe',
         status: 'processing',
-        amount: 499.99,
-        currency: 'MXN',
+        money: { amount: 499.99, currency: 'MXN' },
         clientSecret: 'secret',
       };
       const processingMock = createMockPaymentState({ intent: processingIntent });
-      const refreshPaymentSpy = vi.fn();
-      const mockWithProcessing = withCheckoutCatalog({
-        ...processingMock,
-        refreshPayment: refreshPaymentSpy,
-      });
+      const mockWithProcessing = withCheckoutCatalog(processingMock);
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         imports: [CheckoutComponent, RouterLink],
@@ -781,6 +788,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: mockWithProcessing },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockWithProcessing },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -789,8 +797,7 @@ describe('CheckoutComponent', () => {
       f.detectChanges();
       expect(c.showProcessingPanel()).toBe(true);
       expect(f.nativeElement.querySelector('[data-testid="processing-panel"]')).toBeTruthy();
-      c.refreshProcessingStatus();
-      expect(refreshPaymentSpy).toHaveBeenCalledWith({ intentId: 'pi_123' }, 'stripe');
+      expect(f.nativeElement.querySelector('[data-testid="processing-panel"] button')).toBeNull();
     });
   });
 });

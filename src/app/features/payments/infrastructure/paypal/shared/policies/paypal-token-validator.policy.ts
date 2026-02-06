@@ -1,4 +1,4 @@
-import { NullTokenValidator } from '@payments/domain/common/ports/token-validator.port';
+import { NoopTokenValidator } from '@payments/shared/token-validators/noop-token-validator';
 
 /**
  * Token validator for PayPal.
@@ -22,7 +22,7 @@ import { NullTokenValidator } from '@payments/domain/common/ports/token-validato
  * validator.isValid('anything');  // true
  * ```
  */
-export class PaypalTokenValidatorPolicy extends NullTokenValidator {
+export class PaypalTokenValidatorPolicy extends NoopTokenValidator {
   /**
    * Override to provide a more specific message.
    */

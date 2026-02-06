@@ -1,20 +1,23 @@
 import { inject, Injectable } from '@angular/core';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
+import type { PaymentRequestBuilderPort } from '@app/features/payments/domain/subdomains/payment/ports/payment-request/payment-request-builder.port';
 import { PaypalRedirectRequestBuilder } from '@app/features/payments/infrastructure/paypal/core/builders/paypal-redirect-request.builder';
 import { PaypalRedirectStrategy } from '@app/features/payments/infrastructure/paypal/payment-methods/redirect/strategies/paypal-redirect.strategy';
 import { PaypalIntentFacade } from '@app/features/payments/infrastructure/paypal/workflows/order/order.facade';
-import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
-import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type { PaymentMethodType } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type {
-  FieldRequirements,
-  PaymentRequestBuilder,
-} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
+import {
+  PAYMENT_ERROR_KEYS,
+  PAYMENT_MESSAGE_KEYS,
+} from '@payments/shared/constants/payment-error-keys';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 /**
  * PayPal provider factory.
@@ -30,11 +33,12 @@ import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows
  */
 @Injectable()
 export class PaypalProviderFactory implements ProviderFactory {
-  readonly providerId = 'paypal' as const;
+  readonly providerId = PAYMENT_PROVIDER_IDS.paypal;
 
   private readonly gateway = inject(PaypalIntentFacade);
   private readonly logger = inject(LoggerService);
   private readonly finalizeHandler = inject(PaypalFinalizeHandler);
+  private readonly infraConfig = inject(PAYMENTS_INFRA_CONFIG);
   /**
    * Strategy cache.
    */
@@ -81,7 +85,7 @@ export class PaypalProviderFactory implements ProviderFactory {
    * PayPal ALWAYS uses redirect flow, so all methods
    * use the same builder that requires returnUrl.
    */
-  createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilder {
+  createRequestBuilder(type: PaymentMethodType): PaymentRequestBuilderPort {
     this.assertSupported(type);
 
     return new PaypalRedirectRequestBuilder();
@@ -96,8 +100,8 @@ export class PaypalProviderFactory implements ProviderFactory {
     this.assertSupported(type);
 
     return {
-      descriptionKey: I18nKeys.ui.pay_with_paypal,
-      instructionsKey: I18nKeys.ui.paypal_redirect_secure_message,
+      descriptionKey: PAYMENT_MESSAGE_KEYS.PAY_WITH_PAYPAL,
+      instructionsKey: PAYMENT_MESSAGE_KEYS.PAYPAL_REDIRECT_SECURE_MESSAGE,
       fields: [],
     };
   }
@@ -109,13 +113,25 @@ export class PaypalProviderFactory implements ProviderFactory {
     return this.finalizeHandler;
   }
 
+  getResilienceConfig() {
+    return {
+      circuitOpenCooldownMs: 30_000,
+      rateLimitCooldownMs: 15_000,
+    };
+  }
+
+  getDashboardUrl(intentId: string): string | null {
+    if (!intentId) return null;
+    return `https://www.paypal.com/activity/payment/${intentId}`;
+  }
+
   // ============================================================
   // PRIVATE HELPERS
   // ============================================================
 
   private assertSupported(type: PaymentMethodType): void {
     if (!this.supportsMethod(type)) {
-      throw invalidRequestError(I18nKeys.errors.invalid_request, {
+      throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
         reason: 'unsupported_payment_method',
         supportedMethods: PaypalProviderFactory.SUPPORTED_METHODS.join(', '),
       });
@@ -125,9 +141,13 @@ export class PaypalProviderFactory implements ProviderFactory {
   private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
     switch (type) {
       case 'card':
-        return new PaypalRedirectStrategy(this.gateway, this.logger);
+        return new PaypalRedirectStrategy(
+          this.gateway,
+          this.logger,
+          this.infraConfig.paypal.defaults,
+        );
       default:
-        throw invalidRequestError(I18nKeys.errors.invalid_request, {
+        throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
           reason: 'unexpected_payment_method_type',
           type,
         });

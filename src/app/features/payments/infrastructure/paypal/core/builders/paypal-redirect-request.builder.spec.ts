@@ -1,5 +1,10 @@
 import { PaypalRedirectRequestBuilder } from '@app/features/payments/infrastructure/paypal/core/builders/paypal-redirect-request.builder';
-import { I18nKeys } from '@core/i18n';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
+import {
+  TEST_CANCEL_URL,
+  TEST_ORIGIN_URL,
+  TEST_RETURN_URL,
+} from '@payments/shared/testing/fixtures/test-urls';
 
 export function expectSyncPaymentError(fn: () => unknown, expected: any) {
   try {
@@ -30,27 +35,29 @@ describe('PaypalRedirectRequestBuilder', () => {
         .forOrder('order_123')
         .withAmount(100, 'MXN')
         .withOptions({
-          returnUrl: 'https://example.com/return',
-          cancelUrl: 'https://example.com/cancel',
+          returnUrl: TEST_RETURN_URL,
+          cancelUrl: TEST_CANCEL_URL,
         })
+        .withIdempotencyKey('idem_paypal_builder')
         .build();
 
-      expect(request.orderId).toBe('order_123');
-      expect(request.amount).toBe(100);
-      expect(request.currency).toBe('MXN');
+      expect(request.orderId.value).toBe('order_123');
+      expect(request.money.amount).toBe(100);
+      expect(request.money.currency).toBe('MXN');
       expect(request.method.type).toBe('card');
-      expect(request.returnUrl).toBe('https://example.com/return');
-      expect(request.cancelUrl).toBe('https://example.com/cancel');
+      expect(request.returnUrl).toBe(TEST_RETURN_URL);
+      expect(request.cancelUrl).toBe(TEST_CANCEL_URL);
     });
 
     it('uses returnUrl as default cancelUrl when cancelUrl not provided', () => {
       const request = builder
         .forOrder('order_123')
         .withAmount(100, 'MXN')
-        .withOptions({ returnUrl: 'https://example.com/return' })
+        .withOptions({ returnUrl: TEST_RETURN_URL })
+        .withIdempotencyKey('idem_paypal_builder')
         .build();
 
-      expect(request.cancelUrl).toBe('https://example.com/return');
+      expect(request.cancelUrl).toBe(TEST_RETURN_URL);
     });
 
     it('uses provided cancelUrl when specified', () => {
@@ -58,20 +65,22 @@ describe('PaypalRedirectRequestBuilder', () => {
         .forOrder('order_123')
         .withAmount(100, 'MXN')
         .withOptions({
-          returnUrl: 'https://example.com/return',
-          cancelUrl: 'https://example.com/cancel',
+          returnUrl: TEST_RETURN_URL,
+          cancelUrl: TEST_CANCEL_URL,
         })
+        .withIdempotencyKey('idem_paypal_builder')
         .build();
 
-      expect(request.returnUrl).toBe('https://example.com/return');
-      expect(request.cancelUrl).toBe('https://example.com/cancel');
+      expect(request.returnUrl).toBe(TEST_RETURN_URL);
+      expect(request.cancelUrl).toBe(TEST_CANCEL_URL);
     });
 
     it('does not include token in method (PayPal uses redirect)', () => {
       const request = builder
         .forOrder('order_123')
         .withAmount(100, 'MXN')
-        .withOptions({ returnUrl: 'https://example.com/return' })
+        .withOptions({ returnUrl: TEST_RETURN_URL })
+        .withIdempotencyKey('idem_paypal_builder')
         .build();
 
       expect(request.method.token).toBeUndefined();
@@ -82,9 +91,10 @@ describe('PaypalRedirectRequestBuilder', () => {
         .forOrder('order_123')
         .withAmount(100, 'MXN')
         .withOptions({
-          returnUrl: 'https://example.com/return',
+          returnUrl: TEST_RETURN_URL,
           token: 'tok_should_be_ignored',
         })
+        .withIdempotencyKey('idem_paypal_builder')
         .build();
 
       expect(request.method.token).toBeUndefined();
@@ -97,11 +107,12 @@ describe('PaypalRedirectRequestBuilder', () => {
         () =>
           builder
             .withAmount(100, 'MXN')
-            .withOptions({ returnUrl: 'https://example.com/return' })
+            .withOptions({ returnUrl: TEST_RETURN_URL })
+            .withIdempotencyKey('idem_paypal_builder')
             .build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.order_id_required,
+          messageKey: PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED,
           params: { field: 'orderId' },
         },
       );
@@ -113,11 +124,12 @@ describe('PaypalRedirectRequestBuilder', () => {
           builder
             .forOrder('order_123')
             .withAmount(0 as any, 'MXN')
-            .withOptions({ returnUrl: 'https://example.com/return' })
+            .withOptions({ returnUrl: TEST_RETURN_URL })
+            .withIdempotencyKey('idem_paypal_builder')
             .build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.amount_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.AMOUNT_INVALID,
           params: { field: 'amount' },
         },
       );
@@ -129,11 +141,12 @@ describe('PaypalRedirectRequestBuilder', () => {
           builder
             .forOrder('order_123')
             .withAmount(100, undefined as any)
-            .withOptions({ returnUrl: 'https://example.com/return' })
+            .withOptions({ returnUrl: TEST_RETURN_URL })
+            .withIdempotencyKey('idem_paypal_builder')
             .build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.currency_required,
+          messageKey: PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED,
           params: { field: 'currency' },
         },
       );
@@ -141,10 +154,14 @@ describe('PaypalRedirectRequestBuilder', () => {
 
     it('allows building without returnUrl (can come from StrategyContext)', () => {
       // returnUrl is optional in the builder - it can come from StrategyContext
-      const request = builder.forOrder('order_123').withAmount(100, 'MXN').build();
+      const request = builder
+        .forOrder('order_123')
+        .withAmount(100, 'MXN')
+        .withIdempotencyKey('idem_paypal_builder')
+        .build();
 
-      expect(request.orderId).toBe('order_123');
-      expect(request.amount).toBe(100);
+      expect(request.orderId.value).toBe('order_123');
+      expect(request.money.amount).toBe(100);
       expect(request.returnUrl).toBeUndefined();
     });
 
@@ -155,10 +172,11 @@ describe('PaypalRedirectRequestBuilder', () => {
             .forOrder('order_123')
             .withAmount(100, 'MXN')
             .withOptions({ returnUrl: 'not-a-valid-url' })
+            .withIdempotencyKey('idem_paypal_builder')
             .build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.return_url_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.RETURN_URL_INVALID,
           params: { field: 'returnUrl' },
         },
       );
@@ -171,13 +189,14 @@ describe('PaypalRedirectRequestBuilder', () => {
             .forOrder('order_123')
             .withAmount(100, 'MXN')
             .withOptions({
-              returnUrl: 'https://example.com/return',
+              returnUrl: TEST_RETURN_URL,
               cancelUrl: 'not-a-valid-url',
             })
+            .withIdempotencyKey('idem_paypal_builder')
             .build(),
         {
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.cancel_url_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.CANCEL_URL_INVALID,
           params: { field: 'cancelUrl' },
         },
       );
@@ -191,11 +210,13 @@ describe('PaypalRedirectRequestBuilder', () => {
     it('returns this from all setter methods for chaining', () => {
       const result1 = builder.forOrder('order_123');
       const result2 = result1.withAmount(100, 'MXN');
-      const result3 = result2.withOptions({ returnUrl: 'https://example.com' });
+      const result3 = result2.withOptions({ returnUrl: TEST_ORIGIN_URL });
+      const result4 = result3.withIdempotencyKey('idem_paypal_builder');
 
       expect(result1).toBe(builder);
       expect(result2).toBe(builder);
       expect(result3).toBe(builder);
+      expect(result4).toBe(builder);
     });
   });
 });

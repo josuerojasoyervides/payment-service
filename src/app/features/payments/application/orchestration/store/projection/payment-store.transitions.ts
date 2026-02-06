@@ -1,12 +1,11 @@
 import { updateState } from '@angular-architects/ngrx-toolkit';
+import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
-import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { INITIAL_RESILIENCE_STATE } from '@payments/application/orchestration/store/types/payment-store-state';
 
 /**
  * Transition: marks the store as `loading` right away.
@@ -177,6 +176,7 @@ export function resetState(store: PaymentsStoreContext): void {
     intent: null,
     error: null,
     currentRequest: null,
+    resilience: INITIAL_RESILIENCE_STATE,
   });
 }
 
@@ -199,6 +199,7 @@ export function resetAllState(store: PaymentsStoreContext): void {
     error: null,
     currentRequest: null,
     fallback: INITIAL_FALLBACK_STATE,
+    resilience: INITIAL_RESILIENCE_STATE,
     history: [],
     selectedProvider: null,
   });

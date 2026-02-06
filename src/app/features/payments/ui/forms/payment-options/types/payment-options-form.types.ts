@@ -1,5 +1,5 @@
 import type { FieldTree, SchemaPath, SchemaPathTree } from '@angular/forms/signals';
-import type { FieldRequirement } from '@app/features/payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import type { FieldRequirement } from '@payments/application/api/contracts/checkout-field-requirements.types';
 
 export type TextModel = Record<string, string>;
 export type FlagModel = Record<string, boolean>;

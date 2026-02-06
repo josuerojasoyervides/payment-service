@@ -1,5 +1,6 @@
 import { generateId } from '@app/features/payments/infrastructure/fake/shared/helpers/get-id.helper';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
+import { buildPaypalSandboxOrderUrl } from '@payments/shared/constants/fake-external-urls';
 
 export function createConfirmedPaypalOrder(orderId: string): PaypalOrderDto {
   const captureId = generateId('CAPTURE').toUpperCase();
@@ -12,7 +13,7 @@ export function createConfirmedPaypalOrder(orderId: string): PaypalOrderDto {
     update_time: new Date().toISOString(),
     links: [
       {
-        href: `https://api.sandbox.paypal.com/v2/checkout/orders/${orderId}`,
+        href: buildPaypalSandboxOrderUrl(orderId),
         rel: 'self',
         method: 'GET',
       },

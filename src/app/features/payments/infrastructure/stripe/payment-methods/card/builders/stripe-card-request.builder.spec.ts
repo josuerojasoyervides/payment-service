@@ -1,5 +1,6 @@
-import { I18nKeys } from '@core/i18n';
 import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/card/builders/stripe-card-request.builder';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
+import { TEST_CANCEL_URL, TEST_RETURN_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 describe('StripeCardRequestBuilder', () => {
   let builder: StripeCardRequestBuilder;
@@ -14,11 +15,12 @@ describe('StripeCardRequestBuilder', () => {
         .forOrder('order_123')
         .withAmount(100, 'MXN')
         .withOptions({ token: 'tok_test1234567890abc' })
+        .withIdempotencyKey('idem_card_builder')
         .build();
 
-      expect(request.orderId).toBe('order_123');
-      expect(request.amount).toBe(100);
-      expect(request.currency).toBe('MXN');
+      expect(request.orderId.value).toBe('order_123');
+      expect(request.money.amount).toBe(100);
+      expect(request.money.currency).toBe('MXN');
       expect(request.method.type).toBe('card');
       expect(request.method.token).toBe('tok_test1234567890abc');
     });
@@ -28,6 +30,7 @@ describe('StripeCardRequestBuilder', () => {
         .forOrder('order_123')
         .withAmount(100, 'MXN')
         .withOptions({ token: 'tok_test1234567890abc', saveForFuture: true })
+        .withIdempotencyKey('idem_card_builder')
         .build();
 
       expect(request.metadata?.['saveForFuture']).toBe(true);
@@ -39,9 +42,10 @@ describe('StripeCardRequestBuilder', () => {
         .withAmount(100, 'MXN')
         .withOptions({
           token: 'tok_test1234567890abc',
-          returnUrl: 'https://example.com/return',
-          cancelUrl: 'https://example.com/cancel',
+          returnUrl: TEST_RETURN_URL,
+          cancelUrl: TEST_CANCEL_URL,
         })
+        .withIdempotencyKey('idem_card_builder')
         .build();
 
       expect(request.returnUrl).toBeUndefined();
@@ -52,12 +56,12 @@ describe('StripeCardRequestBuilder', () => {
   describe('validation', () => {
     it('throws PaymentError when orderId is missing', () => {
       try {
-        builder.withAmount(100, 'MXN').build();
+        builder.withAmount(100, 'MXN').withIdempotencyKey('idem_card_builder').build();
         throw new Error('Expected builder.build() to throw');
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.order_id_required,
+          messageKey: PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED,
           params: { field: 'orderId' },
         });
       }
@@ -68,12 +72,13 @@ describe('StripeCardRequestBuilder', () => {
         builder
           .forOrder('order_123')
           .withAmount(0 as any, 'MXN')
+          .withIdempotencyKey('idem_card_builder')
           .build();
         throw new Error('Expected builder.build() to throw');
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.amount_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.AMOUNT_INVALID,
           params: { field: 'amount' },
         });
       }
@@ -85,13 +90,14 @@ describe('StripeCardRequestBuilder', () => {
           .forOrder('order_123')
           .withAmount(0, 'MXN')
           .withOptions({ token: 'tok_test1234567890abc' })
+          .withIdempotencyKey('idem_card_builder')
           .build();
 
         throw new Error('Expected builder.build() to throw');
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.amount_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.AMOUNT_INVALID,
           params: { field: 'amount', min: 1 },
           raw: { amount: 0 },
         });
@@ -104,13 +110,14 @@ describe('StripeCardRequestBuilder', () => {
           .forOrder('order_123')
           .withAmount(-100, 'MXN')
           .withOptions({ token: 'tok_test1234567890abc' })
+          .withIdempotencyKey('idem_card_builder')
           .build();
 
         throw new Error('Expected builder.build() to throw');
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.amount_invalid,
+          messageKey: PAYMENT_ERROR_KEYS.AMOUNT_INVALID,
           params: { field: 'amount', min: 1 },
           raw: { amount: -100 },
         });
@@ -123,13 +130,14 @@ describe('StripeCardRequestBuilder', () => {
           .forOrder('order_123')
           .withAmount(100, undefined as any)
           .withOptions({ token: 'tok_test1234567890abc' })
+          .withIdempotencyKey('idem_card_builder')
           .build();
 
         throw new Error('Expected builder.build() to throw');
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.currency_required,
+          messageKey: PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED,
           params: { field: 'currency' },
         });
       }
@@ -137,12 +145,16 @@ describe('StripeCardRequestBuilder', () => {
 
     it('throws PaymentError when token is missing (Stripe Card requires token)', () => {
       try {
-        builder.forOrder('order_123').withAmount(100, 'MXN').build();
+        builder
+          .forOrder('order_123')
+          .withAmount(100, 'MXN')
+          .withIdempotencyKey('idem_card_builder')
+          .build();
         throw new Error('Expected builder.build() to throw');
       } catch (e) {
         expect(e).toMatchObject({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.card_token_required,
+          messageKey: PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED,
           params: { field: 'token' },
         });
       }
@@ -157,10 +169,12 @@ describe('StripeCardRequestBuilder', () => {
       const result1 = builder.forOrder('order_123');
       const result2 = result1.withAmount(100, 'MXN');
       const result3 = result2.withOptions({ token: 'tok_test1234567890abc' });
+      const result4 = result3.withIdempotencyKey('idem_card_builder');
 
       expect(result1).toBe(builder);
       expect(result2).toBe(builder);
       expect(result3).toBe(builder);
+      expect(result4).toBe(builder);
     });
   });
 });

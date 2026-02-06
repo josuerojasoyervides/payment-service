@@ -1,11 +1,11 @@
 import { inject, Injectable } from '@angular/core';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import { PaypalIntentFacade } from '@app/features/payments/infrastructure/paypal/workflows/order/order.facade';
 import type { FinalizePort, FinalizeRequest } from '@payments/application/api/ports/finalize.port';
-import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import type { Observable } from 'rxjs';
 
 /**
@@ -16,13 +16,17 @@ import type { Observable } from 'rxjs';
  */
 @Injectable()
 export class PaypalFinalizeHandler implements FinalizePort {
-  readonly providerId: PaymentProviderId = 'paypal' as const;
+  readonly providerId: PaymentProviderId = PAYMENT_PROVIDER_IDS.paypal;
 
   private readonly gateway = inject(PaypalIntentFacade);
 
   execute(request: FinalizeRequest): Observable<PaymentIntent> {
-    const orderId = this.resolveOrderId(request);
-    return this.gateway.confirmIntent({ intentId: orderId });
+    const rawId = this.resolveOrderId(request);
+    const result = PaymentIntentId.from(rawId);
+    if (!result.ok) {
+      throw invalidRequestError('errors.intent_id_required', { field: 'context.providerRefs' });
+    }
+    return this.gateway.confirmIntent({ intentId: result.value });
   }
 
   private resolveOrderId(request: FinalizeRequest): string {

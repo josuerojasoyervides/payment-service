@@ -1,4 +1,5 @@
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+export type { RedirectReturnedPayload } from '@app/features/payments/application/api/contracts/redirect-return-normalized.contract';
 
 export type PaymentFlowSystemEventType =
   | 'REDIRECT_RETURNED'
@@ -13,16 +14,6 @@ export type PaymentFlowSystemEventType =
   | 'FALLBACK_REQUESTED'
   | 'FALLBACK_EXECUTE'
   | 'FALLBACK_ABORT';
-
-export interface RedirectReturnedPayload {
-  providerId: PaymentProviderId;
-  referenceId: string;
-  /**
-   * Optional nonce to deduplicate multiple returns for the same redirect.
-   * If omitted, the machine will fall back to using `referenceId` as the nonce.
-   */
-  returnNonce?: string;
-}
 
 export interface ExternalStatusUpdatedPayload {
   providerId: PaymentProviderId;

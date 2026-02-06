@@ -2,19 +2,45 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { LoggerService } from '@core/logging';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { ConfirmPaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
+import {
+  TEST_PAYMENTS_BASE_URL,
+  TEST_RETURN_URL,
+} from '@payments/shared/testing/fixtures/test-urls';
 
 describe('StripeConfirmIntentGateway', () => {
   let gateway: StripeConfirmIntentGateway;
-  let httpMock: HttpTestingController;
+  let transportMock: HttpTestingController;
 
   const loggerMock = {
     error: vi.fn(),
     warn: vi.fn(),
     info: vi.fn(),
     debug: vi.fn(),
+  };
+  const infraConfigInput: PaymentsInfraConfigInput = {
+    paymentsBackendBaseUrl: TEST_PAYMENTS_BASE_URL,
+    timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
+    paypal: {
+      defaults: {
+        brand_name: 'Payment Service',
+        landing_page: 'NO_PREFERENCE',
+        user_action: 'PAY_NOW',
+      },
+    },
+    spei: {
+      displayConfig: {
+        receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+        beneficiaryName: 'Payment Service',
+      },
+    },
   };
 
   beforeEach(() => {
@@ -23,46 +49,50 @@ describe('StripeConfirmIntentGateway', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         StripeConfirmIntentGateway,
+        IdempotencyKeyFactory,
         { provide: LoggerService, useValue: loggerMock },
+        providePaymentsInfraConfig(infraConfigInput),
       ],
     });
 
     gateway = TestBed.inject(StripeConfirmIntentGateway);
-    httpMock = TestBed.inject(HttpTestingController);
+    transportMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpMock.verify();
+    transportMock.verify();
   });
 
   it('POST /intents/:id/confirm with correct payload and headers', () => {
     const req: ConfirmPaymentRequest = {
-      intentId: 'pi_123',
-      returnUrl: 'https://example.com/return',
+      intentId: createPaymentIntentId('pi_123'),
+      returnUrl: TEST_RETURN_URL,
       idempotencyKey: 'idem_confirm_123',
     };
 
     gateway.execute(req).subscribe({
       next: (intent: PaymentIntent) => {
-        expect(intent.provider).toBe('stripe');
-        expect(intent.id).toBe('pi_123');
+        expect(intent.provider).toBe(PAYMENT_PROVIDER_IDS.stripe);
+        expect(intent.id.value).toBe('pi_123');
       },
       error: (e) => {
         throw e;
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/intents/pi_123/confirm');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents/pi_123/confirm`,
+    );
 
-    expect(httpReq.request.method).toBe('POST');
+    expect(transportReq.request.method).toBe('POST');
 
-    expect(httpReq.request.body).toEqual({
-      return_url: 'https://example.com/return',
+    expect(transportReq.request.body).toEqual({
+      return_url: TEST_RETURN_URL,
     });
 
-    expect(httpReq.request.headers.has('Idempotency-Key')).toBe(true);
+    expect(transportReq.request.headers.get('Idempotency-Key')).toBe('idem_confirm_123');
 
-    httpReq.flush({
+    transportReq.flush({
       id: 'pi_123',
       status: 'succeeded',
       amount: 10000,
@@ -72,7 +102,7 @@ describe('StripeConfirmIntentGateway', () => {
 
   it('propagates provider error when backend fails', () => {
     const req: ConfirmPaymentRequest = {
-      intentId: 'pi_error',
+      intentId: createPaymentIntentId('pi_error'),
       idempotencyKey: 'idem_confirm_error',
     };
 
@@ -81,15 +111,17 @@ describe('StripeConfirmIntentGateway', () => {
         expect.fail('Expected error');
       },
       error: (err) => {
-        expect(err.code).toBe('provider_error');
+        expect(err.code).toBe('provider_unavailable');
         expect(err.raw).toBeDefined();
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/intents/pi_error/confirm');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents/pi_error/confirm`,
+    );
+    expect(transportReq.request.method).toBe('POST');
 
-    httpReq.flush(
+    transportReq.flush(
       { message: 'Stripe error' },
       { status: 500, statusText: 'Internal Server Error' },
     );

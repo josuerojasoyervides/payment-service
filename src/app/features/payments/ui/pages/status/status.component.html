@@ -21,6 +21,7 @@
             type="text"
             class="input font-mono"
             [placeholder]="labels.intentIdPlaceholder()"
+            [disabled]="isFormBlocked()"
             [(ngModel)]="intentIdModel"
             (keyup.enter)="searchIntent()" />
           <p class="text-xs text-gray-500 mt-1">
@@ -32,7 +33,7 @@
         <app-provider-selector
           [descriptors]="providerDescriptors()"
           [selected]="selectedProvider()"
-          [disabled]="flowState.isLoading()"
+          [disabled]="isFormBlocked()"
           (providerChange)="onSelectProvider($event)" />
 
         <!-- Search Button -->
@@ -104,7 +105,8 @@
       <div class="flex flex-wrap gap-2">
         @for (example of examples(); track example.id) {
           <button
-            class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-700 transition-colors"
+            class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="isFormBlocked()"
             (click)="useExample(example)">
             {{ example.label }}
           </button>

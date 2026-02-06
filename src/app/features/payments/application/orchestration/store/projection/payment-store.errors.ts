@@ -1,4 +1,5 @@
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentErrorCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 
 export function looksLikeI18nKey(value: unknown): value is string {
   if (typeof value !== 'string') return false;
@@ -6,7 +7,7 @@ export function looksLikeI18nKey(value: unknown): value is string {
 }
 
 export function isPaymentError(e: unknown): e is PaymentError {
-  return !!e && typeof e === 'object' && 'code' in e && 'messageKey' in e;
+  return !!e && typeof e === 'object' && 'code' in e;
 }
 
 /**
@@ -14,22 +15,23 @@ export function isPaymentError(e: unknown): e is PaymentError {
  *
  * This is the only acceptable place to:
  * - Accept `unknown`
- * - Apply a safe fallback messageKey
+ * - Normalize shape for storage/logging
  */
 export function normalizePaymentError(e: unknown): PaymentError {
   if (isPaymentError(e)) {
-    // Always ensure raw exists for debug purposes.
-    // NOTE: MessageKey must already be an i18n key at this point.
-    return {
-      ...e,
-      messageKey: looksLikeI18nKey(e.messageKey) ? e.messageKey : 'errors.unknown_error',
+    const messageKey = looksLikeI18nKey(e.messageKey) ? e.messageKey : undefined;
+
+    const normalized: PaymentError = {
+      code: e.code as PaymentErrorCode,
       raw: e.raw ?? null,
+      ...(e.params ? { params: e.params } : {}),
     };
+
+    return messageKey ? { ...normalized, messageKey } : normalized;
   }
 
   return {
     code: 'unknown_error',
-    messageKey: 'errors.unknown_error',
     raw: e,
   };
 }

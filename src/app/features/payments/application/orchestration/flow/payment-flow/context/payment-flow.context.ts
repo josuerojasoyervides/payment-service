@@ -5,22 +5,27 @@
  * merge per provider for reconciliation (each provider uses different IDs — intentId,
  * orderId, preferenceId, paymentId — so we keep a provider-keyed map and merge on updates).
  */
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type {
-  PaymentFlowContext,
   ProviderReferences,
   ProviderReferenceSet,
-} from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-provider-references.types';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import { FlowId } from '@payments/domain/common/primitives/ids/flow-id.vo';
 
 export const FLOW_CONTEXT_TTL_MS = 30 * 60 * 1000;
 
 export type FlowIdGenerator = (nowMs: number) => string;
 
 export const defaultFlowIdGenerator: FlowIdGenerator = (nowMs) => {
-  return `flow_${nowMs.toString(36)}_${createRandomSuffix()}`;
+  const built = FlowId.build(nowMs, createRandomSuffix());
+  return built.ok ? built.value.value : `flow_${nowMs.toString(36)}_${createRandomSuffix()}`;
 };
 
+/**
+ * Builds a flow context with stable ids, timestamps, and provider references.
+ */
 export function createFlowContext(params: {
   providerId: PaymentProviderId;
   request: CreatePaymentRequest;
@@ -35,7 +40,7 @@ export function createFlowContext(params: {
   const flowId = base.flowId ?? flowIdGenerator(nowMs);
   const createdAt = base.createdAt ?? nowMs;
   const expiresAt = base.expiresAt ?? nowMs + FLOW_CONTEXT_TTL_MS;
-  const externalReference = base.externalReference ?? params.request.orderId;
+  const externalReference = base.externalReference ?? params.request.orderId.value;
 
   const providerRefs = mergeProviderRefs(base.providerRefs, {
     [params.providerId]: base.providerRefs?.[params.providerId] ?? {},
@@ -68,6 +73,9 @@ export function mergeProviderRefs(
   return result;
 }
 
+/**
+ * Merges provider references into an existing flow context.
+ */
 export function updateFlowContextProviderRefs(params: {
   context: PaymentFlowContext | null;
   providerId: PaymentProviderId;
@@ -86,6 +94,9 @@ export function updateFlowContextProviderRefs(params: {
   };
 }
 
+/**
+ * Resolves the most reliable reference id for status checks.
+ */
 export function resolveStatusReference(
   context: PaymentFlowContext | null,
   providerId: PaymentProviderId | null,

@@ -1,6 +1,6 @@
 # Payments Module — Architecture & Quality Rules
 
-> **Last review:** 2026-01-29
+> **Last review:** 2026-02-02
 > This repo is a lab to practice payments architecture **without turning it into a spider web**.
 
 ## How to read this document
@@ -13,7 +13,7 @@ This doc has two roles:
 You will see sections with:
 
 - **Rule (target)**
-- **Current state (as of 2026-01-26)**
+- **Current state (as of 2026-02-02)**
 - **Accepted deviation** (if any) + **closure plan**
 
 ---
@@ -86,6 +86,23 @@ You will see sections with:
 
 ## 2) Allowed dependencies (quick map)
 
+### 2.1 Ports vs presentation contracts
+
+**Rule (target)**
+
+- `application/api` defines **application ports** (input/output) and core contracts used by orchestration.
+- `presentation/` defines **UI-specific contracts** (display/form metadata).
+- `ui/` may depend on both `application/api` and `presentation/`.
+- `application/orchestration` and `domain` must **not** depend on `presentation/`.
+
+**Rationale**
+
+Ports belong to the application (how the core is used). Presentation contracts are UI concerns.
+Keeping them separate preserves UI-agnostic core and prevents UI metadata from leaking into orchestration.
+
+Presentation registries (e.g., provider descriptors) are fed by infra/config via tokens and consumed by application adapters.
+Orchestration and domain must remain presentation-free.
+
 **Rule (target)**
 
 - `ui/` → can import `application/`, `domain/`, `shared/` (feature), and `src/app/shared/**` (global UI).
@@ -99,6 +116,10 @@ You will see sections with:
 - `domain/` importing Angular/RxJS/HttpClient.
 - `ui/` importing `infrastructure/` directly.
 - `shared/` (feature) importing `i18n.t()` or UI code.
+
+**Note:** `application/api` is the public surface for UI/infra/config; it may re-export presentation
+contracts and import internal application types as type-only when they are part of the contract.
+Anything internal-only should live outside `application/api`.
 
 ---
 
@@ -192,6 +213,19 @@ export interface PaymentError {
 
 **Current state:** enforced; guardrails prevent regressions.
 
+Error/message keys live in `shared/constants/payment-error-keys.ts` (`PAYMENT_ERROR_KEYS`, `PAYMENT_MESSAGE_KEYS`, `PAYMENT_SPEI_DETAIL_LABEL_KEYS`). Domain stays agnostic of UI vocabulary; strategies use these constants; the UI translates via i18n.
+
+---
+
+## 5.3 Shared → domain only; SPEI display config
+
+**Rule (target)**
+
+- `shared/` (feature) may only import `domain/`. It must not import `@core` (i18n, logging).
+- Provider-specific or environment-specific display data (e.g. SPEI bank names, beneficiary, test CLABE) lives in infrastructure; it is injected into strategies via domain contracts (e.g. `SpeiDisplayConfig`).
+
+**Current state:** Depcruise rule `shared-no-core` forbids payments `shared/` from importing `src/app/core`. Error/message keys are in `shared/constants/`. `SpeiDisplayConfig` lives in `presentation/contracts/` (deprecated re-export in `application/api/contracts/`); constants in `infrastructure/fake/shared/constants/spei-display.constants.ts`; `SpeiStrategy` receives optional config from the provider factory.
+
 ---
 
 ## 6) XState as source of truth
@@ -217,7 +251,7 @@ CI must fail when:
 - `messageKey` is used as translated text,
 - boundary rules are broken.
 
-**Current state:** guardrails are in place (tests + depcruise).
+**Current state:** guardrails are in place (tests + depcruise). Rule `shared-no-core` forbids payments `shared/` from importing `@core`. Policy `intentRequiresUserAction` lives in Domain (`domain/.../policies/requires-user-action.policy.ts`).
 
 ---
 
@@ -251,13 +285,16 @@ Per critical operation, at minimum:
   - `*.policy.ts` → boolean gates.
   - `*.port.ts` → boundary interfaces.
 
-**Current state (Domain layout as of 2026-01-29)**
+**Current state (Domain layout as of 2026-02)**
 
 - `domain/common/`:
-  - `primitives/{ids,money,time}` → shared value objects.
+  - `primitives/{ids,money,time}` → shared value objects: `Money`, `PaymentIntentId`, `OrderId`, `UrlString`, `TimestampMs`, `FlowId` (see `domain/common/primitives/ids/`, `money/`, `time/`, `url-string.vo.ts`).
   - `ports/` → truly cross-subdomain ports (e.g. token validators).
-- `domain/subdomains/payment/{contracts,entities,primitives,rules,policies,ports}`
-- `domain/subdomains/fallback/{contracts,entities,primitives,rules,policies,ports}`
+- `domain/subdomains/payment/`:
+  - `messages/` → `payment-request.command.ts` (CreatePaymentRequest, ConfirmPaymentRequest, CancelPaymentRequest, GetPaymentStatusRequest), `payment-webhook.event.ts`.
+  - `entities/` → `payment-intent.types.ts`, `payment-flow-context.types.ts`, `payment-error.model.ts`, etc.
+  - `rules/`, `policies/`, `ports/` — policies include `requires-user-action.policy.ts`. Error keys in `shared/constants/`; `SpeiDisplayConfig` in `presentation/contracts/` (deprecated re-export in `application/api/contracts/`).
+- `domain/subdomains/fallback/{contracts,entities,messages,policies,ports}` — messages include `fallback-user-response.command.ts`.
 
 To keep the structure visible while subfolders are still empty, we use **temporary markers**:
 
@@ -265,6 +302,13 @@ To keep the structure visible while subfolders are still empty, we use **tempora
   - which suffixes belong there (e.g. `*.vo.ts`, `*.rule.ts`),
   - 1–2 examples of expected artifacts.
 - These `.txt` files are **not** imported anywhere and can be safely deleted once real code exists in that folder.
+
+**Value Objects and current contracts**
+
+- **Adopted in domain contracts:** `Money` (CreatePaymentRequest.money, PaymentIntent.money), `PaymentIntentId` (intentId in Confirm/Cancel/GetStatus requests, PaymentIntent.id), `OrderId` (CreatePaymentRequest.orderId).
+- **Contracts:** Only interfaces; data lives in entities. Commands in `messages/*.command.ts`; events in `messages/*.event.ts`.
+- **Edge validation:** Builders (e.g. `BasePaymentRequestBuilder`) parse raw strings into VOs via `createMoneyOrThrow()`, `createOrderIdOrThrow()`, `createIntentIdOrThrow()`; optional URLs are validated with `UrlString.from()` (returnUrl/cancelUrl remain `string` in contracts; validation happens at Application edge).
+- **Guardrails:** `bun run test`, `bun run dep:check`, `bun run lint:fix` must pass.
 
 **Config & DI interplay (reminder)**
 

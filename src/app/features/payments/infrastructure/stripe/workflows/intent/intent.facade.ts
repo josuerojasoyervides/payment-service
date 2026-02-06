@@ -1,16 +1,17 @@
 import { inject, Injectable } from '@angular/core';
-import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+} from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/cancel-intent.gateway';
 import { StripeConfirmIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/confirm-intent.gateway';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import type { Observable } from 'rxjs';
 
 /**
@@ -26,7 +27,7 @@ import type { Observable } from 'rxjs';
  */
 @Injectable()
 export class StripeIntentFacade implements PaymentGatewayPort {
-  readonly providerId = 'stripe' as const;
+  readonly providerId = PAYMENT_PROVIDER_IDS.stripe;
 
   private readonly createIntentOp = inject(StripeCreateIntentGateway);
   private readonly confirmIntentOp = inject(StripeConfirmIntentGateway);

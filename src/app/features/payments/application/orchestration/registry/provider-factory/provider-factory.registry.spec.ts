@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
 import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
-import type { PaymentMethodType } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 describe('ProviderFactoryRegistry', () => {
   let registry: ProviderFactoryRegistry;

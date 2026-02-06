@@ -18,6 +18,11 @@ export type TokenBehavior =
   | 'insufficient'
   | 'expired'
   | 'processing'
+  | 'circuit'
+  | 'rate_limit'
+  | 'retry_exhaust'
+  | 'half_open_fail'
+  | 'slow_response'
   | 'normal';
 
 export function getTokenBehavior(token?: string): TokenBehavior {
@@ -32,6 +37,11 @@ export function getTokenBehavior(token?: string): TokenBehavior {
   if (token === SPECIAL_TOKENS.INSUFFICIENT) return 'insufficient';
   if (token === SPECIAL_TOKENS.EXPIRED) return 'expired';
   if (token === SPECIAL_TOKENS.PROCESSING) return 'processing';
+  if (token === SPECIAL_TOKENS.CIRCUIT_TRIP) return 'circuit';
+  if (token === SPECIAL_TOKENS.RATE_LIMIT_HIT) return 'rate_limit';
+  if (token === SPECIAL_TOKENS.RETRY_EXHAUST) return 'retry_exhaust';
+  if (token === SPECIAL_TOKENS.HALF_OPEN_FAIL) return 'half_open_fail';
+  if (token === SPECIAL_TOKENS.SLOW_RESPONSE) return 'slow_response';
 
   if (token.startsWith(SPECIAL_TOKENS.SUCCESS)) return 'success';
   if (token.startsWith(SPECIAL_TOKENS.THREE_DS)) return '3ds';
@@ -44,6 +54,11 @@ export function getTokenBehavior(token?: string): TokenBehavior {
   if (token.startsWith(SPECIAL_TOKENS.INSUFFICIENT)) return 'insufficient';
   if (token.startsWith(SPECIAL_TOKENS.EXPIRED)) return 'expired';
   if (token.startsWith(SPECIAL_TOKENS.PROCESSING)) return 'processing';
+  if (token.startsWith(SPECIAL_TOKENS.CIRCUIT_TRIP)) return 'circuit';
+  if (token.startsWith(SPECIAL_TOKENS.RATE_LIMIT_HIT)) return 'rate_limit';
+  if (token.startsWith(SPECIAL_TOKENS.RETRY_EXHAUST)) return 'retry_exhaust';
+  if (token.startsWith(SPECIAL_TOKENS.HALF_OPEN_FAIL)) return 'half_open_fail';
+  if (token.startsWith(SPECIAL_TOKENS.SLOW_RESPONSE)) return 'slow_response';
 
   return 'normal';
 }

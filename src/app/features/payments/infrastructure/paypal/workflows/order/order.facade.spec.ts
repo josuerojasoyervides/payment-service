@@ -1,15 +1,20 @@
 import { TestBed } from '@angular/core/testing';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+} from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { PaypalCancelIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/cancel-intent.gateway';
 import { PaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/confirm-intent.gateway';
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/create-intent.gateway';
 import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/get-intent.gateway';
 import { PaypalIntentFacade } from '@payments/infrastructure/paypal/workflows/order/order.facade';
+import { TEST_RETURN_URL } from '@payments/shared/testing/fixtures/test-urls';
 import { of } from 'rxjs';
 
 describe('IntentFacade (adapter)', () => {
@@ -22,23 +27,23 @@ describe('IntentFacade (adapter)', () => {
   const getIntentOp = { execute: vi.fn() };
 
   const createReq: CreatePaymentRequest = {
-    orderId: 'order_1',
-    amount: 100,
-    currency: 'MXN',
+    orderId: createOrderId('order_1'),
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
+    idempotencyKey: 'idem_paypal_facade_create',
   };
 
   const confirmReq: ConfirmPaymentRequest = {
-    intentId: 'pi_1',
-    returnUrl: 'https://example.com/return',
+    intentId: createPaymentIntentId('pi_1'),
+    returnUrl: TEST_RETURN_URL,
   };
 
   const cancelReq: CancelPaymentRequest = {
-    intentId: 'pi_1',
+    intentId: createPaymentIntentId('pi_1'),
   };
 
   const getIntentReq: GetPaymentStatusRequest = {
-    intentId: 'pi_1',
+    intentId: createPaymentIntentId('pi_1'),
   };
 
   beforeEach(() => {
@@ -57,7 +62,7 @@ describe('IntentFacade (adapter)', () => {
   });
 
   it('delegates createIntent to PaypalCreateIntentGateway.execute', async () => {
-    createIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
+    createIntentOp.execute.mockReturnValue(of({ id: createPaymentIntentId('pi_1') } as any));
 
     gateway.createIntent(createReq).subscribe();
 
@@ -65,7 +70,7 @@ describe('IntentFacade (adapter)', () => {
     expect(createIntentOp.execute).toHaveBeenCalledWith(createReq);
   });
   it('delegates confirmIntent to PaypalConfirmIntentGateway.execute', async () => {
-    confirmIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
+    confirmIntentOp.execute.mockReturnValue(of({ id: createPaymentIntentId('pi_1') } as any));
 
     gateway.confirmIntent(confirmReq).subscribe();
 
@@ -81,7 +86,7 @@ describe('IntentFacade (adapter)', () => {
     expect(cancelIntentOp.execute).toHaveBeenCalledWith(cancelReq);
   });
   it('delegates getIntentStatus to PaypalGetIntentGateway.execute', async () => {
-    getIntentOp.execute.mockReturnValue(of({ id: 'pi_1' } as any));
+    getIntentOp.execute.mockReturnValue(of({ id: createPaymentIntentId('pi_1') } as any));
 
     gateway.getIntent(getIntentReq).subscribe();
 

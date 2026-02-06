@@ -2,21 +2,25 @@
  * Mega stress scenario (PR6 Phase D): duplicates + delays + out-of-order events.
  * Asserts: convergence, finalize idempotency, telemetry timeline (new kinds/refs), no secrets in meta.
  */
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
 import { scheduleDelayedWebhook } from '@payments/application/orchestration/testing/fakes/delayed-webhook.fake';
 import { createFlakyStatusUseCaseFake } from '@payments/application/orchestration/testing/fakes/flaky-status-use-case.fake';
 import { createPaymentFlowScenarioHarness } from '@payments/application/orchestration/testing/payment-flow.scenario-harness';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 const baseRequest: CreatePaymentRequest = {
-  orderId: 'o1',
-  amount: 100,
-  currency: 'MXN',
+  orderId: createOrderId('o1'),
+  money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_visa1234567890abcdef' },
+  idempotencyKey: 'idem_flow_mega',
 };
 
 const FORBIDDEN_PAYLOAD_KEYS = ['raw', 'clientSecret', 'token', 'email'];
@@ -28,12 +32,12 @@ describe('Payment flow mega chaos (PR6 Phase D)', () => {
   });
   it('START + REDIRECT_RETURNED + delayed webhook + duplicate now + advance + REFRESH: finalize once, flow converges, telemetry has COMMAND_SENT/SYSTEM_EVENT_SENT, no secrets in meta', async () => {
     const refId = 'pi_mega';
+    const refIdVo = createPaymentIntentId(refId);
     const succeededIntent = {
-      id: refId,
+      id: refIdVo,
       provider: 'stripe' as const,
       status: 'succeeded' as const,
-      amount: 100,
-      currency: 'MXN' as const,
+      money: { amount: 100, currency: 'MXN' as const },
     };
     const requestFinalizeSpy = vi.fn(() => of(succeededIntent));
 
@@ -61,7 +65,7 @@ describe('Payment flow mega chaos (PR6 Phase D)', () => {
           provide: GetPaymentStatusUseCase,
           useValue: createFlakyStatusUseCaseFake({
             statusSequence: ['processing', 'succeeded'],
-            intentId: refId,
+            intentId: refIdVo,
             providerId: 'stripe',
           }),
         },

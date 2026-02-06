@@ -1,8 +1,16 @@
-import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import type {
   PaymentIntent,
   PaymentIntentStatus,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
+
+function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
+  const result = PaymentIntentId.from(raw);
+  if (!result.ok) throw new Error(`Invalid intent id from provider: ${raw}`);
+  return result.value;
+}
 
 export function mapStripeIntent(dto: StripePaymentIntentDto): PaymentIntent {
   const statusMap: Record<StripePaymentIntentDto['status'], PaymentIntentStatus> = {
@@ -31,11 +39,13 @@ export function mapStripeIntent(dto: StripePaymentIntentDto): PaymentIntent {
   }
 
   return {
-    id: dto.id,
-    provider: 'stripe',
+    id: toPaymentIntentIdOrThrow(dto.id),
+    provider: PAYMENT_PROVIDER_IDS.stripe,
     status: statusMap[dto.status],
-    amount: dto.amount / 100,
-    currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
+    money: {
+      amount: dto.amount / 100,
+      currency: dto.currency.toUpperCase() as 'MXN' | 'USD',
+    },
     clientSecret: dto.client_secret,
     nextAction,
     raw: dto,

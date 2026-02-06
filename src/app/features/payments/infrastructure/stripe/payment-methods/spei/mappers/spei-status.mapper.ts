@@ -1,5 +1,5 @@
+import type { PaymentIntentStatus } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { StripeSpeiSourceDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import type { PaymentIntentStatus } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export class SpeiStatusMapper {
   mapSpeiStatus(status: StripeSpeiSourceDto['status']): PaymentIntentStatus {

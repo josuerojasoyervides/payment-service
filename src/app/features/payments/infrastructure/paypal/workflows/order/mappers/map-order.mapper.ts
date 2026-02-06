@@ -1,10 +1,15 @@
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { findPaypalLink } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { STATUS_MAP } from '@payments/infrastructure/paypal/workflows/order/mappers/status.mapper';
+
+function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
+  const result = PaymentIntentId.from(raw);
+  if (!result.ok) throw new Error(`Invalid intent id from provider: ${raw}`);
+  return result.value;
+}
 
 export function mapOrder(dto: PaypalOrderDto, providerId: PaymentProviderId): PaymentIntent {
   const status = STATUS_MAP[dto.status] ?? 'processing';
@@ -14,11 +19,10 @@ export function mapOrder(dto: PaypalOrderDto, providerId: PaymentProviderId): Pa
   const currency = purchaseUnit?.amount?.currency_code as 'MXN' | 'USD';
 
   const intent: PaymentIntent = {
-    id: dto.id,
+    id: toPaymentIntentIdOrThrow(dto.id),
     provider: providerId,
     status,
-    amount,
-    currency,
+    money: { amount, currency },
     raw: dto,
   };
 

@@ -5,8 +5,8 @@ import { provideRouter } from '@angular/router';
 import { LoggerService } from '@app/core';
 import { FALLBACK_CONFIG } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import providePayments from '@app/features/payments/config/payment.providers';
-import { DEFAULT_FALLBACK_CONFIG } from '@app/features/payments/domain/subdomains/fallback/contracts/fallback-config.types';
 import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
+import { DEFAULT_FALLBACK_CONFIG } from '@payments/application/orchestration/services/fallback/fallback-config.constant';
 import { vi } from 'vitest';
 
 /**
@@ -90,7 +90,8 @@ export async function waitForPaymentComplete(
   await waitFor(
     () => {
       const intent = state.intent();
-      const isLoading = state.isLoading();
+      const tags = state.debugTags();
+      const isLoading = state.isLoading() || tags.includes('loading');
       const hasError = state.hasError();
       return (!!intent && !isLoading) || (hasError && !isLoading);
     },
@@ -98,6 +99,7 @@ export async function waitForPaymentComplete(
     () => {
       const snap = state.getSnapshot();
       const summary = state.debugSummary();
+      const tags = state.debugTags();
       return (
         `Payment did not complete within ${maxWaitMs}ms.\n` +
         `Final state: ${JSON.stringify(
@@ -105,6 +107,8 @@ export async function waitForPaymentComplete(
             intent: !!snap.intent,
             status: summary.status,
             isLoading: summary.status === 'loading',
+            machineLoading: tags.includes('loading'),
+            tags,
             isReady: summary.status === 'ready',
             hasError: summary.status === 'error',
           },
@@ -160,7 +164,8 @@ export const BASE_PROVIDERS = [
     provide: FALLBACK_CONFIG,
     useValue: {
       ...DEFAULT_FALLBACK_CONFIG,
-      triggerErrorCodes: ['provider_unavailable', 'provider_error', 'network_error'],
+      triggerErrorCodes: ['provider_unavailable', 'network_error', 'timeout'],
+      blockedErrorCodes: ['card_declined'],
     },
   },
 ];

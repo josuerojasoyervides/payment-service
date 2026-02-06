@@ -1,3 +1,0 @@
-Pure functions: *.rule.ts
-Examples: resolve-next-action.rule.ts, calculate-retry-delay.rule.ts
-Pure functions that derive/decide/calculate domain logic.

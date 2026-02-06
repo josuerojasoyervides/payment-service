@@ -9,10 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { disabled, email, type FieldTree, form, required } from '@angular/forms/signals';
-import type {
-  FieldRequirements,
-  PaymentOptions,
-} from '@app/features/payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import {
   isEmailField,
   isFlagField,
@@ -27,6 +24,7 @@ import type {
   RootPathTree,
   TextModel,
 } from '@app/features/payments/ui/forms/payment-options/types/payment-options-form.types';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 
 @Injectable()
 export class PaymentOptionsForm {

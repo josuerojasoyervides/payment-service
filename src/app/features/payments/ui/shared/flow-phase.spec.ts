@@ -1,6 +1,8 @@
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
-import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
+import { INITIAL_RESILIENCE_STATE } from '@payments/application/orchestration/store/types/payment-store-state';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { deriveFlowPhase } from '@payments/ui/shared/flow-phase';
 
 function setup(overrides: Parameters<typeof createMockPaymentState>[0] = {}) {
@@ -22,11 +24,10 @@ describe('deriveFlowPhase', () => {
 
   it('returns action_required when intent has requires_action', () => {
     const intent: PaymentIntent = {
-      id: 'pi_1',
+      id: createPaymentIntentId('pi_1'),
       provider: 'stripe',
       status: 'requires_action',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       clientSecret: 'secret',
       nextAction: { kind: 'client_confirm', token: 'tok_test' },
     };
@@ -36,11 +37,10 @@ describe('deriveFlowPhase', () => {
 
   it('returns processing when intent status is processing', () => {
     const intent: PaymentIntent = {
-      id: 'pi_1',
+      id: createPaymentIntentId('pi_1'),
       provider: 'stripe',
       status: 'processing',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       clientSecret: 'secret',
     };
     const { phaseSignal } = setup({ intent, isReady: true });
@@ -49,11 +49,10 @@ describe('deriveFlowPhase', () => {
 
   it('returns done when intent status is succeeded', () => {
     const intent: PaymentIntent = {
-      id: 'pi_1',
+      id: createPaymentIntentId('pi_1'),
       provider: 'stripe',
       status: 'succeeded',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       clientSecret: 'secret',
     };
     const { phaseSignal } = setup({ intent, isReady: true });
@@ -72,20 +71,19 @@ describe('deriveFlowPhase', () => {
 
   it('returns failed when intent.status is failed even if hasError is false', () => {
     const intent: PaymentIntent = {
-      id: 'pi_1',
+      id: createPaymentIntentId('pi_1'),
       provider: 'stripe',
       status: 'failed',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       clientSecret: 'secret',
     };
     const { phaseSignal } = setup({ intent, isReady: true, hasError: false });
     expect(phaseSignal()).toBe('failed');
   });
 
-  it('returns fallback_pending when fallback status is pending', () => {
+  it('returns fallback_pending when fallback is confirming', () => {
     const { phaseSignal } = setup({
-      fallback: { ...INITIAL_FALLBACK_STATE, status: 'pending' },
+      resilience: { ...INITIAL_RESILIENCE_STATE, status: 'fallback_confirming' },
     });
     expect(phaseSignal()).toBe('fallback_pending');
   });
@@ -106,11 +104,10 @@ describe('deriveFlowPhase', () => {
 
   it('fallback_pending wins over hasError and requires_action', () => {
     const intent: PaymentIntent = {
-      id: 'pi_1',
+      id: createPaymentIntentId('pi_1'),
       provider: 'stripe',
       status: 'requires_action',
-      amount: 100,
-      currency: 'MXN',
+      money: { amount: 100, currency: 'MXN' },
       clientSecret: 'secret',
       nextAction: { kind: 'client_confirm', token: 'tok_test' },
     };
@@ -118,7 +115,7 @@ describe('deriveFlowPhase', () => {
       intent,
       hasError: true,
       isReady: true,
-      fallback: { ...INITIAL_FALLBACK_STATE, status: 'pending' },
+      resilience: { ...INITIAL_RESILIENCE_STATE, status: 'fallback_confirming' },
     });
     expect(phaseSignal()).toBe('fallback_pending');
   });

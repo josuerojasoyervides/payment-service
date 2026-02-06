@@ -19,6 +19,38 @@
       </div>
     </div>
 
+    @if (showCircuitOpenBanner()) {
+      <div class="card mb-6 bg-amber-50 border border-amber-200" data-testid="circuit-open-banner">
+        <h2 class="text-lg font-semibold mb-1">{{ checkoutLabels.circuitOpenTitle() }}</h2>
+        <p class="text-sm text-amber-900">
+          {{ checkoutLabels.circuitOpenHint() }}
+        </p>
+      </div>
+    }
+
+    @if (showCircuitHalfOpenBanner()) {
+      <div
+        class="card mb-6 bg-slate-50 border border-slate-200"
+        data-testid="circuit-half-open-banner">
+        <h2 class="text-lg font-semibold mb-1">{{ checkoutLabels.circuitOpenTitle() }}</h2>
+        <p class="text-sm text-slate-700">
+          {{ checkoutLabels.circuitHalfOpenHint() }}
+        </p>
+      </div>
+    }
+
+    @if (showRateLimitedBanner()) {
+      <div class="card mb-6 bg-blue-50 border border-blue-200" data-testid="rate-limited-banner">
+        <h2 class="text-lg font-semibold mb-1">{{ checkoutLabels.rateLimitedTitle() }}</h2>
+        <p class="text-sm text-blue-900">
+          {{ checkoutLabels.rateLimitedHint() }}
+          @if (resilienceCountdownSeconds(); as seconds) {
+            <span class="font-medium"> ({{ seconds }}s)</span>
+          }
+        </p>
+      </div>
+    }
+
     <!-- Show result on success or error (phase-driven) -->
     @if (showResult()) {
       <div class="mb-6">
@@ -28,13 +60,27 @@
             [isAuto]="isAutoFallback()"
             (canceled)="cancelFallback()" />
         }
+        @if (showManualReviewPanel()) {
+          <div
+            class="card mb-6 bg-amber-50 border border-amber-200"
+            data-testid="manual-review-panel">
+            <h2 class="text-lg font-semibold mb-2">{{ checkoutLabels.manualReviewTitle() }}</h2>
+            <p class="text-sm text-amber-900 mb-3">{{ checkoutLabels.manualReviewHint() }}</p>
+            @if (state.manualReviewData(); as manualReview) {
+              <a
+                class="btn-primary inline-flex items-center gap-2"
+                [href]="manualReview.dashboardUrl"
+                target="_blank"
+                rel="noreferrer">
+                {{ checkoutLabels.manualReviewAction() }}
+              </a>
+            }
+          </div>
+        }
         @if (showProcessingPanel()) {
           <div class="card mb-6" data-testid="processing-panel">
             <h2 class="text-lg font-semibold mb-2">{{ checkoutLabels.processingStatusTitle() }}</h2>
             <p class="text-gray-600 text-sm mb-4">{{ checkoutLabels.processingStatusHint() }}</p>
-            <button type="button" class="btn-primary" (click)="refreshProcessingStatus()">
-              {{ checkoutLabels.refreshStatus() }}
-            </button>
           </div>
         }
         <app-payment-result
@@ -47,6 +93,7 @@
         @if (flowState.currentIntent()?.nextAction) {
           <app-next-action-card
             [nextAction]="flowState.currentIntent()!.nextAction!"
+            [showRetry]="state.canRetryClientConfirm()"
             (actionRequested)="onNextActionRequested($event)" />
         }
       </div>
@@ -76,8 +123,22 @@
           <app-provider-selector
             [descriptors]="providerDescriptors()"
             [selected]="checkoutPageState.selectedProvider()"
-            [disabled]="flowState.isLoading()"
+            [disabled]="flowState.isLoading() || isResilienceBlocked()"
             (providerChange)="selectProvider($event)" />
+          @if (providerHealthState.isLoading()) {
+            <div class="mt-3 flex items-center gap-2 text-xs text-gray-600">
+              <span
+                class="inline-block h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></span>
+              <span>{{ checkoutLabels.healthChecking() }}</span>
+            </div>
+          } @else if (providerHealthLabel(); as label) {
+            <div class="mt-3 flex items-center gap-2 text-xs text-gray-600">
+              <span>{{ label }}</span>
+              @if (providerHealthState.latencyMs(); as latencyMs) {
+                <span class="text-gray-400">• {{ latencyMs }}ms</span>
+              }
+            </div>
+          }
         </div>
 
         <!-- Step 2: Method Selection -->
@@ -94,7 +155,11 @@
           <app-method-selector
             [methods]="availableMethods()"
             [selected]="checkoutPageState.selectedMethod()"
-            [disabled]="flowState.isLoading() || !checkoutPageState.selectedProvider()"
+            [disabled]="
+              flowState.isLoading() ||
+              isResilienceBlocked() ||
+              !checkoutPageState.selectedProvider()
+            "
             (methodChange)="selectMethod($event)" />
         </div>
 
@@ -107,7 +172,7 @@
             </div>
             <app-payment-form
               [requirements]="fieldRequirements()"
-              [disabled]="flowState.isLoading()"
+              [disabled]="flowState.isLoading() || isResilienceBlocked()"
               (formChange)="onFormChange($event)"
               (formValidChange)="onFormValidChange($event)" />
           </div>
@@ -120,7 +185,7 @@
             [currency]="checkoutPageState.currency()"
             [provider]="checkoutPageState.selectedProvider()"
             [loading]="flowState.isLoading()"
-            [disabled]="!checkoutPageState.isFormValid()"
+            [disabled]="!checkoutPageState.isFormValid() || isResilienceBlocked()"
             (pay)="processPayment()" />
         }
       </div>
@@ -157,10 +222,26 @@
 
     <!-- Fallback Modal -->
     <app-fallback-modal
-      [event]="fallbackState.pendingEvent()"
+      [data]="fallbackState.data()"
       [open]="fallbackState.isPending()"
       (confirm)="confirmFallback($event)"
       (canceled)="cancelFallback()" />
+
+    @if (showAllProvidersUnavailableModal()) {
+      <div class="modal-overlay" role="button" tabindex="0">
+        <div class="modal-content" role="dialog" aria-modal="true">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">
+            {{ checkoutLabels.allProvidersUnavailableTitle() }}
+          </h3>
+          <p class="text-sm text-gray-700 mb-4">
+            {{ checkoutLabels.allProvidersUnavailableHint() }}
+          </p>
+          <button type="button" class="btn-secondary" (click)="resetPayment()">
+            {{ checkoutLabels.tryAgainLabel() }}
+          </button>
+        </div>
+      </div>
+    }
 
     <!-- Flow debug panel (dev) -->
     <app-flow-debug-panel />

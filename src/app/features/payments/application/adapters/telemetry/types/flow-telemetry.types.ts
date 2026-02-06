@@ -25,6 +25,21 @@ export type FlowTelemetryEvent =
       meta?: Record<string, unknown>;
     }
   | {
+      kind: 'RESILIENCE_EVENT';
+      eventType:
+        | 'CIRCUIT_OPENED'
+        | 'CIRCUIT_CLOSED'
+        | 'CIRCUIT_HALF_OPEN'
+        | 'RETRY_ATTEMPTED'
+        | 'RETRY_EXHAUSTED'
+        | 'RATE_LIMIT_HIT';
+      atMs: number;
+      flowId?: string;
+      providerId?: string;
+      refs?: FlowTelemetryRefs;
+      meta?: Record<string, unknown>;
+    }
+  | {
       kind: 'STATE_CHANGED';
       state: string;
       tags: string[];

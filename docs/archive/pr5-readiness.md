@@ -1,5 +1,7 @@
 # PR5 Readiness Summary
 
+> **Archived.** Some referenced docs (e.g. `provider-integration-plan.md`) do not exist in the repo. Use `docs/architecture-rules.md` and `docs/flow-brain.md` as current references.
+
 ## 1. PR5 Scope
 
 - **Webhook normalization:** External signals (`WEBHOOK_RECEIVED`, `EXTERNAL_STATUS_UPDATED`) must emit semantic system events that the machine handles directly. No more forcing a `REFRESH` after every adapter call; the machine should move to `reconciling`/`finalizing`/terminal states based on the event data.

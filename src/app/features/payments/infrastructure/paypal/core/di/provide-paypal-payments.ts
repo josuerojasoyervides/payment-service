@@ -5,14 +5,9 @@ import { PaypalCancelIntentGateway } from '@app/features/payments/infrastructure
 import { PaypalConfirmIntentGateway } from '@app/features/payments/infrastructure/paypal/workflows/order/gateways/confirm-intent.gateway';
 import { PaypalGetIntentGateway } from '@app/features/payments/infrastructure/paypal/workflows/order/gateways/get-intent.gateway';
 import { PaypalIntentFacade } from '@app/features/payments/infrastructure/paypal/workflows/order/order.facade';
-import { I18nKeys } from '@core/i18n';
-import { PAYMENT_PROVIDER_DESCRIPTORS } from '@payments/application/api/tokens/provider/payment-provider-descriptors.token';
 import { PAYMENT_PROVIDER_FACTORIES } from '@payments/application/api/tokens/provider/payment-provider-factories.token';
 import { PAYMENT_PROVIDER_METHOD_POLICIES } from '@payments/application/api/tokens/provider/payment-provider-method-policies.token';
-import {
-  PAYMENT_PROVIDER_UI_META,
-  type PaymentProviderUiMeta,
-} from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
+import { REDIRECT_RETURN_NORMALIZERS } from '@payments/application/api/tokens/redirect/redirect-return-normalizers.token';
 import type { PaymentsProvidersMode } from '@payments/config/payments-providers.types';
 import { FakePaypalCancelIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-cancel-intent.gateway';
 import { FakePaypalConfirmIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-confirm-intent.gateway';
@@ -20,76 +15,58 @@ import { FakePaypalCreateIntentGateway } from '@payments/infrastructure/paypal/t
 import { FakePaypalGetIntentGateway } from '@payments/infrastructure/paypal/testing/fake-gateways/intent/fake-paypal-get-intent.gateway';
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/create-intent.gateway';
 import { PaypalFinalizeHandler } from '@payments/infrastructure/paypal/workflows/redirect/handlers/paypal-finalize.handler';
+import { PaypalRedirectReturnNormalizer } from '@payments/infrastructure/paypal/workflows/redirect/paypal-redirect-return.normalizer';
 import { fakeIntentFacadeFactory } from '@payments/infrastructure/testing/fake-intent-facade.factory';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 export { PaypalWebhookNormalizer } from '@payments/infrastructure/paypal/workflows/webhook/paypal-webhook.normalizer';
 
-const PAYPAL_FACTORY_PROVIDERS: Provider[] = [
+const paypalFactoryProviders: Provider[] = [
   { provide: PAYMENT_PROVIDER_FACTORIES, useClass: PaypalProviderFactory, multi: true },
 ];
 
-const PAYPAL_POLICY_PROVIDERS: Provider[] = [
+const paypalPolicyProviders: Provider[] = [
   { provide: PAYMENT_PROVIDER_METHOD_POLICIES, useClass: PaypalProviderMethodPolicy, multi: true },
 ];
 
-const PAYPAL_UI_META = {
-  providerId: 'paypal',
-  displayNameKey: I18nKeys.ui.provider_paypal,
-  buttonClasses: 'bg-paypal-primary hover:opacity-90 text-white focus:ring-paypal-primary',
-} as const satisfies PaymentProviderUiMeta;
-
-const PAYPAL_DESCRIPTOR = {
-  id: 'paypal' as const,
-  labelKey: I18nKeys.ui.provider_paypal,
-  descriptionKey: I18nKeys.ui.provider_paypal_description,
-  icon: '🅿️',
-  supportedMethods: ['card', 'spei'] as const,
-};
-
-const PAYPAL_UI_META_PROVIDERS: Provider[] = [
-  { provide: PAYMENT_PROVIDER_UI_META, useValue: PAYPAL_UI_META, multi: true },
+const paypalRedirectReturnProviders: Provider[] = [
+  { provide: REDIRECT_RETURN_NORMALIZERS, useClass: PaypalRedirectReturnNormalizer, multi: true },
 ];
 
-const PAYPAL_DESCRIPTOR_PROVIDERS: Provider[] = [
-  { provide: PAYMENT_PROVIDER_DESCRIPTORS, useValue: PAYPAL_DESCRIPTOR, multi: true },
-];
-
-const PAYPAL_REAL_PROVIDERS: Provider[] = [
+const paypalRealProviders: Provider[] = [
   PaypalIntentFacade,
   PaypalCreateIntentGateway,
   PaypalConfirmIntentGateway,
   PaypalCancelIntentGateway,
   PaypalGetIntentGateway,
   PaypalFinalizeHandler,
-  ...PAYPAL_FACTORY_PROVIDERS,
-  ...PAYPAL_POLICY_PROVIDERS,
-  ...PAYPAL_UI_META_PROVIDERS,
-  ...PAYPAL_DESCRIPTOR_PROVIDERS,
+  ...paypalFactoryProviders,
+  ...paypalPolicyProviders,
+  ...paypalRedirectReturnProviders,
 ];
 
-const PAYPAL_FAKE_PROVIDERS: Provider[] = [
+const paypalFakeProviders: Provider[] = [
   FakePaypalCreateIntentGateway,
   FakePaypalConfirmIntentGateway,
   FakePaypalCancelIntentGateway,
   FakePaypalGetIntentGateway,
   PaypalFinalizeHandler,
   fakeIntentFacadeFactory(
-    'paypal',
+    PAYMENT_PROVIDER_IDS.paypal,
     PaypalIntentFacade,
     FakePaypalCreateIntentGateway,
     FakePaypalConfirmIntentGateway,
     FakePaypalCancelIntentGateway,
     FakePaypalGetIntentGateway,
   ),
-  ...PAYPAL_FACTORY_PROVIDERS,
-  ...PAYPAL_POLICY_PROVIDERS,
-  ...PAYPAL_UI_META_PROVIDERS,
-  ...PAYPAL_DESCRIPTOR_PROVIDERS,
+  ...paypalFactoryProviders,
+  ...paypalPolicyProviders,
+  ...paypalRedirectReturnProviders,
 ];
 
 export function providePaypalPayments(mode: PaymentsProvidersMode): Provider[] {
   if (mode === 'real') {
-    return PAYPAL_REAL_PROVIDERS;
+    return paypalRealProviders;
   }
 
-  return PAYPAL_FAKE_PROVIDERS;
+  return paypalFakeProviders;
 }

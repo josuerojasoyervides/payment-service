@@ -1,22 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, isDevMode } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, isDevMode, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
+import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
-import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
-import type {
-  CurrencyCode,
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type {
-  FieldRequirements,
-  PaymentOptions,
-} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import type { HealthStatus } from '@payments/application/api/ports/provider-health.port';
+import { PROVIDER_HEALTH_PORT } from '@payments/application/api/tokens/health/provider-health.token';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { FallbackStatusBannerComponent } from '@payments/ui/components/fallback-status-banner/fallback-status-banner.component';
 import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';
@@ -37,6 +36,13 @@ interface CheckoutPageState {
   selectedMethod: PaymentMethodType | null;
   formOptions: PaymentOptions;
   isFormValid: boolean;
+}
+
+interface ProviderHealthState {
+  status: HealthStatus['status'] | null;
+  latencyMs: number | null;
+  isLoading: boolean;
+  error: 'timeout' | 'unknown' | null;
 }
 
 /**
@@ -75,8 +81,13 @@ export class CheckoutComponent {
 
   private readonly logger = inject(LoggerService);
   private readonly i18n = inject(I18nService);
-  private readonly state = inject(PAYMENT_STATE);
+  readonly state = inject(PAYMENT_STATE);
   private readonly catalog = inject(PAYMENT_CHECKOUT_CATALOG);
+  private readonly health = inject(PROVIDER_HEALTH_PORT);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private readonly now = signal(Date.now());
+  private healthRequestId = 0;
 
   readonly flowState = deepComputed(() => ({
     isLoading: this.state.isLoading(),
@@ -96,9 +107,24 @@ export class CheckoutComponent {
     isFormValid: false,
   });
 
+  readonly providerHealthState = signalState<ProviderHealthState>({
+    status: null,
+    latencyMs: null,
+    isLoading: false,
+    error: null,
+  });
+
+  readonly providerHealthLabel = computed(() => {
+    const status = this.providerHealthState.status();
+    if (status === 'healthy') return this.checkoutLabels.healthAvailable();
+    if (status === 'degraded') return this.checkoutLabels.healthSlow();
+    if (status === 'down') return this.checkoutLabels.healthUnavailable();
+    return null;
+  });
+
   readonly fallbackState = deepComputed(() => ({
-    isPending: this.state.hasPendingFallback(),
-    pendingEvent: this.state.pendingFallbackEvent(),
+    isPending: this.state.isFallbackConfirming(),
+    data: this.state.fallbackConfirmation(),
   }));
 
   readonly providerDescriptors = computed(() => this.catalog.getProviderDescriptors());
@@ -143,6 +169,29 @@ export class CheckoutComponent {
   readonly isFallbackExecuting = computed(() => this.state.isFallbackExecuting());
   readonly isAutoFallback = computed(() => this.state.isAutoFallbackInProgress());
 
+  readonly isResilienceBlocked = computed(
+    () =>
+      this.state.isCircuitOpen() ||
+      this.state.isRateLimited() ||
+      this.state.isPendingManualReview() ||
+      this.state.isAllProvidersUnavailable(),
+  );
+
+  readonly showCircuitOpenBanner = computed(() => this.state.isCircuitOpen());
+  readonly showCircuitHalfOpenBanner = computed(() => this.state.isCircuitHalfOpen());
+  readonly showRateLimitedBanner = computed(() => this.state.isRateLimited());
+  readonly showManualReviewPanel = computed(() => this.state.isPendingManualReview());
+  readonly showAllProvidersUnavailableModal = computed(() =>
+    this.state.isAllProvidersUnavailable(),
+  );
+
+  readonly resilienceCountdownSeconds = computed(() => {
+    const untilMs = this.state.resilienceCooldownUntilMs();
+    if (!untilMs) return null;
+    const deltaMs = Math.max(0, untilMs - this.now());
+    return Math.ceil(deltaMs / 1000);
+  });
+
   readonly debugInfo = computed(() => {
     const summary = this.state.debugSummary();
 
@@ -155,6 +204,9 @@ export class CheckoutComponent {
   });
 
   constructor() {
+    const interval = setInterval(() => this.now.set(Date.now()), 1000);
+    this.destroyRef.onDestroy(() => clearInterval(interval));
+
     effect(() => {
       const descriptors = this.providerDescriptors();
       const current = this.checkoutPageState.selectedProvider();
@@ -182,13 +234,70 @@ export class CheckoutComponent {
     });
 
     effect(() => {
-      const event = this.fallbackState.pendingEvent();
-      if (event) {
+      const provider = this.checkoutPageState.selectedProvider();
+      if (!provider) {
+        patchState(this.providerHealthState, {
+          status: null,
+          latencyMs: null,
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+
+      this.refreshProviderHealth(provider);
+    });
+
+    effect(() => {
+      const data = this.fallbackState.data();
+      if (data) {
         this.logger.info('Fallback available', 'CheckoutPage', {
-          failedProvider: event.failedProvider,
-          alternatives: event.alternativeProviders,
+          alternatives: data.eligibleProviders,
+          failureReason: data.failureReason,
         });
       }
+    });
+  }
+
+  private async refreshProviderHealth(providerId: PaymentProviderId): Promise<void> {
+    const requestId = ++this.healthRequestId;
+    patchState(this.providerHealthState, {
+      isLoading: true,
+      error: null,
+    });
+
+    try {
+      const result = await this.withTimeout(this.health.check(providerId), 5000);
+      if (requestId !== this.healthRequestId) return;
+      patchState(this.providerHealthState, {
+        status: result.status,
+        latencyMs: result.latencyMs ?? null,
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      if (requestId !== this.healthRequestId) return;
+      patchState(this.providerHealthState, {
+        status: 'down',
+        latencyMs: null,
+        isLoading: false,
+        error: error instanceof Error && error.message === 'timeout' ? 'timeout' : 'unknown',
+      });
+    }
+  }
+
+  private withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('timeout')), timeoutMs);
+      promise
+        .then((value) => {
+          clearTimeout(timeout);
+          resolve(value);
+        })
+        .catch((err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
     });
   }
 
@@ -218,6 +327,13 @@ export class CheckoutComponent {
   }
 
   processPayment(): void {
+    if (this.isResilienceBlocked()) {
+      this.logger.info('Payment blocked by resilience state', 'CheckoutPage', {
+        status: this.state.resilienceStatus(),
+      });
+      return;
+    }
+
     const provider = this.checkoutPageState.selectedProvider();
     const method = this.checkoutPageState.selectedMethod();
 
@@ -247,7 +363,7 @@ export class CheckoutComponent {
 
       this.logger.info('Payment request built', 'CheckoutPage', {
         orderId: request.orderId,
-        amount: request.amount,
+        amount: request.money.amount,
         method: request.method.type,
       });
 
@@ -306,19 +422,11 @@ export class CheckoutComponent {
 
   resumePayment(): void {
     const providerId = this.state.resumeProviderId();
-    const intentId = this.state.resumeIntentId();
-    if (providerId && intentId) {
-      this.state.refreshPayment({ intentId }, providerId);
-    }
-  }
-
-  refreshProcessingStatus(): void {
-    const intent = this.state.intent();
-    const intentId = intent?.id ?? null;
-    const providerId = intent?.provider ?? this.state.selectedProvider();
-    if (intentId && providerId) {
-      this.state.refreshPayment({ intentId }, providerId);
-    }
+    const rawId = this.state.resumeIntentId();
+    if (!providerId || !rawId) return;
+    const result = PaymentIntentId.from(rawId);
+    if (!result.ok) return;
+    this.state.refreshPayment({ intentId: result.value }, providerId);
   }
 
   resetPayment(): void {
@@ -351,6 +459,21 @@ export class CheckoutComponent {
     refreshStatus: this.i18n.t(I18nKeys.ui.refresh_status),
     resumePaymentFound: this.i18n.t(I18nKeys.ui.resume_payment_found),
     resumePaymentAction: this.i18n.t(I18nKeys.ui.resume_payment_action),
+    tryAgainLabel: this.i18n.t(I18nKeys.ui.try_again),
+    circuitOpenTitle: this.i18n.t(I18nKeys.ui.circuit_open_title),
+    circuitOpenHint: this.i18n.t(I18nKeys.ui.circuit_open_hint),
+    circuitHalfOpenHint: this.i18n.t(I18nKeys.ui.circuit_half_open_hint),
+    rateLimitedTitle: this.i18n.t(I18nKeys.ui.rate_limited_title),
+    rateLimitedHint: this.i18n.t(I18nKeys.ui.rate_limited_hint),
+    manualReviewTitle: this.i18n.t(I18nKeys.ui.manual_review_title),
+    manualReviewHint: this.i18n.t(I18nKeys.ui.manual_review_hint),
+    manualReviewAction: this.i18n.t(I18nKeys.ui.manual_review_action),
+    allProvidersUnavailableTitle: this.i18n.t(I18nKeys.ui.all_providers_unavailable_title),
+    allProvidersUnavailableHint: this.i18n.t(I18nKeys.ui.all_providers_unavailable_hint),
+    healthChecking: this.i18n.t(I18nKeys.ui.health_checking),
+    healthAvailable: this.i18n.t(I18nKeys.ui.health_available),
+    healthSlow: this.i18n.t(I18nKeys.ui.health_slow),
+    healthUnavailable: this.i18n.t(I18nKeys.ui.health_unavailable),
   }));
 
   // TODO : This is orchestration layer responsibility, not UI layer

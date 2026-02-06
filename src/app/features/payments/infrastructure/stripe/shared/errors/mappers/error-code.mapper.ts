@@ -1,8 +1,9 @@
-import type { PaymentErrorCode } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type { PaymentErrorCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 
 export const ERROR_CODE_MAP: Record<string, PaymentErrorCode> = {
   card_declined: 'card_declined',
-  expired_card: 'card_declined',
+  insufficient_funds: 'insufficient_funds',
+  expired_card: 'expired_card',
   incorrect_cvc: 'card_declined',
   processing_error: 'provider_error',
   incorrect_number: 'invalid_request',

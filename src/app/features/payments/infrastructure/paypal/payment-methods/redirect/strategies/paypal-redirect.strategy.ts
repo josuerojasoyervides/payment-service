@@ -1,6 +1,10 @@
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import { intentRequiresUserAction } from '@app/features/payments/domain/subdomains/payment/policies/requires-user-action.policy';
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { findPaypalLink } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
-import { I18nKeys } from '@core/i18n';
 import type { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type {
@@ -8,13 +12,15 @@ import type {
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
-import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type {
-  CurrencyCode,
-  PaymentIntent,
-  PaymentMethodType,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { PaypalAppContextDefaults } from '@payments/infrastructure/config/payments-infra-config.types';
+import { PAYPAL_CARD_VALIDATION_CONFIG } from '@payments/infrastructure/shared/validation/provider-validation.config';
+import { validateAmount } from '@payments/infrastructure/shared/validation/validate-amount';
+import {
+  PAYMENT_ERROR_KEYS,
+  PAYMENT_MESSAGE_KEYS,
+} from '@payments/shared/constants/payment-error-keys';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
+import { sanitizeForLogging } from '@payments/shared/logging/sanitize-for-logging.util';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
 
@@ -32,12 +38,10 @@ import { map, tap } from 'rxjs';
 export class PaypalRedirectStrategy implements PaymentStrategy {
   readonly type: PaymentMethodType = 'card';
 
-  private static readonly DEFAULT_LANDING_PAGE = 'LOGIN';
-  private static readonly DEFAULT_USER_ACTION = 'PAY_NOW';
-
   constructor(
     private readonly gateway: PaymentGatewayPort,
     private readonly logger: LoggerService,
+    private readonly defaults: PaypalAppContextDefaults,
   ) {}
 
   /**
@@ -48,38 +52,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
    * - Minimum amounts vary by currency
    */
   validate(req: CreatePaymentRequest): void {
-    const supportedCurrencies: CurrencyCode[] = ['USD', 'MXN'];
-
-    // Currency must exist (usually validated by BasePaymentGateway),
-    // but we keep PayPal-specific rules here.
-    if (!req.currency || !supportedCurrencies.includes(req.currency)) {
-      throw invalidRequestError(
-        I18nKeys.errors.currency_not_supported,
-        {
-          field: 'currency',
-          provider: 'paypal',
-          supportedCount: supportedCurrencies.length,
-          currency: req.currency,
-        },
-        { currency: req.currency },
-      );
-    }
-
-    const minAmounts: Record<CurrencyCode, number> = {
-      USD: 1,
-      MXN: 10,
-    };
-
-    const minAmount = minAmounts[req.currency] ?? 1;
-
-    // Invalid amount or below PayPal minimum for the currency
-    if (!Number.isFinite(req.amount) || req.amount < minAmount) {
-      throw invalidRequestError(
-        I18nKeys.errors.amount_invalid,
-        { field: 'amount', min: minAmount, currency: req.currency },
-        { amount: req.amount, currency: req.currency, minAmount },
-      );
-    }
+    validateAmount(req.money, PAYPAL_CARD_VALIDATION_CONFIG);
 
     // Token is ignored in PayPal redirect flow (warn but do not fail)
     if (req.method?.token) {
@@ -87,7 +60,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
         '[PaypalRedirectStrategy] Token provided but PayPal uses its own checkout flow',
         'PaypalRedirectStrategy',
         {
-          token: req.method.token,
+          hasToken: true,
         },
       );
     }
@@ -106,8 +79,8 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
     // Do not invent URLs - if returnUrl is missing, fail fast
     if (!context?.returnUrl) {
       throw invalidRequestError(
-        I18nKeys.errors.return_url_required,
-        { field: 'returnUrl', provider: 'paypal' },
+        PAYMENT_ERROR_KEYS.RETURN_URL_REQUIRED,
+        { field: 'returnUrl', provider: PAYMENT_PROVIDER_IDS.paypal },
         { returnUrl: context?.returnUrl },
       );
     }
@@ -119,11 +92,11 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
       payment_method_type: 'paypal_redirect',
       return_url: returnUrl,
       cancel_url: cancelUrl,
-      landing_page: PaypalRedirectStrategy.DEFAULT_LANDING_PAGE,
-      user_action: PaypalRedirectStrategy.DEFAULT_USER_ACTION,
-      brand_name: 'Payment Service',
+      landing_page: this.defaults.landing_page,
+      user_action: this.defaults.user_action,
+      brand_name: this.defaults.brand_name,
       timestamp: new Date().toISOString(),
-      formatted_amount: req.amount.toFixed(2),
+      formatted_amount: req.money.amount.toFixed(2),
     };
 
     if (context?.deviceData) {
@@ -150,12 +123,17 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
 
     const { preparedRequest, metadata } = this.prepare(req, context);
 
-    this.logger.warn(`[PaypalRedirectStrategy] Creating PayPal order:`, 'PaypalRedirectStrategy', {
-      orderId: req.orderId,
-      amount: req.amount,
-      currency: req.currency,
-      returnUrl: metadata['return_url'],
-    });
+    this.logger.warn(
+      `[PaypalRedirectStrategy] Creating PayPal order:`,
+      'PaypalRedirectStrategy',
+      sanitizeForLogging({
+        orderId: req.orderId,
+        amount: req.money.amount,
+        currency: req.money.currency,
+        returnUrl: metadata['return_url'],
+        cancelUrl: metadata['cancel_url'],
+      }),
+    );
 
     return this.gateway.createIntent(preparedRequest).pipe(
       tap((intent) => {
@@ -172,7 +150,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
   }
 
   requiresUserAction(intent: PaymentIntent): boolean {
-    return intent.status === 'requires_action' || intent.nextAction?.kind === 'redirect';
+    return intentRequiresUserAction(intent) || intent.nextAction?.kind === 'redirect';
   }
 
   getUserInstructions(intent: PaymentIntent): string[] | null {
@@ -180,7 +158,10 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
       return null;
     }
 
-    return [I18nKeys.ui.paypal_redirect_secure_message, I18nKeys.ui.redirected_to_paypal];
+    return [
+      PAYMENT_MESSAGE_KEYS.PAYPAL_REDIRECT_SECURE_MESSAGE,
+      PAYMENT_MESSAGE_KEYS.REDIRECTED_TO_PAYPAL,
+    ];
   }
 
   /**

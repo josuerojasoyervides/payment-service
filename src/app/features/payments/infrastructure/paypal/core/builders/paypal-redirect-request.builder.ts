@@ -1,8 +1,10 @@
-import { I18nKeys } from '@core/i18n';
-import type { CurrencyCode } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import type { PaymentOptions } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
-import { PaymentRequestBuilder } from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import { BasePaymentRequestBuilder } from '@app/features/payments/application/api/builders/base-payment-request.builder';
+import type { Money } from '@app/features/payments/domain/common/primitives/money/money.vo';
+import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import type { OrderId } from '@payments/domain/common/primitives/ids/order-id.vo';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 
 /**
  * Builder for payments via PayPal (redirect flow).
@@ -18,12 +20,15 @@ import { PaymentRequestBuilder } from '@payments/domain/subdomains/payment/ports
  * - token (PayPal handles this internally)
  * - customerEmail (PayPal gets it from user)
  */
-export class PaypalRedirectRequestBuilder extends PaymentRequestBuilder {
+export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
   private orderId?: string;
+  private orderIdVo?: OrderId;
   private amount?: number;
   private currency?: CurrencyCode;
+  private money?: Money;
   private returnUrl?: string;
   private cancelUrl?: string;
+  private idempotencyKey?: string;
 
   constructor() {
     super();
@@ -52,12 +57,25 @@ export class PaypalRedirectRequestBuilder extends PaymentRequestBuilder {
     return this;
   }
 
+  withIdempotencyKey(idempotencyKey: string): this {
+    this.idempotencyKey = idempotencyKey;
+    return this;
+  }
+
   protected override validateRequired(): void {
-    this.requireNonEmptyStringWithKey('orderId', this.orderId, I18nKeys.errors.order_id_required);
-    this.requirePositiveAmountWithKey('amount', this.amount, I18nKeys.errors.amount_invalid);
-    this.requireDefinedWithKey('currency', this.currency, I18nKeys.errors.currency_required);
-    this.validateOptionalUrl('returnUrl', this.returnUrl);
-    this.validateOptionalUrl('cancelUrl', this.cancelUrl);
+    this.orderIdVo = this.createOrderIdOrThrow(this.orderId, PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED);
+    this.requireDefinedWithKey('currency', this.currency, PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED);
+    this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
+    this.requireNonEmptyStringWithKey(
+      'idempotencyKey',
+      this.idempotencyKey,
+      PAYMENT_ERROR_KEYS.INVALID_REQUEST,
+    );
+
+    // returnUrl and cancelUrl are optional in builder - they can come from StrategyContext
+    // But if provided, they must be valid URLs
+    this.returnUrl = this.validateOptionalUrl('returnUrl', this.returnUrl);
+    this.cancelUrl = this.validateOptionalUrl('cancelUrl', this.cancelUrl);
   }
 
   protected override buildUnsafe(): CreatePaymentRequest {
@@ -67,14 +85,14 @@ export class PaypalRedirectRequestBuilder extends PaymentRequestBuilder {
      * it uses card only as a compatibility label.
      */
     return {
-      orderId: this.orderId!,
-      amount: this.amount!,
-      currency: this.currency!,
+      orderId: this.orderIdVo!,
+      money: this.money!,
       method: {
         type: 'card',
       },
-      returnUrl: this.returnUrl!,
-      cancelUrl: this.cancelUrl!,
+      returnUrl: this.returnUrl,
+      cancelUrl: this.cancelUrl,
+      idempotencyKey: this.idempotencyKey!,
     };
   }
 }

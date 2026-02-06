@@ -1,17 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import type { ClientConfirmPort } from '@payments/application/api/ports/client-confirm.port';
 import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
 import { firstValueFrom, of } from 'rxjs';
 
 describe('NextActionOrchestratorService', () => {
   const intent = {
-    id: 'pi_1',
+    id: createPaymentIntentId('pi_1'),
     provider: 'stripe' as const,
     status: 'succeeded' as const,
-    amount: 100,
-    currency: 'MXN' as const,
+    money: { amount: 100, currency: 'MXN' as const },
   };
 
   function registryWithClientConfirmHandler(

@@ -5,13 +5,16 @@ import { provideRouter, RouterLink } from '@angular/router';
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { patchState } from '@ngrx/signals';
-import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
-import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type {
+  PaymentFlowPort,
+  ProviderDescriptor,
+} from '@payments/application/api/ports/payment-store.port';
+import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { StatusComponent } from '@payments/ui/pages/status/status.page';
 
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
@@ -54,11 +57,10 @@ describe('StatusComponent', () => {
   };
 
   const mockIntent: PaymentIntent = {
-    id: 'pi_test_123',
+    id: createPaymentIntentId('pi_test_123'),
     provider: 'stripe',
     status: 'succeeded',
-    amount: 499.99,
-    currency: 'MXN',
+    money: { amount: 499.99, currency: 'MXN' },
     clientSecret: 'secret_test',
   };
 
@@ -145,11 +147,14 @@ describe('StatusComponent', () => {
       patchState(component.statusPageState, { intentId: 'pi_test_123' });
       component.searchIntent();
 
-      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
+      expect(mockState.refreshPayment).toHaveBeenCalledWith(
+        { intentId: expect.objectContaining({ value: 'pi_test_123' }) },
+        'stripe',
+      );
     });
 
     it('should show result when intent matches lastQueryId', () => {
-      patchState(component.statusPageState, { lastQueryId: mockIntent.id });
+      patchState(component.statusPageState, { lastQueryId: mockIntent.id.value });
       (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set(mockIntent);
       fixture.detectChanges();
 
@@ -172,7 +177,7 @@ describe('StatusComponent', () => {
       component.searchIntent();
 
       expect(mockState.refreshPayment).toHaveBeenCalledWith(
-        { intentId: 'ORDER_FAKE_XYZ' },
+        expect.objectContaining({ intentId: expect.objectContaining({ value: 'ORDER_FAKE_XYZ' }) }),
         'paypal',
       );
     });
@@ -182,7 +187,7 @@ describe('StatusComponent', () => {
       component.searchIntent();
 
       expect(mockState.refreshPayment).toHaveBeenCalledWith(
-        { intentId: 'pi_test_123' },
+        expect.objectContaining({ intentId: expect.objectContaining({ value: 'pi_test_123' }) }),
         expect.any(String),
       );
     });
@@ -191,17 +196,24 @@ describe('StatusComponent', () => {
   describe('Payment actions', () => {
     it('should confirm payment', () => {
       component.confirmPayment('pi_test_123');
-      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
+      expect(mockState.confirmPayment).toHaveBeenCalledWith(
+        expect.objectContaining({ intentId: expect.objectContaining({ value: 'pi_test_123' }) }),
+      );
     });
 
     it('should cancel payment', () => {
       component.cancelPayment('pi_test_123');
-      expect(mockState.cancelPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
+      expect(mockState.cancelPayment).toHaveBeenCalledWith(
+        expect.objectContaining({ intentId: expect.objectContaining({ value: 'pi_test_123' }) }),
+      );
     });
 
     it('should refresh payment with providerId', () => {
       component.refreshPayment('pi_test_123');
-      expect(mockState.refreshPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' }, 'stripe');
+      expect(mockState.refreshPayment).toHaveBeenCalledWith(
+        { intentId: expect.objectContaining({ value: 'pi_test_123' }) },
+        'stripe',
+      );
     });
 
     it('should call confirmPayment with intentId (adapter resolves provider)', () => {
@@ -209,14 +221,18 @@ describe('StatusComponent', () => {
         'paypal' as PaymentProviderId,
       );
       component.confirmPayment('ORDER_FAKE_XYZ');
-      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'ORDER_FAKE_XYZ' });
+      expect(mockState.confirmPayment).toHaveBeenCalledWith(
+        expect.objectContaining({ intentId: expect.objectContaining({ value: 'ORDER_FAKE_XYZ' }) }),
+      );
     });
 
     it('should call confirmPayment when next-action client_confirm is requested', () => {
       patchState(component.statusPageState, { lastQueryId: 'pi_test_123' });
       const action = { kind: 'client_confirm' as const, token: 'tok_runtime' };
       component.onNextActionRequested(action);
-      expect(mockState.confirmPayment).toHaveBeenCalledWith({ intentId: 'pi_test_123' });
+      expect(mockState.confirmPayment).toHaveBeenCalledWith(
+        expect.objectContaining({ intentId: expect.objectContaining({ value: 'pi_test_123' }) }),
+      );
     });
   });
 
@@ -227,7 +243,7 @@ describe('StatusComponent', () => {
       expect(component.statusPageState.intentId()).toBe(example.id);
       expect(mockState.selectProvider).toHaveBeenCalledWith(example.provider);
       expect(mockState.refreshPayment).toHaveBeenCalledWith(
-        { intentId: example.id },
+        expect.objectContaining({ intentId: expect.objectContaining({ value: example.id }) }),
         example.provider,
       );
     });
@@ -280,6 +296,19 @@ describe('StatusComponent', () => {
       (mockState.error as ReturnType<typeof signal<PaymentError | null>>).set(mockError);
       fixture.detectChanges();
       expect(component.flowState.error()).toEqual(mockError);
+    });
+
+    it('should block search when processing', () => {
+      patchState(component.statusPageState, { intentId: 'pi_processing' });
+      (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set({
+        id: createPaymentIntentId('pi_processing'),
+        provider: 'stripe',
+        status: 'processing',
+        money: { amount: 100, currency: 'MXN' },
+      });
+      fixture.detectChanges();
+
+      expect(component.isSearchDisabled()).toBe(true);
     });
   });
 });

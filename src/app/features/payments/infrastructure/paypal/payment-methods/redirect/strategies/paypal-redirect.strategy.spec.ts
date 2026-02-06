@@ -2,7 +2,16 @@ import { TestBed } from '@angular/core/testing';
 import { PaypalRedirectStrategy } from '@app/features/payments/infrastructure/paypal/payment-methods/redirect/strategies/paypal-redirect.strategy';
 import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
+import {
+  TEST_PAYMENTS_CANCEL_URL,
+  TEST_PAYMENTS_RETURN_URL,
+} from '@payments/shared/testing/fixtures/test-urls';
 import { firstValueFrom, of } from 'rxjs';
 
 describe('PaypalRedirectStrategy', () => {
@@ -11,15 +20,15 @@ describe('PaypalRedirectStrategy', () => {
   let gatewayMock: Pick<PaymentGatewayPort, 'createIntent' | 'providerId'>;
 
   const req: CreatePaymentRequest = {
-    orderId: 'order_1',
-    amount: 100,
-    currency: 'MXN',
+    orderId: createOrderId('order_1'),
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
+    idempotencyKey: 'idem_paypal_redirect',
   };
 
   const context = {
-    returnUrl: 'https://example.com/payments/return',
-    cancelUrl: 'https://example.com/payments/cancel',
+    returnUrl: TEST_PAYMENTS_RETURN_URL,
+    cancelUrl: TEST_PAYMENTS_CANCEL_URL,
     isTest: true,
   };
 
@@ -32,14 +41,13 @@ describe('PaypalRedirectStrategy', () => {
 
   beforeEach(() => {
     gatewayMock = {
-      providerId: 'paypal',
+      providerId: PAYMENT_PROVIDER_IDS.paypal,
       createIntent: vi.fn(() =>
         of({
-          id: 'pi_1',
-          provider: 'paypal',
+          id: createPaymentIntentId('pi_1'),
+          provider: PAYMENT_PROVIDER_IDS.paypal,
           status: 'requires_payment_method',
-          amount: 100,
-          currency: 'MXN',
+          money: { amount: 100, currency: 'MXN' },
         }),
       ),
     } as any;
@@ -48,7 +56,11 @@ describe('PaypalRedirectStrategy', () => {
       providers: [{ provide: LoggerService, useValue: loggerMock }],
     });
 
-    strategy = new PaypalRedirectStrategy(gatewayMock as any, loggerMock as any);
+    strategy = new PaypalRedirectStrategy(gatewayMock as any, loggerMock as any, {
+      brand_name: 'Payment Service',
+      landing_page: 'NO_PREFERENCE',
+      user_action: 'PAY_NOW',
+    });
   });
 
   it('delegates to gateway.createIntent(req)', async () => {
@@ -60,14 +72,21 @@ describe('PaypalRedirectStrategy', () => {
     expect(gatewayMock.createIntent).toHaveBeenCalledWith(
       expect.objectContaining({
         orderId: req.orderId,
-        amount: req.amount,
-        currency: req.currency,
+        money: req.money,
         method: { type: 'card' }, // Token removed
         returnUrl: context.returnUrl,
         cancelUrl: context.cancelUrl,
       }),
     );
 
-    expect(result.id).toBe('pi_1');
+    expect(result.id?.value ?? result.id).toBe('pi_1');
+  });
+
+  it('warns without logging token when token is provided', () => {
+    expect(() => strategy.validate(req)).not.toThrow();
+    expect(loggerMock.warn).toHaveBeenCalled();
+    const meta = loggerMock.warn.mock.calls.at(-1)?.[2] as Record<string, unknown>;
+    expect(meta).toEqual(expect.objectContaining({ hasToken: true }));
+    expect(meta).not.toHaveProperty('token');
   });
 });

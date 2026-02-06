@@ -4,6 +4,7 @@
  * Uses scenario harness + telemetry; asserts providerId/refs and no duplicate side-effects.
  */
 import { createScenarioHarness } from '@app/features/payments/application/api/testing/flow/payment-flow.harness';
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import {
   PAYMENT_FLOW_CONFIG_OVERRIDES,
   PAYMENT_FLOW_INITIAL_CONTEXT,
@@ -11,15 +12,15 @@ import {
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 const baseRequest: CreatePaymentRequest = {
-  orderId: 'o1',
-  amount: 100,
-  currency: 'MXN',
+  orderId: createOrderId('o1'),
+  money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_123' },
+  idempotencyKey: 'idem_flow_stress_base',
 };
 
 describe('Payment flow stress (PR6.2)', () => {

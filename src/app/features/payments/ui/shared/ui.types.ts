@@ -1,18 +1,19 @@
-import { I18nKeys } from '@core/i18n';
-import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type {
   CurrencyCode,
   PaymentIntent,
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import { I18nKeys } from '@core/i18n';
 import type {
   FieldRequirements,
   FieldType,
-  PaymentOptions,
-} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+} from '@payments/application/api/contracts/checkout-field-requirements.types';
+import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
+
 /**
  * Order item shown in summary.
  */

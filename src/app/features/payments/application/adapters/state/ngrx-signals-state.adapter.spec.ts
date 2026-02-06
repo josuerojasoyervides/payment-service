@@ -1,11 +1,17 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
 import { NgRxSignalsStateAdapter } from '@payments/application/adapters/state/ngrx-signals-state.adapter';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import { ProviderDescriptorRegistry } from '@payments/application/orchestration/registry/provider-descriptor/provider-descriptor.registry';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
-import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
+import { INITIAL_RESILIENCE_STATE } from '@payments/application/orchestration/store/types/payment-store-state';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 describe('NgRxSignalsStateAdapter', () => {
   let adapter: NgRxSignalsStateAdapter;
@@ -21,6 +27,7 @@ describe('NgRxSignalsStateAdapter', () => {
       selectedProvider: signal(null),
       currentRequest: signal(null),
       fallback: signal(INITIAL_FALLBACK_STATE),
+      resilience: signal(INITIAL_RESILIENCE_STATE),
       history: signal([]),
 
       // Computed signals
@@ -29,8 +36,30 @@ describe('NgRxSignalsStateAdapter', () => {
       hasError: signal(false),
       currentIntent: signal(null),
       currentError: signal(null),
+      requiresUserAction: signal(false),
+      isSucceeded: signal(false),
+      isProcessing: signal(false),
+      isFailed: signal(false),
+      canResume: signal(false),
+      resumeProviderId: signal(null),
+      resumeIntentId: signal(null),
       hasPendingFallback: signal(false),
+      isAutoFallbackInProgress: signal(false),
+      isFallbackExecuting: signal(false),
+      isAutoFallback: signal(false),
       pendingFallbackEvent: signal(null),
+      resilienceState: signal(INITIAL_RESILIENCE_STATE),
+      resilienceStatus: signal('idle'),
+      resilienceCooldownUntilMs: signal(null),
+      fallbackConfirmation: signal(null),
+      manualReviewData: signal(null),
+      isCircuitOpen: signal(false),
+      isCircuitHalfOpen: signal(false),
+      isRateLimited: signal(false),
+      isFallbackConfirming: signal(false),
+      isPendingManualReview: signal(false),
+      isAllProvidersUnavailable: signal(false),
+      canRetryClientConfirm: signal(false),
       historyCount: signal(0),
       lastHistoryEntry: signal(null),
       debugSummary: signal({
@@ -38,8 +67,13 @@ describe('NgRxSignalsStateAdapter', () => {
         intentId: null,
         provider: null,
         fallbackStatus: 'idle',
+        isAutoFallback: false,
         historyCount: 0,
       }),
+      debugStateNode: signal(null),
+      debugTags: signal([]),
+      debugLastEventType: signal(null),
+      debugLastEventPayload: signal(null),
 
       // Methods
       startPayment: vi.fn(),
@@ -62,7 +96,11 @@ describe('NgRxSignalsStateAdapter', () => {
         getFieldRequirements: () => null,
         createRequestBuilder: () => ({
           forOrder: () => ({
-            withAmount: () => ({ withOptions: () => ({ build: () => ({}) as any }) }),
+            withAmount: () => ({
+              withOptions: () => ({
+                withIdempotencyKey: () => ({ build: () => ({ idempotencyKey: 'idem' }) as any }),
+              }),
+            }),
           }),
         }),
       }),
@@ -86,6 +124,7 @@ describe('NgRxSignalsStateAdapter', () => {
         { provide: ProviderFactoryRegistry, useValue: registryMock },
         { provide: ProviderDescriptorRegistry, useValue: descriptorRegistryMock },
         { provide: ExternalEventAdapter, useValue: externalEventAdapterMock },
+        IdempotencyKeyFactory,
       ],
     });
 
@@ -113,11 +152,10 @@ describe('NgRxSignalsStateAdapter', () => {
 
     it('exposes intent from store', () => {
       const mockIntent = {
-        id: 'pi_1',
+        id: createPaymentIntentId('pi_1'),
         provider: 'stripe',
         status: 'succeeded',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
       };
       expect(adapter.intent()).toBeNull();
       storeMock.currentIntent.set(mockIntent);
@@ -173,8 +211,7 @@ describe('NgRxSignalsStateAdapter', () => {
         intentId: 'pi_1',
         provider: 'stripe',
         status: 'succeeded',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         timestamp: Date.now(),
       };
       expect(adapter.lastHistoryEntry()).toBeNull();
@@ -199,10 +236,10 @@ describe('NgRxSignalsStateAdapter', () => {
   describe('payment actions delegation', () => {
     it('delegates startPayment to store', () => {
       const request = {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN' as const,
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' as const },
         method: { type: 'card' as const },
+        idempotencyKey: 'idem_adapter_start',
       };
       adapter.startPayment(request, 'stripe');
       expect(storeMock.startPayment).toHaveBeenCalledWith({
@@ -214,10 +251,10 @@ describe('NgRxSignalsStateAdapter', () => {
 
     it('delegates startPayment with context to store', () => {
       const request = {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN' as const,
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' as const },
         method: { type: 'card' as const },
+        idempotencyKey: 'idem_adapter_start_ctx',
       };
       const context = { returnUrl: 'https://return.com', isTest: true };
       adapter.startPayment(request, 'stripe', context);
@@ -229,34 +266,33 @@ describe('NgRxSignalsStateAdapter', () => {
     });
 
     it('delegates confirmPayment to store', () => {
-      const request = { intentId: 'pi_1' };
+      const request = { intentId: createPaymentIntentId('pi_1') };
       adapter.confirmPayment(request, 'stripe');
       expect(storeMock.confirmPayment).toHaveBeenCalledWith({ request, providerId: 'stripe' });
     });
 
     it('delegates cancelPayment to store', () => {
-      const request = { intentId: 'pi_1' };
+      const request = { intentId: createPaymentIntentId('pi_1') };
       adapter.cancelPayment(request, 'stripe');
       expect(storeMock.cancelPayment).toHaveBeenCalledWith({ request, providerId: 'stripe' });
     });
 
     it('delegates refreshPayment to store', () => {
-      const request = { intentId: 'pi_1' };
+      const request = { intentId: createPaymentIntentId('pi_1') };
       adapter.refreshPayment(request, 'stripe');
       expect(storeMock.refreshPayment).toHaveBeenCalledWith({ request, providerId: 'stripe' });
     });
   });
 
   describe('providerId resolution (confirmPayment, cancelPayment, refreshPayment)', () => {
-    const request = { intentId: 'pi_1' as const };
+    const request = { intentId: createPaymentIntentId('pi_1') };
 
     it('uses intent.provider when providerId is omitted', () => {
       storeMock.currentIntent.set({
-        id: 'pi_1',
+        id: createPaymentIntentId('pi_1'),
         provider: 'stripe',
         status: 'succeeded',
-        amount: 100,
-        currency: 'MXN',
+        money: { amount: 100, currency: 'MXN' },
         clientSecret: 'secret',
       });
       storeMock.selectedProvider.set(null);

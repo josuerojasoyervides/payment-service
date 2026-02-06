@@ -12,6 +12,7 @@ This repo is a **personal architecture lab** for a payments module: Stripe + Pay
 - [What to try first](#what-to-try-first)
 - [Architecture maps (charts)](#architecture-maps-charts)
 - [Mental model](#mental-model)
+- [Resilience and fallback](#resilience-and-fallback)
 - [Key architecture decisions (why)](#key-architecture-decisions-why)
 - [Walkthrough: what happens when you click Pay](#walkthrough-what-happens-when-you-click-pay)
 - [Extending: add a new provider](#extending-add-a-new-provider)
@@ -33,7 +34,9 @@ Open the app and go to **`/payments/checkout`** (the default payments page). Fro
 **Useful commands:**
 
 - `bun run test:ci` — run the full test suite
+- `bun run dep:check` — verify dependency rules (dependency-cruise)
 - `bun run lint` — run ESLint (no auto-fix)
+- `bun run lint:fix` — ESLint with auto-fix
 
 ---
 
@@ -58,11 +61,17 @@ Two maps explain the system: **runtime** (who talks to whom during a payment) an
 
 **Runtime: what talks to what during a payment**
 
-![Payments runtime map](charts/chart-payments-runtime-29-jan.png)
+![Payments runtime map](charts/chart-payments-runtime-feb-02.svg)
 
 **Dependencies: what may import what (guardrails)**
 
-![Dependency map](charts/chart-dependancy-29-jan.png)
+![Dependency map](charts/chart-dependancy-feb-02.svg)
+
+**Payment flow: what is the machine purpose flow**
+![Payment flow machine map](charts/chart-payment-flow-machine-feb-02.svg)
+
+**Resilience flow: circuit, rate limit, fallback**
+Included in `charts/payment-flow-machine.mermaid` (Resilience block).
 
 **How to use these maps:** When you feel lost, start at the centre (the **Flow** / state machine), then follow the bridges to the **store**, **UI**, and **providers**. The runtime map shows the live flow; the dependency map shows the rules the repo enforces so the architecture stays consistent.
 
@@ -77,6 +86,14 @@ Two maps explain the system: **runtime** (who talks to whom during a payment) an
 - **Fallback** — A policy subsystem: when a provider fails, the orchestrator can suggest or trigger a switch (e.g. Stripe → PayPal). This is not a UI hack; it is testable and consistent.
 - **Providers** — Interchangeable implementations (Stripe, PayPal, Fake). They sit behind a registry/factory; the rest of the app does not branch by provider name.
 - **Telemetry** — Structured breadcrumbs (flowId, providerId, state, event, refs) so you can debug and verify behaviour. Redaction rules keep logs safe (no secrets, no raw PII).
+
+---
+
+## Resilience and fallback
+
+Resilience is treated as a first-class system, not a set of ad-hoc retries. The flow engine centralizes convergence rules, the resilience policy defines cooldowns and rate limits, and the fallback orchestrator decides if and when a provider switch is allowed.
+
+The UI does not implement fallback logic. It only renders the projected state (eligible, manual, auto) and surfaces next actions. This keeps failure handling deterministic, testable, and provider-agnostic.
 
 ---
 
@@ -150,9 +167,11 @@ The repo protects its own architecture:
 
 - **UI cannot import infrastructure** — Pages and components do not import Stripe/PayPal adapters directly; they use the flow API and the store. Dependency-cruiser and boundary tests enforce this.
 - **Domain is framework-free** — The domain layer has no Angular, RxJS, or XState; it stays pure types, contracts, and rules.
+- **Shared keeps Domain agnostic** — The payments `shared/` layer must not import `@core` (i18n, logging). Depcruise rule `shared-no-core` enforces this. Error/message keys live in `shared/constants/`; `SpeiDisplayConfig` in `application/api/contracts/`; SPEI display data (bank names, beneficiary, test CLABE) is injected from infrastructure constants.
 - **Architecture tests yell early** — Tests (e.g. boundary/import rules) fail the build if someone breaks these rules.
+- **Value Objects in domain** — Core contracts use `Money`, `PaymentIntentId`, and `OrderId`; builders validate at the Application edge before emitting requests.
 
-So: you can rely on “UI → application → domain” and “infrastructure → application”; the tooling checks it.
+So: you can rely on "UI → application → domain", "shared → domain only", and "infrastructure → application"; the tooling checks it.
 
 ---
 
@@ -161,9 +180,8 @@ So: you can rely on “UI → application → domain” and “infrastructure �
 For deeper detail, read these (no content copied here):
 
 - **docs/goals.md** — North star and intent
-- **docs/architecture-rules.md** — Layers, boundaries, and current state
+- **docs/architecture-rules.md** — Layers, boundaries, Value Objects, and current state
 - **docs/flow-brain.md** — State machine and transitions
-- **docs/provider-integration-plan.md** — Provider contracts and migration plan
 - **docs/observability/flow-telemetry.md** — Telemetry envelope, redaction, sinks
 
 ---

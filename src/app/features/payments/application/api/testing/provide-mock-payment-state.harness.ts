@@ -3,37 +3,40 @@ import type { Provider } from '@angular/core';
 import { computed, effect, signal } from '@angular/core';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
+import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type {
+  CurrencyCode,
+  PaymentIntent,
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type {
+  CancelPaymentRequest,
+  ConfirmPaymentRequest,
+  CreatePaymentRequest,
+  GetPaymentStatusRequest,
+} from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
+import type { RedirectReturnRaw } from '@payments/application/api/contracts/redirect-return.contract';
+import type { RedirectReturnedPayload } from '@payments/application/api/contracts/redirect-return-normalized.contract';
 import type {
   PaymentDebugSummary,
   PaymentStorePort,
   ProviderDescriptor,
 } from '@payments/application/api/ports/payment-store.port';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import type {
   PaymentFlowStatus,
   PaymentsState,
+  ResilienceState,
 } from '@payments/application/orchestration/store/types/payment-store-state';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
-import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type {
-  CurrencyCode,
-  PaymentIntent,
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type {
-  CancelPaymentRequest,
-  ConfirmPaymentRequest,
-  CreatePaymentRequest,
-  GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import type {
-  FieldRequirements,
-  PaymentOptions,
-} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import { INITIAL_RESILIENCE_STATE } from '@payments/application/orchestration/store/types/payment-store-state';
 
 export interface MockPaymentStateOverrides {
   status?: PaymentFlowStatus;
@@ -41,6 +44,7 @@ export interface MockPaymentStateOverrides {
   error?: PaymentError | null;
   selectedProvider?: PaymentProviderId | null;
   fallback?: FallbackState;
+  resilience?: ResilienceState;
   history?: PaymentHistoryEntry[];
 
   // convenience flags (optional)
@@ -66,6 +70,7 @@ export function createMockPaymentState(
   const selectedProvider = signal<PaymentProviderId | null>(overrides.selectedProvider ?? null);
 
   const fallbackState = signal<FallbackState>(overrides.fallback ?? INITIAL_FALLBACK_STATE);
+  const resilienceState = signal<ResilienceState>(overrides.resilience ?? INITIAL_RESILIENCE_STATE);
   const history = signal<PaymentHistoryEntry[]>(overrides.history ?? []);
 
   // Optional convenience flags override status if provided
@@ -80,12 +85,13 @@ export function createMockPaymentState(
     selectedProvider: selectedProvider(),
     currentRequest: null,
     fallback: fallbackState(),
+    resilience: resilienceState(),
     history: history(),
   }));
 
   const debugSummary = computed<PaymentDebugSummary>(() => ({
     status: state().status,
-    intentId: state().intent?.id ?? null,
+    intentId: state().intent?.id?.value ?? null,
     provider: state().selectedProvider,
     fallbackStatus: state().fallback.status,
     isAutoFallback: state().fallback.isAutoFallback,
@@ -122,6 +128,22 @@ export function createMockPaymentState(
     () => fallbackState().pendingEvent,
   );
 
+  const resilienceStatus = computed(() => resilienceState().status);
+  const resilienceCooldownUntilMs = computed(() => resilienceState().cooldownUntilMs);
+  const fallbackConfirmation = computed(() => resilienceState().fallbackConfirmation);
+  const manualReviewData = computed(() => resilienceState().manualReview);
+  const isCircuitOpen = computed(() => resilienceState().status === 'circuit_open');
+  const isCircuitHalfOpen = computed(() => resilienceState().status === 'circuit_half_open');
+  const isRateLimited = computed(() => resilienceState().status === 'rate_limited');
+  const isFallbackConfirming = computed(() => resilienceState().status === 'fallback_confirming');
+  const isPendingManualReview = computed(
+    () => resilienceState().status === 'pending_manual_review',
+  );
+  const isAllProvidersUnavailable = computed(
+    () => resilienceState().status === 'all_providers_unavailable',
+  );
+  const canRetryClientConfirm = computed(() => false);
+
   const historyCount = computed(() => history().length);
   const lastHistoryEntry = computed(() => {
     const list = history();
@@ -155,6 +177,7 @@ export function createMockPaymentState(
     error.set(null);
     selectedProvider.set(null);
     fallbackState.set(INITIAL_FALLBACK_STATE);
+    resilienceState.set(INITIAL_RESILIENCE_STATE);
     history.set([]);
   };
   const clearHistory = () => history.set([]);
@@ -176,13 +199,12 @@ export function createMockPaymentState(
     amount: number;
     currency: CurrencyCode;
     options: PaymentOptions;
-  }): CreatePaymentRequest =>
-    ({
-      orderId: '',
-      amount: 0,
-      currency: 'MXN',
-      method: { type: 'card' },
-    }) as CreatePaymentRequest;
+  }): CreatePaymentRequest => ({
+    orderId: createOrderId('mock_order'),
+    money: { amount: 0, currency: 'MXN' },
+    method: { type: 'card' },
+    idempotencyKey: 'mock:idempotency',
+  });
 
   return {
     state,
@@ -206,6 +228,19 @@ export function createMockPaymentState(
     isAutoFallback,
     pendingFallbackEvent,
     fallbackState: computed(() => fallbackState()),
+
+    resilienceState: computed(() => resilienceState()),
+    resilienceStatus,
+    resilienceCooldownUntilMs,
+    fallbackConfirmation,
+    manualReviewData,
+    isCircuitOpen,
+    isCircuitHalfOpen,
+    isRateLimited,
+    isFallbackConfirming,
+    isPendingManualReview,
+    isAllProvidersUnavailable,
+    canRetryClientConfirm,
 
     historyCount,
     lastHistoryEntry,
@@ -247,18 +282,7 @@ export function createMockPaymentState(
     getFieldRequirements,
     buildCreatePaymentRequest,
 
-    getReturnReferenceFromQuery: (queryParams: Record<string, unknown>) => {
-      const token = Array.isArray(queryParams['token'])
-        ? queryParams['token'][0]
-        : queryParams['token'];
-      const pi = queryParams['payment_intent'] ?? queryParams['setup_intent'] ?? null;
-      const id = typeof pi === 'string' ? pi : Array.isArray(pi) ? pi[0] : null;
-      if (typeof token === 'string' && token)
-        return { providerId: 'paypal' as PaymentProviderId, referenceId: token };
-      if (id) return { providerId: 'stripe' as PaymentProviderId, referenceId: id };
-      return { providerId: 'stripe' as PaymentProviderId, referenceId: null };
-    },
-    notifyRedirectReturned: () => {},
+    notifyRedirectReturned: (_raw: RedirectReturnRaw): RedirectReturnedPayload | null => null,
   };
 }
 

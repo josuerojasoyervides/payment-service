@@ -1,7 +1,7 @@
 import { CommonModule, CurrencyPipe, JsonPipe } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import { I18nKeys, I18nService } from '@core/i18n';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { hasStringProp } from '@payments/ui/shared/has-string-prop';
 import { PaymentStatusLabelPipe } from '@payments/ui/shared/pipes/payment-status-label.pipe';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
@@ -56,6 +56,12 @@ export class PaymentResultComponent {
     return i !== null && i.status === 'succeeded';
   });
 
+  /** Whether payment is still processing */
+  readonly isProcessing = computed(() => {
+    const i = this.intent();
+    return i !== null && i.status === 'processing';
+  });
+
   /** Readable error message */
   readonly errorMessage = computed(() => {
     const error = this.error();
@@ -75,6 +81,18 @@ export class PaymentResultComponent {
     const i = this.intent();
     if (!i) return 'badge';
     return STATUS_BADGE_MAP[i.status] || 'badge';
+  });
+
+  /** Readable intent id */
+  readonly intentIdText = computed(() => {
+    const i = this.intent();
+    if (!i) return '';
+    const id = i.id as unknown;
+    if (typeof id === 'string') return id;
+    if (id && typeof id === 'object' && 'value' in id) {
+      return (id as { value: string }).value;
+    }
+    return String(id ?? '');
   });
 
   readonly paymentErrorTitle = computed(() => this.i18n.t(I18nKeys.ui.payment_error));

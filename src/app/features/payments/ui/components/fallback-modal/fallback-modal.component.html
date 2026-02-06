@@ -1,4 +1,4 @@
-@if (open() && event()) {
+@if (open() && data()) {
   <div
     class="modal-overlay"
     role="button"
@@ -30,18 +30,15 @@
             {{ paymentProblemTitle() }}
           </h3>
           <p class="mt-1 text-gray-600">
-            <span class="font-medium capitalize">{{ event()!.failedProvider }}</span>
             {{ providerUnavailableText() }}
           </p>
         </div>
       </div>
 
       <!-- Error info -->
-      @if (event()?.error) {
-        <div class="bg-red-50 border border-red-100 rounded-lg p-3 mb-6 text-sm text-red-700">
-          {{ errorMessageText() }}
-        </div>
-      }
+      <div class="bg-red-50 border border-red-100 rounded-lg p-3 mb-6 text-sm text-red-700">
+        {{ errorMessageText() }}
+      </div>
 
       <!-- Alternatives -->
       <div class="mb-6">

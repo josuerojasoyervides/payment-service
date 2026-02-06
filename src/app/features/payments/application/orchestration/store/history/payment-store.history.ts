@@ -1,12 +1,10 @@
 import { updateState } from '@angular-architects/ngrx-toolkit';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { HISTORY_MAX_ENTRIES } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 function isSameAsLast(prev: PaymentHistoryEntry[], next: PaymentHistoryEntry): boolean {
   const last = prev.at(-1);
@@ -30,11 +28,11 @@ export function addToHistory(
   error?: PaymentError,
 ): void {
   const entry: PaymentHistoryEntry = {
-    intentId: intent.id,
+    intentId: intent.id.value,
     provider: providerId,
     status: intent.status,
-    amount: intent.amount,
-    currency: intent.currency,
+    amount: intent.money.amount,
+    currency: intent.money.currency,
     timestamp: Date.now(),
     ...(error ? { error } : {}),
   };

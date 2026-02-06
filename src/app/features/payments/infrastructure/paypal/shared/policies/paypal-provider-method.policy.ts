@@ -1,19 +1,18 @@
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type {
   ProviderMethodPolicy,
   ProviderMethodPolicyPort,
 } from '@payments/application/api/ports/provider-method-policy.port';
-import type {
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 export class PaypalProviderMethodPolicy implements ProviderMethodPolicyPort {
-  readonly providerId: PaymentProviderId = 'paypal';
+  readonly providerId: PaymentProviderId = PAYMENT_PROVIDER_IDS.paypal;
 
   getPolicy(method: PaymentMethodType): ProviderMethodPolicy {
     if (method === 'card') {
       return {
-        providerId: 'paypal',
+        providerId: PAYMENT_PROVIDER_IDS.paypal,
         method: 'card',
         requires: {
           returnUrl: true,
@@ -32,6 +31,8 @@ export class PaypalProviderMethodPolicy implements ProviderMethodPolicyPort {
       };
     }
 
-    throw new Error(`Unsupported method "${method}" for provider "paypal".`);
+    throw new Error(
+      `Unsupported method "${method}" for provider "${PAYMENT_PROVIDER_IDS.paypal}".`,
+    );
   }
 }

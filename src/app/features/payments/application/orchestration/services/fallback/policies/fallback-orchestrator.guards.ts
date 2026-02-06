@@ -1,14 +1,10 @@
-import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
-import type {
-  FallbackAvailableEvent,
-  FallbackUserResponse,
-} from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
-import type {
-  FallbackState,
-  FallbackStatus,
-} from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { FallbackConfig } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.model';
+import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { FallbackStatus } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-statuses.types';
+import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
+import type { FallbackUserResponse } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-user-response.command';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 
 /**
  * ✅ Config / Enabled

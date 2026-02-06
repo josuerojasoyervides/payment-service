@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { FakeGetIntentGateway } from '@app/features/payments/infrastructure/fake/workflows/intent/gateways/get-intent.gateway';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 @Injectable()
 export class FakePaypalGetIntentGateway extends FakeGetIntentGateway {
-  override readonly providerId: PaymentProviderId = 'paypal';
+  override readonly providerId: PaymentProviderId = PAYMENT_PROVIDER_IDS.paypal;
 }

@@ -1,21 +1,45 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import { LoggerService } from '@core/logging';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
+import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
+import { SPEI_RAW_KEYS } from '@payments/infrastructure/stripe/shared/constants/spei-raw-keys.constants';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
+import { TEST_PAYMENTS_BASE_URL } from '@payments/shared/testing/fixtures/test-urls';
 
 describe('StripeCreateIntentGateway', () => {
   let gateway: StripeCreateIntentGateway;
-  let httpMock: HttpTestingController;
+  let transportMock: HttpTestingController;
 
   const loggerMock = {
     error: vi.fn(),
     warn: vi.fn(),
     info: vi.fn(),
     debug: vi.fn(),
+  };
+  const infraConfigInput: PaymentsInfraConfigInput = {
+    paymentsBackendBaseUrl: TEST_PAYMENTS_BASE_URL,
+    timeouts: { stripeMs: 10_000, paypalMs: 10_000 },
+    paypal: {
+      defaults: {
+        brand_name: 'Payment Service',
+        landing_page: 'NO_PREFERENCE',
+        user_action: 'PAY_NOW',
+      },
+    },
+    spei: {
+      displayConfig: {
+        receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+        beneficiaryName: 'Payment Service',
+      },
+    },
   };
 
   beforeEach(() => {
@@ -24,41 +48,44 @@ describe('StripeCreateIntentGateway', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         StripeCreateIntentGateway,
+        IdempotencyKeyFactory,
         { provide: LoggerService, useValue: loggerMock },
+        providePaymentsInfraConfig(infraConfigInput),
       ],
     });
 
     gateway = TestBed.inject(StripeCreateIntentGateway);
-    httpMock = TestBed.inject(HttpTestingController);
+    transportMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    httpMock.verify();
+    transportMock.verify();
   });
 
   it('POST /intents for card payments with correct payload and headers', () => {
     const req: CreatePaymentRequest = {
-      orderId: 'order_1',
-      amount: 100,
-      currency: 'MXN',
+      orderId: createOrderId('order_1'),
+      money: { amount: 100, currency: 'MXN' },
       method: { type: 'card', token: 'tok_123' },
       idempotencyKey: 'idem_123',
     };
 
     gateway.execute(req).subscribe({
       next: (intent: PaymentIntent) => {
-        expect(intent.provider).toBe('stripe');
-        expect(intent.id).toBe('pi_1');
+        expect(intent.provider).toBe(PAYMENT_PROVIDER_IDS.stripe);
+        expect(intent.id.value).toBe('pi_1');
       },
       error: (error: PaymentError) => {
         throw error;
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents`,
+    );
+    expect(transportReq.request.method).toBe('POST');
 
-    expect(httpReq.request.body).toEqual({
+    expect(transportReq.request.body).toEqual({
       amount: 100 * 100,
       currency: 'mxn',
       payment_method_types: ['card'],
@@ -70,9 +97,9 @@ describe('StripeCreateIntentGateway', () => {
       description: 'Order order_1',
     });
 
-    expect(httpReq.request.headers.get('Idempotency-Key')).toContain('idem_123');
+    expect(transportReq.request.headers.get('Idempotency-Key')).toBe('idem_123');
 
-    httpReq.flush({
+    transportReq.flush({
       id: 'pi_1',
       status: 'requires_confirmation',
       amount: 10000,
@@ -82,9 +109,8 @@ describe('StripeCreateIntentGateway', () => {
 
   it('POST /sources for SPEI payments', () => {
     const req: CreatePaymentRequest = {
-      orderId: 'order_2',
-      amount: 200,
-      currency: 'MXN',
+      orderId: createOrderId('order_2'),
+      money: { amount: 200, currency: 'MXN' },
       method: { type: 'spei' },
       idempotencyKey: 'idem_spei',
     };
@@ -98,28 +124,31 @@ describe('StripeCreateIntentGateway', () => {
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/sources');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/sources`,
+    );
+    expect(transportReq.request.method).toBe('POST');
 
-    httpReq.flush({
+    const spei = {
+      [SPEI_RAW_KEYS.REFERENCE]: '123456',
+      [SPEI_RAW_KEYS.CLABE]: '646180157000000000',
+      [SPEI_RAW_KEYS.BANK]: 'STP',
+    };
+
+    transportReq.flush({
       id: 'src_1',
       status: 'pending',
       amount: 20000,
       currency: 'mxn',
       expires_at: 1234567890,
-      spei: {
-        reference: '123456',
-        clabe: '646180157000000000',
-        bank: 'STP',
-      },
+      spei,
     });
   });
 
   it('propagates provider error when backend fails', () => {
     const req: CreatePaymentRequest = {
-      orderId: 'order_error',
-      amount: 100,
-      currency: 'MXN',
+      orderId: createOrderId('order_error'),
+      money: { amount: 100, currency: 'MXN' },
       method: { type: 'card', token: 'tok_123' },
       idempotencyKey: 'idem_error',
     };
@@ -129,17 +158,48 @@ describe('StripeCreateIntentGateway', () => {
         expect.fail('Expected error');
       },
       error: (err: PaymentError) => {
-        expect(err.code).toBe('provider_error');
+        expect(err.code).toBe('provider_unavailable');
         expect(err.raw).toBeDefined();
       },
     });
 
-    const httpReq = httpMock.expectOne('/api/payments/stripe/intents');
-    expect(httpReq.request.method).toBe('POST');
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents`,
+    );
+    expect(transportReq.request.method).toBe('POST');
 
-    httpReq.flush(
+    transportReq.flush(
       { message: 'Stripe error' },
       { status: 500, statusText: 'Internal Server Error' },
+    );
+  });
+
+  it('maps Stripe error codes to payment error codes without messageKey', () => {
+    const req: CreatePaymentRequest = {
+      orderId: createOrderId('order_error_code'),
+      money: { amount: 100, currency: 'MXN' },
+      method: { type: 'card', token: 'tok_123' },
+      idempotencyKey: 'idem_error_code',
+    };
+
+    gateway.execute(req).subscribe({
+      next: () => {
+        expect.fail('Expected error');
+      },
+      error: (err: PaymentError) => {
+        expect(err.code).toBe('card_declined');
+        expect(err.messageKey).toBeUndefined();
+      },
+    });
+
+    const transportReq = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents`,
+    );
+    expect(transportReq.request.method).toBe('POST');
+
+    transportReq.flush(
+      { error: { code: 'card_declined', type: 'card_error', message: 'Card declined' } },
+      { status: 402, statusText: 'Payment Required' },
     );
   });
 });

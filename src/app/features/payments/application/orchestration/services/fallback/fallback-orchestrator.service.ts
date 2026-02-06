@@ -7,7 +7,16 @@ import type {
   FinishStatus,
   ReportFailurePayload,
 } from '@app/features/payments/application/orchestration/services/fallback/helpers/fallback-orchestrator.types';
+import type { FallbackConfig } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.model';
+import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
+import type { FallbackUserResponse } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-user-response.command';
+import { isEligibleForFallbackPolicy } from '@app/features/payments/domain/subdomains/fallback/policies/eligible-for-fallback.policy';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { LoggerService } from '@core/logging/logger.service';
+import { DEFAULT_FALLBACK_CONFIG } from '@payments/application/orchestration/services/fallback/fallback-config.constant';
 import {
   hasDifferentEventId,
   isAutoExecutingGuard,
@@ -25,7 +34,6 @@ import {
   getAlternativeProvidersPolicy,
   getAutoFallbackCountPolicy,
   hasReachedMaxAttemptsPolicy,
-  isEligibleForFallbackPolicy,
   shouldAutoFallbackPolicy,
 } from '@payments/application/orchestration/services/fallback/policies/fallback-orchestrator.policy';
 import {
@@ -41,22 +49,25 @@ import {
   setPendingManualTransition,
   setTerminalTransition,
 } from '@payments/application/orchestration/services/fallback/runtime/fallback-orchestrator.transitions';
-import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
-import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
-import type {
-  FallbackAvailableEvent,
-  FallbackUserResponse,
-} from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
-import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
 import { Subject } from 'rxjs';
 
 /**
  * Token for injecting fallback configuration.
  */
 export const FALLBACK_CONFIG = new InjectionToken<Partial<FallbackConfig>>('FALLBACK_CONFIG');
+
+export type FallbackDecisionReason =
+  | 'disabled'
+  | 'ineligible'
+  | 'blocked'
+  | 'max_attempts'
+  | 'no_alternatives'
+  | 'handled';
+
+export interface FallbackDecision {
+  handled: boolean;
+  reason: FallbackDecisionReason;
+}
 
 /**
  * Fallback orchestration service between providers.
@@ -109,6 +120,7 @@ export class FallbackOrchestratorService {
   readonly autoFallbackStarted$ = this._autoFallbackStarted$.asObservable();
 
   private flowId: string | null = null;
+  private lastDecision: FallbackDecision = { handled: false, reason: 'disabled' };
 
   // Computed signals
   readonly state = this._state.asReadonly();
@@ -133,6 +145,10 @@ export class FallbackOrchestratorService {
    */
   getConfig(): Readonly<FallbackConfig> {
     return this.config;
+  }
+
+  getLastDecision(): FallbackDecision {
+    return this.lastDecision;
   }
 
   reportFailure(payload: ReportFailurePayload): boolean;
@@ -163,16 +179,23 @@ export class FallbackOrchestratorService {
     request,
     wasAutoFallback,
   }: ReportFailurePayload): boolean {
-    if (!isFallbackEnabledGuard(this.config)) return false;
+    if (!isFallbackEnabledGuard(this.config)) {
+      this.lastDecision = { handled: false, reason: 'disabled' };
+      return false;
+    }
 
     // ✅ eligibility
-    if (!isEligibleForFallbackPolicy(this.config, error)) return false;
+    if (!isEligibleForFallbackPolicy(this.config, error)) {
+      this.lastDecision = { handled: false, reason: 'ineligible' };
+      return false;
+    }
 
     // ✅ record failed attempt (now exists)
     registerFailureTransition(this._state, providerId, error, !!wasAutoFallback);
 
     if (hasReachedMaxAttemptsPolicy(this.config, this._state())) {
       this.finish('failed');
+      this.lastDecision = { handled: false, reason: 'max_attempts' };
       return false;
     }
 
@@ -188,6 +211,7 @@ export class FallbackOrchestratorService {
     // ✅ no alternatives => terminal
     if (alternatives.length === 0) {
       this.finish('failed');
+      this.lastDecision = { handled: false, reason: 'no_alternatives' };
       return false;
     }
 
@@ -200,6 +224,7 @@ export class FallbackOrchestratorService {
       this.emitManualFallbackEvent(providerId, error, alternatives, request, flowId);
     }
 
+    this.lastDecision = { handled: true, reason: 'handled' };
     return true;
   }
 

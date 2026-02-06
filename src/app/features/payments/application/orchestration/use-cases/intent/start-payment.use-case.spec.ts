@@ -1,18 +1,20 @@
 import { TestBed } from '@angular/core/testing';
 import { ProviderMethodPolicyRegistry } from '@app/features/payments/application/orchestration/registry/provider-method-policy/provider-method-policy.registry';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type {
   PaymentStrategy,
   StrategyContext,
 } from '@payments/application/api/ports/payment-strategy.port';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type {
-  PaymentIntent,
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { firstValueFrom, of, throwError } from 'rxjs';
 
@@ -20,18 +22,17 @@ describe('StartPaymentUseCase', () => {
   let useCase: StartPaymentUseCase;
 
   const req: CreatePaymentRequest = {
-    orderId: 'o1',
-    amount: 100,
-    currency: 'MXN',
+    orderId: createOrderId('o1'),
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
+    idempotencyKey: 'idem_start_use_case',
   };
 
   const intentResponse: PaymentIntent = {
-    id: 'pi_1',
+    id: createPaymentIntentId('pi_1'),
     provider: 'stripe',
     status: 'requires_payment_method',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
   };
 
   const strategyMock: PaymentStrategy = {
@@ -97,7 +98,9 @@ describe('StartPaymentUseCase', () => {
     });
 
     it('calls strategy.start with request (with idempotency key) and context', async () => {
-      const context: StrategyContext = { returnUrl: 'https://return.com' };
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-02-06T00:00:00Z'));
+      const context: StrategyContext = { returnUrl: 'https://return.com', flowId: 'flow_test' };
       await firstValueFrom(useCase.execute(req, 'stripe', context));
 
       expect(strategyMock.start).toHaveBeenCalledTimes(1);
@@ -105,16 +108,17 @@ describe('StartPaymentUseCase', () => {
       expect(strategyMock.start).toHaveBeenCalledWith(
         expect.objectContaining({
           ...req,
-          idempotencyKey: expect.stringContaining('stripe:start:o1:100:MXN:card'),
+          idempotencyKey: 'flow_test:o1:stripe:1770336000000',
         }),
         context,
       );
+      vi.useRealTimers();
     });
 
     it('returns the PaymentIntent from strategy.start', async () => {
       const result = await firstValueFrom(useCase.execute(req, 'stripe'));
 
-      expect(result.id).toBe('pi_1');
+      expect(result.id?.value ?? result.id).toBe('pi_1');
       expect(result.provider).toBe('stripe');
     });
 

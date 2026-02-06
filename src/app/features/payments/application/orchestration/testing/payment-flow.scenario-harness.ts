@@ -14,14 +14,15 @@ import { InMemoryFlowTelemetrySink } from '@app/features/payments/application/ad
 import type { PaymentFlowPort } from '@app/features/payments/application/api/ports/payment-store.port';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type {
   PaymentFlowCommandEvent,
   PaymentFlowSnapshot,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import providePayments from '@payments/config/payment.providers';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { vi } from 'vitest';
 
 function buildCommandEvent(
@@ -35,12 +36,21 @@ function buildCommandEvent(
       providerId: payload['providerId'] as PaymentProviderId,
       request: payload['request'] as CreatePaymentRequest,
     };
-  if (type === 'REFRESH')
+  if (type === 'REFRESH') {
+    const rawIntentId = payload?.['intentId'];
+    const intentId =
+      rawIntentId != null && typeof rawIntentId === 'string'
+        ? (() => {
+            const r = PaymentIntentId.from(rawIntentId);
+            return r.ok ? r.value : undefined;
+          })()
+        : (rawIntentId as PaymentIntentId | undefined);
     return {
       type: 'REFRESH',
       providerId: payload?.['providerId'] as PaymentProviderId | undefined,
-      intentId: payload?.['intentId'] as string | undefined,
+      intentId,
     };
+  }
   throw new Error(`Unsupported command type: ${type}`);
 }
 

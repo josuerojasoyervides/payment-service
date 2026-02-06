@@ -2,30 +2,35 @@ import type { Signal } from '@angular/core';
 import type {
   PaymentFlowStatus,
   PaymentsState,
+  ResilienceState,
 } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
-import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
-import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
-
-export type { PaymentHistoryEntry };
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
-import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type {
   CurrencyCode,
   PaymentIntent,
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type {
   CancelPaymentRequest,
   ConfirmPaymentRequest,
   CreatePaymentRequest,
   GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+} from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
+import type { RedirectReturnRaw } from '@payments/application/api/contracts/redirect-return.contract';
+import type { RedirectReturnedPayload } from '@payments/application/api/contracts/redirect-return-normalized.contract';
 import type {
-  FieldRequirements,
-  PaymentOptions,
-} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+  FallbackConfirmationData,
+  ManualReviewData,
+} from '@payments/application/api/contracts/resilience.types';
+import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
+
+export type { PaymentHistoryEntry };
 
 /**
  * Provider metadata for checkout UI (techless: i18n keys are plain strings).
@@ -58,10 +63,36 @@ export interface PaymentDebugSummary {
 }
 
 /**
- * Flow port: state signals, payment/UI/fallback actions, return helpers.
+ * Core flow port (UI-agnostic): snapshot + imperative actions.
+ *
+ * UI can build signals/selectors on top of this, but the core port does not
+ * depend on framework or presentation types.
+ */
+export interface PaymentFlowPortCore {
+  getSnapshot(): Readonly<PaymentsState>;
+  subscribe(listener: () => void): Unsubscribe;
+
+  startPayment(
+    request: CreatePaymentRequest,
+    providerId: PaymentProviderId,
+    context?: StrategyContext,
+  ): void;
+  confirmPayment(request: ConfirmPaymentRequest, providerId?: PaymentProviderId): void;
+  cancelPayment(request: CancelPaymentRequest, providerId?: PaymentProviderId): void;
+  refreshPayment(request: GetPaymentStatusRequest, providerId?: PaymentProviderId): void;
+  selectProvider(providerId: PaymentProviderId): void;
+  clearError(): void;
+  reset(): void;
+  clearHistory(): void;
+  executeFallback(providerId: PaymentProviderId): void;
+  cancelFallback(): void;
+}
+
+/**
+ * UI flow port: signals, debug helpers, and UI-only helpers.
  * UI injects PAYMENT_STATE to get this contract.
  */
-export interface PaymentFlowPort {
+export interface PaymentFlowPortUi extends PaymentFlowPortCore {
   readonly state: Signal<PaymentsState>;
   readonly isLoading: Signal<boolean>;
   readonly isReady: Signal<boolean>;
@@ -82,6 +113,18 @@ export interface PaymentFlowPort {
   readonly isAutoFallback: Signal<boolean>;
   readonly pendingFallbackEvent: Signal<FallbackAvailableEvent | null>;
   readonly fallbackState: Signal<FallbackState>;
+  readonly resilienceState: Signal<ResilienceState>;
+  readonly resilienceStatus: Signal<ResilienceState['status']>;
+  readonly resilienceCooldownUntilMs: Signal<number | null>;
+  readonly fallbackConfirmation: Signal<FallbackConfirmationData | null>;
+  readonly manualReviewData: Signal<ManualReviewData | null>;
+  readonly isCircuitOpen: Signal<boolean>;
+  readonly isCircuitHalfOpen: Signal<boolean>;
+  readonly isRateLimited: Signal<boolean>;
+  readonly isFallbackConfirming: Signal<boolean>;
+  readonly isPendingManualReview: Signal<boolean>;
+  readonly isAllProvidersUnavailable: Signal<boolean>;
+  readonly canRetryClientConfirm: Signal<boolean>;
   readonly historyCount: Signal<number>;
   readonly lastHistoryEntry: Signal<PaymentHistoryEntry | null>;
   readonly history: Signal<PaymentHistoryEntry[]>;
@@ -93,29 +136,7 @@ export interface PaymentFlowPort {
   readonly debugLastEventType: Signal<string | null>;
   readonly debugLastEventPayload: Signal<unknown | null>;
 
-  getSnapshot(): Readonly<PaymentsState>;
-  subscribe(listener: () => void): Unsubscribe;
-
-  startPayment(
-    request: CreatePaymentRequest,
-    providerId: PaymentProviderId,
-    context?: StrategyContext,
-  ): void;
-  confirmPayment(request: ConfirmPaymentRequest, providerId?: PaymentProviderId): void;
-  cancelPayment(request: CancelPaymentRequest, providerId?: PaymentProviderId): void;
-  refreshPayment(request: GetPaymentStatusRequest, providerId?: PaymentProviderId): void;
-  selectProvider(providerId: PaymentProviderId): void;
-  clearError(): void;
-  reset(): void;
-  clearHistory(): void;
-  executeFallback(providerId: PaymentProviderId): void;
-  cancelFallback(): void;
-
-  getReturnReferenceFromQuery(queryParams: Record<string, unknown>): {
-    providerId: PaymentProviderId;
-    referenceId: string | null;
-  };
-  notifyRedirectReturned(queryParams: Record<string, unknown>): void;
+  notifyRedirectReturned(raw: RedirectReturnRaw): RedirectReturnedPayload | null;
 }
 
 /**
@@ -145,4 +166,7 @@ export interface PaymentCheckoutCatalogPort {
  * Combined port for backward compatibility. Prefer injecting PAYMENT_STATE (FlowPort)
  * and PAYMENT_CHECKOUT_CATALOG (CatalogPort) separately in UI.
  */
-export interface PaymentStorePort extends PaymentFlowPort, PaymentCheckoutCatalogPort {}
+export interface PaymentStorePort extends PaymentFlowPortUi, PaymentCheckoutCatalogPort {}
+
+/** Backwards-compatible alias; prefer PaymentFlowPortCore or PaymentFlowPortUi explicitly. */
+export type PaymentFlowPort = PaymentFlowPortUi;

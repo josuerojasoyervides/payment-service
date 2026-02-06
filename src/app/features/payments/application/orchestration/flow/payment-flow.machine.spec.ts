@@ -1,12 +1,16 @@
+import type { KeyValueStorage } from '@payments/application/api/contracts/key-value-storage.contract';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
 import { createPaymentFlowMachine } from '@payments/application/orchestration/flow/payment-flow.machine';
 import type {
   PaymentFlowActorRef,
   PaymentFlowSnapshot,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
-import type { KeyValueStorage } from '@payments/application/orchestration/flow/payment-flow/persistence/payment-flow.persistence';
-import { createPaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/entities/payment-flow-context.types';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import { createPaymentError } from '@payments/domain/subdomains/payment/factories/payment-error.factory';
 import { firstValueFrom, of } from 'rxjs';
 import type { AnyActorRef } from 'xstate';
 import { createActor } from 'xstate';
@@ -54,11 +58,10 @@ const waitForSnapshot = (
 
 describe('PaymentFlowMachine', () => {
   const baseIntent: PaymentIntent = {
-    id: 'pi_1',
+    id: createPaymentIntentId('pi_1'),
     provider: 'stripe',
     status: 'processing',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
   };
 
   afterEach(() => {
@@ -87,6 +90,9 @@ describe('PaymentFlowMachine', () => {
           : (overrides?.statusIntent ?? baseIntent),
       ),
       clientConfirm: vi.fn(async () => {
+        if (overrides?.clientConfirmError) {
+          throw overrides.clientConfirmError;
+        }
         if (overrides?.clientConfirmReject) {
           throw createPaymentError(
             'unsupported_client_confirm',
@@ -136,15 +142,74 @@ describe('PaymentFlowMachine', () => {
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'polling');
     expect(snap.hasTag('ready')).toBe(true);
+  });
+
+  it('increments polling attempts across status refreshes (avoids infinite polling)', async () => {
+    const { actor } = setup({
+      startIntent: { ...baseIntent, status: 'processing' },
+      statusIntent: { ...baseIntent, status: 'processing' },
+      config: {
+        polling: { baseDelayMs: 1, maxDelayMs: 1, maxAttempts: 2 },
+        statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 0 },
+        processing: { maxDurationMs: 60_000 },
+      },
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
+        method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
+      },
+    });
+
+    let snap = await waitForSnapshot(actor, (s) => s.value === 'polling');
+    expect(snap.context.polling.attempt).toBe(1);
+
+    snap = await waitForSnapshot(
+      actor,
+      (s) => s.value === 'polling' && s.context.polling.attempt === 2,
+      500,
+    );
+    expect(snap.context.polling.attempt).toBe(2);
+  });
+
+  it('polling -> requiresAction when status returns requires_confirmation', async () => {
+    const { actor } = setup({
+      startIntent: { ...baseIntent, status: 'processing' },
+      statusIntent: { ...baseIntent, status: 'requires_confirmation' },
+      config: {
+        polling: { baseDelayMs: 1, maxDelayMs: 1, maxAttempts: 2 },
+        statusRetry: { baseDelayMs: 1, maxDelayMs: 1, maxRetries: 0 },
+        processing: { maxDurationMs: 60_000 },
+      },
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
+        method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
+      },
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'requiresAction', 500);
+    expect(snap.context.intent?.status).toBe('requires_confirmation');
   });
 
   it('START -> requiresAction when intent needs user action', async () => {
@@ -156,15 +221,35 @@ describe('PaymentFlowMachine', () => {
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
     expect(snap.hasTag('ready')).toBe(true);
+  });
+
+  it('START -> requiresAction when intent requires confirmation', async () => {
+    const { actor } = setup({
+      startIntent: { ...baseIntent, status: 'requires_confirmation' },
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
+        method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
+      },
+    });
+
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+    expect(snap.context.intent?.status).toBe('requires_confirmation');
   });
 
   it('client_confirm success: requiresAction -> clientConfirming -> reconciling when deps.clientConfirm resolves', async () => {
@@ -180,10 +265,10 @@ describe('PaymentFlowMachine', () => {
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -192,7 +277,7 @@ describe('PaymentFlowMachine', () => {
     actor.send({
       type: 'CONFIRM',
       providerId: 'stripe',
-      intentId: 'pi_1',
+      intentId: createPaymentIntentId('pi_1'),
     });
 
     await waitForSnapshot(actor, (s) => s.value === 'clientConfirming');
@@ -205,7 +290,11 @@ describe('PaymentFlowMachine', () => {
   });
 
   it('client_confirm success: full path uses ProviderFactoryRegistry capability routing', async () => {
-    const resolvedIntent: PaymentIntent = { ...baseIntent, status: 'succeeded', id: 'pi_1' };
+    const resolvedIntent: PaymentIntent = {
+      ...baseIntent,
+      status: 'succeeded',
+      id: createPaymentIntentId('pi_1'),
+    };
     const startIntentWithClientConfirm: PaymentIntent = {
       ...baseIntent,
       status: 'requires_action',
@@ -256,16 +345,20 @@ describe('PaymentFlowMachine', () => {
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
     await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
 
-    actor.send({ type: 'CONFIRM', providerId: 'stripe', intentId: 'pi_1' });
+    actor.send({
+      type: 'CONFIRM',
+      providerId: 'stripe',
+      intentId: createPaymentIntentId('pi_1'),
+    });
 
     await waitForSnapshot(actor, (s) => s.value === 'clientConfirming');
 
@@ -284,7 +377,7 @@ describe('PaymentFlowMachine', () => {
     expect(deps.clientConfirm).toHaveBeenCalledTimes(1);
   });
 
-  it('clientConfirming failure transitions to failed with PaymentError (unsupported_client_confirm)', async () => {
+  it('clientConfirming failure returns to requiresAction with PaymentError (unsupported_client_confirm)', async () => {
     const { actor } = setup({
       startIntent: {
         ...baseIntent,
@@ -298,10 +391,10 @@ describe('PaymentFlowMachine', () => {
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -310,11 +403,11 @@ describe('PaymentFlowMachine', () => {
     actor.send({
       type: 'CONFIRM',
       providerId: 'stripe',
-      intentId: 'pi_1',
+      intentId: createPaymentIntentId('pi_1'),
     });
 
-    const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
-    expect(snap.hasTag('error')).toBe(true);
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+    expect(snap.hasTag('ready')).toBe(true);
     expect(snap.context.error?.code).toBe('unsupported_client_confirm');
     expect(snap.context.error?.messageKey).toBe('errors.unsupported_client_confirm');
   });
@@ -328,10 +421,10 @@ describe('PaymentFlowMachine', () => {
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -357,10 +450,10 @@ describe('PaymentFlowMachine', () => {
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -380,7 +473,7 @@ describe('PaymentFlowMachine', () => {
     );
   });
 
-  it('finalizing failure transitions to failed with error', async () => {
+  it('finalizing failure transitions to finalizeRetrying with error', async () => {
     const { actor } = setup({
       statusIntent: {
         ...baseIntent,
@@ -394,10 +487,10 @@ describe('PaymentFlowMachine', () => {
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -408,14 +501,20 @@ describe('PaymentFlowMachine', () => {
       payload: { providerId: 'stripe', referenceId: 'pi_1' },
     });
 
-    const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
-    expect(snap.hasTag('error')).toBe(true);
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'finalizeRetrying');
+    expect(snap.hasTag('loading')).toBe(true);
+    expect(snap.context.finalizeRetry.count).toBe(1);
+    expect(snap.context.error).toBeTruthy();
   });
 
   it('finalizing unsupported_finalize transitions to reconciling not failed', async () => {
     const { actor, deps } = setup({
       finalizeUnsupportedFinalize: true,
-      statusIntent: { ...baseIntent, id: 'pi_return', status: 'succeeded' },
+      statusIntent: {
+        ...baseIntent,
+        id: createPaymentIntentId('pi_return'),
+        status: 'succeeded',
+      },
     });
 
     actor.send({
@@ -438,14 +537,18 @@ describe('PaymentFlowMachine', () => {
     const { actor, deps } = setup({
       initialContext: {
         providerId: 'stripe',
-        intentId: 'pi_return',
+        intentId: createPaymentIntentId('pi_return'),
         flowContext: {
           providerId: 'stripe',
           lastReturnReferenceId: 'pi_return',
           lastReturnAt: Date.now(),
         },
       },
-      statusIntent: { ...baseIntent, id: 'pi_return', status: 'succeeded' },
+      statusIntent: {
+        ...baseIntent,
+        id: createPaymentIntentId('pi_return'),
+        status: 'succeeded',
+      },
     });
 
     const before = actor.getSnapshot() as PaymentFlowSnapshot;
@@ -470,7 +573,7 @@ describe('PaymentFlowMachine', () => {
     const { actor, deps } = setup({
       initialContext: {
         providerId: 'stripe',
-        intentId: 'pi_A',
+        intentId: createPaymentIntentId('pi_A'),
         flowContext: {
           providerId: 'stripe',
           providerRefs: { stripe: { paymentId: 'pi_A' } },
@@ -491,18 +594,26 @@ describe('PaymentFlowMachine', () => {
 
   it('REFRESH uses context intentId when event is missing it', async () => {
     const { actor, deps } = setup({
-      startIntent: { ...baseIntent, id: 'pi_ctx', status: 'processing' },
-      statusIntent: { ...baseIntent, id: 'pi_ctx', status: 'processing' },
+      startIntent: {
+        ...baseIntent,
+        id: createPaymentIntentId('pi_ctx'),
+        status: 'processing',
+      },
+      statusIntent: {
+        ...baseIntent,
+        id: createPaymentIntentId('pi_ctx'),
+        status: 'processing',
+      },
     });
 
     actor.send({
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -516,7 +627,9 @@ describe('PaymentFlowMachine', () => {
     await waitForSnapshot(actor, (s) => s.value === 'fetchingStatusInvoke');
     await waitForSnapshot(actor, (s) => s.value === 'polling');
 
-    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_ctx' });
+    expect(deps.getStatus).toHaveBeenCalledWith('stripe', {
+      intentId: createPaymentIntentId('pi_ctx'),
+    });
   });
 
   it('REFRESH fails when keys are missing', async () => {
@@ -538,7 +651,7 @@ describe('PaymentFlowMachine', () => {
     actor.send({
       type: 'CONFIRM',
       providerId: 'paypal',
-      intentId: 'ORDER_1',
+      intentId: createPaymentIntentId('ORDER_1'),
       returnUrl: 'https://return.test',
     });
 
@@ -548,7 +661,7 @@ describe('PaymentFlowMachine', () => {
     );
 
     expect(deps.confirmPayment).toHaveBeenCalledWith('paypal', {
-      intentId: 'ORDER_1',
+      intentId: createPaymentIntentId('ORDER_1'),
       returnUrl: 'https://return.test',
     });
   });
@@ -559,13 +672,15 @@ describe('PaymentFlowMachine', () => {
     actor.send({
       type: 'CANCEL',
       providerId: 'stripe',
-      intentId: 'pi_cancel',
+      intentId: createPaymentIntentId('pi_cancel'),
     });
 
     await waitForSnapshot(actor, (s) => s.value === 'cancelling');
     await waitForSnapshot(actor, (s) => s.value === 'done');
 
-    expect(deps.cancelPayment).toHaveBeenCalledWith('stripe', { intentId: 'pi_cancel' });
+    expect(deps.cancelPayment).toHaveBeenCalledWith('stripe', {
+      intentId: createPaymentIntentId('pi_cancel'),
+    });
   });
 
   it('REFRESH fails when providerId is missing', async () => {
@@ -573,7 +688,7 @@ describe('PaymentFlowMachine', () => {
 
     actor.send({
       type: 'REFRESH',
-      intentId: 'pi_missing_provider',
+      intentId: createPaymentIntentId('pi_missing_provider'),
     } as any);
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'failed');
@@ -581,17 +696,17 @@ describe('PaymentFlowMachine', () => {
     expect(deps.getStatus).not.toHaveBeenCalled();
   });
 
-  it('FALLBACK_REQUESTED -> fallbackCandidate', async () => {
+  it('FALLBACK_REQUESTED -> fallbackConfirming', async () => {
     const { actor } = setup({ startReject: true });
 
     actor.send({
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -601,15 +716,15 @@ describe('PaymentFlowMachine', () => {
       type: 'FALLBACK_REQUESTED',
       failedProviderId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
       mode: 'manual',
     });
 
-    const snap = await waitForSnapshot(actor, (s) => s.value === 'fallbackCandidate');
+    const snap = await waitForSnapshot(actor, (s) => s.value === 'fallbackConfirming');
     expect(snap.hasTag('ready')).toBe(true);
     expect(snap.context.fallback.eligible).toBe(true);
   });
@@ -628,10 +743,10 @@ describe('PaymentFlowMachine', () => {
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -657,10 +772,10 @@ describe('PaymentFlowMachine', () => {
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -683,11 +798,11 @@ describe('PaymentFlowMachine', () => {
           providerRefs: { stripe: { paymentId: 'pi_processing' } },
         },
         providerId: 'stripe',
-        intentId: 'pi_processing',
+        intentId: createPaymentIntentId('pi_processing'),
       },
       statusIntent: {
         ...baseIntent,
-        id: 'pi_processing',
+        id: createPaymentIntentId('pi_processing'),
         status: 'processing',
       },
       config: {
@@ -723,10 +838,10 @@ describe('PaymentFlowMachine', () => {
       type: 'START',
       providerId: 'stripe',
       request: {
-        orderId: 'o1',
-        amount: 100,
-        currency: 'MXN',
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -741,11 +856,90 @@ describe('PaymentFlowMachine', () => {
     vi.useRealTimers();
   });
 
+  it('CIRCUIT_OPENED transitions to circuitOpen and then idle after cooldown', async () => {
+    const { actor } = setup();
+
+    actor.send({ type: 'CIRCUIT_OPENED', providerId: 'stripe', cooldownMs: 1 });
+
+    await waitForSnapshot(actor, (s) => s.value === 'circuitOpen');
+    await waitForSnapshot(actor, (s) => s.value === 'idle');
+  });
+
+  it('RATE_LIMITED transitions to rateLimited and then idle after cooldown', async () => {
+    const { actor } = setup();
+
+    actor.send({ type: 'RATE_LIMITED', providerId: 'stripe', cooldownMs: 1 });
+
+    await waitForSnapshot(actor, (s) => s.value === 'rateLimited');
+    await waitForSnapshot(actor, (s) => s.value === 'idle');
+  });
+
+  it('client confirm retries once on timeout before returning to requiresAction', async () => {
+    vi.useFakeTimers();
+    const { actor } = setup({
+      startIntent: {
+        ...baseIntent,
+        status: 'requires_action',
+        nextAction: { kind: 'client_confirm', token: 'tok_retry' },
+      },
+      clientConfirmError: createPaymentError('timeout', 'errors.timeout', undefined, null),
+    });
+
+    actor.send({
+      type: 'START',
+      providerId: 'stripe',
+      request: {
+        orderId: createOrderId('o1'),
+        money: { amount: 100, currency: 'MXN' },
+        method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
+      },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+
+    actor.send({
+      type: 'CONFIRM',
+      providerId: 'stripe',
+      intentId: createPaymentIntentId('pi_1'),
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'clientConfirmRetrying');
+    vi.advanceTimersByTime(500);
+
+    await waitForSnapshot(actor, (s) => s.value === 'requiresAction');
+    vi.useRealTimers();
+  });
+
+  it('finalize retries up to limit before pendingManualReview', async () => {
+    vi.useFakeTimers();
+    const { actor } = setup({
+      finalizeReject: true,
+    });
+
+    actor.send({
+      type: 'REDIRECT_RETURNED',
+      payload: { providerId: 'stripe', referenceId: 'pi_finalize' },
+    });
+
+    await waitForSnapshot(actor, (s) => s.value === 'finalizing');
+
+    // 5 retries (1s delay each) before pending manual review
+    for (let i = 0; i < 5; i += 1) {
+      await waitForSnapshot(actor, (s) => s.value === 'finalizeRetrying');
+      vi.advanceTimersByTime(1000);
+      await waitForSnapshot(actor, (s) => s.value === 'finalizing');
+    }
+
+    await waitForSnapshot(actor, (s) => s.value === 'pendingManualReview', 2000);
+    vi.useRealTimers();
+  });
+
   it('rehydrates context and reconciles external events on re-entry', async () => {
     const flowContext: PaymentFlowContext = {
       flowId: 'flow_reentry',
       providerId: 'stripe',
-      providerRefs: { stripe: { intentId: 'pi_reentry' } },
+      providerRefs: { stripe: { intentId: createPaymentIntentId('pi_reentry').value } },
       createdAt: 1000,
       expiresAt: 2000,
     };
@@ -754,12 +948,12 @@ describe('PaymentFlowMachine', () => {
       initialContext: {
         flowContext,
         providerId: 'stripe',
-        intentId: 'pi_reentry',
+        intentId: createPaymentIntentId('pi_reentry'),
       },
 
       statusIntent: {
         ...baseIntent,
-        id: 'pi_reentry',
+        id: createPaymentIntentId('pi_reentry'),
         status: 'succeeded',
       },
     });
@@ -772,7 +966,9 @@ describe('PaymentFlowMachine', () => {
     const snap = await waitForSnapshot(actor, (s) => s.value === 'done', 1500);
 
     expect(snap.context.flowContext?.flowId).toBe('flow_reentry');
-    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pi_reentry' });
+    expect(deps.getStatus).toHaveBeenCalledWith('stripe', {
+      intentId: createPaymentIntentId('pi_reentry'),
+    });
   });
 
   it('dedupes EXTERNAL_STATUS_UPDATED events with same eventId', async () => {
@@ -786,11 +982,11 @@ describe('PaymentFlowMachine', () => {
           expiresAt: Date.now() + 60_000,
         },
         providerId: 'stripe',
-        intentId: 'pi_ext',
+        intentId: createPaymentIntentId('pi_ext'),
       },
       statusIntent: {
         ...baseIntent,
-        id: 'pi_ext',
+        id: createPaymentIntentId('pi_ext'),
         status: 'succeeded',
       },
     });
@@ -816,11 +1012,11 @@ describe('PaymentFlowMachine', () => {
           expiresAt: Date.now() + 60_000,
         },
         providerId: 'stripe',
-        intentId: 'pi_webhook_ext',
+        intentId: createPaymentIntentId('pi_webhook_ext'),
       },
       statusIntent: {
         ...baseIntent,
-        id: 'pi_webhook_ext',
+        id: createPaymentIntentId('pi_webhook_ext'),
         status: 'succeeded',
       },
     });
@@ -857,7 +1053,7 @@ describe('PaymentFlowMachine', () => {
       cancelPayment: vi.fn(async () => ({ ...baseIntent, status: 'canceled' as const })),
       getStatus: vi.fn(async () => ({
         ...baseIntent,
-        id: 'pi_swap',
+        id: createPaymentIntentId('pi_swap'),
         status: 'succeeded' as const,
         providerRefs: { preferenceId: 'pref_1', paymentId: 'pay_1' },
       })),
@@ -875,8 +1071,10 @@ describe('PaymentFlowMachine', () => {
     });
 
     const snap = await waitForSnapshot(actor, (s) => s.value === 'done');
-    expect(deps.getStatus).toHaveBeenCalledWith('stripe', { intentId: 'pay_1' });
-    expect(snap.context.flowContext?.providerRefs?.stripe?.preferenceId).toBe('pref_1');
-    expect(snap.context.flowContext?.providerRefs?.stripe?.paymentId).toBe('pay_1');
+    expect(deps.getStatus).toHaveBeenCalledWith('stripe', {
+      intentId: createPaymentIntentId('pay_1'),
+    });
+    expect(snap.context.flowContext?.providerRefs?.['stripe']?.preferenceId).toBe('pref_1');
+    expect(snap.context.flowContext?.providerRefs?.['stripe']?.paymentId).toBe('pay_1');
   });
 });

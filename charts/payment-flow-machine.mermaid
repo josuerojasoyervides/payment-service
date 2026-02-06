@@ -1,0 +1,210 @@
+---
+config:
+  theme: neo-dark
+  layout: elk
+---
+stateDiagram
+  direction LR
+  classDef loading fill:#27324d,stroke:#5a7dd0,color:#e8f1ff;
+  classDef ready fill:#1f3b2d,stroke:#4caf50,color:#eaffea;
+  classDef error fill:#3b1f2b,stroke:#e57373,color:#ffecec;
+  classDef terminal fill:#2b2b2b,stroke:#9e9e9e,color:#f0f0f0;
+  state PollingStatus {
+    direction TB
+    [*] --> ps_polling
+    ps_polling --> ps_fetchingStatus:after pollDelay [canPoll]
+    ps_polling --> ps_failed:after pollDelay [isPollingExhausted] / setProcessingTimeoutError
+    ps_polling --> ps_fetchingStatus:REFRESH / setRefreshInput
+    ps_polling --> ps_cancelling:CANCEL
+    ps_fetchingStatus --> ps_fetchingStatusInvoke:hasRefreshKeys
+    ps_fetchingStatus --> ps_failed:missing keys / setRefreshError
+    ps_fetchingStatusInvoke --> ps_afterStatus:onDone / setIntent
+    ps_fetchingStatusInvoke --> ps_statusRetrying:onError [canRetryStatus] / incrementStatusRetry + clearError
+    ps_fetchingStatusInvoke --> ps_failed:onError / setError
+    ps_statusRetrying --> ps_fetchingStatus:after statusRetryDelay
+    ps_afterStatus --> ps_requiresAction:needsUserAction
+    ps_afterStatus --> ps_finalizing:needsFinalize
+    ps_afterStatus --> ps_done:isFinal
+    ps_afterStatus --> ps_failed:isProcessingTimedOut / setProcessingTimeoutError
+    ps_afterStatus --> ps_polling:else
+    ps_cancelling --> ps_done:onDone / setIntent
+    ps_cancelling --> ps_failed:onError / setError
+[*]    ps_polling
+    ps_fetchingStatus
+    ps_failed
+    ps_cancelling
+    ps_fetchingStatusInvoke
+    ps_afterStatus
+    ps_statusRetrying
+    ps_requiresAction
+    ps_finalizing
+    ps_done
+  }
+  state Reconcile {
+    direction TB
+    [*] --> rc_reconciling
+    rc_reconciling --> rc_reconcilingInvoke:hasRefreshKeys
+    rc_reconciling --> rc_failed:missing keys / setExternalEventError
+    rc_reconcilingInvoke --> rc_afterStatus:onDone / setIntent
+    rc_reconcilingInvoke --> rc_reconcilingRetrying:onError [canRetryStatus] / incrementStatusRetry + clearError
+    rc_reconcilingInvoke --> rc_failed:onError / setError
+    rc_reconcilingRetrying --> rc_reconciling:after statusRetryDelay
+    rc_afterStatus --> rc_requiresAction:needsUserAction
+    rc_afterStatus --> rc_finalizing:needsFinalize
+    rc_afterStatus --> rc_done:isFinal
+    rc_afterStatus --> rc_failed:isProcessingTimedOut / setProcessingTimeoutError
+    rc_afterStatus --> rc_polling:else
+[*]    rc_reconciling
+    rc_reconcilingInvoke
+    rc_failed
+    rc_afterStatus
+    rc_reconcilingRetrying
+    rc_requiresAction
+    rc_finalizing
+    rc_done
+    rc_polling
+  }
+  state StartConfirm {
+    direction TB
+    [*] --> sc_starting
+    sc_starting --> sc_afterStart:onDone / setIntent
+    sc_starting --> sc_failed:onError / setError
+    sc_afterStart --> sc_requiresAction:needsUserAction
+    sc_afterStart --> sc_done:isFinal
+    sc_afterStart --> sc_failed:isProcessingTimedOut / setProcessingTimeoutError
+    sc_afterStart --> sc_polling:else
+    sc_requiresAction --> sc_clientConfirming:CONFIRM [needsClientConfirm]
+    sc_requiresAction --> sc_confirming:CONFIRM / setConfirmInput
+    sc_requiresAction --> sc_cancelling:CANCEL / setCancelInput
+    sc_requiresAction --> sc_fetchingStatus:REFRESH / setRefreshInput
+    sc_confirming --> sc_afterConfirm:onDone / setIntent
+    sc_confirming --> sc_failed:onError / setError
+    sc_afterConfirm --> sc_requiresAction:needsUserAction
+    sc_afterConfirm --> sc_finalizing:needsFinalize
+    sc_afterConfirm --> sc_done:isFinal
+    sc_afterConfirm --> sc_polling:else
+    sc_clientConfirming --> sc_reconciling:onDone / setIntent
+    sc_clientConfirming --> sc_failed:onError / setError
+    sc_finalizing --> sc_reconciling:onDone / setIntent
+    sc_finalizing --> sc_reconciling:onError [unsupported_finalize] / clearError
+    sc_finalizing --> sc_failed:onError / setError
+    sc_cancelling --> sc_done:onDone / setIntent
+    sc_cancelling --> sc_failed:onError / setError
+[*]    sc_starting
+    sc_afterStart
+    sc_failed
+    sc_requiresAction
+    sc_done
+    sc_polling
+    sc_clientConfirming
+    sc_confirming
+    sc_cancelling
+    sc_fetchingStatus
+    sc_afterConfirm
+    sc_finalizing
+    sc_reconciling
+  }
+  state Fallback {
+    direction TB
+    [*] --> fb_failed
+    fb_failed --> fb_fallbackCandidate:always [canFallback]
+    fb_failed --> fb_idle:RESET / clear
+    fb_failed --> fb_fetchingStatus:REFRESH / setRefreshInput
+    fb_failed --> fb_fallbackCandidate:FALLBACK_REQUESTED / setFallbackRequested
+    fb_failed --> fb_starting:FALLBACK_EXECUTE / setFallbackStartInput
+    fb_fallbackCandidate --> fb_idle:RESET / clear
+    fb_fallbackCandidate --> fb_starting:FALLBACK_EXECUTE / setFallbackStartInput
+    fb_fallbackCandidate --> fb_done:FALLBACK_ABORT / clear
+    fb_done --> fb_idle:RESET / clear
+    fb_done --> fb_fetchingStatus:REFRESH / setRefreshInput
+[*]    fb_failed
+    fb_fallbackCandidate
+    fb_idle
+    fb_fetchingStatus
+    fb_starting
+    fb_done
+  }
+  state Resilience {
+    direction TB
+    [*] --> idle
+
+    idle --> starting: START
+    starting --> circuitOpen: CIRCUIT_OPENED
+    starting --> rateLimited: RATE_LIMIT_HIT
+    starting --> afterStart: SUCCESS
+    starting --> failed: ERROR
+
+    circuitOpen --> halfOpen: COOLDOWN_EXPIRED
+    halfOpen --> starting: RETRY_PROBE
+    halfOpen --> circuitOpen: PROBE_FAILED
+
+    rateLimited --> idle: RATE_LIMIT_RESET
+
+    failed --> fallbackConfirming: FALLBACK_ELIGIBLE
+    fallbackConfirming --> starting: FALLBACK_CONFIRMED
+    fallbackConfirming --> failed: FALLBACK_CANCELLED
+    fallbackConfirming --> failed: FALLBACK_TIMEOUT
+
+    afterStart --> pendingManualReview: FINALIZE_EXHAUSTED
+  }
+  state Legend {
+    direction LR
+    [*] --> lg_loading
+    lg_loading --> lg_ready
+    lg_ready --> lg_error
+    lg_error --> lg_terminal
+[*]    lg_loading
+    lg_ready
+    lg_error
+    lg_terminal
+  }
+  PollingStatus:Polling & Status (detail)
+  ps_polling:polling
+  ps_fetchingStatus:fetchingStatus
+  ps_failed:failed
+  ps_cancelling:cancelling
+  ps_fetchingStatusInvoke:fetchingStatusInvoke
+  ps_afterStatus:afterStatus
+  ps_statusRetrying:statusRetrying
+  ps_requiresAction:requiresAction
+  ps_finalizing:finalizing
+  ps_done:done
+  Reconcile:Reconcile (detail)
+  rc_reconciling:reconciling
+  rc_reconcilingInvoke:reconcilingInvoke
+  rc_failed:failed
+  rc_afterStatus:afterStatus
+  rc_reconcilingRetrying:reconcilingRetrying
+  rc_requiresAction:requiresAction
+  rc_finalizing:finalizing
+  rc_done:done
+  rc_polling:polling
+  StartConfirm:Start / Confirm / Finalize (detail)
+  sc_starting:starting
+  sc_afterStart:afterStart
+  sc_failed:failed
+  sc_requiresAction:requiresAction
+  sc_done:done
+  sc_polling:polling
+  sc_clientConfirming:clientConfirming
+  sc_confirming:confirming
+  sc_cancelling:cancelling
+  sc_fetchingStatus:fetchingStatus
+  sc_afterConfirm:afterConfirm
+  sc_finalizing:finalizing
+  sc_reconciling:reconciling
+  Fallback:Fallback (detail)
+  fb_failed:failed
+  fb_fallbackCandidate:fallbackCandidate
+  fb_idle:idle
+  fb_fetchingStatus:fetchingStatus
+  fb_starting:starting
+  fb_done:done
+  lg_loading:Loading
+  lg_ready:Ready
+  lg_error:Error
+  lg_terminal:Terminal
+  class ps_polling,ps_fetchingStatus,ps_cancelling,ps_fetchingStatusInvoke,ps_statusRetrying,ps_finalizing,rc_reconciling,rc_reconcilingInvoke,rc_reconcilingRetrying,rc_finalizing,rc_polling,sc_starting,sc_polling,sc_clientConfirming,sc_confirming,sc_cancelling,sc_fetchingStatus,sc_finalizing,sc_reconciling,fb_fetchingStatus,fb_starting,lg_loading loading
+  class ps_afterStatus,ps_requiresAction,rc_afterStatus,rc_requiresAction,sc_afterStart,sc_requiresAction,sc_afterConfirm,fb_fallbackCandidate,fb_idle,lg_ready ready
+  class ps_failed,rc_failed,sc_failed,fb_failed,lg_error error
+  class ps_done,rc_done,sc_done,fb_done,lg_terminal terminal

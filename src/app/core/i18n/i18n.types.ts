@@ -18,6 +18,8 @@ export interface Translations {
     invalid_request: string;
     network_error: string;
     timeout: string;
+    rate_limited: string;
+    circuit_open: string;
 
     card_declined: string;
     expired_card: string;
@@ -27,11 +29,16 @@ export interface Translations {
     processing_error: string;
 
     order_id_required: string;
+    order_id_too_long: string;
+    order_id_invalid: string;
     currency_required: string;
     amount_invalid: string;
     method_type_required: string;
     card_token_required: string;
+    card_token_invalid_format: string;
     intent_id_required: string;
+    intent_id_too_long: string;
+    intent_id_invalid: string;
     min_amount: string;
     max_amount: string;
 
@@ -62,6 +69,8 @@ export interface Translations {
 
     bank_verification_required: string;
     spei_instructions: string;
+    spei_instruction_complete_transfer: string;
+    spei_instruction_make_transfer: string;
     paypal_redirect_required: string;
 
     status_requires_payment_method: string;
@@ -84,6 +93,7 @@ export interface Translations {
     back: string;
     next: string;
     continue_action: string;
+    retry_verification: string;
 
     // Formularios
     select_provider: string;
@@ -100,6 +110,20 @@ export interface Translations {
     fallback_in_progress_title: string;
     fallback_in_progress_hint: string;
     fallback_auto_hint: string;
+    circuit_open_title: string;
+    circuit_open_hint: string;
+    circuit_half_open_hint: string;
+    rate_limited_title: string;
+    rate_limited_hint: string;
+    manual_review_title: string;
+    manual_review_hint: string;
+    manual_review_action: string;
+    all_providers_unavailable_title: string;
+    all_providers_unavailable_hint: string;
+    health_checking: string;
+    health_available: string;
+    health_slow: string;
+    health_unavailable: string;
 
     // Errores y mensajes
     unknown_error: string;
@@ -192,6 +216,9 @@ export interface Translations {
     select_language: string;
     spanish: string;
     english: string;
+    theme_toggle: string;
+    theme_dark: string;
+    theme_light: string;
     app_name: string;
 
     processing: string;

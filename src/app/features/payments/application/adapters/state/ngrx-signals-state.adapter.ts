@@ -1,9 +1,27 @@
 import type { Signal } from '@angular/core';
 import { computed, effect, inject, Injectable } from '@angular/core';
 import type { PaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
+import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type {
+  CurrencyCode,
+  PaymentIntent,
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type {
+  CancelPaymentRequest,
+  ConfirmPaymentRequest,
+  CreatePaymentRequest,
+  GetPaymentStatusRequest,
+} from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { deepComputed } from '@ngrx/signals';
 import { ExternalEventAdapter } from '@payments/application/adapters/events/external/external-event.adapter';
-import { mapReturnQueryToReference } from '@payments/application/adapters/events/external/mappers/payment-flow-return.mapper';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
+import type { RedirectReturnRaw } from '@payments/application/api/contracts/redirect-return.contract';
+import type { RedirectReturnedPayload } from '@payments/application/api/contracts/redirect-return-normalized.contract';
 import type {
   PaymentCheckoutCatalogPort,
   PaymentDebugSummary,
@@ -12,29 +30,12 @@ import type {
   Unsubscribe,
 } from '@payments/application/api/ports/payment-store.port';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import { REDIRECT_RETURN_NORMALIZERS } from '@payments/application/api/tokens/redirect/redirect-return-normalizers.token';
 import { ProviderDescriptorRegistry } from '@payments/application/orchestration/registry/provider-descriptor/provider-descriptor.registry';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
-import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type {
-  CurrencyCode,
-  PaymentIntent,
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type {
-  CancelPaymentRequest,
-  ConfirmPaymentRequest,
-  CreatePaymentRequest,
-  GetPaymentStatusRequest,
-} from '@payments/domain/subdomains/payment/contracts/payment-request.command';
-import type {
-  FieldRequirements,
-  PaymentOptions,
-} from '@payments/domain/subdomains/payment/ports/payment-request-builder.port';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 /**
  * Adapter implementing PaymentFlowPort and PaymentCheckoutCatalogPort by delegating to PaymentsStore.
@@ -47,6 +48,8 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
   private readonly registry = inject(ProviderFactoryRegistry);
   private readonly descriptorRegistry = inject(ProviderDescriptorRegistry);
   private readonly externalEvents = inject(ExternalEventAdapter);
+  private readonly redirectReturnNormalizers = inject(REDIRECT_RETURN_NORMALIZERS);
+  private readonly idempotency = inject(IdempotencyKeyFactory);
 
   // ============================================================
   // REACTIVE STATE (delegated to store)
@@ -59,6 +62,7 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
     selectedProvider: this.store.selectedProvider(),
     currentRequest: this.store.currentRequest(),
     fallback: this.store.fallback(),
+    resilience: this.store.resilience(),
     history: this.store.history(),
   }));
 
@@ -92,6 +96,23 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
   readonly pendingFallbackEvent: Signal<FallbackAvailableEvent | null> =
     this.store.pendingFallbackEvent;
   readonly fallbackState: Signal<FallbackState> = computed(() => this.store.fallback());
+
+  // ============================================================
+  // RESILIENCE STATE
+  // ============================================================
+
+  readonly resilienceState = this.store.resilienceState;
+  readonly resilienceStatus = this.store.resilienceStatus;
+  readonly resilienceCooldownUntilMs = this.store.resilienceCooldownUntilMs;
+  readonly fallbackConfirmation = this.store.fallbackConfirmation;
+  readonly manualReviewData = this.store.manualReviewData;
+  readonly isCircuitOpen = this.store.isCircuitOpen;
+  readonly isCircuitHalfOpen = this.store.isCircuitHalfOpen;
+  readonly isRateLimited = this.store.isRateLimited;
+  readonly isFallbackConfirming = this.store.isFallbackConfirming;
+  readonly isPendingManualReview = this.store.isPendingManualReview;
+  readonly isAllProvidersUnavailable = this.store.isAllProvidersUnavailable;
+  readonly canRetryClientConfirm = this.store.canRetryClientConfirm;
 
   // ============================================================
   // HISTORY
@@ -250,28 +271,47 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
   }): CreatePaymentRequest {
     const factory = this.registry.get(params.providerId);
     const builder = factory.createRequestBuilder(params.method);
+    const idempotencyKey = this.idempotency.generateForStartInput(
+      params.providerId,
+      params.orderId,
+    );
     return builder
       .forOrder(params.orderId)
       .withAmount(params.amount, params.currency)
       .withOptions(params.options)
+      .withIdempotencyKey(idempotencyKey)
       .build();
   }
 
-  getReturnReferenceFromQuery(queryParams: Record<string, unknown>): {
-    providerId: PaymentProviderId;
-    referenceId: string | null;
-  } {
-    const ref = mapReturnQueryToReference(queryParams);
-    return { providerId: ref.providerId, referenceId: ref.referenceId };
+  notifyRedirectReturned(raw: RedirectReturnRaw): RedirectReturnedPayload | null {
+    const providerId = this.resolveReturnProviderId();
+    if (!providerId) {
+      this.setMissingProviderError();
+      return null;
+    }
+
+    const normalizer = this.redirectReturnNormalizers.find(
+      (entry) => entry.providerId === providerId,
+    );
+    if (!normalizer) {
+      this.setMissingProviderError();
+      return null;
+    }
+
+    const payload = normalizer.normalize(raw);
+    if (!payload) return null;
+
+    this.externalEvents.redirectReturned(payload);
+    return payload;
   }
 
-  notifyRedirectReturned(queryParams: Record<string, unknown>): void {
-    const ref = mapReturnQueryToReference(queryParams);
-    if (ref.referenceId) {
-      this.externalEvents.redirectReturned({
-        providerId: ref.providerId,
-        referenceId: ref.referenceId,
-      });
-    }
+  private resolveReturnProviderId(): PaymentProviderId | null {
+    const resume = this.store.resumeProviderId();
+    if (resume) return resume;
+    const selected = this.store.selectedProvider();
+    if (selected) return selected;
+    const intentProvider = this.store.currentIntent()?.provider ?? null;
+    if (intentProvider) return intentProvider;
+    return null;
   }
 }

@@ -1,17 +1,42 @@
-import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
-import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import { INITIAL_FALLBACK_STATE } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+  FallbackConfirmationData,
+  ManualReviewData,
+} from '@payments/application/api/contracts/resilience.types';
+import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 
 /**
  * Possible payment flow states in the UI.
  */
 export type PaymentFlowStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+export type ResilienceStatus =
+  | 'idle'
+  | 'circuit_open'
+  | 'circuit_half_open'
+  | 'rate_limited'
+  | 'fallback_confirming'
+  | 'pending_manual_review'
+  | 'all_providers_unavailable';
+
+export interface ResilienceState {
+  status: ResilienceStatus;
+  cooldownUntilMs: number | null;
+  fallbackConfirmation: FallbackConfirmationData | null;
+  manualReview: ManualReviewData | null;
+}
+
+export const INITIAL_RESILIENCE_STATE: ResilienceState = {
+  status: 'idle',
+  cooldownUntilMs: null,
+  fallbackConfirmation: null,
+  manualReview: null,
+};
 
 /**
  * Main payments module state.
@@ -35,6 +60,9 @@ export interface PaymentsState {
   /** Fallback system state */
   fallback: FallbackState;
 
+  /** Resilience UI state */
+  resilience: ResilienceState;
+
   /** Intent history for debugging */
   history: PaymentHistoryEntry[];
 }
@@ -49,5 +77,6 @@ export const initialPaymentsState: PaymentsState = {
   selectedProvider: null,
   currentRequest: null,
   fallback: INITIAL_FALLBACK_STATE,
+  resilience: INITIAL_RESILIENCE_STATE,
   history: [],
 };

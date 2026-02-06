@@ -1,14 +1,15 @@
 import { TestBed } from '@angular/core/testing';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
+import { DEFAULT_FALLBACK_CONFIG } from '@payments/application/orchestration/services/fallback/fallback-config.constant';
 import {
   FALLBACK_CONFIG,
   FallbackOrchestratorService,
 } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
-import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
-import { DEFAULT_FALLBACK_CONFIG } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { FallbackConfig } from '@payments/domain/subdomains/fallback/entities/fallback-config.model';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 
 describe('FallbackOrchestratorService', () => {
   let service: FallbackOrchestratorService;
@@ -18,10 +19,10 @@ describe('FallbackOrchestratorService', () => {
   };
 
   const mockRequest: CreatePaymentRequest = {
-    orderId: 'order_123',
-    amount: 100,
-    currency: 'MXN',
+    orderId: createOrderId('order_123'),
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_test1234567890abc' },
+    idempotencyKey: 'idem_fallback_1',
   };
 
   const providerUnavailableError: PaymentError = {
@@ -56,6 +57,7 @@ describe('FallbackOrchestratorService', () => {
             mode: 'manual',
             maxAttempts: 2,
             triggerErrorCodes: ['provider_unavailable'],
+            blockedErrorCodes: ['card_declined'],
             userResponseTimeout: 5000,
             providerPriority: ['stripe', 'paypal'],
           } satisfies Partial<FallbackConfig>,
@@ -115,6 +117,34 @@ describe('FallbackOrchestratorService', () => {
       expect(service.state().status).toBe('idle');
     });
 
+    it('returns false when error code is explicitly blocked', () => {
+      const config: Partial<FallbackConfig> = {
+        enabled: true,
+        mode: 'manual',
+        maxAttempts: 2,
+        triggerErrorCodes: ['provider_unavailable', 'card_declined'],
+        blockedErrorCodes: ['card_declined'],
+        userResponseTimeout: 5000,
+        providerPriority: ['stripe', 'paypal'],
+      };
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          FallbackOrchestratorService,
+          { provide: ProviderFactoryRegistry, useValue: registryMock },
+          { provide: FALLBACK_CONFIG, useValue: config },
+        ],
+      });
+
+      const localService = TestBed.inject(FallbackOrchestratorService);
+      const result = localService.reportFailure('stripe', cardDeclinedError, mockRequest);
+
+      expect(result).toBe(false);
+      expect(localService.state().status).toBe('idle');
+      localService.reset();
+    });
+
     it('returns false when no alternative providers available', () => {
       registryMock.getAvailableProviders.mockReturnValue(['stripe']);
 
@@ -135,7 +165,7 @@ describe('FallbackOrchestratorService', () => {
 
       const attempts = service.failedAttempts();
       expect(attempts).toHaveLength(1);
-      expect(attempts[0].provider).toBe('stripe');
+      expect(attempts[0].providerId).toBe('stripe');
       expect(attempts[0].error).toEqual(providerUnavailableError);
       expect(attempts[0].wasAutoFallback).toBe(false);
     });
@@ -697,10 +727,10 @@ describe('FallbackOrchestratorService - Auto Mode', () => {
   };
 
   const mockRequest: CreatePaymentRequest = {
-    orderId: 'order_123',
-    amount: 100,
-    currency: 'MXN',
+    orderId: createOrderId('order_123'),
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_test1234567890abc' },
+    idempotencyKey: 'idem_fallback_auto',
   };
 
   const providerUnavailableError: PaymentError = {

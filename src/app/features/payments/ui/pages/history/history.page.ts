@@ -1,14 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed } from '@ngrx/signals';
 import { PaymentHistoryFacade } from '@payments/application/api/facades/payment-history.facade';
 import type { PaymentHistoryEntry } from '@payments/application/api/ports/payment-store.port';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
 import { ACTION_REQUIRED_STATUSES } from '@payments/ui/shared/ui.types';
 
@@ -37,12 +36,12 @@ export class HistoryComponent {
   }
 
   entryToIntent(entry: PaymentHistoryEntry): PaymentIntent {
+    const parsed = PaymentIntentId.from(entry.intentId);
     return {
-      id: entry.intentId,
+      id: parsed.ok ? parsed.value : { value: entry.intentId },
       provider: entry.provider,
       status: entry.status,
-      amount: entry.amount,
-      currency: entry.currency,
+      money: { amount: entry.amount, currency: entry.currency },
     };
   }
 

@@ -14,7 +14,12 @@ import {
 } from '@angular-architects/ngrx-toolkit';
 import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import type { PaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
-import { initialPaymentsState } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
+import {
+  INITIAL_RESILIENCE_STATE,
+  initialPaymentsState,
+} from '@app/features/payments/application/orchestration/store/types/payment-store-state';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import {
   signalStore,
   withComputed,
@@ -24,13 +29,12 @@ import {
   withState,
 } from '@ngrx/signals';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { createPaymentsStoreActions } from '@payments/application/orchestration/store/actions/payment-store.actions';
 import { createFallbackHandlers } from '@payments/application/orchestration/store/fallback/payment-store.fallback';
 import { setupPaymentFlowMachineBridge } from '@payments/application/orchestration/store/projection/payment-store.machine-bridge';
 import { buildPaymentsSelectors } from '@payments/application/orchestration/store/projection/payment-store.selectors';
 import { sanitizeDebugEventForUi } from '@payments/application/orchestration/store/utils/debug-sanitize.rule';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export const PaymentsStore = signalStore(
   withState<PaymentsState>(initialPaymentsState),
@@ -39,6 +43,7 @@ export const PaymentsStore = signalStore(
   withProps(() => ({
     _fallbackOrchestrator: inject(FallbackOrchestratorService),
     _stateMachine: inject(PaymentFlowActorService),
+    _providerRegistry: inject(ProviderFactoryRegistry),
   })),
   withComputed((store) => {
     const machine = (store as { _stateMachine: PaymentFlowActorService })._stateMachine;
@@ -52,7 +57,8 @@ export const PaymentsStore = signalStore(
       const snap = snapshot();
       if (!snap.hasTag('idle')) return null;
       const ctx = snap.context;
-      return ctx.intent?.id ?? ctx.intentId ?? null;
+      const id = ctx.intent?.id ?? ctx.intentId;
+      return id?.value ?? null;
     });
     const debugStateNode = computed(() => {
       const snap = snapshot();
@@ -66,6 +72,17 @@ export const PaymentsStore = signalStore(
     });
     const debugLastEventType = computed(() => machine.lastSentEvent()?.type ?? null);
     const debugLastEventPayload = computed(() => sanitizeDebugEventForUi(machine.lastSentEvent()));
+    const canRetryClientConfirm = computed(() => {
+      const snap = snapshot();
+      const retry = snap.context.clientConfirmRetry;
+      const action = snap.context.intent?.nextAction;
+      return (
+        snap.hasTag('requiresAction') &&
+        action?.kind === 'client_confirm' &&
+        retry.count >= 1 &&
+        retry.lastErrorCode === 'timeout'
+      );
+    });
     return {
       resumeProviderId,
       resumeIntentId,
@@ -74,6 +91,7 @@ export const PaymentsStore = signalStore(
       debugTags,
       debugLastEventType,
       debugLastEventPayload,
+      canRetryClientConfirm,
     };
   }),
   withMethods(({ _fallbackOrchestrator, _stateMachine, ...store }) => {
@@ -112,7 +130,7 @@ export const PaymentsStore = signalStore(
   }),
 
   withHooks({
-    onInit({ _fallbackOrchestrator, _stateMachine, ...store }) {
+    onInit({ _fallbackOrchestrator, _stateMachine, _providerRegistry, ...store }) {
       // 1) Bridge fallback orchestrator -> store
       effect(() => {
         updateState(store, 'fallback bridge', { fallback: _fallbackOrchestrator.state() });
@@ -121,6 +139,54 @@ export const PaymentsStore = signalStore(
       // 2) Bridge xstate machine -> store (PR2)
       setupPaymentFlowMachineBridge(store, {
         stateMachine: _stateMachine,
+      });
+
+      // 3) Resilience state projection (PR4b)
+      effect(() => {
+        const snapshot = _stateMachine.snapshot();
+        const fallback = _fallbackOrchestrator.state();
+
+        const base = { ...INITIAL_RESILIENCE_STATE };
+
+        if (snapshot.hasTag('circuitOpen')) {
+          const openedAt = snapshot.context.resilience.circuitOpenedAt ?? Date.now();
+          const cooldownMs = snapshot.context.resilience.circuitCooldownMs ?? 0;
+          base.status = 'circuit_open';
+          base.cooldownUntilMs = openedAt + cooldownMs;
+        } else if (snapshot.hasTag('circuitHalfOpen')) {
+          base.status = 'circuit_half_open';
+        } else if (snapshot.hasTag('rateLimited')) {
+          const openedAt = snapshot.context.resilience.rateLimitOpenedAt ?? Date.now();
+          const cooldownMs = snapshot.context.resilience.rateLimitCooldownMs ?? 0;
+          base.status = 'rate_limited';
+          base.cooldownUntilMs = openedAt + cooldownMs;
+        } else if (snapshot.hasTag('pendingManualReview')) {
+          base.status = 'pending_manual_review';
+          const providerId =
+            snapshot.context.providerId ?? snapshot.context.intent?.provider ?? null;
+          const intentId =
+            snapshot.context.intent?.id?.value ?? snapshot.context.intentId?.value ?? null;
+          if (providerId && intentId) {
+            const factory = _providerRegistry.get(providerId);
+            const dashboardUrl = factory.getDashboardUrl?.(intentId) ?? '';
+            base.manualReview = {
+              intentId,
+              providerId,
+              dashboardUrl,
+            };
+          }
+        } else if (snapshot.hasTag('allProvidersUnavailable')) {
+          base.status = 'all_providers_unavailable';
+        } else if (fallback.pendingEvent) {
+          base.status = 'fallback_confirming';
+          base.fallbackConfirmation = {
+            eligibleProviders: fallback.pendingEvent.alternativeProviders,
+            failureReason: fallback.pendingEvent.error.code,
+            timeoutMs: _fallbackOrchestrator.getConfig().userResponseTimeout,
+          };
+        }
+
+        updateState(store, 'resilience bridge', { resilience: base });
       });
     },
   }),

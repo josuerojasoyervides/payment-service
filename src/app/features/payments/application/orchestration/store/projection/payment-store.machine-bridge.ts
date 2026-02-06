@@ -1,5 +1,6 @@
 import type { Signal } from '@angular/core';
 import { computed, effect } from '@angular/core';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
 import type { PaymentFlowSnapshot } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 import { addToHistory } from '@payments/application/orchestration/store/history/payment-store.history';
@@ -12,7 +13,6 @@ import {
   resetState,
 } from '@payments/application/orchestration/store/projection/payment-store.transitions';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 /**
  * Bridge: connects the XState machine to PaymentsStore.
@@ -60,7 +60,9 @@ export function setupPaymentFlowMachineBridge(
      *
      * This prevents UI/tests from getting stuck in loading.
      */
-    if (state === 'fetchingStatus' && machineIntent()) return;
+    if ((state === 'fetchingStatus' || state === 'fetchingStatusInvoke') && machineIntent()) {
+      return;
+    }
 
     applyLoadingState(store, machineProviderId() ?? undefined, machineRequest() ?? undefined);
   });
@@ -86,8 +88,9 @@ export function setupPaymentFlowMachineBridge(
     const providerId = machineProviderId() as PaymentProviderId | null;
     if (!providerId) return;
 
-    if (intent.id !== lastIntentId) {
-      lastIntentId = intent.id;
+    const intentIdValue = intent.id.value;
+    if (intentIdValue !== lastIntentId) {
+      lastIntentId = intentIdValue;
       addToHistory(store, intent, providerId);
     }
     return;
@@ -108,7 +111,19 @@ export function setupPaymentFlowMachineBridge(
 
   /**
    * ============================================================
-   * Effect #2c: machine idle -> clear store so tests/UI see consistent idle
+   * Effect #2c: resilience states -> ready (silent)
+   * ============================================================
+   */
+  effect(() => {
+    const snapshot = machineSnapshot();
+    if (!snapshot.hasTag('resilience')) return;
+
+    applySilentFailureState(store);
+  });
+
+  /**
+   * ============================================================
+   * Effect #2d: machine idle -> clear store so tests/UI see consistent idle
    * ============================================================
    */
   effect(() => {

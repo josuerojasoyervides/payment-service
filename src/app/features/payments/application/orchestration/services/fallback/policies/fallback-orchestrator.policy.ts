@@ -1,17 +1,14 @@
 import type { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
-import type { FallbackConfig } from '@payments/domain/subdomains/fallback/contracts/fallback-config.types';
-import type { FallbackState } from '@payments/domain/subdomains/fallback/contracts/fallback-state.types';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { FallbackConfig } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-config.model';
+import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+
+export { isEligibleForFallbackPolicy } from '@app/features/payments/domain/subdomains/fallback/policies/eligible-for-fallback.policy';
 
 /**
- * ✅ Eligibility / stopping conditions
+ * ✅ Stopping conditions
  */
-export function isEligibleForFallbackPolicy(config: FallbackConfig, error: PaymentError): boolean {
-  return config.triggerErrorCodes.includes(error.code);
-}
-
 export function hasReachedMaxAttemptsPolicy(config: FallbackConfig, state: FallbackState): boolean {
   return state.failedAttempts.length >= config.maxAttempts;
 }
@@ -42,7 +39,7 @@ export function getAlternativeProvidersPolicy(
   request: CreatePaymentRequest,
 ): PaymentProviderId[] {
   const allProviders = registry.getAvailableProviders();
-  const failedProviderIds = state.failedAttempts.map((a) => a.provider);
+  const failedProviderIds = state.failedAttempts.map((a) => a.providerId);
 
   const priority = Array.from(new Set([...config.providerPriority, ...allProviders]));
 

@@ -1,8 +1,5 @@
-import { HttpClient } from '@angular/common/http';
-import { inject } from '@angular/core';
-import { LoggerService } from '@core/logging';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import type { Observable } from 'rxjs';
 import { catchError, map, throwError } from 'rxjs';
 
@@ -16,8 +13,6 @@ export abstract class PaymentOperationPort<
   TResponse,
 > implements PaymentOperationGatewayPort<TRequest, TResponse> {
   abstract readonly providerId: PaymentProviderId;
-  protected readonly http = inject(HttpClient);
-  protected readonly logger = inject(LoggerService);
 
   protected get logContext(): string {
     return `${this.providerId} Gateway`;
@@ -36,11 +31,10 @@ export abstract class PaymentOperationPort<
     // Optionally override in subclasses to perform request validation.
   }
 
-  protected handleError(err: unknown): PaymentError {
+  protected handleError(_err: unknown): PaymentError {
     return {
       code: 'provider_error',
-      messageKey: 'errors.provider_error',
-      raw: err,
+      raw: { reason: 'unexpected_error' },
     };
   }
 

@@ -1,4 +1,8 @@
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
+import {
+  buildPaypalSandboxCaptureUrl,
+  buildPaypalSandboxOrderUrl,
+} from '@payments/shared/constants/fake-external-urls';
 
 export function createFakePaypalOrderStatus(orderId: string): PaypalOrderDto {
   return {
@@ -9,12 +13,12 @@ export function createFakePaypalOrderStatus(orderId: string): PaypalOrderDto {
     update_time: new Date().toISOString(),
     links: [
       {
-        href: `https://api.sandbox.paypal.com/v2/checkout/orders/${orderId}`,
+        href: buildPaypalSandboxOrderUrl(orderId),
         rel: 'self',
         method: 'GET',
       },
       {
-        href: `https://api.sandbox.paypal.com/v2/checkout/orders/${orderId}/capture`,
+        href: buildPaypalSandboxCaptureUrl(orderId),
         rel: 'capture',
         method: 'POST',
       },

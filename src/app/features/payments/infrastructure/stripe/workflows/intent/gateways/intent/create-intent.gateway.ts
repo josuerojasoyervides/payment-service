@@ -1,20 +1,24 @@
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { LoggerService } from '@app/core';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import type {
   StripeCreateIntentRequest,
   StripePaymentIntentDto,
   StripeSpeiSourceDto,
 } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import { STRIPE_API_BASE } from '@app/features/payments/infrastructure/stripe/shared/constants/base-api.constant';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { PaymentError } from '@payments/domain/subdomains/payment/entities/payment-error.model';
+import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { SpeiSourceMapper } from '@payments/infrastructure/stripe/payment-methods/spei/mappers/spei-source.mapper';
-import { getIdempotencyHeaders } from '@payments/infrastructure/stripe/shared/idempotency/get-idempotency-headers';
+import { mapStripeGatewayError } from '@payments/infrastructure/stripe/shared/errors/mappers/stripe-gateway-error.mapper';
 import { mapPaymentIntent } from '@payments/infrastructure/stripe/workflows/intent/mappers/payment-intent.mapper';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import type { Observable } from 'rxjs';
+import { timeout } from 'rxjs';
 
 @Injectable()
 export class StripeCreateIntentGateway extends PaymentOperationPort<
@@ -22,9 +26,11 @@ export class StripeCreateIntentGateway extends PaymentOperationPort<
   StripePaymentIntentDto | StripeSpeiSourceDto,
   PaymentIntent
 > {
-  readonly providerId: PaymentProviderId = 'stripe' as const;
-
-  private static readonly API_BASE = STRIPE_API_BASE;
+  private readonly http = inject(HttpClient);
+  private readonly logger = inject(LoggerService);
+  private readonly idempotencyKeyFactory = inject(IdempotencyKeyFactory);
+  private readonly config = inject(PAYMENTS_INFRA_CONFIG);
+  readonly providerId: PaymentProviderId = PAYMENT_PROVIDER_IDS.stripe;
 
   constructor() {
     super();
@@ -34,24 +40,32 @@ export class StripeCreateIntentGateway extends PaymentOperationPort<
     request: CreatePaymentRequest,
   ): Observable<StripePaymentIntentDto | StripeSpeiSourceDto> {
     const stripeRequest = this.buildStripeCreateRequest(request);
+    const baseUrl = this.config.stripe.baseUrl;
+    const idempotencyKey =
+      request.idempotencyKey ??
+      this.idempotencyKeyFactory.generateForStart(this.providerId, request);
+    const headers = { 'Idempotency-Key': idempotencyKey };
 
     if (request.method.type === 'spei') {
-      return this.http.post<StripeSpeiSourceDto>(
-        `${StripeCreateIntentGateway.API_BASE}/sources`,
-        stripeRequest,
-        { headers: getIdempotencyHeaders(request.orderId, 'create', request.idempotencyKey) },
-      );
+      return this.http
+        .post<StripeSpeiSourceDto>(`${baseUrl}/sources`, stripeRequest, {
+          headers,
+        })
+        .pipe(timeout({ each: this.config.stripe.timeoutMs }));
     }
 
-    return this.http.post<StripePaymentIntentDto>(
-      `${StripeCreateIntentGateway.API_BASE}/intents`,
-      stripeRequest,
-      { headers: getIdempotencyHeaders(request.orderId, 'create', request.idempotencyKey) },
-    );
+    return this.http
+      .post<StripePaymentIntentDto>(`${baseUrl}/intents`, stripeRequest, {
+        headers,
+      })
+      .pipe(timeout({ each: this.config.stripe.timeoutMs }));
   }
   protected mapResponse(dto: StripePaymentIntentDto | StripeSpeiSourceDto): PaymentIntent {
     if ('spei' in dto) {
-      const mapper = new SpeiSourceMapper(this.providerId);
+      const mapper = new SpeiSourceMapper(
+        this.providerId,
+        this.config.spei.displayConfig.beneficiaryName,
+      );
       return mapper.mapSpeiSource(dto as StripeSpeiSourceDto);
     }
     return mapPaymentIntent(dto as StripePaymentIntentDto, this.providerId);
@@ -59,15 +73,19 @@ export class StripeCreateIntentGateway extends PaymentOperationPort<
 
   private buildStripeCreateRequest(req: CreatePaymentRequest): StripeCreateIntentRequest {
     return {
-      amount: Math.round(req.amount * 100),
-      currency: req.currency.toLowerCase(),
+      amount: Math.round(req.money.amount * 100),
+      currency: req.money.currency.toLowerCase(),
       payment_method_types: [req.method.type === 'spei' ? 'spei' : 'card'],
       payment_method: req.method.token,
       metadata: {
-        order_id: req.orderId,
+        order_id: req.orderId.value,
         created_at: new Date().toISOString(),
       },
-      description: `Order ${req.orderId}`,
+      description: `Order ${req.orderId.value}`,
     };
+  }
+
+  protected override handleError(err: unknown): PaymentError {
+    return mapStripeGatewayError(err, this.config.stripe.timeoutMs);
   }
 }

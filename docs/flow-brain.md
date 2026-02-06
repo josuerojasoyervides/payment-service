@@ -1,6 +1,6 @@
 # Flow Brain — Payments State Machine (XState)
 
-> **Last review:** 2026-01-26
+> **Last review:** 2026-02-01
 > This document is the operational map of the payments flow. It explains **why** a state is entered and **who** triggers it.
 
 ---
@@ -171,15 +171,25 @@ done
 
 ---
 
+## Actor snapshot pipeline (order matters)
+
+- ActorService hosts the XState actor and wires inspect logging with redaction.
+- Snapshot subscription order: `signal snapshot` → `telemetry` → `prevSnapshot update` → `side-effects`.
+- Side-effects run in order: `persist flowContext` → `fallback bridge` (report failure / notify success).
+- Fallback auto-execute stream bridges to `sendSystem(FALLBACK_EXECUTE)`.
+
+---
+
 ## Where to look in code
 
 - Machine: `src/app/features/payments/application/orchestration/flow/payment-flow.machine.ts`
-- Policy + config: `src/app/features/payments/application/orchestration/flow/payment-flow.policy.ts`
-- Actor: `src/app/features/payments/application/orchestration/flow/payment-flow.actor.service.ts`
+- Policy + config: `src/app/features/payments/application/orchestration/flow/payment-flow/policy/payment-flow.policy.ts`
+- Actor host: `src/app/features/payments/application/orchestration/flow/payment-flow.actor.service.ts`
+- Actor helpers (pipeline/telemetry/persistence/fallback/inspection): `src/app/features/payments/application/orchestration/flow/actor/`
 - Facade: `src/app/features/payments/application/orchestration/flow/payment-flow-machine-driver.ts`
 - External events: `src/app/features/payments/application/adapters/external-event.adapter.ts`
 - Event map: `src/app/features/payments/application/adapters/events/payment-flow.events.ts`
-- Fallback: `src/app/features/payments/application/orchestration/services/fallback-orchestrator.service.ts`
+- Fallback: `src/app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service.ts`
 - Store bridge: `src/app/features/payments/application/orchestration/store/projection/payment-store.machine-bridge.ts`
 - Contract tests: `src/app/features/payments/tests/payment-flow.contract.spec.ts`
 

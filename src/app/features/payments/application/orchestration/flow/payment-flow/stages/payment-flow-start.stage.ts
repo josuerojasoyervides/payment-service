@@ -3,6 +3,9 @@ import type {
   PaymentFlowStatesConfig,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 
+/**
+ * Start and post-start routing states.
+ */
 export const startStates = {
   starting: {
     tags: ['loading', 'starting'],
@@ -14,7 +17,19 @@ export const startStates = {
         flowContext: context.flowContext ?? undefined,
       }),
       onDone: { target: 'afterStart', actions: 'setIntent' },
-      onError: { target: 'failed', actions: 'setError' },
+      onError: [
+        {
+          guard: 'isCircuitOpenError',
+          target: 'circuitOpen',
+          actions: ['setError', 'setCircuitOpenFromError'],
+        },
+        {
+          guard: 'isRateLimitedError',
+          target: 'rateLimited',
+          actions: ['setError', 'setRateLimitedFromError'],
+        },
+        { target: 'failed', actions: 'setError' },
+      ],
     },
   },
 

@@ -196,7 +196,7 @@
             <app-spei-instructions
               [clabe]="speiInstructions.clabe"
               [reference]="speiInstructions.reference"
-              [bank]="speiInstructions.bank"
+              [bankCode]="speiInstructions.bankCode"
               [beneficiary]="speiInstructions.beneficiary"
               [amount]="speiInstructions.amount"
               [currency]="speiInstructions.currency"
@@ -303,12 +303,12 @@
         <div class="grid md:grid-cols-2 gap-6">
           <div>
             <h3 class="font-medium mb-3">{{ labels.previewLabel() }}</h3>
-            @if (fallbackModalEvent(); as event) {
+            @if (fallbackModalData(); as data) {
               <button class="btn-primary" (click)="fallbackModalOpen = true">
                 {{ labels.openFallbackModalLabel() }}
               </button>
               <app-fallback-modal
-                [event]="event"
+                [data]="data"
                 [open]="fallbackModalOpen"
                 (confirm)="onFallbackConfirm($event)"
                 (canceled)="fallbackModalOpen = false" />

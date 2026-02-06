@@ -1,8 +1,6 @@
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 
 /**
  * History configuration.
@@ -17,7 +15,7 @@ export interface PaymentHistoryEntry {
   provider: PaymentProviderId;
   status: PaymentIntent['status'];
   amount: number;
-  currency: PaymentIntent['currency'];
+  currency: PaymentIntent['money']['currency'];
   timestamp: number;
   error?: PaymentError;
 }

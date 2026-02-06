@@ -1,9 +1,15 @@
 import { TestBed } from '@angular/core/testing';
-import { I18nKeys } from '@core/i18n';
 import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import { STRIPE_SPEI_VALIDATION_CONFIG } from '@payments/infrastructure/shared/validation/provider-validation.config';
+import { validateAmount } from '@payments/infrastructure/shared/validation/validate-amount';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 import { firstValueFrom, of } from 'rxjs';
 
@@ -12,18 +18,17 @@ describe('SpeiStrategy', () => {
   let gatewayMock: Pick<PaymentGatewayPort, 'createIntent' | 'providerId'>;
 
   const validReq: CreatePaymentRequest = {
-    orderId: 'order_1',
-    amount: 100,
-    currency: 'MXN',
+    orderId: createOrderId('order_1'),
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'spei' },
+    idempotencyKey: 'idem_spei_valid',
   };
 
   const intentResponse: PaymentIntent = {
-    id: 'src_1',
+    id: createPaymentIntentId('src_1'),
     provider: 'stripe',
     status: 'requires_action',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
     raw: {
       spei: {
         clabe: '646180111812345678',
@@ -31,6 +36,11 @@ describe('SpeiStrategy', () => {
         bank: 'STP',
       },
     },
+  };
+
+  const displayConfig = {
+    receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+    beneficiaryName: 'Payment Service',
   };
 
   const loggerMock = {
@@ -50,43 +60,44 @@ describe('SpeiStrategy', () => {
       providers: [{ provide: LoggerService, useValue: loggerMock }],
     });
 
-    strategy = new SpeiStrategy(gatewayMock as any, loggerMock as any);
+    strategy = new SpeiStrategy(gatewayMock as any, loggerMock as any, displayConfig, (money) =>
+      validateAmount(money, STRIPE_SPEI_VALIDATION_CONFIG),
+    );
   });
 
   describe('validate()', () => {
     it('throws if currency is not MXN', () => {
-      const req = { ...validReq, currency: 'USD' as const };
+      const req = { ...validReq, money: { amount: 100, currency: 'USD' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
-          code: 'invalid_request',
-          messageKey: I18nKeys.errors.invalid_request,
+          code: 'currency_not_supported',
         }),
       );
     });
 
     it('throws if amount is below minimum', () => {
-      const req = { ...validReq, amount: 0.5 };
+      const req = { ...validReq, money: { amount: 0.5, currency: 'MXN' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
-          code: 'invalid_request',
-          messageKey: I18nKeys.errors.min_amount,
+          code: 'amount_below_minimum',
         }),
       );
     });
 
     it('throws if amount exceeds maximum', () => {
-      const req = { ...validReq, amount: 10_000_000 };
+      const req = { ...validReq, money: { amount: 10_000_000, currency: 'MXN' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
-          code: 'invalid_request',
-          messageKey: I18nKeys.errors.max_amount,
+          code: 'amount_above_maximum',
         }),
       );
     });
 
     it('accepts valid MXN amounts', () => {
       expect(() => strategy.validate(validReq)).not.toThrow();
-      expect(() => strategy.validate({ ...validReq, amount: 5_000_000 })).not.toThrow();
+      expect(() =>
+        strategy.validate({ ...validReq, money: { amount: 5_000_000, currency: 'MXN' } }),
+      ).not.toThrow();
     });
 
     it('warns but does not throw if token is provided', () => {
@@ -97,8 +108,10 @@ describe('SpeiStrategy', () => {
       expect(loggerMock.warn).toHaveBeenCalledWith(
         'Token provided but will be ignored for SPEI payments',
         'SpeiStrategy',
-        { token: 'tok_ignored' },
+        expect.objectContaining({ hasToken: true }),
       );
+      const meta = loggerMock.warn.mock.calls[0][2] as Record<string, unknown>;
+      expect(meta).not.toHaveProperty('token');
 
       consoleSpy.mockRestore();
     });
@@ -137,24 +150,23 @@ describe('SpeiStrategy', () => {
       const result = await firstValueFrom(strategy.start(validReq));
 
       expect(gatewayMock.createIntent).toHaveBeenCalledTimes(1);
-      expect(result.id).toBe('src_1');
+      expect(result.id?.value ?? result.id).toBe('src_1');
     });
 
     it('throws validation error before calling gateway', () => {
-      const invalidReq = { ...validReq, currency: 'USD' as const };
+      const invalidReq = { ...validReq, money: { amount: 100, currency: 'USD' as const } };
 
       // Error is thrown synchronously in start() before returning Observable
       expect(() => strategy.start(invalidReq)).toThrowError(
         expect.objectContaining({
-          code: 'invalid_request',
-          messageKey: I18nKeys.errors.invalid_request,
+          code: 'currency_not_supported',
         }),
       );
 
       expect(gatewayMock.createIntent).not.toHaveBeenCalled();
     });
 
-    it('enriches intent with SPEI instructions', async () => {
+    it('enriches intent with SPEI details', async () => {
       const result = await firstValueFrom(strategy.start(validReq));
 
       expect(result.status).toBe('requires_action');
@@ -163,7 +175,15 @@ describe('SpeiStrategy', () => {
       if (nextAction?.kind !== 'manual_step') {
         throw new Error('Expected manual_step next action');
       }
-      expect(nextAction.details?.length).toBeGreaterThan(0);
+      expect(nextAction.details).toEqual(
+        expect.objectContaining({
+          bankCode: 'STP',
+          clabe: '646180111812345678',
+          beneficiaryName: displayConfig.beneficiaryName,
+          amount: 100,
+          currency: 'MXN',
+        }),
+      );
     });
 
     it('removes token from prepared request', async () => {
@@ -182,8 +202,11 @@ describe('SpeiStrategy', () => {
         ...intentResponse,
         nextAction: {
           kind: 'manual_step',
-          instructions: ['Transfer'],
-          details: [{ label: 'CLABE', value: '123' }],
+          details: {
+            bankCode: 'STP',
+            clabe: '646180111812345678',
+            beneficiaryName: displayConfig.beneficiaryName,
+          },
         },
       };
       expect(strategy.requiresUserAction(intent)).toBe(true);
@@ -194,30 +217,50 @@ describe('SpeiStrategy', () => {
     });
   });
 
-  describe('getUserInstructions()', () => {
-    it('returns detailed SPEI instructions', () => {
-      const intent: PaymentIntent = {
-        ...intentResponse,
-        nextAction: {
-          kind: 'manual_step',
-          instructions: ['Transfer'],
-          details: [
-            { label: 'CLABE', value: '646180111812345678' },
-            { label: 'Reference', value: '1234567' },
-          ],
-        },
-      };
-
-      const instructions = strategy.getUserInstructions(intent);
-
-      expect(instructions).toEqual(
-        expect.arrayContaining(['Complete the transfer using the details below.']),
+  describe('SPEI data validation', () => {
+    it('throws when gateway response is missing clabe', async () => {
+      gatewayMock.createIntent = vi.fn(() =>
+        of({
+          ...intentResponse,
+          raw: { spei: { bank: 'STP', reference: '1234567' } },
+        }),
       );
+
+      await expect(firstValueFrom(strategy.start(validReq))).rejects.toMatchObject({
+        code: 'provider_error',
+        messageKey: PAYMENT_ERROR_KEYS.UNKNOWN_ERROR,
+        params: { reason: 'missing_spei_clabe' },
+      });
     });
 
-    it('returns null when not a SPEI intent', () => {
-      const intent: PaymentIntent = { ...intentResponse, nextAction: undefined };
-      expect(strategy.getUserInstructions(intent)).toBeNull();
+    it('throws when gateway response is missing bank code', async () => {
+      gatewayMock.createIntent = vi.fn(() =>
+        of({
+          ...intentResponse,
+          raw: { spei: { clabe: '646180111812345678', reference: '1234567' } },
+        }),
+      );
+
+      await expect(firstValueFrom(strategy.start(validReq))).rejects.toMatchObject({
+        code: 'provider_error',
+        messageKey: PAYMENT_ERROR_KEYS.UNKNOWN_ERROR,
+        params: { reason: 'missing_spei_bank_code' },
+      });
+    });
+
+    it('throws when bank code is not in receivingBanks map', async () => {
+      gatewayMock.createIntent = vi.fn(() =>
+        of({
+          ...intentResponse,
+          raw: { spei: { clabe: '646180111812345678', reference: '1234567', bank: 'ZZZ' } },
+        }),
+      );
+
+      await expect(firstValueFrom(strategy.start(validReq))).rejects.toMatchObject({
+        code: 'provider_error',
+        messageKey: PAYMENT_ERROR_KEYS.UNKNOWN_ERROR,
+        params: { reason: 'unknown_spei_bank_code', bankCode: 'ZZZ' },
+      });
     });
   });
 });

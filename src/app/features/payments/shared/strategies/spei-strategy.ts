@@ -1,18 +1,31 @@
-import { I18nKeys } from '@core/i18n';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { NextActionManualStep } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
+import {
+  createPaymentError,
+  invalidRequestError,
+} from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import { intentRequiresUserAction } from '@app/features/payments/domain/subdomains/payment/policies/requires-user-action.policy';
+import {
+  SPEI_MAX_AMOUNT_MXN,
+  SPEI_MIN_AMOUNT_MXN,
+  validateSpeiAmount,
+} from '@app/features/payments/domain/subdomains/payment/rules/spei-amount.rule';
+import {
+  formatSpeiPaymentConcept,
+  generateSpeiReference,
+} from '@app/features/payments/domain/subdomains/payment/rules/spei-concept.rule';
+import { SPEI_DEFAULT_EXPIRY_HOURS } from '@app/features/payments/domain/subdomains/payment/rules/spei-expiry.rule';
 import type { LoggerService } from '@core/logging';
+import type { SpeiDisplayConfig } from '@payments/application/api/contracts/spei-display-config.types';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
 import type {
   PaymentStrategy,
   StrategyContext,
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
-import type { NextActionManualStep } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
-import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type {
-  PaymentIntent,
-  PaymentMethodType,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
 
@@ -29,56 +42,50 @@ import { map, tap } from 'rxjs';
 export class SpeiStrategy implements PaymentStrategy {
   readonly type: PaymentMethodType = 'spei';
 
-  // SPEI limits according to Mexican regulation
-  private static readonly MIN_AMOUNT_MXN = 1;
-  private static readonly MAX_AMOUNT_MXN = 8_000_000; // 8 million MXN
-  private static readonly DEFAULT_EXPIRY_HOURS = 72;
-
-  // Common receiving banks for SPEI
-  private static readonly RECEIVING_BANKS: Record<string, string> = {
-    stripe: 'STP (Transfers and Payments System)',
-    conekta: 'STP (Transfers and Payments System)',
-    openpay: 'BBVA Mexico',
-  };
-
   constructor(
     private readonly gateway: PaymentGatewayPort,
     private readonly logger: LoggerService,
+    private readonly displayConfig: SpeiDisplayConfig,
+    private readonly amountValidator?: (money: CreatePaymentRequest['money']) => void,
   ) {}
 
   /**
    * Validates the request for SPEI payments.
    *
-   * Rules:
+   * Uses domain rules (validateSpeiAmount) for amount/currency validation.
    * - Only accepts MXN
    * - Amount between 1 and 8,000,000 MXN
    * - Does not require token (unlike cards)
    */
   validate(req: CreatePaymentRequest): void {
-    if (req.currency !== 'MXN') {
-      throw invalidRequestError(I18nKeys.errors.invalid_request, {
-        reason: 'spei_only_mxn',
-        currency: req.currency,
-      });
-    }
-
-    if (req.amount < SpeiStrategy.MIN_AMOUNT_MXN) {
-      throw invalidRequestError(I18nKeys.errors.min_amount, {
-        amount: SpeiStrategy.MIN_AMOUNT_MXN,
-        currency: req.currency,
-      });
-    }
-
-    if (req.amount > SpeiStrategy.MAX_AMOUNT_MXN) {
-      throw invalidRequestError(I18nKeys.errors.max_amount, {
-        amount: SpeiStrategy.MAX_AMOUNT_MXN,
-        currency: req.currency,
-      });
+    if (this.amountValidator) {
+      this.amountValidator(req.money);
+    } else {
+      const violations = validateSpeiAmount(req.money);
+      for (const v of violations) {
+        switch (v.code) {
+          case 'SPEI_INVALID_CURRENCY':
+            throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
+              reason: 'spei_only_mxn',
+              currency: req.money.currency,
+            });
+          case 'SPEI_AMOUNT_TOO_LOW':
+            throw invalidRequestError(PAYMENT_ERROR_KEYS.MIN_AMOUNT, {
+              amount: SPEI_MIN_AMOUNT_MXN,
+              currency: req.money.currency,
+            });
+          case 'SPEI_AMOUNT_TOO_HIGH':
+            throw invalidRequestError(PAYMENT_ERROR_KEYS.MAX_AMOUNT, {
+              amount: SPEI_MAX_AMOUNT_MXN,
+              currency: req.money.currency,
+            });
+        }
+      }
     }
 
     if (req.method.token) {
       this.logger.warn('Token provided but will be ignored for SPEI payments', 'SpeiStrategy', {
-        token: req.method.token,
+        hasToken: true,
       });
     }
   }
@@ -92,7 +99,7 @@ export class SpeiStrategy implements PaymentStrategy {
    * - Prepares metadata for tracking
    */
   prepare(req: CreatePaymentRequest, _context?: StrategyContext): StrategyPrepareResult {
-    const expiryHours = SpeiStrategy.DEFAULT_EXPIRY_HOURS;
+    const expiryHours = SPEI_DEFAULT_EXPIRY_HOURS;
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + expiryHours);
 
@@ -100,7 +107,7 @@ export class SpeiStrategy implements PaymentStrategy {
       payment_method_type: 'spei',
       expires_at: expiresAt.toISOString(),
       expiry_hours: expiryHours,
-      payment_concept: this.generatePaymentConcept(req.orderId),
+      payment_concept: formatSpeiPaymentConcept(req.orderId),
       timestamp: new Date().toISOString(),
       requires_polling: true,
     };
@@ -130,14 +137,14 @@ export class SpeiStrategy implements PaymentStrategy {
     const { preparedRequest, metadata } = this.prepare(req, context);
 
     this.logger.warn(`[SpeiStrategy] Starting SPEI payment:`, 'SpeiStrategy', {
-      orderId: req.orderId,
-      amount: req.amount,
+      orderId: req.orderId.value,
+      amount: req.money.amount,
       expiresAt: metadata['expires_at'],
     });
     return this.gateway.createIntent(preparedRequest).pipe(
       tap((intent) => {
-        this.logger.warn(`[SpeiStrategy] SPEI source created: ${intent.id}`, 'SpeiStrategy', {
-          intentId: intent.id,
+        this.logger.warn(`[SpeiStrategy] SPEI source created: ${intent.id.value}`, 'SpeiStrategy', {
+          intentId: intent.id.value,
         });
       }),
       map((intent) => this.enrichIntentWithSpeiInstructions(intent, req, metadata)),
@@ -148,21 +155,11 @@ export class SpeiStrategy implements PaymentStrategy {
    * SPEI always requires user action (perform the transfer).
    */
   requiresUserAction(intent: PaymentIntent): boolean {
-    return intent.status === 'requires_action' && intent.nextAction?.kind === 'manual_step';
+    return intentRequiresUserAction(intent) && intent.nextAction?.kind === 'manual_step';
   }
 
-  /**
-   * Generates detailed instructions for the user.
-   */
-  getUserInstructions(intent: PaymentIntent): string[] | null {
-    if (!intent.nextAction || intent.nextAction.kind !== 'manual_step') {
-      return null;
-    }
-    return [
-      `Complete the transfer using the details below.`,
-      `Transfer the exact amount to avoid rejections.`,
-      `Keep your transfer receipt.`,
-    ];
+  getUserInstructions(_intent: PaymentIntent): string[] | null {
+    return null;
   }
 
   /**
@@ -173,23 +170,39 @@ export class SpeiStrategy implements PaymentStrategy {
     req: CreatePaymentRequest,
     metadata: Record<string, unknown>,
   ): PaymentIntent {
-    const details = [
-      { label: 'CLABE', value: this.extractClabeFromRaw(intent) },
-      { label: 'Reference', value: this.generateReference(req.orderId) },
-      {
-        label: 'Bank',
-        value: SpeiStrategy.RECEIVING_BANKS[intent.provider] ?? 'STP',
-      },
-      { label: 'Beneficiary', value: 'Payment Service SA de CV' },
-      { label: 'Amount', value: `${req.amount} ${req.currency}` },
-      { label: 'Expires At', value: metadata['expires_at'] as string },
-    ];
+    const clabe = this.extractClabeFromRaw(intent);
+    if (!clabe) {
+      throw createPaymentError('provider_error', PAYMENT_ERROR_KEYS.UNKNOWN_ERROR, {
+        reason: 'missing_spei_clabe',
+      });
+    }
+
+    const bankCode = this.extractBankCodeFromRaw(intent);
+    if (!bankCode) {
+      throw createPaymentError('provider_error', PAYMENT_ERROR_KEYS.UNKNOWN_ERROR, {
+        reason: 'missing_spei_bank_code',
+      });
+    }
+
+    if (!this.displayConfig.receivingBanks[bankCode]) {
+      throw createPaymentError('provider_error', PAYMENT_ERROR_KEYS.UNKNOWN_ERROR, {
+        reason: 'unknown_spei_bank_code',
+        bankCode,
+      });
+    }
+
+    const details = {
+      bankCode,
+      clabe,
+      beneficiaryName: this.displayConfig.beneficiaryName,
+      reference: generateSpeiReference(req.orderId),
+      amount: req.money.amount,
+      currency: req.money.currency,
+      expiresAt: metadata['expires_at'] as string,
+    };
 
     const speiAction: NextActionManualStep = {
       kind: 'manual_step',
-      instructions: this.getUserInstructions(intent) ?? [
-        'Make a bank transfer using the details below.',
-      ],
       details,
     };
 
@@ -201,31 +214,23 @@ export class SpeiStrategy implements PaymentStrategy {
   }
 
   /**
-   * Generates a valid payment concept for SPEI (max 40 characters).
-   */
-  private generatePaymentConcept(orderId: string): string {
-    const prefix = 'PAGO';
-    const sanitizedOrderId = orderId.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-    return `${prefix} ${sanitizedOrderId}`.substring(0, 40);
-  }
-
-  /**
-   * Generates a 7-digit numeric reference.
-   */
-  private generateReference(orderId: string): string {
-    const hash = orderId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return String(hash % 10000000).padStart(7, '0');
-  }
-
-  /**
    * Attempts to extract CLABE from gateway raw response.
    */
-  private extractClabeFromRaw(intent: PaymentIntent): string {
+  private extractClabeFromRaw(intent: PaymentIntent): string | null {
     const clabe =
       this.getStringFromUnknown(intent.raw, ['spei', 'clabe']) ??
       this.getStringFromUnknown(intent.raw, ['payment_method', 'clabe']);
 
-    return clabe ?? '646180111812345678'; // STP test CLABE
+    return clabe ?? null;
+  }
+
+  private extractBankCodeFromRaw(intent: PaymentIntent): string | null {
+    const bankCode =
+      this.getStringFromUnknown(intent.raw, ['spei', 'bank']) ??
+      this.getStringFromUnknown(intent.raw, ['payment_method', 'bank']);
+
+    const trimmed = bankCode?.trim();
+    return trimmed ? trimmed : null;
   }
 
   private getStringFromUnknown(obj: unknown, path: string[]): string | null {

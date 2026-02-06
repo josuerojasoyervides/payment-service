@@ -5,12 +5,13 @@ import { LoggerService } from '@core/logging';
 import { patchState } from '@ngrx/signals';
 import type { PaymentFlowPort } from '@payments/application/api/ports/payment-store.port';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
-import { FakeIntentStore } from '@payments/infrastructure/fake/shared/state/fake-intent.store';
+import { resetFakeIntentState } from '@payments/infrastructure/fake/shared/state/fake-intent.state';
 import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 
 import {
   BASE_PROVIDERS,
   settle,
+  waitFor,
   waitForIntentStatus,
   waitForPaymentComplete,
   waitUntilIdle,
@@ -134,8 +135,8 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intent).toBeTruthy();
       expect(intent?.provider).toBe('stripe');
       expect(intent?.status).toBe('succeeded');
-      expect(intent?.amount).toBe(499.99);
-      expect(intent?.currency).toBe('MXN');
+      expect(intent?.money.amount).toBe(499.99);
+      expect(intent?.money.currency).toBe('MXN');
 
       // Component shows result
       expect(component.showResult()).toBe(true);
@@ -288,16 +289,13 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intent).toBeTruthy();
       expect(intent?.status).toBe('succeeded');
       expect(intent?.provider).toBe('stripe');
-      expect(intent?.amount).toBe(499.99);
+      expect(intent?.money.amount).toBe(499.99);
     });
   });
 
-  describe('Scenario matrix (fake tokens) — FakeIntentStore deterministic', () => {
-    let fakeIntentStore: FakeIntentStore;
-
+  describe('Scenario matrix (fake tokens) — fake intent state deterministic', () => {
     beforeEach(async () => {
-      fakeIntentStore = TestBed.inject(FakeIntentStore);
-      fakeIntentStore.reset();
+      resetFakeIntentState();
       state.reset();
       await fixture.whenStable();
       await waitUntilIdle(state, 800);
@@ -307,20 +305,29 @@ describe('CheckoutComponent - Real Integration', () => {
       await settle(fixture);
     });
 
-    it('tok_timeout: start -> error code timeout, messageKey errors.timeout', async () => {
+    it('tok_timeout: start -> error code timeout', async () => {
       component.onFormChange({ token: 'tok_timeout1234567890abcdef' });
       ensureValidForm(component);
       component.processPayment();
-      await waitForPaymentComplete(state, 3000);
+      await waitFor(
+        () => state.hasPendingFallback(),
+        3000,
+        () =>
+          `Fallback did not become pending within 3000ms. Current status: ${
+            state.debugSummary().status
+          }`,
+      );
       fixture.detectChanges();
 
       expect(state.isLoading()).toBe(false);
-      expect(state.hasError()).toBe(true);
-      expect(state.isReady()).toBe(false);
-      const err = state.error();
-      expect(err).toBeTruthy();
-      expect(err?.code).toBe('timeout');
-      expect(err?.messageKey).toBe('errors.timeout');
+      expect(state.hasError()).toBe(false);
+      expect(state.hasPendingFallback()).toBe(true);
+
+      const event = state.pendingFallbackEvent();
+      expect(event).toBeTruthy();
+      expect(event?.error.code).toBe('timeout');
+      expect(event?.failedProvider).toBe('stripe');
+      expect(event?.alternativeProviders.length).toBeGreaterThan(0);
     });
 
     it('tok_success: start -> isReady true, hasError false, historyCount > 0', async () => {
@@ -370,7 +377,7 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intentFinal?.status).toBe('succeeded');
       const summary = state.debugSummary();
       expect(summary.provider).toBe('stripe');
-      expect(summary.intentId).toBe(intentAfterStart?.id);
+      expect(summary.intentId).toBe(intentAfterStart?.id?.value ?? intentAfterStart?.id);
       const rawFinal = intentFinal?.raw as { _fakeDebug?: { stepCount?: number } } | undefined;
       if (rawFinal?._fakeDebug?.stepCount !== undefined) {
         expect(rawFinal._fakeDebug.stepCount).toBeGreaterThan(stepCount0);
@@ -391,7 +398,7 @@ describe('CheckoutComponent - Real Integration', () => {
 
       const summaryAfterStart = state.debugSummary();
       expect(summaryAfterStart.provider).toBe('stripe');
-      expect(summaryAfterStart.intentId).toBe(intentAfterStart?.id);
+      expect(summaryAfterStart.intentId).toBe(intentAfterStart?.id?.value ?? intentAfterStart?.id);
 
       state.confirmPayment({ intentId: intentAfterStart!.id }, 'stripe');
       await waitForPaymentComplete(state, 2500);
@@ -410,7 +417,7 @@ describe('CheckoutComponent - Real Integration', () => {
       expect(intentFinal?.status).toBe('succeeded');
       const summary = state.debugSummary();
       expect(summary.provider).toBe('stripe');
-      expect(summary.intentId).toBe(intentAfterStart?.id);
+      expect(summary.intentId).toBe(intentAfterStart?.id?.value ?? intentAfterStart?.id);
     });
 
     it('tok_3ds: requires_action and NextActionCard visible', async () => {

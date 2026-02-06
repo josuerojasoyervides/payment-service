@@ -1,11 +1,10 @@
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
+import type { FallbackConfirmationData } from '@payments/application/api/contracts/resilience.types';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
@@ -38,38 +37,16 @@ describe('FallbackModalComponent', () => {
   let fixture: ComponentFixture<FallbackModalComponent>;
   let mockI18n: any;
 
-  const mockError: PaymentError = {
-    code: 'provider_error',
-    messageKey: I18nKeys.errors.provider_error,
-    raw: { error: 'test' },
+  const mockData1: FallbackConfirmationData = {
+    eligibleProviders: ['paypal'],
+    failureReason: 'provider_error',
+    timeoutMs: 30_000,
   };
 
-  const mockEvent1: FallbackAvailableEvent = {
-    eventId: 'event_1',
-    failedProvider: 'stripe',
-    error: mockError,
-    alternativeProviders: ['paypal'],
-    originalRequest: {
-      orderId: 'order_1',
-      amount: 100,
-      currency: 'MXN',
-      method: { type: 'card', token: 'tok_test' },
-    },
-    timestamp: Date.now(),
-  };
-
-  const mockEvent2: FallbackAvailableEvent = {
-    eventId: 'event_2',
-    failedProvider: 'paypal',
-    error: mockError,
-    alternativeProviders: ['stripe'],
-    originalRequest: {
-      orderId: 'order_2',
-      amount: 200,
-      currency: 'MXN',
-      method: { type: 'card', token: 'tok_test' },
-    },
-    timestamp: Date.now(),
+  const mockData2: FallbackConfirmationData = {
+    eligibleProviders: ['stripe'],
+    failureReason: 'provider_error',
+    timeoutMs: 30_000,
   };
 
   beforeEach(async () => {
@@ -133,35 +110,35 @@ describe('FallbackModalComponent', () => {
       expect(component.selectedProvider()).toBeNull();
     });
 
-    it('should reset selectedProvider when eventId changes', () => {
-      // Set first event
-      fixture.componentRef.setInput('event', mockEvent1);
+    it('should reset selectedProvider when data changes', () => {
+      // Set first data
+      fixture.componentRef.setInput('data', mockData1);
       fixture.detectChanges();
 
       // Select a provider
       component.selectProvider('paypal');
       expect(component.selectedProvider()).toBe('paypal');
 
-      // Switch to a new event with a different eventId
-      fixture.componentRef.setInput('event', mockEvent2);
+      // Switch to new data with a different provider list
+      fixture.componentRef.setInput('data', mockData2);
       fixture.detectChanges();
 
       // Should be reset
       expect(component.selectedProvider()).toBeNull();
     });
 
-    it('should not reset selectedProvider when eventId is the same', () => {
-      // Set event
-      fixture.componentRef.setInput('event', mockEvent1);
+    it('should not reset selectedProvider when data key is the same', () => {
+      // Set data
+      fixture.componentRef.setInput('data', mockData1);
       fixture.detectChanges();
 
       // Select a provider
       component.selectProvider('paypal');
       expect(component.selectedProvider()).toBe('paypal');
 
-      // Update the same event (same eventId, different content)
-      const sameEventId = { ...mockEvent1, timestamp: Date.now() };
-      fixture.componentRef.setInput('event', sameEventId);
+      // Update with the same data
+      const sameData = { ...mockData1 };
+      fixture.componentRef.setInput('data', sameData);
       fixture.detectChanges();
 
       // Should not be reset (same eventId)
@@ -204,22 +181,21 @@ describe('FallbackModalComponent', () => {
 
   describe('Computed properties', () => {
     it('should compute errorMessage correctly', () => {
-      fixture.componentRef.setInput('event', mockEvent1);
+      fixture.componentRef.setInput('data', mockData1);
       fixture.detectChanges();
 
       expect(component.errorMessageText()).toBe(I18nKeys.errors.provider_error);
     });
 
     it('should return null when there is no error', () => {
-      const eventWithoutError = { ...mockEvent1, error: null };
-      fixture.componentRef.setInput('event', eventWithoutError);
+      fixture.componentRef.setInput('data', null);
       fixture.detectChanges();
 
       expect(component.errorMessageText()).toBe(I18nKeys.errors.unknown_error);
     });
 
     it('should compute alternativeProviders correctly', () => {
-      fixture.componentRef.setInput('event', mockEvent1);
+      fixture.componentRef.setInput('data', mockData1);
       fixture.detectChanges();
 
       const providers = component.alternativeProviders();

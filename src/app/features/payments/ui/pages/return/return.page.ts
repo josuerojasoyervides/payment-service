@@ -2,26 +2,28 @@ import { CommonModule } from '@angular/common';
 import type { OnInit } from '@angular/core';
 import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import type { RedirectReturnRaw } from '@app/features/payments/application/api/contracts/redirect-return.contract';
 import type { PaymentCheckoutCatalogPort } from '@app/features/payments/application/api/ports/payment-store.port';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { FlowDebugPanelComponent } from '@payments/ui/components/flow-debug-panel/flow-debug-panel.component';
 import { PaymentIntentCardComponent } from '@payments/ui/components/payment-intent-card/payment-intent-card.component';
-import { normalizeQueryParams } from '@payments/ui/shared/normalize-query-params';
+import { toRedirectReturnRaw } from '@payments/ui/shared/redirect-return-raw';
 import { renderPaymentError } from '@payments/ui/shared/render-payment-errors';
 
 interface ReturnReference {
-  providerId: PaymentProviderId;
+  providerId: PaymentProviderId | null;
   referenceId: string | null;
   providerLabel: string;
 }
 
 interface ReturnPageState {
   returnReference: ReturnReference | null;
-  allParams: Record<string, string>;
+  allParams: RedirectReturnRaw['query'];
   isReturnFlow: boolean;
   isCancelFlow: boolean;
 }
@@ -29,8 +31,8 @@ interface ReturnPageState {
 /**
  * Return page for redirect callbacks (e.g. 3DS, provider redirect).
  *
- * Provider-agnostic: normalizes query params via util, calls port notifyRedirectReturned
- * and getReturnReferenceFromQuery; displays provider label (from catalog) + referenceId.
+ * Provider-agnostic: forwards raw params to port, which normalizes via infra
+ * and emits a redirect-returned event. Displays provider label + referenceId.
  * Cancel/success based on route data (returnFlow/cancelFlow) and intent status from state.
  */
 @Component({
@@ -75,13 +77,17 @@ export class ReturnComponent implements OnInit {
   ngOnInit(): void {
     const data = this.route.snapshot.data;
     const params = this.route.snapshot.queryParams;
-    const normalizedParams = normalizeQueryParams(params);
+    const raw = toRedirectReturnRaw(params);
 
-    this.state.notifyRedirectReturned(normalizedParams);
+    const payload = this.state.notifyRedirectReturned(raw);
 
-    const { providerId, referenceId } = this.state.getReturnReferenceFromQuery(normalizedParams);
-    const descriptor = this.catalog.getProviderDescriptor(providerId);
-    const providerLabel = descriptor ? this.i18n.t(descriptor.labelKey) : providerId;
+    const providerId =
+      payload?.providerId ?? this.state.resumeProviderId() ?? this.state.selectedProvider() ?? null;
+    const referenceId = payload?.referenceId ?? null;
+    const descriptor = providerId ? this.catalog.getProviderDescriptor(providerId) : null;
+    const providerLabel = descriptor
+      ? this.i18n.t(descriptor.labelKey)
+      : (providerId ?? this.i18n.t(I18nKeys.ui.flow_unknown));
 
     if (providerId) {
       this.state.selectProvider(providerId);
@@ -89,21 +95,25 @@ export class ReturnComponent implements OnInit {
 
     patchState(this.returnPageState, {
       returnReference: { providerId, referenceId, providerLabel },
-      allParams: normalizedParams,
+      allParams: raw.query,
       isReturnFlow: !!data['returnFlow'],
       isCancelFlow: !!data['cancelFlow'],
     });
   }
 
   confirmPayment(intentId: string): void {
-    this.state.confirmPayment({ intentId });
+    const result = PaymentIntentId.from(intentId);
+    if (!result.ok) return;
+    this.state.confirmPayment({ intentId: result.value });
   }
 
   refreshPaymentByReference(referenceId: string): void {
+    const result = PaymentIntentId.from(referenceId);
+    if (!result.ok) return;
     const ref = this.returnPageState.returnReference();
     const providerId = ref?.providerId ?? this.state.selectedProvider();
     if (providerId) {
-      this.state.refreshPayment({ intentId: referenceId }, providerId);
+      this.state.refreshPayment({ intentId: result.value }, providerId);
     }
   }
 

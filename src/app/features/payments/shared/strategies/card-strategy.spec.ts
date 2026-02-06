@@ -1,10 +1,16 @@
 import { TestBed } from '@angular/core/testing';
-import { I18nKeys } from '@core/i18n';
+import type { TokenValidator } from '@app/features/payments/domain/subdomains/payment/ports/token-validator/token-validator.port';
 import { LoggerService } from '@core/logging';
 import type { PaymentGatewayPort } from '@payments/application/api/ports/payment-gateway.port';
-import type { TokenValidator } from '@payments/domain/common/ports/token-validator.port';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import {
+  createOrderId,
+  createPaymentIntentId,
+} from '@payments/application/api/testing/vo-test-helpers';
+import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import { STRIPE_CARD_VALIDATION_CONFIG } from '@payments/infrastructure/shared/validation/provider-validation.config';
+import { validateAmount } from '@payments/infrastructure/shared/validation/validate-amount';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import { CardStrategy } from '@payments/shared/strategies/card-strategy';
 import { firstValueFrom, of } from 'rxjs';
 
@@ -16,18 +22,17 @@ describe('CardStrategy', () => {
   const validToken = 'tok_test1234567890abc';
 
   const validReq: CreatePaymentRequest = {
-    orderId: 'order_1',
-    amount: 100,
-    currency: 'MXN',
+    orderId: createOrderId('order_1'),
+    money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: validToken },
+    idempotencyKey: 'idem_card_valid',
   };
 
   const intentResponse: PaymentIntent = {
-    id: 'pi_1',
+    id: createPaymentIntentId('pi_1'),
     provider: 'stripe',
     status: 'requires_payment_method',
-    amount: 100,
-    currency: 'MXN',
+    money: { amount: 100, currency: 'MXN' },
   };
 
   const loggerMock = {
@@ -60,7 +65,12 @@ describe('CardStrategy', () => {
       providers: [{ provide: LoggerService, useValue: loggerMock }],
     });
 
-    strategy = new CardStrategy(gatewayMock as any, tokenValidatorMock, loggerMock as any);
+    strategy = new CardStrategy(
+      gatewayMock as any,
+      tokenValidatorMock,
+      loggerMock as any,
+      (money) => validateAmount(money, STRIPE_CARD_VALIDATION_CONFIG),
+    );
   });
 
   describe('validate()', () => {
@@ -69,7 +79,7 @@ describe('CardStrategy', () => {
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.card_token_required,
+          messageKey: PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED,
         }),
       );
     });
@@ -92,21 +102,19 @@ describe('CardStrategy', () => {
     });
 
     it('throws if amount is below minimum for MXN', () => {
-      const req = { ...validReq, amount: 5, currency: 'MXN' as const };
+      const req = { ...validReq, money: { amount: 5, currency: 'MXN' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
-          code: 'invalid_request',
-          messageKey: I18nKeys.errors.min_amount,
+          code: 'amount_below_minimum',
         }),
       );
     });
 
     it('throws if amount is below minimum for USD', () => {
-      const req = { ...validReq, amount: 0.5, currency: 'USD' as const };
+      const req = { ...validReq, money: { amount: 0.5, currency: 'USD' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
-          code: 'invalid_request',
-          messageKey: I18nKeys.errors.min_amount,
+          code: 'amount_below_minimum',
         }),
       );
     });
@@ -157,7 +165,19 @@ describe('CardStrategy', () => {
 
       expect(gatewayMock.createIntent).toHaveBeenCalledTimes(1);
       expect(gatewayMock.createIntent).toHaveBeenCalledWith(validReq);
-      expect(result.id).toBe('pi_1');
+      expect(result.id?.value ?? result.id).toBe('pi_1');
+    });
+
+    it('logs without token prefix', async () => {
+      await firstValueFrom(strategy.start(validReq));
+
+      const startLog = loggerMock.info.mock.calls.find(
+        ([message]) => message === 'Starting payment',
+      );
+      expect(startLog).toBeTruthy();
+      const meta = startLog?.[2] as Record<string, unknown>;
+      expect(meta).toEqual(expect.objectContaining({ hasToken: true }));
+      expect(meta).not.toHaveProperty('tokenPrefix');
     });
 
     it('throws validation error before calling gateway', () => {
@@ -167,7 +187,7 @@ describe('CardStrategy', () => {
       expect(() => strategy.start(invalidReq)).toThrowError(
         expect.objectContaining({
           code: 'invalid_request',
-          messageKey: I18nKeys.errors.card_token_required,
+          messageKey: PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED,
         }),
       );
 

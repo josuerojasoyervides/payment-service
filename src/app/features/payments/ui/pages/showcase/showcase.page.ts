@@ -4,16 +4,17 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import type { PaymentCheckoutCatalogPort } from '@app/features/payments/application/api/ports/payment-store.port';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
-import { I18nKeys, I18nService } from '@core/i18n';
-import { LoggerService } from '@core/logging';
-import type { FallbackAvailableEvent } from '@payments/domain/subdomains/fallback/contracts/fallback-event.event';
-import type { PaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.types';
+import type { PaymentError } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.model';
 import type {
   CurrencyCode,
   PaymentIntent,
-  PaymentMethodType,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import { I18nKeys, I18nService } from '@core/i18n';
+import { LoggerService } from '@core/logging';
+import type { FallbackConfirmationData } from '@payments/application/api/contracts/resilience.types';
+import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { MethodSelectorComponent } from '@payments/ui/components/method-selector/method-selector.component';
 import { OrderSummaryComponent } from '@payments/ui/components/order-summary/order-summary.component';
@@ -134,12 +135,12 @@ export class ShowcaseComponent {
   readonly sampleIntent = computed((): PaymentIntent | null => {
     const { p0 } = this.catalogProviderIds();
     if (!p0) return null;
+    const idResult = PaymentIntentId.from('pi_fake_demo123');
     return {
-      id: 'pi_fake_demo123',
+      id: idResult.ok ? idResult.value : { value: 'pi_fake_demo123' },
       provider: p0,
       status: 'succeeded',
-      amount: 499.99,
-      currency: 'MXN',
+      money: { amount: 499.99, currency: 'MXN' },
       clientSecret: 'pi_fake_demo123_secret_xxx',
     };
   });
@@ -154,7 +155,7 @@ export class ShowcaseComponent {
   speiInstructions = {
     clabe: '646180157034567890',
     reference: '1234567',
-    bank: 'STP',
+    bankCode: 'STP',
     beneficiary: 'Payment Service Demo',
     amount: 499.99,
     currency: 'MXN',
@@ -170,15 +171,16 @@ export class ShowcaseComponent {
   intentCardStatus: PaymentIntent['status'] = 'requires_confirmation';
   readonly intentCard = computed(() => {
     const { p0 } = this.catalogProviderIds();
-    const intent: PaymentIntent | null = p0
-      ? {
-          id: 'pi_fake_card_demo',
-          provider: p0,
-          status: this.intentCardStatus,
-          amount: 299.99,
-          currency: 'MXN' as CurrencyCode,
-        }
-      : null;
+    const idResult = p0 ? PaymentIntentId.from('pi_fake_card_demo') : null;
+    const intent: PaymentIntent | null =
+      p0 && idResult
+        ? {
+            id: idResult.ok ? idResult.value : { value: 'pi_fake_card_demo' },
+            provider: p0,
+            status: this.intentCardStatus,
+            money: { amount: 299.99, currency: 'MXN' as CurrencyCode },
+          }
+        : null;
     return {
       intent,
       showActions: this.intentCardShowActions,
@@ -186,27 +188,15 @@ export class ShowcaseComponent {
     };
   });
 
-  // Fallback Modal (open mutable; event from catalog; null when no providers)
+  // Fallback Modal (open mutable; data from catalog; null when no providers)
   fallbackModalOpen = false;
-  readonly fallbackModalEvent = computed((): FallbackAvailableEvent | null => {
+  readonly fallbackModalData = computed((): FallbackConfirmationData | null => {
     const { p0, p1 } = this.catalogProviderIds();
     if (!p0) return null;
     return {
-      failedProvider: p0,
-      error: {
-        code: 'provider_error',
-        messageKey: I18nKeys.errors.provider_error,
-        raw: { source: 'showcase' },
-      },
-      alternativeProviders: p1 ? [p1] : [],
-      originalRequest: {
-        orderId: 'order_123',
-        amount: 499.99,
-        currency: 'MXN',
-        method: { type: 'card', token: 'tok_xxx' },
-      },
-      timestamp: Date.now(),
-      eventId: 'fb_demo_123',
+      eligibleProviders: p1 ? [p1] : [],
+      failureReason: 'provider_error',
+      timeoutMs: 30_000,
     };
   });
 

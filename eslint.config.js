@@ -57,6 +57,7 @@ module.exports = defineConfig([
       '@typescript-eslint/no-unused-vars': 'off',
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/consistent-type-assertions": "error",
+      '@typescript-eslint/no-explicit-any': 'error',
 
       'no-restricted-imports': [
         'error',
@@ -87,22 +88,6 @@ module.exports = defineConfig([
       'simple-import-sort/exports': 'error',
     },
 
-  },
-
-  // ✅ infra fake: se permite any
-  {
-    files: ['src/app/features/**/infrastructure/fake/**/*.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-    },
-  },
-
-  // ✅ core testing helpers: se permite any
-  {
-    files: ['src/app/core/testing/**/*.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-    },
   },
 
   // ✅ Runtime only: api/testing/** allowed only in specs (order: UI override must come after so it wins for UI files)
@@ -171,6 +156,9 @@ module.exports = defineConfig([
   {
     files: ['src/app/**/*.html'],
     extends: [...angular.configs.templateRecommended, ...angular.configs.templateAccessibility],
+    rules: {
+      '@angular-eslint/template/no-any': 'error',
+    },
   },
 
   eslintConfigPrettier,

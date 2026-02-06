@@ -1,9 +1,8 @@
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { ProviderReferences } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider-references.types';
+import type { KeyValueStorage } from '@payments/application/api/contracts/key-value-storage.contract';
 import { FLOW_CONTEXT_TTL_MS } from '@payments/application/orchestration/flow/payment-flow/context/payment-flow.context';
-import type {
-  PaymentFlowContext,
-  ProviderReferences,
-} from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export const FLOW_CONTEXT_SCHEMA_VERSION = 1;
 
@@ -24,12 +23,9 @@ export interface PersistedFlowContext {
   persistedAt: number;
 }
 
-export interface KeyValueStorage {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-  removeItem(key: string): void;
-}
-
+/**
+ * Storage wrapper for flow context persistence and TTL cleanup.
+ */
 export class FlowContextStore {
   private readonly storageKey: string;
   private readonly now: () => number;
@@ -107,6 +103,9 @@ export class FlowContextStore {
   }
 }
 
+/**
+ * Restores a runtime flow context from persisted data.
+ */
 export function toFlowContext(persisted: PersistedFlowContext): PaymentFlowContext {
   return {
     flowId: persisted.flowId,

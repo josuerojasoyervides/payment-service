@@ -1,13 +1,13 @@
-import { inject, Injectable } from '@angular/core';
-import { LoggerService, TraceOperation } from '@core/logging';
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import { Injectable } from '@angular/core';
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
+import type { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 
 export type IdempotencyOperation = 'start' | 'confirm' | 'cancel' | 'get';
 
 interface IntentReq {
-  intentId: string;
+  intentId: PaymentIntentId;
 }
 type IntentOperation = Exclude<IdempotencyOperation, 'start'>;
 
@@ -17,30 +17,43 @@ type GenerateInput =
 
 @Injectable()
 export class IdempotencyKeyFactory {
-  private readonly logger = inject(LoggerService);
-
-  generateForStart(providerId: PaymentProviderId, req: CreatePaymentRequest): string {
-    const parts = [
-      providerId,
-      'start',
-      req.orderId,
-      req.amount.toString(),
-      req.currency,
-      req.method.type,
-    ];
-    return parts.join(':');
+  generateForStart(
+    providerId: PaymentProviderId,
+    req: CreatePaymentRequest,
+    sessionId?: string,
+    nowMs: number = Date.now(),
+  ): string {
+    const resolvedSessionId =
+      sessionId ??
+      (typeof req.metadata?.['sessionId'] === 'string' ? req.metadata['sessionId'] : null);
+    const safeSessionId =
+      resolvedSessionId && resolvedSessionId.length > 0 ? resolvedSessionId : 'unknown_session';
+    return [safeSessionId, req.orderId.value, providerId, nowMs.toString()].join(':');
   }
 
-  generateForConfirm(providerId: PaymentProviderId, intentId: string): string {
-    return `${providerId}:confirm:${intentId}`;
+  /**
+   * Generates a start idempotency key from raw inputs (used before CreatePaymentRequest is built).
+   */
+  generateForStartInput(
+    providerId: PaymentProviderId,
+    orderId: string,
+    sessionId?: string,
+    nowMs: number = Date.now(),
+  ): string {
+    const safeSessionId = sessionId && sessionId.length > 0 ? sessionId : 'unknown_session';
+    return [safeSessionId, orderId, providerId, nowMs.toString()].join(':');
   }
 
-  generateForCancel(providerId: PaymentProviderId, intentId: string): string {
-    return `${providerId}:cancel:${intentId}`;
+  generateForConfirm(providerId: PaymentProviderId, intentId: PaymentIntentId): string {
+    return `${providerId}:confirm:${intentId.value}`;
   }
 
-  generateForGet(providerId: PaymentProviderId, intentId: string): string {
-    return `${providerId}:get:${intentId}`;
+  generateForCancel(providerId: PaymentProviderId, intentId: PaymentIntentId): string {
+    return `${providerId}:cancel:${intentId.value}`;
+  }
+
+  generateForGet(providerId: PaymentProviderId, intentId: PaymentIntentId): string {
+    return `${providerId}:get:${intentId.value}`;
   }
 
   /**
@@ -57,14 +70,6 @@ export class IdempotencyKeyFactory {
    *   },
    * });
    */
-  @TraceOperation({
-    name: 'generateIdempotencyKey',
-    context: 'IdempotencyKeyFactory',
-    metadata: ([providerId, input]) => ({
-      providerId,
-      operation: (input as GenerateInput | undefined)?.operation ?? 'unknown',
-    }),
-  })
   generate(providerId: PaymentProviderId, input: GenerateInput): string {
     if (input.operation === 'start') {
       return this.generateForStart(providerId, input.req);

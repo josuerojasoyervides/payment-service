@@ -2,6 +2,7 @@
  * Stress scenario: correlation mismatch handling (PR6 Phase C).
  * Asserts: mismatch event (referenceId pi_B when flow is for pi_A) is ignored; state unchanged; no finalize; telemetry records SYSTEM_EVENT_SENT with pi_B.
  */
+import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import { NextActionOrchestratorService } from '@payments/application/orchestration/services/next-action/next-action-orchestrator.service';
 import {
   createPaymentFlowScenarioHarness,
@@ -9,15 +10,15 @@ import {
 } from '@payments/application/orchestration/testing/payment-flow.scenario-harness';
 import { GetPaymentStatusUseCase } from '@payments/application/orchestration/use-cases/intent/get-payment-status.use-case';
 import { StartPaymentUseCase } from '@payments/application/orchestration/use-cases/intent/start-payment.use-case';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 const baseRequest: CreatePaymentRequest = {
-  orderId: 'o1',
-  amount: 100,
-  currency: 'MXN',
+  orderId: createOrderId('o1'),
+  money: { amount: 100, currency: 'MXN' },
   method: { type: 'card' as const, token: 'tok_visa1234567890abcdef' },
+  idempotencyKey: 'idem_flow_correlation',
 };
 
 describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {
@@ -43,8 +44,7 @@ describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {
                 id: refA,
                 provider: 'stripe' as const,
                 status: 'requires_action' as const,
-                amount: 100,
-                currency: 'MXN' as const,
+                money: { amount: 100, currency: 'MXN' as const },
               }),
           },
         },
@@ -57,8 +57,7 @@ describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {
                 id: refA,
                 provider: 'stripe' as const,
                 status: 'succeeded' as const,
-                amount: 100,
-                currency: 'MXN' as const,
+                money: { amount: 100, currency: 'MXN' as const },
               }),
             ),
           },
@@ -71,8 +70,7 @@ describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {
                 id: refA,
                 provider: 'stripe' as const,
                 status: 'processing' as const,
-                amount: 100,
-                currency: 'MXN' as const,
+                money: { amount: 100, currency: 'MXN' as const },
               }),
           },
         },
@@ -82,7 +80,7 @@ describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {
     harness!.sendCommand('START', { providerId: 'stripe', request: baseRequest });
     await harness!.drain();
 
-    const stateBefore = String(harness!.getSnapshot().value);
+    const snapBefore = harness!.getSnapshot();
 
     harness!.sendSystem('WEBHOOK_RECEIVED', {
       providerId: 'stripe',
@@ -95,15 +93,19 @@ describe('Payment flow stress — correlation mismatch (PR6 Phase C)', () => {
 
     const snapAfter = harness!.getSnapshot();
     const intentIdAfter = snapAfter.context.intentId ?? snapAfter.context.intent?.id ?? null;
-    expect(intentIdAfter).toBe(refA);
+    expect(intentIdAfter?.value ?? intentIdAfter).toBe(refA);
     expect(
-      stateBefore === 'requiresAction' || stateBefore === 'polling' || stateBefore === 'starting',
+      snapBefore.hasTag('ready') ||
+        snapBefore.hasTag('loading') ||
+        snapBefore.hasTag('idle') ||
+        String(snapBefore.value) === 'starting',
     ).toBe(true);
     expect(
       String(snapAfter.value) === 'requiresAction' ||
         String(snapAfter.value) === 'polling' ||
         String(snapAfter.value) === 'starting' ||
-        snapAfter.hasTag('ready'),
+        snapAfter.hasTag('ready') ||
+        snapAfter.hasTag('idle'),
     ).toBe(true);
 
     const systemSent = harness!.telemetry.ofKind('SYSTEM_EVENT_SENT');

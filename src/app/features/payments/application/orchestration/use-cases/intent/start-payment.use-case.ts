@@ -1,13 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { ProviderMethodPolicyRegistry } from '@app/features/payments/application/orchestration/registry/provider-method-policy/provider-method-policy.registry';
-import { invalidRequestError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/contracts/payment-request.command';
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
+import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import { safeDefer } from '@shared/rxjs/safe-defer';
 import type { Observable } from 'rxjs';
@@ -53,10 +51,19 @@ export class StartPaymentUseCase {
       }
 
       const strategy = factory.createStrategy(request.method.type);
+      const sessionId = context?.flowId ?? null;
 
       const enrichedRequest: CreatePaymentRequest = {
         ...request,
-        idempotencyKey: this.idempotency.generateForStart(providerId, request),
+        metadata: {
+          ...(request.metadata ?? {}),
+          ...(sessionId ? { sessionId } : {}),
+        },
+        idempotencyKey: this.idempotency.generateForStart(
+          providerId,
+          request,
+          sessionId ?? undefined,
+        ),
       };
 
       return strategy.start(enrichedRequest, context);

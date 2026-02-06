@@ -1,18 +1,14 @@
-import type { ProviderReferences } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
-import type {
-  PaymentIntentStatus,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type {
-  NormalizedWebhookEvent,
-  WebhookNormalizer,
-} from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
+import type { PaymentIntentStatus } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { ProviderReferences } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider-references.types';
+import type { NormalizedWebhookEvent } from '@app/features/payments/domain/subdomains/payment/messages/payment-webhook.event';
+import type { WebhookNormalizer } from '@app/features/payments/domain/subdomains/payment/ports/payment-webhook-normalizer/payment-webhook-normalizer.port';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 /**
  * Minimal PayPal webhook event DTO for Orders/Captures events.
  *
  * Based on:
- * https://developer.paypal.com/docs/api/webhooks/v1/#webhooks-events
+ * PayPal webhooks docs (events)
  */
 export interface PaypalWebhookEvent {
   id: string;
@@ -26,17 +22,18 @@ export interface PaypalWebhookEvent {
 
 type PaypalWebhookHeaders = Record<string, string | string[]>;
 
-const PAYPAL_PROVIDER_ID: PaymentProviderId = 'paypal';
-
 export class PaypalWebhookNormalizer implements WebhookNormalizer<
   PaypalWebhookEvent,
   PaypalWebhookHeaders
 > {
   normalize(
     payload: PaypalWebhookEvent,
-    _headers: PaypalWebhookHeaders,
+    headers: PaypalWebhookHeaders,
   ): NormalizedWebhookEvent | null {
     if (!payload || !payload.event_type || !payload.resource?.id) return null;
+
+    // Placeholder for signature verification (PR5.6).
+    if (!this.isSignatureValid(payload, headers)) return null;
 
     // We only care about order/capture events relevant to the payment flow.
     const type = payload.event_type;
@@ -46,7 +43,7 @@ export class PaypalWebhookNormalizer implements WebhookNormalizer<
     if (!isOrderEvent && !isCaptureEvent) return null;
 
     const providerRefs: ProviderReferences = {
-      [PAYPAL_PROVIDER_ID]: {
+      [PAYMENT_PROVIDER_IDS.paypal]: {
         orderId: payload.resource.id,
       },
     };
@@ -57,7 +54,7 @@ export class PaypalWebhookNormalizer implements WebhookNormalizer<
 
     return {
       eventId: payload.id,
-      providerId: PAYPAL_PROVIDER_ID,
+      providerId: PAYMENT_PROVIDER_IDS.paypal,
       providerRefs,
       status,
       occurredAt: Number.isNaN(occurredAt) ? Date.now() : occurredAt,
@@ -67,6 +64,11 @@ export class PaypalWebhookNormalizer implements WebhookNormalizer<
         resource_status: payload.resource.status,
       },
     };
+  }
+
+  private isSignatureValid(_payload: PaypalWebhookEvent, _headers: PaypalWebhookHeaders): boolean {
+    // TODO(PR5): verify PayPal signature (backend responsibility).
+    return true;
   }
 }
 

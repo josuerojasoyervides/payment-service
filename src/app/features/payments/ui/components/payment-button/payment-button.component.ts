@@ -1,12 +1,10 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, input, output } from '@angular/core';
+import type { CurrencyCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys, I18nService } from '@core/i18n';
-import type { PaymentProviderUiMeta } from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
-import { PAYMENT_PROVIDER_UI_META } from '@payments/application/api/tokens/provider/payment-provider-ui-meta.token';
-import type {
-  CurrencyCode,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import type { PaymentProviderUiMeta } from '@payments/presentation/tokens/provider/payment-provider-ui-meta.token';
+import { PAYMENT_PROVIDER_UI_META } from '@payments/presentation/tokens/provider/payment-provider-ui-meta.token';
 import type { PaymentButtonState } from '@payments/ui/shared/ui.types';
 import { TrackClickDirective } from '@shared/directives/track-click.directive';
 
@@ -131,8 +129,13 @@ export class PaymentButtonComponent {
     return `${base} bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500`;
   });
 
+  private lastClickAt = 0;
+
   handleClick(): void {
     if (!this.disabled() && !this.loading()) {
+      const now = Date.now();
+      if (now - this.lastClickAt < 300) return;
+      this.lastClickAt = now;
       this.pay.emit();
     }
   }

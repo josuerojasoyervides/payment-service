@@ -1,5 +1,5 @@
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentFlowMachineContext } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
-import type { PaymentIntent } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 
 export interface PaymentFlowConfig {
   polling: {
@@ -27,6 +27,9 @@ export interface PaymentFlowConfig {
   };
 }
 
+/**
+ * Configuration.
+ */
 export type PaymentFlowConfigOverrides = Partial<{
   polling: Partial<PaymentFlowConfig['polling']>;
   statusRetry: Partial<PaymentFlowConfig['statusRetry']>;
@@ -50,6 +53,9 @@ export const DEFAULT_PAYMENT_FLOW_CONFIG: PaymentFlowConfig = {
   },
 };
 
+/**
+ * Resolves the final flow config with defaults + overrides.
+ */
 export function resolvePaymentFlowConfig(
   overrides: PaymentFlowConfigOverrides = {},
 ): PaymentFlowConfig {
@@ -69,6 +75,9 @@ export function resolvePaymentFlowConfig(
   };
 }
 
+/**
+ * Intent helpers.
+ */
 export function isFinalStatus(status?: string) {
   return status === 'succeeded' || status === 'failed' || status === 'canceled';
 }
@@ -77,7 +86,9 @@ export function needsUserAction(intent?: PaymentIntent | null) {
   if (!intent) return false;
   const action = intent.nextAction;
   const actionable = action ? action.kind !== 'external_wait' : false;
-  return intent.status === 'requires_action' || !!intent.redirectUrl || actionable;
+  const statusRequiresAction =
+    intent.status === 'requires_action' || intent.status === 'requires_confirmation';
+  return statusRequiresAction || !!intent.redirectUrl || actionable;
 }
 
 export function needsClientConfirm(intent?: PaymentIntent | null): boolean {
@@ -88,6 +99,9 @@ export function needsFinalize(intent?: PaymentIntent | null): boolean {
   return intent?.finalizeRequired === true;
 }
 
+/**
+ * Context policies.
+ */
 export function hasIntentPolicy(context: PaymentFlowMachineContext): boolean {
   return !!context.intent;
 }
@@ -125,6 +139,13 @@ export function canPollPolicy(
   return context.polling.attempt < config.polling.maxAttempts;
 }
 
+export function canRetryStatusPolicy(
+  config: PaymentFlowConfig,
+  context: PaymentFlowMachineContext,
+): boolean {
+  return context.statusRetry.count < config.statusRetry.maxRetries;
+}
+
 /**
  * True when polling limit is reached and intent is still processing.
  * Used from the polling state so we only transition to failed when we're
@@ -139,18 +160,14 @@ export function isPollingExhaustedPolicy(
   return exhausted && !!stillProcessing;
 }
 
-export function canRetryStatusPolicy(
-  config: PaymentFlowConfig,
-  context: PaymentFlowMachineContext,
-): boolean {
-  return context.statusRetry.count < config.statusRetry.maxRetries;
-}
-
 /**
  * Returns true when the processing resolution policy has been exceeded.
  *
  * This is intentionally conservative: either exceeding the maximum number of
  * polling attempts **or** the maximum processing duration will trigger a timeout.
+ */
+/**
+ * Determines whether processing has exceeded timing/attempt bounds.
  */
 export function hasProcessingTimedOutPolicy(
   config: PaymentFlowConfig,
@@ -166,6 +183,9 @@ export function hasProcessingTimedOutPolicy(
   return exceededAttempts || exceededDuration;
 }
 
+/**
+ * Backoff utilities.
+ */
 export function getPollingDelayMs(config: PaymentFlowConfig, attempt: number): number {
   const delay = config.polling.baseDelayMs * Math.pow(2, Math.max(0, attempt));
   return Math.min(delay, config.polling.maxDelayMs);

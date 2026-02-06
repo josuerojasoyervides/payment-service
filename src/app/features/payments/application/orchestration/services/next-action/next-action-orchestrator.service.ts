@@ -1,13 +1,11 @@
 import { inject, Injectable } from '@angular/core';
 import { ProviderFactoryRegistry } from '@app/features/payments/application/orchestration/registry/provider-factory/provider-factory.registry';
+import type { PaymentFlowContext } from '@app/features/payments/domain/subdomains/payment/entities/payment-flow-context.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { NextAction } from '@app/features/payments/domain/subdomains/payment/entities/payment-next-action.model';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
+import { createPaymentError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { FinalizePort } from '@payments/application/api/ports/finalize.port';
-import type { NextAction } from '@payments/domain/subdomains/payment/contracts/payment-action.types';
-import { createPaymentError } from '@payments/domain/subdomains/payment/contracts/payment-error.factory';
-import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
-import type {
-  PaymentIntent,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
 import type { Observable } from 'rxjs';
 import { throwError } from 'rxjs';
 

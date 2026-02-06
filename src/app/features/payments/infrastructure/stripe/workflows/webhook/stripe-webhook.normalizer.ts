@@ -1,16 +1,12 @@
+import type { PaymentIntentStatus } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { ProviderReferences } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider-references.types';
+import type { NormalizedWebhookEvent } from '@app/features/payments/domain/subdomains/payment/messages/payment-webhook.event';
+import type { WebhookNormalizer } from '@app/features/payments/domain/subdomains/payment/ports/payment-webhook-normalizer/payment-webhook-normalizer.port';
 import type {
   StripePaymentIntentDto,
   StripePaymentIntentStatus,
 } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import type { ProviderReferences } from '@payments/domain/subdomains/payment/contracts/payment-flow-context.types';
-import type {
-  PaymentIntentStatus,
-  PaymentProviderId,
-} from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
-import type {
-  NormalizedWebhookEvent,
-  WebhookNormalizer,
-} from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 /**
  * Minimal Stripe webhook event DTO for PaymentIntent events.
@@ -29,17 +25,18 @@ export interface StripePaymentIntentWebhookEvent {
 
 type StripeWebhookHeaders = Record<string, string | string[]>;
 
-const STRIPE_PROVIDER_ID: PaymentProviderId = 'stripe';
-
 export class StripeWebhookNormalizer implements WebhookNormalizer<
   StripePaymentIntentWebhookEvent,
   StripeWebhookHeaders
 > {
   normalize(
     payload: StripePaymentIntentWebhookEvent,
-    _headers: StripeWebhookHeaders,
+    headers: StripeWebhookHeaders,
   ): NormalizedWebhookEvent | null {
     if (!payload || !payload.type || !payload.data?.object) return null;
+
+    // Placeholder for signature verification (PR5.6).
+    if (!this.isSignatureValid(payload, headers)) return null;
 
     // We only care about PaymentIntent events for PR5.
     if (!payload.type.startsWith('payment_intent.')) return null;
@@ -48,7 +45,7 @@ export class StripeWebhookNormalizer implements WebhookNormalizer<
     if (object.object !== 'payment_intent') return null;
 
     const providerRefs: ProviderReferences = {
-      [STRIPE_PROVIDER_ID]: {
+      [PAYMENT_PROVIDER_IDS.stripe]: {
         intentId: object.id,
       },
     };
@@ -59,7 +56,7 @@ export class StripeWebhookNormalizer implements WebhookNormalizer<
 
     return {
       eventId: payload.id,
-      providerId: STRIPE_PROVIDER_ID,
+      providerId: PAYMENT_PROVIDER_IDS.stripe,
       providerRefs,
       status,
       occurredAt: occurredAtMs,
@@ -69,6 +66,14 @@ export class StripeWebhookNormalizer implements WebhookNormalizer<
         created: payload.created,
       },
     };
+  }
+
+  private isSignatureValid(
+    _payload: StripePaymentIntentWebhookEvent,
+    _headers: StripeWebhookHeaders,
+  ): boolean {
+    // TODO(PR5): verify Stripe signature (backend responsibility).
+    return true;
   }
 }
 

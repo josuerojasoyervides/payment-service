@@ -2,9 +2,11 @@ import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
+import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys } from '@core/i18n';
+import { LoggerService } from '@core/logging';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
-import type { PaymentProviderId } from '@payments/domain/subdomains/payment/contracts/payment-intent.types';
+import { SPEI_DISPLAY_CONFIG } from '@payments/application/api/tokens/spei-display-config.token';
 import { ShowcaseComponent } from '@payments/ui/pages/showcase/showcase.page';
 
 const MOCK_DESCRIPTORS: ProviderDescriptor[] = [
@@ -31,15 +33,33 @@ const mockCatalog = {
   getFieldRequirements: () => null,
   buildCreatePaymentRequest: () => ({}) as any,
 };
+const loggerMock = {
+  warn: vi.fn(),
+  error: vi.fn(),
+};
 
 describe('ShowcaseComponent', () => {
   let component: ShowcaseComponent;
   let fixture: ComponentFixture<ShowcaseComponent>;
 
   beforeEach(async () => {
+    loggerMock.warn.mockClear();
+    loggerMock.error.mockClear();
+
     await TestBed.configureTestingModule({
       imports: [ShowcaseComponent, RouterLink],
-      providers: [provideRouter([]), { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog }],
+      providers: [
+        provideRouter([]),
+        { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockCatalog },
+        { provide: LoggerService, useValue: loggerMock },
+        {
+          provide: SPEI_DISPLAY_CONFIG,
+          useValue: {
+            receivingBanks: { STP: 'STP (Transfers and Payments System)' },
+            beneficiaryName: 'Payment Service',
+          },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ShowcaseComponent);
@@ -91,11 +111,11 @@ describe('ShowcaseComponent', () => {
     it('should have sampleIntent configured from catalog', () => {
       const intent = component.sampleIntent();
       expect(intent).toBeTruthy();
-      expect(intent?.id).toBe('pi_fake_demo123');
+      expect(intent?.id?.value ?? intent?.id).toBe('pi_fake_demo123');
       expect(intent?.provider).toBe(component.catalogProviderIds().p0);
       expect(intent?.status).toBe('succeeded');
-      expect(intent?.amount).toBe(499.99);
-      expect(intent?.currency).toBe('MXN');
+      expect(intent?.money.amount).toBe(499.99);
+      expect(intent?.money.currency).toBe('MXN');
     });
 
     it('should have sampleError configured', () => {
@@ -106,7 +126,7 @@ describe('ShowcaseComponent', () => {
     it('should have speiInstructions configured', () => {
       expect(component.speiInstructions.clabe).toBeTruthy();
       expect(component.speiInstructions.reference).toBeTruthy();
-      expect(component.speiInstructions.bank).toBe('STP');
+      expect(component.speiInstructions.bankCode).toBe('STP');
       expect(component.speiInstructions.amount).toBe(499.99);
       expect(component.speiInstructions.currency).toBe('MXN');
     });
@@ -116,7 +136,7 @@ describe('ShowcaseComponent', () => {
       const card = component.intentCard();
       expect(card.intent).not.toBeNull();
       if (card.intent) {
-        expect(card.intent.id).toBe('pi_fake_card_demo');
+        expect(card.intent.id?.value ?? card.intent.id).toBe('pi_fake_card_demo');
         expect(card.intent.status).toBe('requires_confirmation');
         expect(card.intent.provider).toBe(component.catalogProviderIds().p0);
       }
@@ -124,70 +144,57 @@ describe('ShowcaseComponent', () => {
       expect(card.expanded).toBe(false);
     });
 
-    it('should have fallbackModal event from catalog when providers exist', () => {
+    it('should have fallbackModal data from catalog when providers exist', () => {
       expect(component.fallbackModalOpen).toBe(false);
       expect(component.providerDescriptors().length).toBeGreaterThan(0);
-      const event = component.fallbackModalEvent();
-      expect(event).not.toBeNull();
-      if (event) {
-        expect(event.failedProvider).toBe(component.catalogProviderIds().p0);
-        expect(Array.isArray(event.alternativeProviders)).toBe(true);
+      const data = component.fallbackModalData();
+      expect(data).not.toBeNull();
+      if (data) {
+        expect(data.failureReason).toBe('provider_error');
+        expect(Array.isArray(data.eligibleProviders)).toBe(true);
       }
     });
   });
 
   describe('Handlers', () => {
     it('should handle onPayClick', () => {
-      const consoleSpy = vi.spyOn(console, 'warn');
       component.onPayClick();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ShowcaseComponent] Pay button clicked'),
-      );
-      consoleSpy.mockRestore();
+      expect(loggerMock.warn).toHaveBeenCalledWith('Pay button clicked', 'ShowcaseComponent');
     });
 
     it('should handle onRetry', () => {
-      const consoleSpy = vi.spyOn(console, 'warn');
       component.onRetry();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ShowcaseComponent] Retry button clicked'),
-      );
-      consoleSpy.mockRestore();
+      expect(loggerMock.warn).toHaveBeenCalledWith('Retry button clicked', 'ShowcaseComponent');
     });
 
     it('should handle onNewPayment', () => {
-      const consoleSpy = vi.spyOn(console, 'warn');
       component.onNewPayment();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ShowcaseComponent] New payment button clicked'),
+      expect(loggerMock.warn).toHaveBeenCalledWith(
+        'New payment button clicked',
+        'ShowcaseComponent',
       );
-      consoleSpy.mockRestore();
     });
 
     it('should handle onIntentAction with parameters', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
       component.onIntentAction('confirm', 'pi_test_123');
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ShowcaseComponent] Intent action: confirm, ID: pi_test_123'),
+      expect(loggerMock.warn).toHaveBeenCalledWith(
+        'Intent action: confirm, ID: pi_test_123',
+        'ShowcaseComponent',
         { action: 'confirm', intentId: 'pi_test_123' },
       );
-
-      consoleSpy.mockRestore();
     });
 
     it('should handle onFallbackConfirm and close modal', () => {
       component.fallbackModalOpen = true;
-      const consoleSpy = vi.spyOn(console, 'warn');
       const altProvider = component.catalogProviderIds().p1 ?? component.catalogProviderIds().p0;
       component.onFallbackConfirm(altProvider);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ShowcaseComponent] Fallback confirmed with:'),
+      expect(loggerMock.warn).toHaveBeenCalledWith(
+        `Fallback confirmed with: ${altProvider}`,
+        'ShowcaseComponent',
         { provider: altProvider },
       );
       expect(component.fallbackModalOpen).toBe(false);
-      consoleSpy.mockRestore();
     });
   });
 
@@ -200,18 +207,16 @@ describe('ShowcaseComponent', () => {
       expect(component.orderSummary.items[1].price).toBe(100.0);
     });
 
-    it('should have fallbackEvent configured from catalog when providers exist', () => {
+    it('should have fallback data configured from catalog when providers exist', () => {
       expect(component.providerDescriptors().length).toBeGreaterThan(0);
-      const event = component.fallbackModalEvent();
-      expect(event).not.toBeNull();
-      if (event) {
-        expect(event.eventId).toBe('fb_demo_123');
-        expect(event.failedProvider).toBe(component.catalogProviderIds().p0);
-        expect(event.error.code).toBe('provider_error');
-        expect(event.alternativeProviders).toEqual(
+      const data = component.fallbackModalData();
+      expect(data).not.toBeNull();
+      if (data) {
+        expect(data.failureReason).toBe('provider_error');
+        expect(data.eligibleProviders).toEqual(
           component.catalogProviderIds().p1 ? [component.catalogProviderIds().p1] : [],
         );
-        expect(event.originalRequest.orderId).toBe('order_123');
+        expect(data.timeoutMs).toBe(30_000);
       }
     });
 

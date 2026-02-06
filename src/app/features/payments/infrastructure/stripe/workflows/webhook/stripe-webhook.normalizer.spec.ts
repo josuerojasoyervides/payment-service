@@ -1,9 +1,10 @@
 import type { StripePaymentIntentDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import type { NormalizedWebhookEvent } from '@payments/domain/subdomains/payment/ports/payment-webhook-normalizer.port';
+import type { NormalizedWebhookEvent } from '@payments/domain/subdomains/payment/messages/payment-webhook.event';
 import {
   type StripePaymentIntentWebhookEvent,
   StripeWebhookNormalizer,
 } from '@payments/infrastructure/stripe/workflows/webhook/stripe-webhook.normalizer';
+import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 describe('StripeWebhookNormalizer', () => {
   let normalizer: StripeWebhookNormalizer;
@@ -48,8 +49,8 @@ describe('StripeWebhookNormalizer', () => {
     const event = result as NormalizedWebhookEvent;
 
     expect(event.eventId).toBe('evt_1');
-    expect(event.providerId).toBe('stripe');
-    expect(event.providerRefs?.['stripe']?.intentId).toBe('pi_success');
+    expect(event.providerId).toBe(PAYMENT_PROVIDER_IDS.stripe);
+    expect(event.providerRefs?.[PAYMENT_PROVIDER_IDS.stripe]?.intentId).toBe('pi_success');
     expect(event.status).toBe('succeeded');
     expect(event.occurredAt).toBe(1_700_000_001 * 1000);
   });

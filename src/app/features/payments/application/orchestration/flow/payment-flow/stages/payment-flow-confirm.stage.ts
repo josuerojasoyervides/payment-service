@@ -4,6 +4,9 @@ import type {
   PaymentFlowStatesConfig,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.types';
 
+/**
+ * Confirm intent and post-confirm routing states.
+ */
 export const confirmStates = {
   confirming: {
     tags: ['loading', 'confirming'],
@@ -31,7 +34,19 @@ export const confirmStates = {
         };
       },
       onDone: { target: 'afterConfirm', actions: 'setIntent' },
-      onError: { target: 'failed', actions: 'setError' },
+      onError: [
+        {
+          guard: 'isCircuitOpenError',
+          target: 'circuitOpen',
+          actions: ['setError', 'setCircuitOpenFromError'],
+        },
+        {
+          guard: 'isRateLimitedError',
+          target: 'rateLimited',
+          actions: ['setError', 'setRateLimitedFromError'],
+        },
+        { target: 'failed', actions: 'setError' },
+      ],
     },
   },
 
