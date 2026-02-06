@@ -59,6 +59,16 @@ Outgoing dependencies (application depends on):
 - Prefer `import type` for internal references to avoid runtime coupling; keep api curated (no internal-only exports).
 - UI-facing ports live here intentionally; core ports remain UI-agnostic.
 
+## Resilience Architecture
+
+The payments flow is intentionally built to survive non-ideal conditions (timeouts, provider outages, webhooks racing redirects, rate limits). The resilience model is split into focused subsystems so each risk is handled in one place.
+
+- **Flow engine** owns retries, reconciliation, and convergence. It decides whether to retry, advance, or stop.
+- **Resilience policy** centralizes rules for circuit breaker and rate limiting (cooldowns, max attempts).
+- **Fallback orchestrator** decides when the system may switch providers and how (manual vs auto).
+- **Telemetry** captures command/event breadcrumbs with redaction so resilience events are observable and debuggable.
+- **State store** projects the resilience state (circuit open, rate limited, fallback eligibility) for UI rendering.
+
 ## Prioritized findings
 
 ### P0

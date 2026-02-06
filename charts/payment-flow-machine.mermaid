@@ -124,6 +124,24 @@ stateDiagram
     fb_starting
     fb_done
   }
+state Resilience{
+  [*] --> idle
+
+  idle --> starting: START
+  starting --> circuitOpen: CIRCUIT_OPENED
+  starting --> rateLimited: RATE_LIMIT_HIT
+  starting --> afterStart: SUCCESS
+  starting --> failed: ERROR
+
+  circuitOpen --> halfOpen: COOLDOWN_EXPIRED
+  halfOpen --> starting: RETRY_PROBE
+  halfOpen --> circuitOpen: PROBE_FAILED
+
+  rateLimited --> idle: RATE_LIMIT_RESET
+
+  failed --> fallbackConfirming: FALLBACK_ELIGIBLE
+  fallbackConfirming --> starting: FALLBACK_CONFIRMED
+}
   state Legend {
     direction LR
     [*] --> lg_loading

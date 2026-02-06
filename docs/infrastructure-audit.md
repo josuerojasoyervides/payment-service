@@ -428,7 +428,7 @@ Tests PR7
 
 ---
 
-## 8) PR8: Documentation
+## 8) PR8: Documentation ✅
 
 Scope: ~200 LOC | Depende de: PR7
 
