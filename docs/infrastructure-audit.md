@@ -465,12 +465,12 @@ afterStart --> pendingManualReview: FINALIZE_EXHAUSTED
 
 ---
 
-## 10) Resumen de Decisiones
+## 10) Resumen de Decisiones ✅
 
 | Área                           | Decisión                                                                            |
 | ------------------------------ | ----------------------------------------------------------------------------------- |
 | Factories                      | Mantener unificadas, extraer helpers a subcarpeta                                   |
-| Validaciones provider-specific | Type guards en infrastructure/{provider}/shared/guards/                             |
+| Validaciones provider-specific | Policies/validators en infrastructure/{provider}/shared/policies/                   |
 | Validaciones cross-provider    | Función genérica validateAmount(money, config) en infrastructure/shared/validation/ |
 | Constants                      | Por provider en shared/constants/, con prefijo (ej. PAYPAL_STATUS_MAP)              |
 | Magic strings                  | Const objects con as const                                                          |
@@ -483,7 +483,7 @@ afterStart --> pendingManualReview: FINALIZE_EXHAUSTED
 | Idempotency                    | Obligatorio en CreatePaymentRequest y todos los action requests                     |
 | Config validation              | ProviderValidationConfig completa (currencies, amounts, methods, urls)              |
 | i18n en infrastructure         | Error codes, mapping en presentation via pipe                                       |
-| Contratos                      | Mover a application/api, sin deprecation                                            |
+| Contratos                      | UI contracts en application/api; tokens legacy en presentation con deprecación      |
 | Resilience integration         | Ports desacoplados del state machine                                                |
 | Circuit breaker trigger        | Estado dedicado en máquina con cooldown configurable                                |
 | Circuit breaker key            | Por providerId                                                                      |
@@ -511,27 +511,28 @@ afterStart --> pendingManualReview: FINALIZE_EXHAUSTED
 
 ---
 
-## 11) UI Específica por Estado
+## 11) UI Específica por Estado ✅
 
 ### Circuit Open (fallo activo)
 
-- Banner degradado + botón "Usar otro proveedor"
+- Banner informativo (circuit_open) con hint
+- Selector y acciones bloqueadas por `isResilienceBlocked()`
 
 ### Checkout con Circuit Abierto
 
-- Provider deshabilitado en selector + tooltip explicativo
+- Provider deshabilitado en selector (explicación via banner, sin tooltip dedicado)
 
 ### Half-Open (verificando)
 
-- Mensaje "Verificando disponibilidad..."
+- Mensaje "Verificando disponibilidad..." (banner half-open)
 
 ### Todos los Providers Down
 
-- Modal bloqueante "Intenta más tarde"
+- Modal bloqueante con CTA de reintento
 
 ### Rate Limited
 
-- Toast con countdown: "Demasiadas solicitudes. Espera {X} segundos."
+- Banner con countdown: "Demasiadas solicitudes. Espera {X} segundos."
 
 ### Health Check en Selector
 
@@ -539,8 +540,8 @@ afterStart --> pendingManualReview: FINALIZE_EXHAUSTED
 
 ### Fallback Confirmation
 
-- Modal con opciones: "Reintentar", "Usar otro proveedor", "Cancelar"
-- 30s timeout auto-cancel
+- Modal con opciones: "Cancelar" y "Reintentar con proveedor alterno"
+- 30s timeout auto-cancel (state machine)
 
 ### Pending Manual Review
 
@@ -548,7 +549,7 @@ afterStart --> pendingManualReview: FINALIZE_EXHAUSTED
 
 ---
 
-## 12) Verificación Final
+## 12) Verificación Final ✅
 
 | Check           | Comando                                      |
 | --------------- | -------------------------------------------- |
@@ -560,9 +561,11 @@ afterStart --> pendingManualReview: FINALIZE_EXHAUSTED
 | FakeIntentStore | No debe existir después de PR0               |
 | Coverage        | 100% paths críticos                          |
 
+Validación (2026-02-06): Lint ✅, Build ✅, Tests ✅ (1 re-run por flake), Dependencies ✅, i18n grep ✅, FakeIntentStore ✅. Coverage: no hay reporte automático en repo; se valida por suite.
+
 ---
 
-## 13) Notas de Implementación
+## 13) Notas de Implementación ✅
 
 1. Cada PR debe ser autónomo y deployable
 2. Tests van con el código en cada PR
