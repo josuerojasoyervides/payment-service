@@ -11,6 +11,7 @@ import { CheckoutComponent } from '@payments/ui/pages/checkout/checkout.page';
 import {
   BASE_PROVIDERS,
   settle,
+  waitFor,
   waitForIntentStatus,
   waitForPaymentComplete,
   waitUntilIdle,
@@ -308,16 +309,25 @@ describe('CheckoutComponent - Real Integration', () => {
       component.onFormChange({ token: 'tok_timeout1234567890abcdef' });
       ensureValidForm(component);
       component.processPayment();
-      await waitForPaymentComplete(state, 3000);
+      await waitFor(
+        () => state.hasPendingFallback(),
+        3000,
+        () =>
+          `Fallback did not become pending within 3000ms. Current status: ${
+            state.debugSummary().status
+          }`,
+      );
       fixture.detectChanges();
 
       expect(state.isLoading()).toBe(false);
-      expect(state.hasError()).toBe(true);
-      expect(state.isReady()).toBe(false);
-      const err = state.error();
-      expect(err).toBeTruthy();
-      expect(err?.code).toBe('timeout');
-      expect(err?.messageKey).toBeUndefined();
+      expect(state.hasError()).toBe(false);
+      expect(state.hasPendingFallback()).toBe(true);
+
+      const event = state.pendingFallbackEvent();
+      expect(event).toBeTruthy();
+      expect(event?.error.code).toBe('timeout');
+      expect(event?.failedProvider).toBe('stripe');
+      expect(event?.alternativeProviders.length).toBeGreaterThan(0);
     });
 
     it('tok_success: start -> isReady true, hasError false, historyCount > 0', async () => {

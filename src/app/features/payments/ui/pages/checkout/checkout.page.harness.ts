@@ -160,7 +160,8 @@ export const BASE_PROVIDERS = [
     provide: FALLBACK_CONFIG,
     useValue: {
       ...DEFAULT_FALLBACK_CONFIG,
-      triggerErrorCodes: ['provider_unavailable', 'provider_error', 'network_error'],
+      triggerErrorCodes: ['provider_unavailable', 'network_error', 'timeout'],
+      blockedErrorCodes: ['card_declined'],
     },
   },
 ];

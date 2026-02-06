@@ -10,6 +10,7 @@ export interface FallbackConfig {
   userResponseTimeout: number;
 
   triggerErrorCodes: PaymentErrorCode[];
+  blockedErrorCodes: PaymentErrorCode[];
   providerPriority: PaymentProviderId[];
 
   mode: FallbackMode;
