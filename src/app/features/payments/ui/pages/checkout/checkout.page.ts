@@ -13,6 +13,8 @@ import { LoggerService } from '@core/logging';
 import { deepComputed, patchState, signalState } from '@ngrx/signals';
 import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
+import type { HealthStatus } from '@payments/application/api/ports/provider-health.port';
+import { PROVIDER_HEALTH_PORT } from '@payments/application/api/tokens/health/provider-health.token';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
 import { FallbackModalComponent } from '@payments/ui/components/fallback-modal/fallback-modal.component';
 import { FallbackStatusBannerComponent } from '@payments/ui/components/fallback-status-banner/fallback-status-banner.component';
@@ -34,6 +36,13 @@ interface CheckoutPageState {
   selectedMethod: PaymentMethodType | null;
   formOptions: PaymentOptions;
   isFormValid: boolean;
+}
+
+interface ProviderHealthState {
+  status: HealthStatus['status'] | null;
+  latencyMs: number | null;
+  isLoading: boolean;
+  error: 'timeout' | 'unknown' | null;
 }
 
 /**
@@ -74,9 +83,11 @@ export class CheckoutComponent {
   private readonly i18n = inject(I18nService);
   readonly state = inject(PAYMENT_STATE);
   private readonly catalog = inject(PAYMENT_CHECKOUT_CATALOG);
+  private readonly health = inject(PROVIDER_HEALTH_PORT);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly now = signal(Date.now());
+  private healthRequestId = 0;
 
   readonly flowState = deepComputed(() => ({
     isLoading: this.state.isLoading(),
@@ -94,6 +105,21 @@ export class CheckoutComponent {
     selectedMethod: null,
     formOptions: {},
     isFormValid: false,
+  });
+
+  readonly providerHealthState = signalState<ProviderHealthState>({
+    status: null,
+    latencyMs: null,
+    isLoading: false,
+    error: null,
+  });
+
+  readonly providerHealthLabel = computed(() => {
+    const status = this.providerHealthState.status();
+    if (status === 'healthy') return this.checkoutLabels.healthAvailable();
+    if (status === 'degraded') return this.checkoutLabels.healthSlow();
+    if (status === 'down') return this.checkoutLabels.healthUnavailable();
+    return null;
   });
 
   readonly fallbackState = deepComputed(() => ({
@@ -208,6 +234,21 @@ export class CheckoutComponent {
     });
 
     effect(() => {
+      const provider = this.checkoutPageState.selectedProvider();
+      if (!provider) {
+        patchState(this.providerHealthState, {
+          status: null,
+          latencyMs: null,
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+
+      this.refreshProviderHealth(provider);
+    });
+
+    effect(() => {
       const data = this.fallbackState.data();
       if (data) {
         this.logger.info('Fallback available', 'CheckoutPage', {
@@ -215,6 +256,48 @@ export class CheckoutComponent {
           failureReason: data.failureReason,
         });
       }
+    });
+  }
+
+  private async refreshProviderHealth(providerId: PaymentProviderId): Promise<void> {
+    const requestId = ++this.healthRequestId;
+    patchState(this.providerHealthState, {
+      isLoading: true,
+      error: null,
+    });
+
+    try {
+      const result = await this.withTimeout(this.health.check(providerId), 5000);
+      if (requestId !== this.healthRequestId) return;
+      patchState(this.providerHealthState, {
+        status: result.status,
+        latencyMs: result.latencyMs ?? null,
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      if (requestId !== this.healthRequestId) return;
+      patchState(this.providerHealthState, {
+        status: 'down',
+        latencyMs: null,
+        isLoading: false,
+        error: error instanceof Error && error.message === 'timeout' ? 'timeout' : 'unknown',
+      });
+    }
+  }
+
+  private withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('timeout')), timeoutMs);
+      promise
+        .then((value) => {
+          clearTimeout(timeout);
+          resolve(value);
+        })
+        .catch((err) => {
+          clearTimeout(timeout);
+          reject(err);
+        });
     });
   }
 
@@ -396,6 +479,10 @@ export class CheckoutComponent {
     manualReviewAction: this.i18n.t(I18nKeys.ui.manual_review_action),
     allProvidersUnavailableTitle: this.i18n.t(I18nKeys.ui.all_providers_unavailable_title),
     allProvidersUnavailableHint: this.i18n.t(I18nKeys.ui.all_providers_unavailable_hint),
+    healthChecking: this.i18n.t(I18nKeys.ui.health_checking),
+    healthAvailable: this.i18n.t(I18nKeys.ui.health_available),
+    healthSlow: this.i18n.t(I18nKeys.ui.health_slow),
+    healthUnavailable: this.i18n.t(I18nKeys.ui.health_unavailable),
   }));
 
   // TODO : This is orchestration layer responsibility, not UI layer

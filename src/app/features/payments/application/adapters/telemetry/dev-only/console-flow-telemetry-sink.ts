@@ -43,6 +43,9 @@ function redactForLog(event: FlowTelemetryEvent): SafeLog {
     case 'SYSTEM_EVENT_SENT':
       return { ...base, eventType: event.eventType, meta: sanitizeMetaForLog(event.meta) };
 
+    case 'RESILIENCE_EVENT':
+      return { ...base, eventType: event.eventType, meta: sanitizeMetaForLog(event.meta) };
+
     case 'STATE_CHANGED':
       return {
         ...base,

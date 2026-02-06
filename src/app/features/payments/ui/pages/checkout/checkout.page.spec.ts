@@ -3,6 +3,7 @@ import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, RouterLink } from '@angular/router';
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
+import { PROVIDER_HEALTH_PORT } from '@app/features/payments/application/api/tokens/health/provider-health.token';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
@@ -78,6 +79,7 @@ describe('CheckoutComponent', () => {
   let mockLogger: any;
   let mockFactory: any;
   let mockBuilder: any;
+  let mockHealthPort: { check: ReturnType<typeof vi.fn> };
 
   const mockIntent: PaymentIntent = {
     id: createPaymentIntentId('pi_test_123'),
@@ -205,6 +207,9 @@ describe('CheckoutComponent', () => {
       endCorrelation: vi.fn(),
       getCorrelationId: vi.fn(() => 'test_corr'),
     };
+    mockHealthPort = {
+      check: vi.fn(async () => ({ status: 'healthy', latencyMs: 120 })),
+    };
 
     await TestBed.configureTestingModule({
       imports: [CheckoutComponent, RouterLink],
@@ -212,6 +217,7 @@ describe('CheckoutComponent', () => {
         { provide: PAYMENT_STATE, useValue: mockState },
         { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockState },
         { provide: LoggerService, useValue: mockLogger },
+        { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
         provideRouter([]),
       ],
     }).compileComponents();
@@ -532,6 +538,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: execMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: execMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -556,6 +563,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: autoMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: autoMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -582,6 +590,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: execMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: execMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -609,6 +618,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: loadingMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: loadingMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -627,6 +637,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: readyMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: readyMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -647,6 +658,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: errorMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: errorMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -672,6 +684,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: readyMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: readyMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -690,6 +703,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: errorMock },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: errorMock },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -737,6 +751,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: mockWithResume },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockWithResume },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();
@@ -773,6 +788,7 @@ describe('CheckoutComponent', () => {
           { provide: PAYMENT_STATE, useValue: mockWithProcessing },
           { provide: PAYMENT_CHECKOUT_CATALOG, useValue: mockWithProcessing },
           { provide: LoggerService, useValue: mockLogger },
+          { provide: PROVIDER_HEALTH_PORT, useValue: mockHealthPort },
           provideRouter([]),
         ],
       }).compileComponents();

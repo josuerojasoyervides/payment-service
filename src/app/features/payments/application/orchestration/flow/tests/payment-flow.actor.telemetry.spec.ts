@@ -13,6 +13,18 @@ async function waitForPolling(actor: PaymentFlowActorService, timeoutMs = 3000):
   }
 }
 
+async function waitForState(
+  actor: PaymentFlowActorService,
+  state: string,
+  timeoutMs = 3000,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (String(actor.snapshot().value) !== state) {
+    if (Date.now() > deadline) throw new Error(`Timeout waiting for ${state}`);
+    await new Promise((r) => setTimeout(r, 20));
+  }
+}
+
 const FORBIDDEN_KEYS = ['raw', 'clientSecret', 'token', 'email'];
 
 describe('PaymentFlowActorService (PR6 flow telemetry)', () => {
@@ -85,5 +97,22 @@ describe('PaymentFlowActorService (PR6 flow telemetry)', () => {
         }
       }
     }
+  });
+
+  it('emits RESILIENCE_EVENT when circuit opens', async () => {
+    const sink = new InMemoryFlowTelemetrySink();
+    TestBed.configureTestingModule({
+      providers: [...providePayments(), { provide: FLOW_TELEMETRY_SINK, useValue: sink }],
+    });
+    const actor = TestBed.inject(PaymentFlowActorService);
+
+    actor.sendSystem({ type: 'CIRCUIT_OPENED', providerId: 'stripe', cooldownMs: 1 });
+    await waitForState(actor, 'circuitOpen');
+
+    const resilienceEvents = sink.ofKind('RESILIENCE_EVENT');
+    const hasCircuitOpened = resilienceEvents.some(
+      (e) => e.kind === 'RESILIENCE_EVENT' && e.eventType === 'CIRCUIT_OPENED',
+    );
+    expect(hasCircuitOpened).toBe(true);
   });
 });

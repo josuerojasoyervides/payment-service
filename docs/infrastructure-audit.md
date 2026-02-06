@@ -281,7 +281,7 @@ Tests PR5
 
 ---
 
-## 6) PR6: Full Observability
+## 6) PR6: Full Observability ✅
 
 Scope: ~400 LOC | Depende de: PR5
 

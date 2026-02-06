@@ -3,6 +3,7 @@ import {
   recordCommandSent,
   recordEffectTelemetry,
   recordErrorTelemetry,
+  recordResilienceTelemetry,
   recordStateTelemetry,
   recordSystemEventSent,
 } from '@payments/application/orchestration/flow/payment-flow/deps/payment-flow.actor.telemetry';
@@ -34,6 +35,7 @@ export class PaymentFlowTelemetryReporter {
     const atMs = Date.now();
 
     recordEffectTelemetry(this.telemetry, snapshot, prevSnapshot, atMs, base);
+    recordResilienceTelemetry(this.telemetry, snapshot, prevSnapshot, atMs, base);
     this.lastErrorCodeForTelemetry = recordErrorTelemetry(
       this.telemetry,
       snapshot,
