@@ -28,6 +28,7 @@ Define non-negotiable UI/UX behavior and theming decisions for the payments expe
 ## Polling Behavior (User-Facing)
 
 - Polling exists to converge `processing` intents to a terminal status without user intervention.
+- **Do not poll while `requires_confirmation`**: show action-required UI and wait for `REDIRECT_RETURNED`/webhook reconciliation.
 - UI should remain stable during polling; avoid flicker or global “loading” states.
 
 ## Theme System (Dark by Default)

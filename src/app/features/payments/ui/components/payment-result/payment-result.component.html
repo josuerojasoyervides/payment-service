@@ -27,9 +27,10 @@
           <summary class="text-sm text-red-600 cursor-pointer hover:underline">
             {{ viewTechnicalDetailsLabel() }}
           </summary>
-          <pre class="mt-2 p-3 bg-red-100 rounded-lg text-xs overflow-auto max-h-40">{{
-            error() | json
-          }}</pre>
+          <pre
+            class="mt-2 p-3 bg-red-100 rounded-lg text-xs overflow-auto max-h-40 max-w-full whitespace-pre-wrap break-words"
+            >{{ error() | json }}</pre
+          >
         </details>
 
         <div class="mt-4 flex gap-3">
@@ -86,9 +87,10 @@
           <summary class="text-sm text-green-600 cursor-pointer hover:underline">
             {{ viewFullResponseLabel() }}
           </summary>
-          <pre class="mt-2 p-3 bg-green-100 rounded-lg text-xs overflow-auto max-h-40">{{
-            intent() | json
-          }}</pre>
+          <pre
+            class="mt-2 p-3 bg-green-100 rounded-lg text-xs overflow-auto max-h-40 max-w-full whitespace-pre-wrap break-words"
+            >{{ intent() | json }}</pre
+          >
         </details>
 
         <div class="mt-4">

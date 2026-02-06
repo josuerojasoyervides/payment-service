@@ -185,12 +185,21 @@
   background-color: #0b274a;
 }
 
+:root[data-theme='dark'] .bg-blue-100 {
+  background-color: #0f2a4d;
+  color: #dbeafe;
+}
+
 :root[data-theme='dark'] .border-blue-200 {
   border-color: #1e3a8a;
 }
 
 :root[data-theme='dark'] .text-blue-900 {
   color: #bfdbfe;
+}
+
+:root[data-theme='dark'] .text-blue-800 {
+  color: #dbeafe;
 }
 
 :root[data-theme='dark'] .text-blue-700,
@@ -202,6 +211,11 @@
   background-color: #3f2d0c;
 }
 
+:root[data-theme='dark'] .bg-amber-100 {
+  background-color: #4a2a0a;
+  color: #fde68a;
+}
+
 :root[data-theme='dark'] .border-amber-200 {
   border-color: #78350f;
 }
@@ -210,12 +224,33 @@
   color: #fde68a;
 }
 
+:root[data-theme='dark'] .text-amber-800 {
+  color: #fcd34d;
+}
+
+:root[data-theme='dark'] .text-amber-700 {
+  color: #fbbf24;
+}
+
+:root[data-theme='dark'] .text-amber-600 {
+  color: #f59e0b;
+}
+
 :root[data-theme='dark'] .bg-red-50 {
   background-color: #450a0a;
 }
 
+:root[data-theme='dark'] .bg-red-100 {
+  background-color: #4c0a0a;
+  color: #fee2e2;
+}
+
 :root[data-theme='dark'] .border-red-200 {
   border-color: #7f1d1d;
+}
+
+:root[data-theme='dark'] .text-red-900 {
+  color: #fee2e2;
 }
 
 :root[data-theme='dark'] .text-red-800,
@@ -231,24 +266,53 @@
   background-color: #052e16;
 }
 
+:root[data-theme='dark'] .bg-green-100 {
+  background-color: #064e3b;
+  color: #dcfce7;
+}
+
 :root[data-theme='dark'] .border-green-200 {
   border-color: #14532d;
 }
 
-:root[data-theme='dark'] .text-green-800,
-:root[data-theme='dark'] .text-green-700 {
+:root[data-theme='dark'] .text-green-900 {
+  color: #dcfce7;
+}
+
+:root[data-theme='dark'] .text-green-800 {
   color: #bbf7d0;
+}
+
+:root[data-theme='dark'] .text-green-700 {
+  color: #86efac;
+}
+
+:root[data-theme='dark'] .text-green-600 {
+  color: #4ade80;
 }
 
 :root[data-theme='dark'] .bg-yellow-50 {
   background-color: #3f2d0c;
 }
 
+:root[data-theme='dark'] .bg-yellow-100 {
+  background-color: #4a2f0b;
+  color: #fef3c7;
+}
+
 :root[data-theme='dark'] .border-yellow-200 {
   border-color: #78350f;
+}
+
+:root[data-theme='dark'] .text-yellow-900 {
+  color: #fde68a;
 }
 
 :root[data-theme='dark'] .text-yellow-800,
 :root[data-theme='dark'] .text-yellow-700 {
   color: #fde68a;
+}
+
+:root[data-theme='dark'] .text-yellow-600 {
+  color: #fbbf24;
 }
