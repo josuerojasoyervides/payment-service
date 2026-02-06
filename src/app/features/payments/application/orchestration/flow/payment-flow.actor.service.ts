@@ -1,6 +1,7 @@
 import type { Signal } from '@angular/core';
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { FLOW_CONTEXT_STORAGE } from '@app/features/payments/application/api/tokens/flow/flow-context-storage.token';
+import { PII_FIELDS } from '@app/features/payments/application/api/tokens/security/pii-fields.token';
 import { FLOW_TELEMETRY_SINK } from '@app/features/payments/application/api/tokens/telemetry/flow-telemetry-sink.token';
 import { FallbackOrchestratorService } from '@app/features/payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import { NextActionOrchestratorService } from '@app/features/payments/application/orchestration/services/next-action/next-action-orchestrator.service';
@@ -82,7 +83,12 @@ export class PaymentFlowActorService {
   );
 
   private readonly snapshotState = new PaymentFlowSnapshotState();
-  private readonly inspector = new PaymentFlowActorInspector(this.logger, this.snapshotState);
+  private readonly piiFields = inject(PII_FIELDS, { optional: true }) ?? [];
+  private readonly inspector = new PaymentFlowActorInspector(
+    this.logger,
+    this.snapshotState,
+    this.piiFields,
+  );
 
   private readonly actor: PaymentFlowActorRef = createActor(this.machine, {
     inspect: this.inspector.inspect,

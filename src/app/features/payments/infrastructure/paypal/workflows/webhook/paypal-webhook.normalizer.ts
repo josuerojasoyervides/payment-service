@@ -28,9 +28,12 @@ export class PaypalWebhookNormalizer implements WebhookNormalizer<
 > {
   normalize(
     payload: PaypalWebhookEvent,
-    _headers: PaypalWebhookHeaders,
+    headers: PaypalWebhookHeaders,
   ): NormalizedWebhookEvent | null {
     if (!payload || !payload.event_type || !payload.resource?.id) return null;
+
+    // Placeholder for signature verification (PR5.6).
+    if (!this.isSignatureValid(payload, headers)) return null;
 
     // We only care about order/capture events relevant to the payment flow.
     const type = payload.event_type;
@@ -61,6 +64,11 @@ export class PaypalWebhookNormalizer implements WebhookNormalizer<
         resource_status: payload.resource.status,
       },
     };
+  }
+
+  private isSignatureValid(_payload: PaypalWebhookEvent, _headers: PaypalWebhookHeaders): boolean {
+    // TODO(PR5): verify PayPal signature (backend responsibility).
+    return true;
   }
 }
 

@@ -249,7 +249,7 @@ Tests PR4b
 
 ---
 
-## 5) PR5: Security Hardening
+## 5) PR5: Security Hardening ✅
 
 Scope: ~250 LOC | Depende de: PR4b
 

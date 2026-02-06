@@ -31,9 +31,12 @@ export class StripeWebhookNormalizer implements WebhookNormalizer<
 > {
   normalize(
     payload: StripePaymentIntentWebhookEvent,
-    _headers: StripeWebhookHeaders,
+    headers: StripeWebhookHeaders,
   ): NormalizedWebhookEvent | null {
     if (!payload || !payload.type || !payload.data?.object) return null;
+
+    // Placeholder for signature verification (PR5.6).
+    if (!this.isSignatureValid(payload, headers)) return null;
 
     // We only care about PaymentIntent events for PR5.
     if (!payload.type.startsWith('payment_intent.')) return null;
@@ -63,6 +66,14 @@ export class StripeWebhookNormalizer implements WebhookNormalizer<
         created: payload.created,
       },
     };
+  }
+
+  private isSignatureValid(
+    _payload: StripePaymentIntentWebhookEvent,
+    _headers: StripeWebhookHeaders,
+  ): boolean {
+    // TODO(PR5): verify Stripe signature (backend responsibility).
+    return true;
   }
 }
 

@@ -20,6 +20,7 @@ import {
   PAYMENT_MESSAGE_KEYS,
 } from '@payments/shared/constants/payment-error-keys';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
+import { sanitizeForLogging } from '@payments/shared/logging/sanitize-for-logging.util';
 import type { Observable } from 'rxjs';
 import { map, tap } from 'rxjs';
 
@@ -122,12 +123,17 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
 
     const { preparedRequest, metadata } = this.prepare(req, context);
 
-    this.logger.warn(`[PaypalRedirectStrategy] Creating PayPal order:`, 'PaypalRedirectStrategy', {
-      orderId: req.orderId,
-      amount: req.money.amount,
-      currency: req.money.currency,
-      returnUrl: metadata['return_url'],
-    });
+    this.logger.warn(
+      `[PaypalRedirectStrategy] Creating PayPal order:`,
+      'PaypalRedirectStrategy',
+      sanitizeForLogging({
+        orderId: req.orderId,
+        amount: req.money.amount,
+        currency: req.money.currency,
+        returnUrl: metadata['return_url'],
+        cancelUrl: metadata['cancel_url'],
+      }),
+    );
 
     return this.gateway.createIntent(preparedRequest).pipe(
       tap((intent) => {

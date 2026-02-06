@@ -9,6 +9,7 @@ import {
   isPaymentFlowSnapshot,
   isSnapshotInspectionEventWithSnapshot,
 } from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.guards';
+import { redactPaymentError } from '@payments/shared/errors/redact-payment-error.util';
 import type { InspectionEvent } from 'xstate';
 
 /**
@@ -18,6 +19,7 @@ export class PaymentFlowActorInspector {
   constructor(
     private readonly logger: LoggerService,
     private readonly snapshotState: PaymentFlowSnapshotState,
+    private readonly piiFields: readonly string[],
   ) {}
 
   readonly inspect = (insp: InspectionEvent): void => {
@@ -42,6 +44,7 @@ export class PaymentFlowActorInspector {
           ...snap.context,
           flowContext: redactFlowContext(snap.context.flowContext),
           intent: redactIntent(snap.context.intent),
+          error: redactPaymentError(snap.context.error ?? null, [...this.piiFields]),
         },
       },
       this.logger.getCorrelationId(),
