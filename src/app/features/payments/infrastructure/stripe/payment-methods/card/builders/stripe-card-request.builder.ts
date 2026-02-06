@@ -26,6 +26,7 @@ export class StripeCardRequestBuilder extends BasePaymentRequestBuilder {
   private money?: Money;
   private token?: string;
   private saveForFuture?: boolean;
+  private idempotencyKey?: string;
 
   forOrder(orderId: string): this {
     this.orderId = orderId;
@@ -44,11 +45,21 @@ export class StripeCardRequestBuilder extends BasePaymentRequestBuilder {
     return this;
   }
 
+  withIdempotencyKey(idempotencyKey: string): this {
+    this.idempotencyKey = idempotencyKey;
+    return this;
+  }
+
   protected override validateRequired(): void {
     this.orderIdVo = this.createOrderIdOrThrow(this.orderId, PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED);
     this.requireDefinedWithKey('currency', this.currency, PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED);
     this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
     this.requireNonEmptyStringWithKey('token', this.token, PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED);
+    this.requireNonEmptyStringWithKey(
+      'idempotencyKey',
+      this.idempotencyKey,
+      PAYMENT_ERROR_KEYS.INVALID_REQUEST,
+    );
   }
 
   protected override buildUnsafe(): CreatePaymentRequest {
@@ -59,6 +70,7 @@ export class StripeCardRequestBuilder extends BasePaymentRequestBuilder {
         type: 'card',
         token: this.token!,
       },
+      idempotencyKey: this.idempotencyKey!,
       metadata: {
         saveForFuture: this.saveForFuture,
       },

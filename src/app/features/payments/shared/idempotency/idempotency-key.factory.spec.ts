@@ -21,6 +21,7 @@ describe('IdempotencyKeyFactory', () => {
       orderId: createOrderId('o1'),
       money: { amount: 100, currency: 'MXN' },
       method: { type: 'card', token: 'tok_123' },
+      idempotencyKey: 'idem_start',
       metadata: { sessionId: 'flow_123' },
     };
 
@@ -126,6 +127,7 @@ describe('IdempotencyKeyFactory', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card' },
+        idempotencyKey: 'idem_generate',
         metadata: { sessionId: 'flow_123' },
       };
 

@@ -203,6 +203,7 @@ export function createMockPaymentState(
     orderId: createOrderId('mock_order'),
     money: { amount: 0, currency: 'MXN' },
     method: { type: 'card' },
+    idempotencyKey: 'mock:idempotency',
   });
 
   return {

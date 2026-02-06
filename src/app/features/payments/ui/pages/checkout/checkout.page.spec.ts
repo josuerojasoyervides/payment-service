@@ -59,6 +59,7 @@ function withCheckoutCatalog<T extends PaymentFlowPort & PaymentCheckoutCatalogP
       orderId: createOrderId('order_test'),
       money: { amount: 499.99, currency: 'MXN' },
       method: { type: 'card', token: 'tok_test' },
+      idempotencyKey: 'idem_checkout_mock',
     }),
   };
 }
@@ -107,10 +108,12 @@ describe('CheckoutComponent', () => {
       forOrder: vi.fn().mockReturnThis(),
       withAmount: vi.fn().mockReturnThis(),
       withOptions: vi.fn().mockReturnThis(),
+      withIdempotencyKey: vi.fn().mockReturnThis(),
       build: vi.fn().mockReturnValue({
         orderId: createOrderId('order_test'),
         money: { amount: 499.99, currency: 'MXN' },
         method: { type: 'card', token: 'tok_test' },
+        idempotencyKey: 'idem_checkout_builder',
       }),
     };
 
@@ -183,7 +186,8 @@ describe('CheckoutComponent', () => {
         mockBuilder
           .forOrder(params.orderId)
           .withAmount(params.amount, params.currency)
-          .withOptions(params.options);
+          .withOptions(params.options)
+          .withIdempotencyKey('idem_checkout_request');
         return mockBuilder.build();
       },
     } as (PaymentFlowPort & PaymentCheckoutCatalogPort) & {

@@ -35,6 +35,7 @@ import { ProviderDescriptorRegistry } from '@payments/application/orchestration/
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 /**
  * Adapter implementing PaymentFlowPort and PaymentCheckoutCatalogPort by delegating to PaymentsStore.
@@ -48,6 +49,7 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
   private readonly descriptorRegistry = inject(ProviderDescriptorRegistry);
   private readonly externalEvents = inject(ExternalEventAdapter);
   private readonly redirectReturnNormalizers = inject(REDIRECT_RETURN_NORMALIZERS);
+  private readonly idempotency = inject(IdempotencyKeyFactory);
 
   // ============================================================
   // REACTIVE STATE (delegated to store)
@@ -269,10 +271,15 @@ export class NgRxSignalsStateAdapter implements PaymentFlowPort, PaymentCheckout
   }): CreatePaymentRequest {
     const factory = this.registry.get(params.providerId);
     const builder = factory.createRequestBuilder(params.method);
+    const idempotencyKey = this.idempotency.generateForStartInput(
+      params.providerId,
+      params.orderId,
+    );
     return builder
       .forOrder(params.orderId)
       .withAmount(params.amount, params.currency)
       .withOptions(params.options)
+      .withIdempotencyKey(idempotencyKey)
       .build();
   }
 

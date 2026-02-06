@@ -6,6 +6,7 @@ export interface PaymentRequestBuilderPort {
   forOrder(orderId: string): this;
   withAmount(amount: number, currency: CurrencyCode): this;
   withOptions(options: PaymentOptions): this;
+  withIdempotencyKey(idempotencyKey: string): this;
 
   build(): CreatePaymentRequest;
 }

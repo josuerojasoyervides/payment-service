@@ -20,6 +20,7 @@ export abstract class BasePaymentRequestBuilder implements PaymentRequestBuilder
   abstract forOrder(orderId: string): this;
   abstract withAmount(amount: number, currency: CurrencyCode): this;
   abstract withOptions(options: PaymentOptions): this;
+  abstract withIdempotencyKey(idempotencyKey: string): this;
 
   build(): CreatePaymentRequest {
     this.validateRequired();

@@ -11,6 +11,7 @@ import { ProviderDescriptorRegistry } from '@payments/application/orchestration/
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
 import { INITIAL_RESILIENCE_STATE } from '@payments/application/orchestration/store/types/payment-store-state';
+import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 
 describe('NgRxSignalsStateAdapter', () => {
   let adapter: NgRxSignalsStateAdapter;
@@ -95,7 +96,11 @@ describe('NgRxSignalsStateAdapter', () => {
         getFieldRequirements: () => null,
         createRequestBuilder: () => ({
           forOrder: () => ({
-            withAmount: () => ({ withOptions: () => ({ build: () => ({}) as any }) }),
+            withAmount: () => ({
+              withOptions: () => ({
+                withIdempotencyKey: () => ({ build: () => ({ idempotencyKey: 'idem' }) as any }),
+              }),
+            }),
           }),
         }),
       }),
@@ -119,6 +124,7 @@ describe('NgRxSignalsStateAdapter', () => {
         { provide: ProviderFactoryRegistry, useValue: registryMock },
         { provide: ProviderDescriptorRegistry, useValue: descriptorRegistryMock },
         { provide: ExternalEventAdapter, useValue: externalEventAdapterMock },
+        IdempotencyKeyFactory,
       ],
     });
 
@@ -233,6 +239,7 @@ describe('NgRxSignalsStateAdapter', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' as const },
         method: { type: 'card' as const },
+        idempotencyKey: 'idem_adapter_start',
       };
       adapter.startPayment(request, 'stripe');
       expect(storeMock.startPayment).toHaveBeenCalledWith({
@@ -247,6 +254,7 @@ describe('NgRxSignalsStateAdapter', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' as const },
         method: { type: 'card' as const },
+        idempotencyKey: 'idem_adapter_start_ctx',
       };
       const context = { returnUrl: 'https://return.com', isTest: true };
       adapter.startPayment(request, 'stripe', context);

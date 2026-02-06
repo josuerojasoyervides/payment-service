@@ -30,6 +30,7 @@ describe('IntentFacade (adapter)', () => {
     orderId: createOrderId('order_1'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
+    idempotencyKey: 'idem_stripe_facade_create',
   };
 
   const confirmReq: ConfirmPaymentRequest = {

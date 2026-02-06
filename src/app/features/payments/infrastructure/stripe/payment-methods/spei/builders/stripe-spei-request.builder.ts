@@ -24,6 +24,7 @@ export class StripeSpeiRequestBuilder extends BasePaymentRequestBuilder {
   private currency?: CurrencyCode;
   private customerEmail?: string;
   private money?: Money;
+  private idempotencyKey?: string;
 
   constructor() {
     super();
@@ -45,6 +46,11 @@ export class StripeSpeiRequestBuilder extends BasePaymentRequestBuilder {
     return this;
   }
 
+  withIdempotencyKey(idempotencyKey: string): this {
+    this.idempotencyKey = idempotencyKey;
+    return this;
+  }
+
   protected override validateRequired(): void {
     this.orderIdVo = this.createOrderIdOrThrow(this.orderId, PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED);
     this.requireDefinedWithKey('currency', this.currency, PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED);
@@ -56,6 +62,11 @@ export class StripeSpeiRequestBuilder extends BasePaymentRequestBuilder {
       PAYMENT_ERROR_KEYS.CUSTOMER_EMAIL_REQUIRED,
       PAYMENT_ERROR_KEYS.CUSTOMER_EMAIL_INVALID,
     );
+    this.requireNonEmptyStringWithKey(
+      'idempotencyKey',
+      this.idempotencyKey,
+      PAYMENT_ERROR_KEYS.INVALID_REQUEST,
+    );
   }
 
   protected override buildUnsafe(): CreatePaymentRequest {
@@ -66,6 +77,7 @@ export class StripeSpeiRequestBuilder extends BasePaymentRequestBuilder {
         type: 'spei',
       },
       customerEmail: this.customerEmail!,
+      idempotencyKey: this.idempotencyKey!,
     };
   }
 }

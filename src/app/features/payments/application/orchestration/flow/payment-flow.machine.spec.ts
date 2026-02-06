@@ -145,6 +145,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -164,6 +165,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -187,6 +189,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -266,6 +269,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -311,6 +315,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -340,6 +345,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -368,6 +374,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -404,6 +411,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -526,6 +534,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -618,6 +627,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -630,6 +640,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
       mode: 'manual',
     });
@@ -656,6 +667,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -684,6 +696,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -749,6 +762,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 
@@ -799,6 +813,7 @@ describe('PaymentFlowMachine', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_123' },
+        idempotencyKey: 'idem_flow_machine',
       },
     });
 

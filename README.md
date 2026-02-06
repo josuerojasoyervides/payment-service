@@ -12,6 +12,7 @@ This repo is a **personal architecture lab** for a payments module: Stripe + Pay
 - [What to try first](#what-to-try-first)
 - [Architecture maps (charts)](#architecture-maps-charts)
 - [Mental model](#mental-model)
+- [Resilience and fallback](#resilience-and-fallback)
 - [Key architecture decisions (why)](#key-architecture-decisions-why)
 - [Walkthrough: what happens when you click Pay](#walkthrough-what-happens-when-you-click-pay)
 - [Extending: add a new provider](#extending-add-a-new-provider)
@@ -69,6 +70,9 @@ Two maps explain the system: **runtime** (who talks to whom during a payment) an
 **Payment flow: what is the machine purpose flow**
 ![Payment flow machine map](charts/chart-payment-flow-machine-feb-02.svg)
 
+**Resilience flow: circuit, rate limit, fallback**
+See `charts/payment-flow.mermaid`.
+
 **How to use these maps:** When you feel lost, start at the centre (the **Flow** / state machine), then follow the bridges to the **store**, **UI**, and **providers**. The runtime map shows the live flow; the dependency map shows the rules the repo enforces so the architecture stays consistent.
 
 ---
@@ -82,6 +86,14 @@ Two maps explain the system: **runtime** (who talks to whom during a payment) an
 - **Fallback** — A policy subsystem: when a provider fails, the orchestrator can suggest or trigger a switch (e.g. Stripe → PayPal). This is not a UI hack; it is testable and consistent.
 - **Providers** — Interchangeable implementations (Stripe, PayPal, Fake). They sit behind a registry/factory; the rest of the app does not branch by provider name.
 - **Telemetry** — Structured breadcrumbs (flowId, providerId, state, event, refs) so you can debug and verify behaviour. Redaction rules keep logs safe (no secrets, no raw PII).
+
+---
+
+## Resilience and fallback
+
+Resilience is treated as a first-class system, not a set of ad-hoc retries. The flow engine centralizes convergence rules, the resilience policy defines cooldowns and rate limits, and the fallback orchestrator decides if and when a provider switch is allowed.
+
+The UI does not implement fallback logic. It only renders the projected state (eligible, manual, auto) and surfaces next actions. This keeps failure handling deterministic, testable, and provider-agnostic.
 
 ---
 

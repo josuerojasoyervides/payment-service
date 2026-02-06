@@ -23,6 +23,7 @@ describe('PaypalRedirectStrategy', () => {
     orderId: createOrderId('order_1'),
     money: { amount: 100, currency: 'MXN' },
     method: { type: 'card', token: 'tok_123' },
+    idempotencyKey: 'idem_paypal_redirect',
   };
 
   const context = {

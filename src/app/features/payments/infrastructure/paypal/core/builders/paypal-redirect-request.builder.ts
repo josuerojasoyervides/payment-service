@@ -28,6 +28,7 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
   private money?: Money;
   private returnUrl?: string;
   private cancelUrl?: string;
+  private idempotencyKey?: string;
 
   constructor() {
     super();
@@ -56,10 +57,20 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
     return this;
   }
 
+  withIdempotencyKey(idempotencyKey: string): this {
+    this.idempotencyKey = idempotencyKey;
+    return this;
+  }
+
   protected override validateRequired(): void {
     this.orderIdVo = this.createOrderIdOrThrow(this.orderId, PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED);
     this.requireDefinedWithKey('currency', this.currency, PAYMENT_ERROR_KEYS.CURRENCY_REQUIRED);
     this.money = this.createMoneyOrThrow(this.amount ?? 0, this.currency!);
+    this.requireNonEmptyStringWithKey(
+      'idempotencyKey',
+      this.idempotencyKey,
+      PAYMENT_ERROR_KEYS.INVALID_REQUEST,
+    );
 
     // returnUrl and cancelUrl are optional in builder - they can come from StrategyContext
     // But if provided, they must be valid URLs
@@ -81,6 +92,7 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
       },
       returnUrl: this.returnUrl,
       cancelUrl: this.cancelUrl,
+      idempotencyKey: this.idempotencyKey!,
     };
   }
 }

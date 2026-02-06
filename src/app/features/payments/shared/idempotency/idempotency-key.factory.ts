@@ -31,6 +31,19 @@ export class IdempotencyKeyFactory {
     return [safeSessionId, req.orderId.value, providerId, nowMs.toString()].join(':');
   }
 
+  /**
+   * Generates a start idempotency key from raw inputs (used before CreatePaymentRequest is built).
+   */
+  generateForStartInput(
+    providerId: PaymentProviderId,
+    orderId: string,
+    sessionId?: string,
+    nowMs: number = Date.now(),
+  ): string {
+    const safeSessionId = sessionId && sessionId.length > 0 ? sessionId : 'unknown_session';
+    return [safeSessionId, orderId, providerId, nowMs.toString()].join(':');
+  }
+
   generateForConfirm(providerId: PaymentProviderId, intentId: PaymentIntentId): string {
     return `${providerId}:confirm:${intentId.value}`;
   }

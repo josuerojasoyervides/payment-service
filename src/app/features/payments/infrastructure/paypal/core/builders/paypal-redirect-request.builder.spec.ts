@@ -38,6 +38,7 @@ describe('PaypalRedirectRequestBuilder', () => {
           returnUrl: TEST_RETURN_URL,
           cancelUrl: TEST_CANCEL_URL,
         })
+        .withIdempotencyKey('idem_paypal_builder')
         .build();
 
       expect(request.orderId.value).toBe('order_123');
@@ -53,6 +54,7 @@ describe('PaypalRedirectRequestBuilder', () => {
         .forOrder('order_123')
         .withAmount(100, 'MXN')
         .withOptions({ returnUrl: TEST_RETURN_URL })
+        .withIdempotencyKey('idem_paypal_builder')
         .build();
 
       expect(request.cancelUrl).toBe(TEST_RETURN_URL);
@@ -66,6 +68,7 @@ describe('PaypalRedirectRequestBuilder', () => {
           returnUrl: TEST_RETURN_URL,
           cancelUrl: TEST_CANCEL_URL,
         })
+        .withIdempotencyKey('idem_paypal_builder')
         .build();
 
       expect(request.returnUrl).toBe(TEST_RETURN_URL);
@@ -77,6 +80,7 @@ describe('PaypalRedirectRequestBuilder', () => {
         .forOrder('order_123')
         .withAmount(100, 'MXN')
         .withOptions({ returnUrl: TEST_RETURN_URL })
+        .withIdempotencyKey('idem_paypal_builder')
         .build();
 
       expect(request.method.token).toBeUndefined();
@@ -90,6 +94,7 @@ describe('PaypalRedirectRequestBuilder', () => {
           returnUrl: TEST_RETURN_URL,
           token: 'tok_should_be_ignored',
         })
+        .withIdempotencyKey('idem_paypal_builder')
         .build();
 
       expect(request.method.token).toBeUndefined();
@@ -99,7 +104,12 @@ describe('PaypalRedirectRequestBuilder', () => {
   describe('validation', () => {
     it('throws PaymentError when orderId is missing', () => {
       expectSyncPaymentError(
-        () => builder.withAmount(100, 'MXN').withOptions({ returnUrl: TEST_RETURN_URL }).build(),
+        () =>
+          builder
+            .withAmount(100, 'MXN')
+            .withOptions({ returnUrl: TEST_RETURN_URL })
+            .withIdempotencyKey('idem_paypal_builder')
+            .build(),
         {
           code: 'invalid_request',
           messageKey: PAYMENT_ERROR_KEYS.ORDER_ID_REQUIRED,
@@ -115,6 +125,7 @@ describe('PaypalRedirectRequestBuilder', () => {
             .forOrder('order_123')
             .withAmount(0 as any, 'MXN')
             .withOptions({ returnUrl: TEST_RETURN_URL })
+            .withIdempotencyKey('idem_paypal_builder')
             .build(),
         {
           code: 'invalid_request',
@@ -131,6 +142,7 @@ describe('PaypalRedirectRequestBuilder', () => {
             .forOrder('order_123')
             .withAmount(100, undefined as any)
             .withOptions({ returnUrl: TEST_RETURN_URL })
+            .withIdempotencyKey('idem_paypal_builder')
             .build(),
         {
           code: 'invalid_request',
@@ -142,7 +154,11 @@ describe('PaypalRedirectRequestBuilder', () => {
 
     it('allows building without returnUrl (can come from StrategyContext)', () => {
       // returnUrl is optional in the builder - it can come from StrategyContext
-      const request = builder.forOrder('order_123').withAmount(100, 'MXN').build();
+      const request = builder
+        .forOrder('order_123')
+        .withAmount(100, 'MXN')
+        .withIdempotencyKey('idem_paypal_builder')
+        .build();
 
       expect(request.orderId.value).toBe('order_123');
       expect(request.money.amount).toBe(100);
@@ -156,6 +172,7 @@ describe('PaypalRedirectRequestBuilder', () => {
             .forOrder('order_123')
             .withAmount(100, 'MXN')
             .withOptions({ returnUrl: 'not-a-valid-url' })
+            .withIdempotencyKey('idem_paypal_builder')
             .build(),
         {
           code: 'invalid_request',
@@ -175,6 +192,7 @@ describe('PaypalRedirectRequestBuilder', () => {
               returnUrl: TEST_RETURN_URL,
               cancelUrl: 'not-a-valid-url',
             })
+            .withIdempotencyKey('idem_paypal_builder')
             .build(),
         {
           code: 'invalid_request',
@@ -193,10 +211,12 @@ describe('PaypalRedirectRequestBuilder', () => {
       const result1 = builder.forOrder('order_123');
       const result2 = result1.withAmount(100, 'MXN');
       const result3 = result2.withOptions({ returnUrl: TEST_ORIGIN_URL });
+      const result4 = result3.withIdempotencyKey('idem_paypal_builder');
 
       expect(result1).toBe(builder);
       expect(result2).toBe(builder);
       expect(result3).toBe(builder);
+      expect(result4).toBe(builder);
     });
   });
 });

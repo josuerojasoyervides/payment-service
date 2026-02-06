@@ -92,6 +92,7 @@ describe('StripeProviderFactory', () => {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card', token: 'tok_test1234567890abc' },
+        idempotencyKey: 'idem_stripe_factory',
       }),
     );
 
