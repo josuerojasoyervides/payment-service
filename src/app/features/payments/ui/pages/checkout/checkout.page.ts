@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, isDevMode } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, isDevMode, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PAYMENT_CHECKOUT_CATALOG } from '@app/features/payments/application/api/tokens/store/payment-checkout-catalog.token';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
@@ -72,8 +72,11 @@ export class CheckoutComponent {
 
   private readonly logger = inject(LoggerService);
   private readonly i18n = inject(I18nService);
-  private readonly state = inject(PAYMENT_STATE);
+  readonly state = inject(PAYMENT_STATE);
   private readonly catalog = inject(PAYMENT_CHECKOUT_CATALOG);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private readonly now = signal(Date.now());
 
   readonly flowState = deepComputed(() => ({
     isLoading: this.state.isLoading(),
@@ -94,8 +97,8 @@ export class CheckoutComponent {
   });
 
   readonly fallbackState = deepComputed(() => ({
-    isPending: this.state.hasPendingFallback(),
-    pendingEvent: this.state.pendingFallbackEvent(),
+    isPending: this.state.isFallbackConfirming(),
+    data: this.state.fallbackConfirmation(),
   }));
 
   readonly providerDescriptors = computed(() => this.catalog.getProviderDescriptors());
@@ -140,6 +143,29 @@ export class CheckoutComponent {
   readonly isFallbackExecuting = computed(() => this.state.isFallbackExecuting());
   readonly isAutoFallback = computed(() => this.state.isAutoFallbackInProgress());
 
+  readonly isResilienceBlocked = computed(
+    () =>
+      this.state.isCircuitOpen() ||
+      this.state.isRateLimited() ||
+      this.state.isPendingManualReview() ||
+      this.state.isAllProvidersUnavailable(),
+  );
+
+  readonly showCircuitOpenBanner = computed(() => this.state.isCircuitOpen());
+  readonly showCircuitHalfOpenBanner = computed(() => this.state.isCircuitHalfOpen());
+  readonly showRateLimitedBanner = computed(() => this.state.isRateLimited());
+  readonly showManualReviewPanel = computed(() => this.state.isPendingManualReview());
+  readonly showAllProvidersUnavailableModal = computed(() =>
+    this.state.isAllProvidersUnavailable(),
+  );
+
+  readonly resilienceCountdownSeconds = computed(() => {
+    const untilMs = this.state.resilienceCooldownUntilMs();
+    if (!untilMs) return null;
+    const deltaMs = Math.max(0, untilMs - this.now());
+    return Math.ceil(deltaMs / 1000);
+  });
+
   readonly debugInfo = computed(() => {
     const summary = this.state.debugSummary();
 
@@ -152,6 +178,9 @@ export class CheckoutComponent {
   });
 
   constructor() {
+    const interval = setInterval(() => this.now.set(Date.now()), 1000);
+    this.destroyRef.onDestroy(() => clearInterval(interval));
+
     effect(() => {
       const descriptors = this.providerDescriptors();
       const current = this.checkoutPageState.selectedProvider();
@@ -179,11 +208,11 @@ export class CheckoutComponent {
     });
 
     effect(() => {
-      const event = this.fallbackState.pendingEvent();
-      if (event) {
+      const data = this.fallbackState.data();
+      if (data) {
         this.logger.info('Fallback available', 'CheckoutPage', {
-          failedProvider: event.failedProvider,
-          alternatives: event.alternativeProviders,
+          alternatives: data.eligibleProviders,
+          failureReason: data.failureReason,
         });
       }
     });
@@ -215,6 +244,13 @@ export class CheckoutComponent {
   }
 
   processPayment(): void {
+    if (this.isResilienceBlocked()) {
+      this.logger.info('Payment blocked by resilience state', 'CheckoutPage', {
+        status: this.state.resilienceStatus(),
+      });
+      return;
+    }
+
     const provider = this.checkoutPageState.selectedProvider();
     const method = this.checkoutPageState.selectedMethod();
 
@@ -349,6 +385,17 @@ export class CheckoutComponent {
     refreshStatus: this.i18n.t(I18nKeys.ui.refresh_status),
     resumePaymentFound: this.i18n.t(I18nKeys.ui.resume_payment_found),
     resumePaymentAction: this.i18n.t(I18nKeys.ui.resume_payment_action),
+    tryAgainLabel: this.i18n.t(I18nKeys.ui.try_again),
+    circuitOpenTitle: this.i18n.t(I18nKeys.ui.circuit_open_title),
+    circuitOpenHint: this.i18n.t(I18nKeys.ui.circuit_open_hint),
+    circuitHalfOpenHint: this.i18n.t(I18nKeys.ui.circuit_half_open_hint),
+    rateLimitedTitle: this.i18n.t(I18nKeys.ui.rate_limited_title),
+    rateLimitedHint: this.i18n.t(I18nKeys.ui.rate_limited_hint),
+    manualReviewTitle: this.i18n.t(I18nKeys.ui.manual_review_title),
+    manualReviewHint: this.i18n.t(I18nKeys.ui.manual_review_hint),
+    manualReviewAction: this.i18n.t(I18nKeys.ui.manual_review_action),
+    allProvidersUnavailableTitle: this.i18n.t(I18nKeys.ui.all_providers_unavailable_title),
+    allProvidersUnavailableHint: this.i18n.t(I18nKeys.ui.all_providers_unavailable_hint),
   }));
 
   // TODO : This is orchestration layer responsibility, not UI layer

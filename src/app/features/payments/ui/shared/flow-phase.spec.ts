@@ -1,6 +1,7 @@
 import { createMockPaymentState } from '@app/features/payments/application/api/testing/provide-mock-payment-state.harness';
 import { INITIAL_FALLBACK_STATE } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
 import { createPaymentIntentId } from '@payments/application/api/testing/vo-test-helpers';
+import { INITIAL_RESILIENCE_STATE } from '@payments/application/orchestration/store/types/payment-store-state';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import { deriveFlowPhase } from '@payments/ui/shared/flow-phase';
 
@@ -80,9 +81,9 @@ describe('deriveFlowPhase', () => {
     expect(phaseSignal()).toBe('failed');
   });
 
-  it('returns fallback_pending when fallback status is pending', () => {
+  it('returns fallback_pending when fallback is confirming', () => {
     const { phaseSignal } = setup({
-      fallback: { ...INITIAL_FALLBACK_STATE, status: 'pending' },
+      resilience: { ...INITIAL_RESILIENCE_STATE, status: 'fallback_confirming' },
     });
     expect(phaseSignal()).toBe('fallback_pending');
   });
@@ -114,7 +115,7 @@ describe('deriveFlowPhase', () => {
       intent,
       hasError: true,
       isReady: true,
-      fallback: { ...INITIAL_FALLBACK_STATE, status: 'pending' },
+      resilience: { ...INITIAL_RESILIENCE_STATE, status: 'fallback_confirming' },
     });
     expect(phaseSignal()).toBe('fallback_pending');
   });

@@ -8,6 +8,7 @@ import {
   createPaymentIntentId,
 } from '@payments/application/api/testing/vo-test-helpers';
 import { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
+import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { FallbackOrchestratorService } from '@payments/application/orchestration/services/fallback/fallback-orchestrator.service';
 import { HISTORY_MAX_ENTRIES } from '@payments/application/orchestration/store/history/payment-store.history.types';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
@@ -62,7 +63,14 @@ describe('PaymentsStore', () => {
     notifySuccess: vi.fn(),
     respondToFallback: vi.fn(),
     reset: vi.fn(),
+    getConfig: vi.fn(() => ({ userResponseTimeout: 30_000 })),
     fallbackExecute$: fallbackExecute$.asObservable(),
+  };
+
+  const providerRegistryMock = {
+    get: vi.fn(() => ({
+      getDashboardUrl: vi.fn(() => 'https://dashboard.local/intent/pi_1'),
+    })),
   };
 
   // -------------------
@@ -178,7 +186,7 @@ describe('PaymentsStore', () => {
   const setMachineFallbackCandidate = (overrides?: Partial<any>) => {
     machineSnapshot.set(
       buildSnapshot({
-        value: 'fallbackCandidate',
+        value: 'fallbackConfirming',
         context: {
           providerId: 'stripe',
           request: req,
@@ -227,6 +235,7 @@ describe('PaymentsStore', () => {
         PaymentsStore,
         { provide: FallbackOrchestratorService, useValue: fallbackOrchestratorMock },
         { provide: PaymentFlowActorService, useValue: stateMachineMock },
+        { provide: ProviderFactoryRegistry, useValue: providerRegistryMock },
       ],
     });
 

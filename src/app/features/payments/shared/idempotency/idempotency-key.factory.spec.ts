@@ -21,63 +21,61 @@ describe('IdempotencyKeyFactory', () => {
       orderId: createOrderId('o1'),
       money: { amount: 100, currency: 'MXN' },
       method: { type: 'card', token: 'tok_123' },
+      metadata: { sessionId: 'flow_123' },
     };
 
-    it('generates stable key for same request', () => {
-      const key1 = factory.generateForStart('stripe', req);
-      const key2 = factory.generateForStart('stripe', req);
+    it('generates stable key for same request + timestamp', () => {
+      const key1 = factory.generateForStart('stripe', req, undefined, 1_700_000_000_000);
+      const key2 = factory.generateForStart('stripe', req, undefined, 1_700_000_000_000);
 
       expect(key1).toBe(key2);
-      expect(key1).toBe('stripe:start:o1:100:MXN:card');
+      expect(key1).toBe('flow_123:o1:stripe:1700000000000');
     });
 
     it('generates different key for different provider', () => {
-      const key1 = factory.generateForStart('stripe', req);
-      const key2 = factory.generateForStart('paypal', req);
+      const key1 = factory.generateForStart('stripe', req, undefined, 1_700_000_000_000);
+      const key2 = factory.generateForStart('paypal', req, undefined, 1_700_000_000_000);
 
       expect(key1).not.toBe(key2);
-      expect(key1).toBe('stripe:start:o1:100:MXN:card');
-      expect(key2).toBe('paypal:start:o1:100:MXN:card');
+      expect(key1).toBe('flow_123:o1:stripe:1700000000000');
+      expect(key2).toBe('flow_123:o1:paypal:1700000000000');
     });
 
     it('generates different key for different orderId', () => {
       const req2 = { ...req, orderId: createOrderId('o2') };
-      const key1 = factory.generateForStart('stripe', req);
-      const key2 = factory.generateForStart('stripe', req2);
+      const key1 = factory.generateForStart('stripe', req, undefined, 1_700_000_000_000);
+      const key2 = factory.generateForStart('stripe', req2, undefined, 1_700_000_000_000);
 
       expect(key1).not.toBe(key2);
-      expect(key1).toBe('stripe:start:o1:100:MXN:card');
-      expect(key2).toBe('stripe:start:o2:100:MXN:card');
+      expect(key1).toBe('flow_123:o1:stripe:1700000000000');
+      expect(key2).toBe('flow_123:o2:stripe:1700000000000');
     });
 
-    it('generates different key for different amount', () => {
-      const req2 = { ...req, money: { amount: 200, currency: 'MXN' as const } };
-      const key1 = factory.generateForStart('stripe', req);
-      const key2 = factory.generateForStart('stripe', req2);
+    it('generates different key for different timestamp', () => {
+      const key1 = factory.generateForStart('stripe', req, undefined, 1_700_000_000_000);
+      const key2 = factory.generateForStart('stripe', req, undefined, 1_700_000_000_001);
 
       expect(key1).not.toBe(key2);
-      expect(key1).toBe('stripe:start:o1:100:MXN:card');
-      expect(key2).toBe('stripe:start:o1:200:MXN:card');
+      expect(key1).toBe('flow_123:o1:stripe:1700000000000');
+      expect(key2).toBe('flow_123:o1:stripe:1700000000001');
     });
 
-    it('generates different key for different currency', () => {
-      const req2 = { ...req, money: { amount: 100, currency: 'USD' as const } };
-      const key1 = factory.generateForStart('stripe', req);
-      const key2 = factory.generateForStart('stripe', req2);
+    it('uses explicit sessionId when provided', () => {
+      const key = factory.generateForStart('stripe', req, 'flow_override', 1_700_000_000_000);
 
-      expect(key1).not.toBe(key2);
-      expect(key1).toBe('stripe:start:o1:100:MXN:card');
-      expect(key2).toBe('stripe:start:o1:100:USD:card');
+      expect(key).toBe('flow_override:o1:stripe:1700000000000');
     });
 
-    it('generates different key for different method type', () => {
-      const req2 = { ...req, method: { type: 'spei' as const } };
-      const key1 = factory.generateForStart('stripe', req);
-      const key2 = factory.generateForStart('stripe', req2);
+    it('falls back to unknown_session when sessionId is missing', () => {
+      const reqWithoutSession = { ...req, metadata: {} };
+      const key = factory.generateForStart(
+        'stripe',
+        reqWithoutSession,
+        undefined,
+        1_700_000_000_000,
+      );
 
-      expect(key1).not.toBe(key2);
-      expect(key1).toBe('stripe:start:o1:100:MXN:card');
-      expect(key2).toBe('stripe:start:o1:100:MXN:spei');
+      expect(key).toBe('unknown_session:o1:stripe:1700000000000');
     });
   });
 
@@ -122,14 +120,18 @@ describe('IdempotencyKeyFactory', () => {
 
   describe('generate', () => {
     it('generates correct key for start operation', () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2023-11-14T22:13:20Z'));
       const req: CreatePaymentRequest = {
         orderId: createOrderId('o1'),
         money: { amount: 100, currency: 'MXN' },
         method: { type: 'card' },
+        metadata: { sessionId: 'flow_123' },
       };
 
       const key = factory.generate('stripe', { operation: 'start', req });
-      expect(key).toBe('stripe:start:o1:100:MXN:card');
+      expect(key).toBe('flow_123:o1:stripe:1700000000000');
+      vi.useRealTimers();
     });
 
     it('generates correct key for confirm operation', () => {

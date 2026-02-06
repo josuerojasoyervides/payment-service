@@ -25,8 +25,35 @@ export const clientConfirmStates = {
           action: nextAction as NextActionClientConfirm,
         };
       },
-      onDone: { target: 'reconciling', actions: 'setIntent' },
-      onError: { target: 'failed', actions: 'setError' },
+      onDone: { target: 'reconciling', actions: ['setIntent', 'resetClientConfirmRetry'] },
+      onError: [
+        {
+          guard: 'isCircuitOpenError',
+          target: 'circuitOpen',
+          actions: ['setError', 'setCircuitOpenFromError'],
+        },
+        {
+          guard: 'isRateLimitedError',
+          target: 'rateLimited',
+          actions: ['setError', 'setRateLimitedFromError'],
+        },
+        {
+          guard: 'shouldRetryClientConfirm',
+          target: 'clientConfirmRetrying',
+          actions: ['incrementClientConfirmRetry', 'setClientConfirmRetryError'],
+        },
+        {
+          target: 'requiresAction',
+          actions: ['setError', 'setClientConfirmRetryError'],
+        },
+      ],
+    },
+  },
+
+  clientConfirmRetrying: {
+    tags: ['loading', 'clientConfirmRetrying'],
+    after: {
+      clientConfirmRetryDelay: { target: 'clientConfirming' },
     },
   },
 } as const satisfies PaymentFlowStatesConfig;

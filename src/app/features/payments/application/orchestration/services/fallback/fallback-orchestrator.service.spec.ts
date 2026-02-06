@@ -56,6 +56,7 @@ describe('FallbackOrchestratorService', () => {
             mode: 'manual',
             maxAttempts: 2,
             triggerErrorCodes: ['provider_unavailable'],
+            blockedErrorCodes: ['card_declined'],
             userResponseTimeout: 5000,
             providerPriority: ['stripe', 'paypal'],
           } satisfies Partial<FallbackConfig>,
@@ -113,6 +114,34 @@ describe('FallbackOrchestratorService', () => {
 
       expect(result).toBe(false);
       expect(service.state().status).toBe('idle');
+    });
+
+    it('returns false when error code is explicitly blocked', () => {
+      const config: Partial<FallbackConfig> = {
+        enabled: true,
+        mode: 'manual',
+        maxAttempts: 2,
+        triggerErrorCodes: ['provider_unavailable', 'card_declined'],
+        blockedErrorCodes: ['card_declined'],
+        userResponseTimeout: 5000,
+        providerPriority: ['stripe', 'paypal'],
+      };
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          FallbackOrchestratorService,
+          { provide: ProviderFactoryRegistry, useValue: registryMock },
+          { provide: FALLBACK_CONFIG, useValue: config },
+        ],
+      });
+
+      const localService = TestBed.inject(FallbackOrchestratorService);
+      const result = localService.reportFailure('stripe', cardDeclinedError, mockRequest);
+
+      expect(result).toBe(false);
+      expect(localService.state().status).toBe('idle');
+      localService.reset();
     });
 
     it('returns false when no alternative providers available', () => {

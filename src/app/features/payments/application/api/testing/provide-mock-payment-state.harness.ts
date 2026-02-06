@@ -34,7 +34,9 @@ import type { PaymentHistoryEntry } from '@payments/application/orchestration/st
 import type {
   PaymentFlowStatus,
   PaymentsState,
+  ResilienceState,
 } from '@payments/application/orchestration/store/types/payment-store-state';
+import { INITIAL_RESILIENCE_STATE } from '@payments/application/orchestration/store/types/payment-store-state';
 
 export interface MockPaymentStateOverrides {
   status?: PaymentFlowStatus;
@@ -42,6 +44,7 @@ export interface MockPaymentStateOverrides {
   error?: PaymentError | null;
   selectedProvider?: PaymentProviderId | null;
   fallback?: FallbackState;
+  resilience?: ResilienceState;
   history?: PaymentHistoryEntry[];
 
   // convenience flags (optional)
@@ -67,6 +70,7 @@ export function createMockPaymentState(
   const selectedProvider = signal<PaymentProviderId | null>(overrides.selectedProvider ?? null);
 
   const fallbackState = signal<FallbackState>(overrides.fallback ?? INITIAL_FALLBACK_STATE);
+  const resilienceState = signal<ResilienceState>(overrides.resilience ?? INITIAL_RESILIENCE_STATE);
   const history = signal<PaymentHistoryEntry[]>(overrides.history ?? []);
 
   // Optional convenience flags override status if provided
@@ -81,6 +85,7 @@ export function createMockPaymentState(
     selectedProvider: selectedProvider(),
     currentRequest: null,
     fallback: fallbackState(),
+    resilience: resilienceState(),
     history: history(),
   }));
 
@@ -123,6 +128,22 @@ export function createMockPaymentState(
     () => fallbackState().pendingEvent,
   );
 
+  const resilienceStatus = computed(() => resilienceState().status);
+  const resilienceCooldownUntilMs = computed(() => resilienceState().cooldownUntilMs);
+  const fallbackConfirmation = computed(() => resilienceState().fallbackConfirmation);
+  const manualReviewData = computed(() => resilienceState().manualReview);
+  const isCircuitOpen = computed(() => resilienceState().status === 'circuit_open');
+  const isCircuitHalfOpen = computed(() => resilienceState().status === 'circuit_half_open');
+  const isRateLimited = computed(() => resilienceState().status === 'rate_limited');
+  const isFallbackConfirming = computed(() => resilienceState().status === 'fallback_confirming');
+  const isPendingManualReview = computed(
+    () => resilienceState().status === 'pending_manual_review',
+  );
+  const isAllProvidersUnavailable = computed(
+    () => resilienceState().status === 'all_providers_unavailable',
+  );
+  const canRetryClientConfirm = computed(() => false);
+
   const historyCount = computed(() => history().length);
   const lastHistoryEntry = computed(() => {
     const list = history();
@@ -156,6 +177,7 @@ export function createMockPaymentState(
     error.set(null);
     selectedProvider.set(null);
     fallbackState.set(INITIAL_FALLBACK_STATE);
+    resilienceState.set(INITIAL_RESILIENCE_STATE);
     history.set([]);
   };
   const clearHistory = () => history.set([]);
@@ -205,6 +227,19 @@ export function createMockPaymentState(
     isAutoFallback,
     pendingFallbackEvent,
     fallbackState: computed(() => fallbackState()),
+
+    resilienceState: computed(() => resilienceState()),
+    resilienceStatus,
+    resilienceCooldownUntilMs,
+    fallbackConfirmation,
+    manualReviewData,
+    isCircuitOpen,
+    isCircuitHalfOpen,
+    isRateLimited,
+    isFallbackConfirming,
+    isPendingManualReview,
+    isAllProvidersUnavailable,
+    canRetryClientConfirm,
 
     historyCount,
     lastHistoryEntry,

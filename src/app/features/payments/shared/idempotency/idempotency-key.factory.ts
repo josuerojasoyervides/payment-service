@@ -17,16 +17,18 @@ type GenerateInput =
 
 @Injectable()
 export class IdempotencyKeyFactory {
-  generateForStart(providerId: PaymentProviderId, req: CreatePaymentRequest): string {
-    const parts = [
-      providerId,
-      'start',
-      req.orderId.value,
-      req.money.amount.toString(),
-      req.money.currency,
-      req.method.type,
-    ];
-    return parts.join(':');
+  generateForStart(
+    providerId: PaymentProviderId,
+    req: CreatePaymentRequest,
+    sessionId?: string,
+    nowMs: number = Date.now(),
+  ): string {
+    const resolvedSessionId =
+      sessionId ??
+      (typeof req.metadata?.['sessionId'] === 'string' ? req.metadata['sessionId'] : null);
+    const safeSessionId =
+      resolvedSessionId && resolvedSessionId.length > 0 ? resolvedSessionId : 'unknown_session';
+    return [safeSessionId, req.orderId.value, providerId, nowMs.toString()].join(':');
   }
 
   generateForConfirm(providerId: PaymentProviderId, intentId: PaymentIntentId): string {

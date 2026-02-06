@@ -156,6 +156,18 @@ export class StripeProviderFactory implements ProviderFactory {
     }
   }
 
+  getResilienceConfig() {
+    return {
+      circuitOpenCooldownMs: 30_000,
+      rateLimitCooldownMs: 15_000,
+    };
+  }
+
+  getDashboardUrl(intentId: string): string | null {
+    if (!intentId) return null;
+    return `https://dashboard.stripe.com/payments/${intentId}`;
+  }
+
   // ============================================================
   // PRIVATE HELPERS
   // ============================================================

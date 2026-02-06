@@ -22,8 +22,33 @@ export const finalizeStates = {
           target: 'reconciling',
           actions: 'clearError',
         },
-        { target: 'failed', actions: 'setError' },
+        {
+          guard: 'isCircuitOpenError',
+          target: 'circuitOpen',
+          actions: ['setError', 'setCircuitOpenFromError'],
+        },
+        {
+          guard: 'isRateLimitedError',
+          target: 'rateLimited',
+          actions: ['setError', 'setRateLimitedFromError'],
+        },
+        {
+          guard: 'canRetryFinalize',
+          target: 'finalizeRetrying',
+          actions: ['incrementFinalizeRetry', 'setError'],
+        },
+        {
+          target: 'pendingManualReview',
+          actions: ['setError'],
+        },
       ],
+    },
+  },
+
+  finalizeRetrying: {
+    tags: ['loading', 'finalizeRetrying'],
+    after: {
+      finalizeRetryDelay: { target: 'finalizing' },
     },
   },
 } as const satisfies PaymentFlowStatesConfig;

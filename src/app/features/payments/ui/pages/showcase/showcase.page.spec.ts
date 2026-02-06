@@ -144,14 +144,14 @@ describe('ShowcaseComponent', () => {
       expect(card.expanded).toBe(false);
     });
 
-    it('should have fallbackModal event from catalog when providers exist', () => {
+    it('should have fallbackModal data from catalog when providers exist', () => {
       expect(component.fallbackModalOpen).toBe(false);
       expect(component.providerDescriptors().length).toBeGreaterThan(0);
-      const event = component.fallbackModalEvent();
-      expect(event).not.toBeNull();
-      if (event) {
-        expect(event.failedProvider).toBe(component.catalogProviderIds().p0);
-        expect(Array.isArray(event.alternativeProviders)).toBe(true);
+      const data = component.fallbackModalData();
+      expect(data).not.toBeNull();
+      if (data) {
+        expect(data.failureReason).toBe('provider_error');
+        expect(Array.isArray(data.eligibleProviders)).toBe(true);
       }
     });
   });
@@ -207,18 +207,16 @@ describe('ShowcaseComponent', () => {
       expect(component.orderSummary.items[1].price).toBe(100.0);
     });
 
-    it('should have fallbackEvent configured from catalog when providers exist', () => {
+    it('should have fallback data configured from catalog when providers exist', () => {
       expect(component.providerDescriptors().length).toBeGreaterThan(0);
-      const event = component.fallbackModalEvent();
-      expect(event).not.toBeNull();
-      if (event) {
-        expect(event.eventId).toBe('fb_demo_123');
-        expect(event.failedProvider).toBe(component.catalogProviderIds().p0);
-        expect(event.error.code).toBe('provider_error');
-        expect(event.alternativeProviders).toEqual(
+      const data = component.fallbackModalData();
+      expect(data).not.toBeNull();
+      if (data) {
+        expect(data.failureReason).toBe('provider_error');
+        expect(data.eligibleProviders).toEqual(
           component.catalogProviderIds().p1 ? [component.catalogProviderIds().p1] : [],
         );
-        expect(event.originalRequest.orderId.value).toBe('order_123');
+        expect(data.timeoutMs).toBe(30_000);
       }
     });
 

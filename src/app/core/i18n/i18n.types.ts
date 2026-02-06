@@ -18,6 +18,8 @@ export interface Translations {
     invalid_request: string;
     network_error: string;
     timeout: string;
+    rate_limited: string;
+    circuit_open: string;
 
     card_declined: string;
     expired_card: string;
@@ -91,6 +93,7 @@ export interface Translations {
     back: string;
     next: string;
     continue_action: string;
+    retry_verification: string;
 
     // Formularios
     select_provider: string;
@@ -107,6 +110,16 @@ export interface Translations {
     fallback_in_progress_title: string;
     fallback_in_progress_hint: string;
     fallback_auto_hint: string;
+    circuit_open_title: string;
+    circuit_open_hint: string;
+    circuit_half_open_hint: string;
+    rate_limited_title: string;
+    rate_limited_hint: string;
+    manual_review_title: string;
+    manual_review_hint: string;
+    manual_review_action: string;
+    all_providers_unavailable_title: string;
+    all_providers_unavailable_hint: string;
 
     // Errores y mensajes
     unknown_error: string;

@@ -109,7 +109,19 @@ export function setupPaymentFlowMachineBridge(
 
   /**
    * ============================================================
-   * Effect #2c: machine idle -> clear store so tests/UI see consistent idle
+   * Effect #2c: resilience states -> ready (silent)
+   * ============================================================
+   */
+  effect(() => {
+    const snapshot = machineSnapshot();
+    if (!snapshot.hasTag('resilience')) return;
+
+    applySilentFailureState(store);
+  });
+
+  /**
+   * ============================================================
+   * Effect #2d: machine idle -> clear store so tests/UI see consistent idle
    * ============================================================
    */
   effect(() => {

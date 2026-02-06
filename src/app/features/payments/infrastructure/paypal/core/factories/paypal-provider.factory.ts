@@ -113,6 +113,18 @@ export class PaypalProviderFactory implements ProviderFactory {
     return this.finalizeHandler;
   }
 
+  getResilienceConfig() {
+    return {
+      circuitOpenCooldownMs: 30_000,
+      rateLimitCooldownMs: 15_000,
+    };
+  }
+
+  getDashboardUrl(intentId: string): string | null {
+    if (!intentId) return null;
+    return `https://www.paypal.com/activity/payment/${intentId}`;
+  }
+
   // ============================================================
   // PRIVATE HELPERS
   // ============================================================

@@ -64,6 +64,8 @@ function mapErrorCodeToKey(code: PaymentErrorCode | undefined): string | null {
     provider_error: I18nKeys.errors.provider_error,
     network_error: I18nKeys.errors.network_error,
     timeout: I18nKeys.errors.timeout,
+    rate_limited: I18nKeys.errors.rate_limited,
+    circuit_open: I18nKeys.errors.circuit_open,
     processing_timeout: I18nKeys.errors.processing_timeout,
     unknown_error: I18nKeys.errors.unknown_error,
     currency_not_supported: I18nKeys.errors.currency_not_supported,

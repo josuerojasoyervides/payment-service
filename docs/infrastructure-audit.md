@@ -146,7 +146,7 @@ Tests PR3
 
 ## 4) Resilience
 
-### PR4a: Resilience Foundation
+### PR4a: Resilience Foundation ✅
 
 Scope: ~300 LOC | Depende de: PR3
 
@@ -185,7 +185,7 @@ Tests PR4a
 
 ---
 
-### PR4b: Resilience Machine States
+### PR4b: Resilience Machine States ✅
 
 Scope: ~400 LOC | Depende de: PR4a
 

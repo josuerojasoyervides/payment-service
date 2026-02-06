@@ -2,6 +2,7 @@ import type { Signal } from '@angular/core';
 import type {
   PaymentFlowStatus,
   PaymentsState,
+  ResilienceState,
 } from '@app/features/payments/application/orchestration/store/types/payment-store-state';
 import type { FallbackState } from '@app/features/payments/domain/subdomains/fallback/entities/fallback-state.model';
 import type { FallbackAvailableEvent } from '@app/features/payments/domain/subdomains/fallback/messages/fallback-available.event';
@@ -22,6 +23,10 @@ import type {
 import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 import type { RedirectReturnRaw } from '@payments/application/api/contracts/redirect-return.contract';
 import type { RedirectReturnedPayload } from '@payments/application/api/contracts/redirect-return-normalized.contract';
+import type {
+  FallbackConfirmationData,
+  ManualReviewData,
+} from '@payments/application/api/contracts/resilience.types';
 import type { StrategyContext } from '@payments/application/api/ports/payment-strategy.port';
 import type { PaymentHistoryEntry } from '@payments/application/orchestration/store/history/payment-store.history.types';
 
@@ -108,6 +113,18 @@ export interface PaymentFlowPortUi extends PaymentFlowPortCore {
   readonly isAutoFallback: Signal<boolean>;
   readonly pendingFallbackEvent: Signal<FallbackAvailableEvent | null>;
   readonly fallbackState: Signal<FallbackState>;
+  readonly resilienceState: Signal<ResilienceState>;
+  readonly resilienceStatus: Signal<ResilienceState['status']>;
+  readonly resilienceCooldownUntilMs: Signal<number | null>;
+  readonly fallbackConfirmation: Signal<FallbackConfirmationData | null>;
+  readonly manualReviewData: Signal<ManualReviewData | null>;
+  readonly isCircuitOpen: Signal<boolean>;
+  readonly isCircuitHalfOpen: Signal<boolean>;
+  readonly isRateLimited: Signal<boolean>;
+  readonly isFallbackConfirming: Signal<boolean>;
+  readonly isPendingManualReview: Signal<boolean>;
+  readonly isAllProvidersUnavailable: Signal<boolean>;
+  readonly canRetryClientConfirm: Signal<boolean>;
   readonly historyCount: Signal<number>;
   readonly lastHistoryEntry: Signal<PaymentHistoryEntry | null>;
   readonly history: Signal<PaymentHistoryEntry[]>;

@@ -29,7 +29,19 @@ export const cancelStates = {
         };
       },
       onDone: { target: 'done', actions: 'setIntent' },
-      onError: { target: 'failed', actions: 'setError' },
+      onError: [
+        {
+          guard: 'isCircuitOpenError',
+          target: 'circuitOpen',
+          actions: ['setError', 'setCircuitOpenFromError'],
+        },
+        {
+          guard: 'isRateLimitedError',
+          target: 'rateLimited',
+          actions: ['setError', 'setRateLimitedFromError'],
+        },
+        { target: 'failed', actions: 'setError' },
+      ],
     },
   },
 } as const satisfies PaymentFlowStatesConfig;

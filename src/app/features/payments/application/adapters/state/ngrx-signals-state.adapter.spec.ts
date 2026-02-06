@@ -10,6 +10,7 @@ import {
 import { ProviderDescriptorRegistry } from '@payments/application/orchestration/registry/provider-descriptor/provider-descriptor.registry';
 import { ProviderFactoryRegistry } from '@payments/application/orchestration/registry/provider-factory/provider-factory.registry';
 import { PaymentsStore } from '@payments/application/orchestration/store/payment-store';
+import { INITIAL_RESILIENCE_STATE } from '@payments/application/orchestration/store/types/payment-store-state';
 
 describe('NgRxSignalsStateAdapter', () => {
   let adapter: NgRxSignalsStateAdapter;
@@ -25,6 +26,7 @@ describe('NgRxSignalsStateAdapter', () => {
       selectedProvider: signal(null),
       currentRequest: signal(null),
       fallback: signal(INITIAL_FALLBACK_STATE),
+      resilience: signal(INITIAL_RESILIENCE_STATE),
       history: signal([]),
 
       // Computed signals
@@ -33,8 +35,30 @@ describe('NgRxSignalsStateAdapter', () => {
       hasError: signal(false),
       currentIntent: signal(null),
       currentError: signal(null),
+      requiresUserAction: signal(false),
+      isSucceeded: signal(false),
+      isProcessing: signal(false),
+      isFailed: signal(false),
+      canResume: signal(false),
+      resumeProviderId: signal(null),
+      resumeIntentId: signal(null),
       hasPendingFallback: signal(false),
+      isAutoFallbackInProgress: signal(false),
+      isFallbackExecuting: signal(false),
+      isAutoFallback: signal(false),
       pendingFallbackEvent: signal(null),
+      resilienceState: signal(INITIAL_RESILIENCE_STATE),
+      resilienceStatus: signal('idle'),
+      resilienceCooldownUntilMs: signal(null),
+      fallbackConfirmation: signal(null),
+      manualReviewData: signal(null),
+      isCircuitOpen: signal(false),
+      isCircuitHalfOpen: signal(false),
+      isRateLimited: signal(false),
+      isFallbackConfirming: signal(false),
+      isPendingManualReview: signal(false),
+      isAllProvidersUnavailable: signal(false),
+      canRetryClientConfirm: signal(false),
       historyCount: signal(0),
       lastHistoryEntry: signal(null),
       debugSummary: signal({
@@ -42,8 +66,13 @@ describe('NgRxSignalsStateAdapter', () => {
         intentId: null,
         provider: null,
         fallbackStatus: 'idle',
+        isAutoFallback: false,
         historyCount: 0,
       }),
+      debugStateNode: signal(null),
+      debugTags: signal([]),
+      debugLastEventType: signal(null),
+      debugLastEventPayload: signal(null),
 
       // Methods
       startPayment: vi.fn(),

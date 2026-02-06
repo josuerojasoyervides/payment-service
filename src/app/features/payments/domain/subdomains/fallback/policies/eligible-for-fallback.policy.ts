@@ -7,5 +7,6 @@ import type { PaymentError } from '@app/features/payments/domain/subdomains/paym
  * Based on configured trigger error codes — no i18n, no infra.
  */
 export function isEligibleForFallbackPolicy(config: FallbackConfig, error: PaymentError): boolean {
+  if (config.blockedErrorCodes.includes(error.code)) return false;
   return config.triggerErrorCodes.includes(error.code);
 }

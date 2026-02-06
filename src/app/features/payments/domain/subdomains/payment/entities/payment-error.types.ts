@@ -9,6 +9,8 @@ export const PAYMENT_ERROR_CODES = [
   'provider_error',
   'network_error',
   'timeout',
+  'rate_limited',
+  'circuit_open',
   'processing_timeout',
   'unknown_error',
   'currency_not_supported',

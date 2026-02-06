@@ -38,6 +38,21 @@ export function buildPaymentsSelectors(state: PaymentsSelectorsSource) {
     isAutoFallback: computed(() => state.fallback().isAutoFallback),
     pendingFallbackEvent: computed(() => state.fallback().pendingEvent),
 
+    // Resilience derived state
+    resilienceState: computed(() => state.resilience()),
+    resilienceStatus: computed(() => state.resilience().status),
+    resilienceCooldownUntilMs: computed(() => state.resilience().cooldownUntilMs),
+    fallbackConfirmation: computed(() => state.resilience().fallbackConfirmation),
+    manualReviewData: computed(() => state.resilience().manualReview),
+    isCircuitOpen: computed(() => state.resilience().status === 'circuit_open'),
+    isCircuitHalfOpen: computed(() => state.resilience().status === 'circuit_half_open'),
+    isRateLimited: computed(() => state.resilience().status === 'rate_limited'),
+    isFallbackConfirming: computed(() => state.resilience().status === 'fallback_confirming'),
+    isPendingManualReview: computed(() => state.resilience().status === 'pending_manual_review'),
+    isAllProvidersUnavailable: computed(
+      () => state.resilience().status === 'all_providers_unavailable',
+    ),
+
     // History
     historyCount: computed(() => state.history().length),
     lastHistoryEntry: computed(() => {

@@ -12,6 +12,7 @@ import type {
 import type { PaymentFlowConfig } from '@payments/application/orchestration/flow/payment-flow/policy/payment-flow.policy';
 import { normalizePaymentError } from '@payments/application/orchestration/store/projection/payment-store.errors';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
+import type { PaymentErrorCode } from '@payments/domain/subdomains/payment/entities/payment-error.types';
 import type { ActionFunction, Assigner, PropertyAssigner, ProvidedActor } from 'xstate';
 
 type AssignFn<TActor extends ProvidedActor> = (
@@ -45,6 +46,13 @@ function toPaymentIntentIdOrNull(
   return result.ok ? result.value : null;
 }
 
+const DEFAULT_RESILIENCE_CONTEXT = {
+  circuitCooldownMs: null,
+  circuitOpenedAt: null,
+  rateLimitCooldownMs: null,
+  rateLimitOpenedAt: null,
+} satisfies PaymentFlowMachineContext['resilience'];
+
 /**
  * Input setters.
  */
@@ -72,6 +80,9 @@ const createInputActions = <TActor extends ProvidedActor>(assignFlow: AssignFn<T
         request: null,
         selectedProviderId: null,
       },
+      resilience: DEFAULT_RESILIENCE_CONTEXT,
+      clientConfirmRetry: { count: 0, lastErrorCode: null },
+      finalizeRetry: { count: 0 },
       polling: { attempt: 0 },
       statusRetry: { count: 0 },
     };
@@ -198,6 +209,30 @@ const createInputActions = <TActor extends ProvidedActor>(assignFlow: AssignFn<T
       },
     };
   }),
+
+  setStartFromContext: assignFlow(({ context }) => {
+    if (!context.providerId || !context.request) return {};
+
+    return {
+      providerId: context.providerId,
+      request: context.request,
+      flowContext: context.flowContext,
+      intent: null,
+      intentId: null,
+      error: null,
+      fallback: {
+        eligible: false,
+        mode: 'manual',
+        failedProviderId: null,
+        request: null,
+        selectedProviderId: null,
+      },
+      clientConfirmRetry: { count: 0, lastErrorCode: null },
+      finalizeRetry: { count: 0 },
+      polling: { attempt: 0 },
+      statusRetry: { count: 0 },
+    };
+  }),
 });
 
 /**
@@ -222,6 +257,8 @@ const createIntentActions = <TActor extends ProvidedActor>(assignFlow: AssignFn<
       intentId: resolvedIntentId,
       flowContext,
       error: null,
+      clientConfirmRetry: { count: 0, lastErrorCode: null },
+      finalizeRetry: { count: 0 },
       polling: { attempt: 0 },
       statusRetry: { count: 0 },
     };
@@ -299,6 +336,72 @@ const createErrorActions = <TActor extends ProvidedActor>(
   }),
 
   clearError: assignFlow(() => ({ error: null })),
+
+  setCircuitOpen: assignFlow(({ context, event }) => {
+    if (event.type !== 'CIRCUIT_OPENED') return {};
+    const now = Date.now();
+    return {
+      error: null,
+      resilience: {
+        ...context.resilience,
+        circuitCooldownMs: event.cooldownMs ?? context.resilience.circuitCooldownMs,
+        circuitOpenedAt: now,
+      },
+    };
+  }),
+
+  setCircuitOpenFromError: assignFlow(({ context }) => {
+    const now = Date.now();
+    return {
+      error: null,
+      resilience: {
+        ...context.resilience,
+        circuitCooldownMs: context.resilience.circuitCooldownMs,
+        circuitOpenedAt: now,
+      },
+    };
+  }),
+
+  setRateLimited: assignFlow(({ context, event }) => {
+    if (event.type !== 'RATE_LIMITED') return {};
+    const now = Date.now();
+    return {
+      error: null,
+      resilience: {
+        ...context.resilience,
+        rateLimitCooldownMs: event.cooldownMs ?? context.resilience.rateLimitCooldownMs,
+        rateLimitOpenedAt: now,
+      },
+    };
+  }),
+
+  setRateLimitedFromError: assignFlow(({ context }) => {
+    const now = Date.now();
+    return {
+      error: null,
+      resilience: {
+        ...context.resilience,
+        rateLimitCooldownMs: context.resilience.rateLimitCooldownMs,
+        rateLimitOpenedAt: now,
+      },
+    };
+  }),
+
+  clearResilience: assignFlow(() => ({
+    resilience: DEFAULT_RESILIENCE_CONTEXT,
+  })),
+
+  setClientConfirmRetryError: assignFlow(({ context, event }) => {
+    if (!('error' in event)) return {};
+    const normalized = normalizePaymentError(event.error);
+    const code = normalized?.code ?? null;
+    return {
+      clientConfirmRetry: {
+        ...context.clientConfirmRetry,
+        lastErrorCode: code as PaymentErrorCode | null,
+      },
+    };
+  }),
 });
 
 /**
@@ -322,6 +425,9 @@ const createStateActions = <TActor extends ProvidedActor>(
       request: null,
       selectedProviderId: null,
     },
+    resilience: DEFAULT_RESILIENCE_CONTEXT,
+    clientConfirmRetry: { count: 0, lastErrorCode: null },
+    finalizeRetry: { count: 0 },
     polling: { attempt: 0 },
     statusRetry: { count: 0 },
   })),
@@ -336,6 +442,27 @@ const createStateActions = <TActor extends ProvidedActor>(
     statusRetry: {
       count: Math.min(context.statusRetry.count + 1, config.statusRetry.maxRetries),
     },
+  })),
+
+  incrementClientConfirmRetry: assignFlow(({ context }) => ({
+    clientConfirmRetry: {
+      ...context.clientConfirmRetry,
+      count: context.clientConfirmRetry.count + 1,
+    },
+  })),
+
+  resetClientConfirmRetry: assignFlow(() => ({
+    clientConfirmRetry: { count: 0, lastErrorCode: null },
+  })),
+
+  incrementFinalizeRetry: assignFlow(({ context }) => ({
+    finalizeRetry: {
+      count: context.finalizeRetry.count + 1,
+    },
+  })),
+
+  resetFinalizeRetry: assignFlow(() => ({
+    finalizeRetry: { count: 0 },
   })),
 });
 
