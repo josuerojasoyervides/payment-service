@@ -771,7 +771,7 @@ describe('CheckoutComponent', () => {
       );
     });
 
-    it('showProcessingPanel is true when flowPhase is processing; refreshProcessingStatus calls refreshPayment', () => {
+    it('showProcessingPanel is true when flowPhase is processing and manual refresh is hidden', () => {
       const processingIntent: PaymentIntent = {
         id: createPaymentIntentId('pi_123'),
         provider: 'stripe',
@@ -780,11 +780,7 @@ describe('CheckoutComponent', () => {
         clientSecret: 'secret',
       };
       const processingMock = createMockPaymentState({ intent: processingIntent });
-      const refreshPaymentSpy = vi.fn();
-      const mockWithProcessing = withCheckoutCatalog({
-        ...processingMock,
-        refreshPayment: refreshPaymentSpy,
-      });
+      const mockWithProcessing = withCheckoutCatalog(processingMock);
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
         imports: [CheckoutComponent, RouterLink],
@@ -801,11 +797,7 @@ describe('CheckoutComponent', () => {
       f.detectChanges();
       expect(c.showProcessingPanel()).toBe(true);
       expect(f.nativeElement.querySelector('[data-testid="processing-panel"]')).toBeTruthy();
-      c.refreshProcessingStatus();
-      expect(refreshPaymentSpy).toHaveBeenCalledWith(
-        { intentId: expect.objectContaining({ value: 'pi_123' }) },
-        'stripe',
-      );
+      expect(f.nativeElement.querySelector('[data-testid="processing-panel"] button')).toBeNull();
     });
   });
 });

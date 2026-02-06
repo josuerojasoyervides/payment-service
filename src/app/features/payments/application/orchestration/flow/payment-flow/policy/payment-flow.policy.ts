@@ -86,7 +86,9 @@ export function needsUserAction(intent?: PaymentIntent | null) {
   if (!intent) return false;
   const action = intent.nextAction;
   const actionable = action ? action.kind !== 'external_wait' : false;
-  return intent.status === 'requires_action' || !!intent.redirectUrl || actionable;
+  const statusRequiresAction =
+    intent.status === 'requires_action' || intent.status === 'requires_confirmation';
+  return statusRequiresAction || !!intent.redirectUrl || actionable;
 }
 
 export function needsClientConfirm(intent?: PaymentIntent | null): boolean {

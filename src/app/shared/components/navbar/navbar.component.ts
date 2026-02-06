@@ -2,11 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { I18nKeys, I18nService } from '@core/i18n';
 import { LanguageSelectorComponent } from '@shared/components/language-selector/language-selector.component';
+import { ThemeToggleComponent } from '@shared/components/theme-toggle/theme-toggle.component';
 
 /**
  * Simple, clean navbar component.
  *
- * Shows the application name and the language selector.
+ * Shows the application name, theme toggle, and the language selector.
  *
  * @example
  * ```html
@@ -16,7 +17,7 @@ import { LanguageSelectorComponent } from '@shared/components/language-selector/
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, LanguageSelectorComponent],
+  imports: [CommonModule, ThemeToggleComponent, LanguageSelectorComponent],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss'],
 })

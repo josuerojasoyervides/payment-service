@@ -297,5 +297,18 @@ describe('StatusComponent', () => {
       fixture.detectChanges();
       expect(component.flowState.error()).toEqual(mockError);
     });
+
+    it('should block search when processing', () => {
+      patchState(component.statusPageState, { intentId: 'pi_processing' });
+      (mockState.intent as ReturnType<typeof signal<PaymentIntent | null>>).set({
+        id: createPaymentIntentId('pi_processing'),
+        provider: 'stripe',
+        status: 'processing',
+        money: { amount: 100, currency: 'MXN' },
+      });
+      fixture.detectChanges();
+
+      expect(component.isSearchDisabled()).toBe(true);
+    });
   });
 });

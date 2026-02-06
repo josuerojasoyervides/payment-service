@@ -252,6 +252,7 @@ const createIntentActions = <TActor extends ProvidedActor>(assignFlow: AssignFn<
     });
 
     const resolvedIntentId = toPaymentIntentIdOrNull(providerRefs?.intentId ?? event.output.id);
+    const shouldResetPolling = event.output.status !== 'processing';
     return {
       intent: event.output,
       intentId: resolvedIntentId,
@@ -259,7 +260,7 @@ const createIntentActions = <TActor extends ProvidedActor>(assignFlow: AssignFn<
       error: null,
       clientConfirmRetry: { count: 0, lastErrorCode: null },
       finalizeRetry: { count: 0 },
-      polling: { attempt: 0 },
+      polling: shouldResetPolling ? { attempt: 0 } : context.polling,
       statusRetry: { count: 0 },
     };
   }),

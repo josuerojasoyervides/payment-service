@@ -56,6 +56,12 @@ export class PaymentResultComponent {
     return i !== null && i.status === 'succeeded';
   });
 
+  /** Whether payment is still processing */
+  readonly isProcessing = computed(() => {
+    const i = this.intent();
+    return i !== null && i.status === 'processing';
+  });
+
   /** Readable error message */
   readonly errorMessage = computed(() => {
     const error = this.error();
@@ -75,6 +81,18 @@ export class PaymentResultComponent {
     const i = this.intent();
     if (!i) return 'badge';
     return STATUS_BADGE_MAP[i.status] || 'badge';
+  });
+
+  /** Readable intent id */
+  readonly intentIdText = computed(() => {
+    const i = this.intent();
+    if (!i) return '';
+    const id = i.id as unknown;
+    if (typeof id === 'string') return id;
+    if (id && typeof id === 'object' && 'value' in id) {
+      return (id as { value: string }).value;
+    }
+    return String(id ?? '');
   });
 
   readonly paymentErrorTitle = computed(() => this.i18n.t(I18nKeys.ui.payment_error));

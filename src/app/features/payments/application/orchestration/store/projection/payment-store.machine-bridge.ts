@@ -60,7 +60,9 @@ export function setupPaymentFlowMachineBridge(
      *
      * This prevents UI/tests from getting stuck in loading.
      */
-    if (state === 'fetchingStatus' && machineIntent()) return;
+    if ((state === 'fetchingStatus' || state === 'fetchingStatusInvoke') && machineIntent()) {
+      return;
+    }
 
     applyLoadingState(store, machineProviderId() ?? undefined, machineRequest() ?? undefined);
   });

@@ -429,15 +429,6 @@ export class CheckoutComponent {
     this.state.refreshPayment({ intentId: result.value }, providerId);
   }
 
-  refreshProcessingStatus(): void {
-    const intent = this.state.intent();
-    const intentId = intent?.id ?? null;
-    const providerId = intent?.provider ?? this.state.selectedProvider();
-    if (intentId && providerId) {
-      this.state.refreshPayment({ intentId }, providerId);
-    }
-  }
-
   resetPayment(): void {
     this.state.reset();
 
