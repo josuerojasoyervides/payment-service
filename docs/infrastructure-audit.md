@@ -432,15 +432,15 @@ Tests PR7
 
 Scope: ~200 LOC | Depende de: PR7
 
-| Archivo                        | Contenido                         |
-| ------------------------------ | --------------------------------- |
-| docs/application-analysis.md   | Sección "Resilience Architecture" |
-| charts/resilience-flow.mermaid | Diagrama de estados               |
-| README.md                      | Overview resilience + fallback    |
+| Archivo                             | Contenido                               |
+| ----------------------------------- | --------------------------------------- |
+| docs/application-analysis.md        | Sección "Resilience Architecture"       |
+| charts/payment-flow-machine.mermaid | Diagrama de estados (bloque Resilience) |
+| README.md                           | Overview resilience + fallback          |
 
 ---
 
-## 9) Estados en Mermaid
+## 9) Estados en Mermaid ✅
 
 stateDiagram-v2
 [*] --> idle

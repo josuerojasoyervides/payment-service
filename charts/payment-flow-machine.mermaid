@@ -124,24 +124,29 @@ stateDiagram
     fb_starting
     fb_done
   }
-state Resilience{
-  [*] --> idle
+  state Resilience {
+    direction TB
+    [*] --> idle
 
-  idle --> starting: START
-  starting --> circuitOpen: CIRCUIT_OPENED
-  starting --> rateLimited: RATE_LIMIT_HIT
-  starting --> afterStart: SUCCESS
-  starting --> failed: ERROR
+    idle --> starting: START
+    starting --> circuitOpen: CIRCUIT_OPENED
+    starting --> rateLimited: RATE_LIMIT_HIT
+    starting --> afterStart: SUCCESS
+    starting --> failed: ERROR
 
-  circuitOpen --> halfOpen: COOLDOWN_EXPIRED
-  halfOpen --> starting: RETRY_PROBE
-  halfOpen --> circuitOpen: PROBE_FAILED
+    circuitOpen --> halfOpen: COOLDOWN_EXPIRED
+    halfOpen --> starting: RETRY_PROBE
+    halfOpen --> circuitOpen: PROBE_FAILED
 
-  rateLimited --> idle: RATE_LIMIT_RESET
+    rateLimited --> idle: RATE_LIMIT_RESET
 
-  failed --> fallbackConfirming: FALLBACK_ELIGIBLE
-  fallbackConfirming --> starting: FALLBACK_CONFIRMED
-}
+    failed --> fallbackConfirming: FALLBACK_ELIGIBLE
+    fallbackConfirming --> starting: FALLBACK_CONFIRMED
+    fallbackConfirming --> failed: FALLBACK_CANCELLED
+    fallbackConfirming --> failed: FALLBACK_TIMEOUT
+
+    afterStart --> pendingManualReview: FINALIZE_EXHAUSTED
+  }
   state Legend {
     direction LR
     [*] --> lg_loading
