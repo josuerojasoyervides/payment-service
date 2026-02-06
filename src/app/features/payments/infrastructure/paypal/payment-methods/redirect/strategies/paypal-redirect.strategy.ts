@@ -1,7 +1,4 @@
-import type {
-  CurrencyCode,
-  PaymentIntent,
-} from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
+import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
 import { invalidRequestError } from '@app/features/payments/domain/subdomains/payment/factories/payment-error.factory';
 import type { CreatePaymentRequest } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
@@ -16,6 +13,8 @@ import type {
   StrategyPrepareResult,
 } from '@payments/application/api/ports/payment-strategy.port';
 import type { PaypalAppContextDefaults } from '@payments/infrastructure/config/payments-infra-config.types';
+import { PAYPAL_CARD_VALIDATION_CONFIG } from '@payments/infrastructure/shared/validation/provider-validation.config';
+import { validateAmount } from '@payments/infrastructure/shared/validation/validate-amount';
 import {
   PAYMENT_ERROR_KEYS,
   PAYMENT_MESSAGE_KEYS,
@@ -52,38 +51,7 @@ export class PaypalRedirectStrategy implements PaymentStrategy {
    * - Minimum amounts vary by currency
    */
   validate(req: CreatePaymentRequest): void {
-    const supportedCurrencies: CurrencyCode[] = ['USD', 'MXN'];
-
-    // Currency must exist (usually validated by BasePaymentGateway),
-    // but we keep PayPal-specific rules here.
-    if (!req.money.currency || !supportedCurrencies.includes(req.money.currency)) {
-      throw invalidRequestError(
-        PAYMENT_ERROR_KEYS.CURRENCY_NOT_SUPPORTED,
-        {
-          field: 'currency',
-          provider: PAYMENT_PROVIDER_IDS.paypal,
-          supportedCount: supportedCurrencies.length,
-          currency: req.money.currency,
-        },
-        { currency: req.money.currency },
-      );
-    }
-
-    const minAmounts: Record<CurrencyCode, number> = {
-      USD: 1,
-      MXN: 10,
-    };
-
-    const minAmount = minAmounts[req.money.currency] ?? 1;
-
-    // Invalid amount or below PayPal minimum for the currency
-    if (!Number.isFinite(req.money.amount) || req.money.amount < minAmount) {
-      throw invalidRequestError(
-        PAYMENT_ERROR_KEYS.AMOUNT_INVALID,
-        { field: 'amount', min: minAmount, currency: req.money.currency },
-        { amount: req.money.amount, currency: req.money.currency, minAmount },
-      );
-    }
+    validateAmount(req.money, PAYPAL_CARD_VALIDATION_CONFIG);
 
     // Token is ignored in PayPal redirect flow (warn but do not fail)
     if (req.method?.token) {

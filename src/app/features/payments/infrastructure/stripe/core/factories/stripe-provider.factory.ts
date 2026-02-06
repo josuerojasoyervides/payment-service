@@ -10,6 +10,11 @@ import type { PaymentGatewayPort } from '@payments/application/api/ports/payment
 import type { PaymentStrategy } from '@payments/application/api/ports/payment-strategy.port';
 import type { ProviderFactory } from '@payments/application/api/ports/provider-factory.port';
 import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
+import {
+  STRIPE_CARD_VALIDATION_CONFIG,
+  STRIPE_SPEI_VALIDATION_CONFIG,
+} from '@payments/infrastructure/shared/validation/provider-validation.config';
+import { validateAmount } from '@payments/infrastructure/shared/validation/validate-amount';
 import { StripeCardRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/card/builders/stripe-card-request.builder';
 import { StripeSpeiRequestBuilder } from '@payments/infrastructure/stripe/payment-methods/spei/builders/stripe-spei-request.builder';
 import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
@@ -167,9 +172,19 @@ export class StripeProviderFactory implements ProviderFactory {
   private instantiateStrategy(type: PaymentMethodType): PaymentStrategy {
     switch (type) {
       case 'card':
-        return new CardStrategy(this.gateway, new StripeTokenValidatorPolicy(), this.logger);
+        return new CardStrategy(
+          this.gateway,
+          new StripeTokenValidatorPolicy(),
+          this.logger,
+          (money) => validateAmount(money, STRIPE_CARD_VALIDATION_CONFIG),
+        );
       case 'spei':
-        return new SpeiStrategy(this.gateway, this.logger, this.infraConfig.spei.displayConfig);
+        return new SpeiStrategy(
+          this.gateway,
+          this.logger,
+          this.infraConfig.spei.displayConfig,
+          (money) => validateAmount(money, STRIPE_SPEI_VALIDATION_CONFIG),
+        );
       default:
         throw invalidRequestError(PAYMENT_ERROR_KEYS.INVALID_REQUEST, {
           reason: 'unexpected_payment_method_type',

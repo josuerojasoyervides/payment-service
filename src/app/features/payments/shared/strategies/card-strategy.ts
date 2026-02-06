@@ -44,6 +44,7 @@ export class CardStrategy implements PaymentStrategy {
     private readonly gateway: PaymentGatewayPort,
     private readonly tokenValidator: TokenValidator = new NoopTokenValidator(),
     private readonly logger: LoggerService,
+    private readonly amountValidator?: (money: CreatePaymentRequest['money']) => void,
   ) {}
 
   /**
@@ -59,6 +60,11 @@ export class CardStrategy implements PaymentStrategy {
         throw invalidRequestError(PAYMENT_ERROR_KEYS.CARD_TOKEN_REQUIRED);
       }
       this.tokenValidator.validate(req.method.token);
+    }
+
+    if (this.amountValidator) {
+      this.amountValidator(req.money);
+      return;
     }
 
     const violations = validateCardAmount(req.money);

@@ -32,6 +32,16 @@ describe('renderPaymentError', () => {
     expect(renderPaymentError(i18n, error)).toBe(I18nKeys.errors.card_declined);
   });
 
+  it('maps amount validation error codes to min/max messages', () => {
+    const i18n = { t: (key: string) => key } as I18nService;
+    expect(renderPaymentError(i18n, { code: 'amount_below_minimum' })).toBe(
+      I18nKeys.errors.min_amount,
+    );
+    expect(renderPaymentError(i18n, { code: 'amount_above_maximum' })).toBe(
+      I18nKeys.errors.max_amount,
+    );
+  });
+
   it('prefers code mapping when messageKey is invalid', () => {
     const i18n = { t: (key: string) => key } as I18nService;
     const error = { code: 'timeout', messageKey: 'not a key' };

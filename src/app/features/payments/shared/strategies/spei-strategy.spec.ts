@@ -7,6 +7,8 @@ import {
 } from '@payments/application/api/testing/vo-test-helpers';
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
+import { STRIPE_SPEI_VALIDATION_CONFIG } from '@payments/infrastructure/shared/validation/provider-validation.config';
+import { validateAmount } from '@payments/infrastructure/shared/validation/validate-amount';
 import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import { SpeiStrategy } from '@payments/shared/strategies/spei-strategy';
 import { firstValueFrom, of } from 'rxjs';
@@ -57,7 +59,9 @@ describe('SpeiStrategy', () => {
       providers: [{ provide: LoggerService, useValue: loggerMock }],
     });
 
-    strategy = new SpeiStrategy(gatewayMock as any, loggerMock as any, displayConfig);
+    strategy = new SpeiStrategy(gatewayMock as any, loggerMock as any, displayConfig, (money) =>
+      validateAmount(money, STRIPE_SPEI_VALIDATION_CONFIG),
+    );
   });
 
   describe('validate()', () => {
@@ -65,8 +69,7 @@ describe('SpeiStrategy', () => {
       const req = { ...validReq, money: { amount: 100, currency: 'USD' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
-          code: 'invalid_request',
-          messageKey: PAYMENT_ERROR_KEYS.INVALID_REQUEST,
+          code: 'currency_not_supported',
         }),
       );
     });
@@ -75,8 +78,7 @@ describe('SpeiStrategy', () => {
       const req = { ...validReq, money: { amount: 0.5, currency: 'MXN' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
-          code: 'invalid_request',
-          messageKey: PAYMENT_ERROR_KEYS.MIN_AMOUNT,
+          code: 'amount_below_minimum',
         }),
       );
     });
@@ -85,8 +87,7 @@ describe('SpeiStrategy', () => {
       const req = { ...validReq, money: { amount: 10_000_000, currency: 'MXN' as const } };
       expect(() => strategy.validate(req)).toThrowError(
         expect.objectContaining({
-          code: 'invalid_request',
-          messageKey: PAYMENT_ERROR_KEYS.MAX_AMOUNT,
+          code: 'amount_above_maximum',
         }),
       );
     });
@@ -157,8 +158,7 @@ describe('SpeiStrategy', () => {
       // Error is thrown synchronously in start() before returning Observable
       expect(() => strategy.start(invalidReq)).toThrowError(
         expect.objectContaining({
-          code: 'invalid_request',
-          messageKey: PAYMENT_ERROR_KEYS.INVALID_REQUEST,
+          code: 'currency_not_supported',
         }),
       );
 
