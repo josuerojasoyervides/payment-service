@@ -394,8 +394,6 @@ describe('CheckoutComponent', () => {
         expect.any(Object),
         'stripe',
         expect.objectContaining({
-          returnUrl: expect.any(String),
-          cancelUrl: expect.any(String),
           isTest: expect.any(Boolean),
           deviceData: expect.any(Object),
         }),
@@ -442,8 +440,6 @@ describe('CheckoutComponent', () => {
         expect.any(Object),
         'stripe',
         expect.objectContaining({
-          returnUrl: expect.any(String),
-          cancelUrl: expect.any(String),
           isTest: expect.any(Boolean),
           deviceData: expect.any(Object),
         }),

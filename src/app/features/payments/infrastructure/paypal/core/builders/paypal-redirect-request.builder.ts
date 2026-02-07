@@ -80,9 +80,8 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
 
   protected override buildUnsafe(): CreatePaymentRequest {
     /**
-     * TODO: PaypalRedirectRequestBuilder - this isn't a hack, but should be it?
-     * This builder makes it explicit that PayPal does not have a card method,
-     * it uses card only as a compatibility label.
+     * PayPal does not expose a distinct "card" method in our domain model.
+     * We keep `type: 'card'` as the compatibility label used by the provider policy.
      */
     return {
       orderId: this.orderIdVo!,

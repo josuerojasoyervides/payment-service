@@ -1,4 +1,5 @@
 import { SPECIAL_TOKENS } from '@app/features/payments/infrastructure/fake/shared/constants/special-tokens';
+import { z } from 'zod';
 
 /**
  * Checks if token is special and determines behavior.
@@ -8,22 +9,24 @@ import { SPECIAL_TOKENS } from '@app/features/payments/infrastructure/fake/share
  * - With underscore: tok_3ds_abc
  * - Without underscore: tok_3ds123 (for backward compatibility)
  */
-export type TokenBehavior =
-  | 'success'
-  | '3ds'
-  | 'client_confirm'
-  | 'fail'
-  | 'timeout'
-  | 'decline'
-  | 'insufficient'
-  | 'expired'
-  | 'processing'
-  | 'circuit'
-  | 'rate_limit'
-  | 'retry_exhaust'
-  | 'half_open_fail'
-  | 'slow_response'
-  | 'normal';
+export const TokenBehaviorSchema = z.enum([
+  'success',
+  '3ds',
+  'client_confirm',
+  'fail',
+  'timeout',
+  'decline',
+  'insufficient',
+  'expired',
+  'processing',
+  'circuit',
+  'rate_limit',
+  'retry_exhaust',
+  'half_open_fail',
+  'slow_response',
+  'normal',
+]);
+export type TokenBehavior = z.infer<typeof TokenBehaviorSchema>;
 
 export function getTokenBehavior(token?: string): TokenBehavior {
   if (!token) return 'normal';

@@ -7,6 +7,7 @@ import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities
 import type { CancelPaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
+import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/core/dto/stripe.dto';
 import { StripeCancelIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/cancel-intent.gateway';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
@@ -39,6 +40,26 @@ describe('StripeCancelIntentGateway', () => {
       },
     },
   };
+
+  function buildStripeIntent(
+    overrides: Partial<StripePaymentIntentDto> = {},
+  ): StripePaymentIntentDto {
+    return {
+      id: 'pi_123',
+      object: 'payment_intent',
+      amount: 10000,
+      amount_received: 10000,
+      currency: 'mxn',
+      status: 'canceled',
+      client_secret: 'secret_123',
+      created: 1_700_000_000,
+      livemode: false,
+      payment_method_types: ['card'],
+      capture_method: 'automatic',
+      confirmation_method: 'automatic',
+      ...overrides,
+    };
+  }
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -86,12 +107,7 @@ describe('StripeCancelIntentGateway', () => {
 
     expect(transportReq.request.headers.get('Idempotency-Key')).toBe('idem_cancel_123');
 
-    transportReq.flush({
-      id: 'pi_123',
-      status: 'canceled',
-      amount: 10000,
-      currency: 'mxn',
-    });
+    transportReq.flush(buildStripeIntent());
   });
 
   it('propagates provider error when backend fails', () => {

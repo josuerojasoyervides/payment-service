@@ -9,6 +9,10 @@ import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
+import type {
+  StripePaymentIntentDto,
+  StripeSpeiSourceDto,
+} from '@payments/infrastructure/stripe/core/dto/stripe.dto';
 import { StripeCreateIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/create-intent.gateway';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
@@ -41,6 +45,46 @@ describe('StripeCreateIntentGateway', () => {
       },
     },
   };
+
+  function buildStripeIntent(
+    overrides: Partial<StripePaymentIntentDto> = {},
+  ): StripePaymentIntentDto {
+    return {
+      id: 'pi_1',
+      object: 'payment_intent',
+      amount: 10000,
+      amount_received: 10000,
+      currency: 'mxn',
+      status: 'requires_confirmation',
+      client_secret: 'secret_123',
+      created: 1_700_000_000,
+      livemode: false,
+      payment_method_types: ['card'],
+      capture_method: 'automatic',
+      confirmation_method: 'automatic',
+      ...overrides,
+    };
+  }
+
+  function buildSpeiSource(overrides: Partial<StripeSpeiSourceDto> = {}): StripeSpeiSourceDto {
+    return {
+      id: 'src_1',
+      object: 'source',
+      amount: 20000,
+      currency: 'mxn',
+      status: 'pending',
+      type: 'spei',
+      created: 1_700_000_000,
+      livemode: false,
+      spei: {
+        bank: 'STP',
+        clabe: '646180157000000000',
+        reference: '123456',
+      },
+      expires_at: 1234567890,
+      ...overrides,
+    };
+  }
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -99,12 +143,7 @@ describe('StripeCreateIntentGateway', () => {
 
     expect(transportReq.request.headers.get('Idempotency-Key')).toBe('idem_123');
 
-    transportReq.flush({
-      id: 'pi_1',
-      status: 'requires_confirmation',
-      amount: 10000,
-      currency: 'mxn',
-    });
+    transportReq.flush(buildStripeIntent());
   });
 
   it('POST /sources for SPEI payments', () => {
@@ -135,14 +174,15 @@ describe('StripeCreateIntentGateway', () => {
       [SPEI_RAW_KEYS.BANK]: 'STP',
     };
 
-    transportReq.flush({
-      id: 'src_1',
-      status: 'pending',
-      amount: 20000,
-      currency: 'mxn',
-      expires_at: 1234567890,
-      spei,
-    });
+    transportReq.flush(
+      buildSpeiSource({
+        spei: {
+          bank: spei[SPEI_RAW_KEYS.BANK],
+          clabe: spei[SPEI_RAW_KEYS.CLABE],
+          reference: spei[SPEI_RAW_KEYS.REFERENCE],
+        },
+      }),
+    );
   });
 
   it('propagates provider error when backend fails', () => {

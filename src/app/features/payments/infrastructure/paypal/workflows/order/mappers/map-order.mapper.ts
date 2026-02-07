@@ -3,7 +3,8 @@ import type { PaymentProviderId } from '@app/features/payments/domain/subdomains
 import type { PaypalOrderDto } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { findPaypalLink } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
-import { STATUS_MAP } from '@payments/infrastructure/paypal/workflows/order/mappers/status.mapper';
+import { mapPaypalOrderStatus } from '@payments/infrastructure/paypal/workflows/order/mappers/status.mapper';
+import { match } from 'ts-pattern';
 
 function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
   const result = PaymentIntentId.from(raw);
@@ -12,7 +13,7 @@ function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {
 }
 
 export function mapOrder(dto: PaypalOrderDto, providerId: PaymentProviderId): PaymentIntent {
-  const status = STATUS_MAP[dto.status] ?? 'processing';
+  const status = mapPaypalOrderStatus(dto.status);
   const purchaseUnit = dto.purchase_units[0];
 
   const amount = parseFloat(purchaseUnit?.amount?.value ?? '0');
@@ -26,15 +27,17 @@ export function mapOrder(dto: PaypalOrderDto, providerId: PaymentProviderId): Pa
     raw: dto,
   };
 
-  if (dto.status === 'CREATED' || dto.status === 'PAYER_ACTION_REQUIRED') {
-    const approveUrl = findPaypalLink(dto.links, 'approve');
-    if (approveUrl) {
-      intent.redirectUrl = approveUrl;
-      // Do not build nextAction here - PaypalRedirectStrategy.enrichIntentWithPaypalApproval
-      // will build it with the correct URLs from StrategyContext (metadata)
-      // If we needed to build here, we'd require access to the original request (returnUrl/cancelUrl)
-    }
-  }
+  match(dto.status)
+    .with('CREATED', 'PAYER_ACTION_REQUIRED', () => {
+      const approveUrl = findPaypalLink(dto.links, 'approve');
+      if (approveUrl) {
+        intent.redirectUrl = approveUrl;
+        // Do not build nextAction here - PaypalRedirectStrategy.enrichIntentWithPaypalApproval
+        // will build it with the correct URLs from StrategyContext (metadata)
+        // If we needed to build here, we'd require access to the original request (returnUrl/cancelUrl)
+      }
+    })
+    .otherwise(() => undefined);
 
   return intent;
 }

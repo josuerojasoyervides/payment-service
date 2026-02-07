@@ -68,4 +68,9 @@ describe('StripeWebhookNormalizer', () => {
     const result = normalizer.normalize(payload, {});
     expect(result).toBeNull();
   });
+
+  it('returns null for invalid payloads', () => {
+    const result = normalizer.normalize({} as StripePaymentIntentWebhookEvent, {});
+    expect(result).toBeNull();
+  });
 });

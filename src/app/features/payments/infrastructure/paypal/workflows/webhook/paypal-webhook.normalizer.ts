@@ -3,6 +3,8 @@ import type { ProviderReferences } from '@app/features/payments/domain/subdomain
 import type { NormalizedWebhookEvent } from '@app/features/payments/domain/subdomains/payment/messages/payment-webhook.event';
 import type { WebhookNormalizer } from '@app/features/payments/domain/subdomains/payment/ports/payment-webhook-normalizer/payment-webhook-normalizer.port';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
+import { match } from 'ts-pattern';
+import { z } from 'zod';
 
 /**
  * Minimal PayPal webhook event DTO for Orders/Captures events.
@@ -10,15 +12,16 @@ import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provide
  * Based on:
  * PayPal webhooks docs (events)
  */
-export interface PaypalWebhookEvent {
-  id: string;
-  event_type: string;
-  create_time: string; // ISO date
-  resource: {
-    id: string;
-    status?: string;
-  };
-}
+export const PaypalWebhookEventSchema = z.object({
+  id: z.string(),
+  event_type: z.string(),
+  create_time: z.string().datetime({ offset: true }),
+  resource: z.object({
+    id: z.string(),
+    status: z.string().optional(),
+  }),
+});
+export type PaypalWebhookEvent = z.infer<typeof PaypalWebhookEventSchema>;
 
 type PaypalWebhookHeaders = Record<string, string | string[]>;
 
@@ -30,13 +33,15 @@ export class PaypalWebhookNormalizer implements WebhookNormalizer<
     payload: PaypalWebhookEvent,
     headers: PaypalWebhookHeaders,
   ): NormalizedWebhookEvent | null {
-    if (!payload || !payload.event_type || !payload.resource?.id) return null;
+    const parsed = PaypalWebhookEventSchema.safeParse(payload);
+    if (!parsed.success) return null;
+    const event = parsed.data;
 
     // Placeholder for signature verification (PR5.6).
-    if (!this.isSignatureValid(payload, headers)) return null;
+    if (!this.isSignatureValid(event, headers)) return null;
 
     // We only care about order/capture events relevant to the payment flow.
-    const type = payload.event_type;
+    const type = event.event_type;
     const isOrderEvent = type.startsWith('CHECKOUT.ORDER.');
     const isCaptureEvent = type.startsWith('PAYMENT.CAPTURE.');
 
@@ -44,30 +49,30 @@ export class PaypalWebhookNormalizer implements WebhookNormalizer<
 
     const providerRefs: ProviderReferences = {
       [PAYMENT_PROVIDER_IDS.paypal]: {
-        orderId: payload.resource.id,
+        orderId: event.resource.id,
       },
     };
 
-    const status = mapPaypalStatus(payload.resource.status, type);
+    const status = mapPaypalStatus(event.resource.status, type);
 
-    const occurredAt = Date.parse(payload.create_time);
+    const occurredAt = parseWebhookTimestamp(event.create_time);
 
     return {
-      eventId: payload.id,
+      eventId: event.id,
       providerId: PAYMENT_PROVIDER_IDS.paypal,
       providerRefs,
       status,
-      occurredAt: Number.isNaN(occurredAt) ? Date.now() : occurredAt,
+      occurredAt,
       raw: {
-        id: payload.id,
-        event_type: payload.event_type,
-        resource_status: payload.resource.status,
+        id: event.id,
+        event_type: event.event_type,
+        resource_status: event.resource.status,
       },
     };
   }
 
   private isSignatureValid(_payload: PaypalWebhookEvent, _headers: PaypalWebhookHeaders): boolean {
-    // TODO(PR5): verify PayPal signature (backend responsibility).
+    // Signature verification is handled by the backend webhook endpoint.
     return true;
   }
 }
@@ -76,26 +81,31 @@ function mapPaypalStatus(
   status: string | undefined,
   eventType: string,
 ): PaymentIntentStatus | undefined {
-  if (!status) {
-    // Approximate based on event type when status is missing.
-    if (eventType.endsWith('.COMPLETED')) return 'succeeded';
-    if (eventType.endsWith('.APPROVED')) return 'processing';
-    return undefined;
+  const normalized = status?.toUpperCase();
+
+  if (!normalized) {
+    return match(eventType)
+      .returnType<PaymentIntentStatus | undefined>()
+      .when(
+        (type) => type.endsWith('.COMPLETED'),
+        () => 'succeeded',
+      )
+      .when(
+        (type) => type.endsWith('.APPROVED'),
+        () => 'processing',
+      )
+      .otherwise(() => undefined);
   }
 
-  const upper = status.toUpperCase();
+  return match(normalized)
+    .returnType<PaymentIntentStatus | undefined>()
+    .with('COMPLETED', 'CAPTURED', () => 'succeeded')
+    .with('PENDING', 'APPROVED', 'SAVED', () => 'processing')
+    .with('VOIDED', 'DENIED', () => 'failed')
+    .otherwise(() => undefined);
+}
 
-  if (upper === 'COMPLETED' || upper === 'CAPTURED') {
-    return 'succeeded';
-  }
-
-  if (upper === 'PENDING' || upper === 'APPROVED' || upper === 'SAVED') {
-    return 'processing';
-  }
-
-  if (upper === 'VOIDED' || upper === 'DENIED') {
-    return 'failed';
-  }
-
-  return undefined;
+function parseWebhookTimestamp(value: string): number {
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? Date.now() : parsed;
 }

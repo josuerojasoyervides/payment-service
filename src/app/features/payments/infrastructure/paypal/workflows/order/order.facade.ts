@@ -28,7 +28,7 @@ import type { Observable } from 'rxjs';
 export class PaypalIntentFacade implements PaymentGatewayPort {
   readonly providerId = PAYMENT_PROVIDER_IDS.paypal;
 
-  // TODO : should all this gateways be renamed to order or they are still intent gateways?
+  // Gateway class names keep the "intent" suffix to align with PaymentGatewayPort.
   private readonly createIntentOp = inject(PaypalCreateIntentGateway);
   private readonly confirmIntentOp = inject(PaypalConfirmIntentGateway);
   private readonly cancelIntentOp = inject(PaypalCancelIntentGateway);

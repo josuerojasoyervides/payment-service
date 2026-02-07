@@ -8,11 +8,14 @@ import type {
   StripeConfirmIntentRequest,
   StripePaymentIntentDto,
 } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import { StripePaymentIntentSchema } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
 import { mapStripeGatewayError } from '@app/features/payments/infrastructure/stripe/shared/errors/stripe-gateway-error.mapper';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import type { PaymentError } from '@payments/domain/subdomains/payment/entities/payment-error.model';
+import { createPaymentError } from '@payments/domain/subdomains/payment/factories/payment-error.factory';
 import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { mapPaymentIntent } from '@payments/infrastructure/stripe/workflows/intent/mappers/payment-intent.mapper';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import type { Observable } from 'rxjs';
@@ -54,7 +57,16 @@ export class StripeConfirmIntentGateway extends PaymentOperationPort<
   }
 
   protected mapResponse(dto: StripePaymentIntentDto): PaymentIntent {
-    return mapPaymentIntent(dto, this.providerId);
+    const parsed = StripePaymentIntentSchema.safeParse(dto);
+    if (!parsed.success) {
+      throw createPaymentError(
+        'provider_error',
+        PAYMENT_ERROR_KEYS.PROVIDER_ERROR,
+        { reason: 'invalid_provider_payload' },
+        dto,
+      );
+    }
+    return mapPaymentIntent(parsed.data, this.providerId);
   }
 
   protected override handleError(err: unknown): PaymentError {

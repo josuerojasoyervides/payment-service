@@ -5,13 +5,9 @@ import type {
   PaymentIntent,
 } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentMethodType } from '@app/features/payments/domain/subdomains/payment/entities/payment-method.types';
-import type { PaymentOptions } from '@app/features/payments/domain/subdomains/payment/entities/payment-options.model';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { I18nKeys } from '@core/i18n';
-import type {
-  FieldRequirements,
-  FieldType,
-} from '@payments/application/api/contracts/checkout-field-requirements.types';
+import type { FieldRequirements } from '@payments/application/api/contracts/checkout-field-requirements.types';
 import type { ProviderDescriptor } from '@payments/application/api/ports/payment-store.port';
 
 /**
@@ -203,34 +199,3 @@ export const ACTION_REQUIRED_STATUSES = new Set<PaymentIntent['status']>([
   'requires_confirmation',
   'requires_action',
 ]);
-
-/**
- * Payment form field configuration.
- */
-// TODO : Move this interface to the ui layer.
-// TODO : check this interface and its usage in the ui layer.
-export interface FieldConfig {
-  /** Field name (key in PaymentOptions) */
-  name: keyof PaymentOptions;
-
-  /** Label to display in UI */
-  label: string;
-
-  /** Whether required for this provider/method */
-  required: boolean;
-
-  /** Input type */
-  type: FieldType;
-
-  /** Input placeholder */
-  placeholder?: string;
-
-  /** Default value */
-  defaultValue?: string;
-
-  /**
-   * If 'hidden', UI must provide it but not display it.
-   * E.g., returnUrl can be the current URL
-   */
-  autoFill?: 'currentUrl' | 'none';
-}

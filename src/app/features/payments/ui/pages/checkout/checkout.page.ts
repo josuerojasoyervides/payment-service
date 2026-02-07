@@ -368,8 +368,6 @@ export class CheckoutComponent {
       });
 
       const context: StrategyContext = {
-        returnUrl: this.buildReturnUrl(),
-        cancelUrl: this.buildCancelUrl(),
         isTest: this.isDevMode,
         deviceData: {
           userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
@@ -476,16 +474,5 @@ export class CheckoutComponent {
     healthUnavailable: this.i18n.t(I18nKeys.ui.health_unavailable),
   }));
 
-  // TODO : This is orchestration layer responsibility, not UI layer
-  private buildReturnUrl(): string {
-    if (typeof window === 'undefined') return '';
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/payments/return`;
-  }
-
-  private buildCancelUrl(): string {
-    if (typeof window === 'undefined') return '';
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/payments/cancel`;
-  }
+  // Return/cancel URLs are resolved in the orchestration layer.
 }

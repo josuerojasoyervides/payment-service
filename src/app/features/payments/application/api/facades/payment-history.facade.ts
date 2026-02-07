@@ -2,8 +2,6 @@ import { inject, Injectable } from '@angular/core';
 import { PAYMENT_STATE } from '@app/features/payments/application/api/tokens/store/payment-state.token';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
-
-// TODO : Check what this facade is used for and if it's still needed
 @Injectable({ providedIn: 'root' })
 export class PaymentHistoryFacade {
   private readonly state = inject(PAYMENT_STATE);

@@ -5,6 +5,7 @@ import { createPaymentError } from '@payments/domain/subdomains/payment/factorie
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 import type { ProviderValidationConfig } from './provider-validation-config.types';
+import { ProviderValidationConfigSchema } from './provider-validation-config.types';
 
 const MAX_SAFE_AMOUNT = Number.MAX_SAFE_INTEGER;
 
@@ -75,5 +76,10 @@ export function getProviderValidationConfig(
     });
   }
 
-  return config;
+  const parsed = ProviderValidationConfigSchema.safeParse(config);
+  if (!parsed.success) {
+    return config;
+  }
+
+  return parsed.data;
 }

@@ -69,4 +69,9 @@ describe('PaypalWebhookNormalizer', () => {
     const result = normalizer.normalize(payload, {});
     expect(result).toBeNull();
   });
+
+  it('returns null for invalid payloads', () => {
+    const result = normalizer.normalize({} as PaypalWebhookEvent, {});
+    expect(result).toBeNull();
+  });
 });

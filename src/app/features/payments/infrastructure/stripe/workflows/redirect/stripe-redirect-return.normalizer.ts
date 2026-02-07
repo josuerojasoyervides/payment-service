@@ -3,12 +3,19 @@ import type { RedirectReturnedPayload } from '@app/features/payments/application
 import type { RedirectReturnNormalizerPort } from '@app/features/payments/application/api/ports/redirect-return-normalizer.port';
 import type { PaymentProviderId } from '@app/features/payments/domain/subdomains/payment/entities/payment-provider.types';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
+import { z } from 'zod';
+
+const RedirectReturnRawSchema = z.object({
+  query: z.record(z.string(), z.union([z.string(), z.array(z.string())])),
+});
 
 export class StripeRedirectReturnNormalizer implements RedirectReturnNormalizerPort {
   readonly providerId: PaymentProviderId = PAYMENT_PROVIDER_IDS.stripe;
 
   normalize(raw: RedirectReturnRaw): RedirectReturnedPayload | null {
-    const query = raw?.query;
+    const parsed = RedirectReturnRawSchema.safeParse(raw);
+    if (!parsed.success) return null;
+    const query = parsed.data.query;
     if (!query) return null;
 
     const referenceId = readLast(query, 'payment_intent') ?? readLast(query, 'setup_intent');

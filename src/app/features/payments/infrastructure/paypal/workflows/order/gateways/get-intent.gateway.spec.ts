@@ -6,6 +6,7 @@ import { createPaymentIntentId } from '@payments/application/api/testing/vo-test
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
+import type { PaypalOrderDto } from '@payments/infrastructure/paypal/core/dto/paypal.dto';
 import { PaypalGetIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/get-intent.gateway';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { TEST_PAYMENTS_BASE_URL } from '@payments/shared/testing/fixtures/test-urls';
@@ -37,6 +38,27 @@ describe('PaypalGetIntentGateway', () => {
       },
     },
   };
+
+  function buildPaypalOrder(overrides: Partial<PaypalOrderDto> = {}): PaypalOrderDto {
+    return {
+      id: 'pi_123',
+      status: 'COMPLETED',
+      intent: 'CAPTURE',
+      create_time: '2026-01-29T00:00:00Z',
+      update_time: '2026-01-29T00:00:01Z',
+      links: [],
+      purchase_units: [
+        {
+          reference_id: 'order_demo',
+          amount: {
+            value: '200.00',
+            currency_code: 'MXN',
+          },
+        },
+      ],
+      ...overrides,
+    };
+  }
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -76,19 +98,7 @@ describe('PaypalGetIntentGateway', () => {
     );
     expect(req.request.method).toBe('GET');
 
-    req.flush({
-      id: 'pi_123',
-      status: 'COMPLETED',
-      purchase_units: [
-        {
-          amount: {
-            value: '200.00',
-            currency_code: 'MXN',
-          },
-        },
-      ],
-      links: [],
-    });
+    req.flush(buildPaypalOrder());
   });
 
   it('propagates provider error when backend fails', () => {
@@ -108,5 +118,22 @@ describe('PaypalGetIntentGateway', () => {
     expect(req.request.method).toBe('GET');
 
     req.flush({ message: 'Paypal error' }, { status: 500, statusText: 'Internal Server Error' });
+  });
+
+  it('emits provider_error when payload is invalid', () => {
+    gateway.execute({ intentId: createPaymentIntentId('pi_invalid') }).subscribe({
+      next: () => {
+        expect.fail('Expected error');
+      },
+      error: (err: { code?: string; messageKey?: string }) => {
+        expect(err.code).toBe('provider_error');
+        expect(err.messageKey).toBe('errors.provider_error');
+      },
+    });
+
+    const req = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.paypal}/orders/pi_invalid`,
+    );
+    req.flush({ id: 'pi_invalid' });
   });
 });

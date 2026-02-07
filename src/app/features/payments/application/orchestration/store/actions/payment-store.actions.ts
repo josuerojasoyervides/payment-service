@@ -8,6 +8,7 @@ import type {
 } from '@app/features/payments/domain/subdomains/payment/messages/payment-request.command';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import type { PaymentFlowActorService } from '@payments/application/orchestration/flow/payment-flow.actor.service';
+import { ensureFlowContextUrls } from '@payments/application/orchestration/flow/payment-flow/context/payment-flow.context';
 import type { PaymentsStoreContext } from '@payments/application/orchestration/store/types/payment-store.types';
 import { ignoreElements, pipe, tap } from 'rxjs';
 
@@ -23,11 +24,12 @@ export function createPaymentsStoreActions(store: PaymentsStoreContext, deps: Pa
   }>(
     pipe(
       tap(({ request, providerId, context }) => {
+        const flowContext = ensureFlowContextUrls(context);
         const accepted = deps.stateMachine.send({
           type: 'START',
           providerId,
           request,
-          flowContext: context,
+          flowContext: flowContext ?? undefined,
         });
 
         if (!accepted) return;

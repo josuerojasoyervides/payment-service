@@ -6,6 +6,7 @@ import { createPaymentIntentId } from '@payments/application/api/testing/vo-test
 import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
+import type { StripePaymentIntentDto } from '@payments/infrastructure/stripe/core/dto/stripe.dto';
 import { StripeGetIntentGateway } from '@payments/infrastructure/stripe/workflows/intent/gateways/intent/get-intent.gateway';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
@@ -38,6 +39,26 @@ describe('StripeGetIntentGateway', () => {
       },
     },
   };
+
+  function buildStripeIntent(
+    overrides: Partial<StripePaymentIntentDto> = {},
+  ): StripePaymentIntentDto {
+    return {
+      id: 'pi_123',
+      object: 'payment_intent',
+      amount: 20000,
+      amount_received: 20000,
+      currency: 'mxn',
+      status: 'succeeded',
+      client_secret: 'secret_123',
+      created: 1_700_000_000,
+      livemode: false,
+      payment_method_types: ['card'],
+      capture_method: 'automatic',
+      confirmation_method: 'automatic',
+      ...overrides,
+    };
+  }
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -81,15 +102,13 @@ describe('StripeGetIntentGateway', () => {
       `${PAYMENT_PROVIDER_IDS.stripe}:get:pi_123`,
     );
 
-    req.flush({
-      id: 'pi_123',
-      status: 'succeeded',
-      amount: 20000,
-      currency: 'mxn',
-      metadata: {
-        order_id: 'order_123',
-      },
-    });
+    req.flush(
+      buildStripeIntent({
+        metadata: {
+          order_id: 'order_123',
+        },
+      }),
+    );
   });
 
   it('propagates provider error when backend fails', () => {
@@ -141,5 +160,22 @@ describe('StripeGetIntentGateway', () => {
     expect(capturedMessageKey).toBeUndefined();
     expect(req.cancelled).toBe(true);
     vi.useRealTimers();
+  });
+
+  it('emits provider_error when payload is invalid', () => {
+    gateway.execute({ intentId: createPaymentIntentId('pi_invalid') }).subscribe({
+      next: () => {
+        expect.fail('Expected error');
+      },
+      error: (err: { code?: string; messageKey?: string }) => {
+        expect(err.code).toBe('provider_error');
+        expect(err.messageKey).toBe('errors.provider_error');
+      },
+    });
+
+    const req = transportMock.expectOne(
+      `${TEST_PAYMENTS_BASE_URL}/${PAYMENT_PROVIDER_IDS.stripe}/intents/pi_invalid`,
+    );
+    req.flush({ id: 'pi_invalid' });
   });
 });

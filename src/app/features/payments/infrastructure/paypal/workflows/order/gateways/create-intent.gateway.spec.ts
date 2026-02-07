@@ -8,6 +8,7 @@ import type { PaymentIntent } from '@payments/domain/subdomains/payment/entities
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import type { PaymentsInfraConfigInput } from '@payments/infrastructure/config/payments-infra-config.types';
 import { providePaymentsInfraConfig } from '@payments/infrastructure/config/provide-payments-infra-config';
+import type { PaypalOrderDto } from '@payments/infrastructure/paypal/core/dto/paypal.dto';
 import { PaypalCreateIntentGateway } from '@payments/infrastructure/paypal/workflows/order/gateways/create-intent.gateway';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
@@ -45,6 +46,33 @@ describe('PaypalCreateIntentGateway', () => {
       },
     },
   };
+
+  function buildPaypalOrder(overrides: Partial<PaypalOrderDto> = {}): PaypalOrderDto {
+    return {
+      id: 'ORDER_1',
+      status: 'CREATED',
+      intent: 'CAPTURE',
+      create_time: '2026-02-06T00:00:00Z',
+      update_time: '2026-02-06T00:00:01Z',
+      links: [
+        {
+          rel: 'approve',
+          href: TEST_PAYPAL_APPROVE_URL,
+          method: 'GET',
+        },
+      ],
+      purchase_units: [
+        {
+          reference_id: 'order_1',
+          amount: {
+            value: '100.00',
+            currency_code: 'MXN',
+          },
+        },
+      ],
+      ...overrides,
+    };
+  }
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -122,24 +150,7 @@ describe('PaypalCreateIntentGateway', () => {
       },
     });
 
-    transportReq.flush({
-      id: 'ORDER_1',
-      status: 'CREATED',
-      purchase_units: [
-        {
-          amount: {
-            value: '100.00',
-            currency_code: 'MXN',
-          },
-        },
-      ],
-      links: [
-        {
-          rel: 'approve',
-          href: TEST_PAYPAL_APPROVE_URL,
-        },
-      ],
-    });
+    transportReq.flush(buildPaypalOrder());
     vi.useRealTimers();
   });
 

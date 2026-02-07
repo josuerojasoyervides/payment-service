@@ -9,11 +9,14 @@ import type {
   PaypalCreateOrderRequest,
   PaypalOrderDto,
 } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
+import { PaypalOrderDtoSchema } from '@app/features/payments/infrastructure/paypal/core/dto/paypal.dto';
 import { PaymentOperationPort } from '@payments/application/api/ports/payment-operation.port';
 import type { PaymentError } from '@payments/domain/subdomains/payment/entities/payment-error.model';
+import { createPaymentError } from '@payments/domain/subdomains/payment/factories/payment-error.factory';
 import { PAYMENTS_INFRA_CONFIG } from '@payments/infrastructure/config/payments-infra-config.token';
 import { mapPaypalGatewayError } from '@payments/infrastructure/paypal/shared/errors/mappers/paypal-gateway-error.mapper';
 import { mapOrder } from '@payments/infrastructure/paypal/workflows/order/mappers/map-order.mapper';
+import { PAYMENT_ERROR_KEYS } from '@payments/shared/constants/payment-error-keys';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 import { IdempotencyKeyFactory } from '@payments/shared/idempotency/idempotency-key.factory';
 import type { Observable } from 'rxjs';
@@ -48,11 +51,18 @@ export class PaypalCreateIntentGateway extends PaymentOperationPort<
       .pipe(timeout({ each: this.config.paypal.timeoutMs }));
   }
   protected mapResponse(dto: PaypalOrderDto): PaymentIntent {
-    return mapOrder(dto, this.providerId);
+    const parsed = PaypalOrderDtoSchema.safeParse(dto);
+    if (!parsed.success) {
+      throw createPaymentError(
+        'provider_error',
+        PAYMENT_ERROR_KEYS.PROVIDER_ERROR,
+        { reason: 'invalid_provider_payload' },
+        dto,
+      );
+    }
+    return mapOrder(parsed.data, this.providerId);
   }
 
-  // TODO : This mocked method should not exist if we are using the fake gateway
-  // TODO : Check if this method is working as expected.
   private buildPaypalCreateRequest(req: CreatePaymentRequest): PaypalCreateOrderRequest {
     // returnUrl/cancelUrl must come from the prepared request (PaypalRedirectStrategy.prepare)
     // which uses StrategyContext as the ONLY source

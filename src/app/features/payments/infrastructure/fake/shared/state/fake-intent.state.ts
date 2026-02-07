@@ -3,14 +3,20 @@ import type { CreatePaymentRequest } from '@app/features/payments/domain/subdoma
 import { generateId } from '@app/features/payments/infrastructure/fake/shared/helpers/get-id.helper';
 import type { TokenBehavior } from '@app/features/payments/infrastructure/fake/shared/helpers/get-token-behavior';
 import { getTokenBehavior } from '@app/features/payments/infrastructure/fake/shared/helpers/get-token-behavior';
+import { TokenBehaviorSchema } from '@app/features/payments/infrastructure/fake/shared/helpers/get-token-behavior';
+import { CURRENCY_CODES } from '@payments/domain/common/primitives/money/currency.types';
+import { PAYMENT_METHOD_TYPES } from '@payments/domain/subdomains/payment/entities/payment-method.types';
+import { z } from 'zod';
 
 /** Stripe-compatible status for DTO mapping. */
-export type FakeIntentStatus =
-  | 'requires_confirmation'
-  | 'requires_action'
-  | 'processing'
-  | 'succeeded'
-  | 'canceled';
+export const FakeIntentStatusSchema = z.enum([
+  'requires_confirmation',
+  'requires_action',
+  'processing',
+  'succeeded',
+  'canceled',
+]);
+export type FakeIntentStatus = z.infer<typeof FakeIntentStatusSchema>;
 
 export interface FakeIntentState {
   intentId: string;
@@ -34,6 +40,45 @@ export interface FakeIntentCreateInput {
   request: CreatePaymentRequest;
 }
 
+const FakeCreatePaymentRequestSchema = z.object({
+  orderId: z.object({ value: z.string().min(1) }),
+  money: z.object({
+    amount: z.number(),
+    currency: z.enum(CURRENCY_CODES),
+  }),
+  method: z.object({
+    type: z.enum(PAYMENT_METHOD_TYPES),
+    token: z.string().optional(),
+  }),
+  returnUrl: z.string().optional(),
+  cancelUrl: z.string().optional(),
+  customerEmail: z.string().optional(),
+  idempotencyKey: z.string().min(1).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const FakeIntentCreateInputSchema = z.object({
+  token: z.string().optional(),
+  providerId: z.string(),
+  request: FakeCreatePaymentRequestSchema,
+});
+
+export const FakeIntentStateSchema = z.object({
+  intentId: z.string(),
+  scenarioId: TokenBehaviorSchema,
+  providerId: z.string(),
+  createdAt: z.number(),
+  stepCount: z.number(),
+  currentStatus: FakeIntentStatusSchema,
+  nextActionKind: z.enum(['redirect', 'client_confirm']).optional(),
+  remainingRefreshesToSucceed: z.number().optional(),
+  clientConfirmed: z.boolean().optional(),
+  correlationId: z.string().optional(),
+  amount: z.number().optional(),
+  currency: z.string().optional(),
+  clientSecret: z.string().optional(),
+});
+
 const PROCESSING_REFRESHES = 2;
 const ERROR_BEHAVIORS: TokenBehavior[] = [
   'fail',
@@ -54,7 +99,13 @@ const fakeIntentsById = new Map<string, FakeIntentState>();
  * Caller must throw for error behaviors (timeout, decline, etc.) before calling this.
  */
 export function createFakeIntentState(input: FakeIntentCreateInput): FakeIntentState {
-  const behavior = getTokenBehavior(input.request.method?.token);
+  const parsed = FakeIntentCreateInputSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new Error('Invalid fake intent input');
+  }
+  const safeInput = parsed.data;
+
+  const behavior = getTokenBehavior(safeInput.request.method?.token);
   if (ERROR_BEHAVIORS.includes(behavior)) {
     throw new Error(`createFakeIntentState: cannot create for error behavior "${behavior}"`);
   }
@@ -66,7 +117,10 @@ export function createFakeIntentState(input: FakeIntentCreateInput): FakeIntentS
 
   if (behavior === 'success') {
     currentStatus = 'succeeded';
-  } else if (behavior === 'normal' && input.request.method?.token === 'tok_visa1234567890abcdef') {
+  } else if (
+    behavior === 'normal' &&
+    safeInput.request.method?.token === 'tok_visa1234567890abcdef'
+  ) {
     currentStatus = 'succeeded';
   } else if (behavior === '3ds') {
     currentStatus = 'requires_action';
@@ -79,20 +133,20 @@ export function createFakeIntentState(input: FakeIntentCreateInput): FakeIntentS
     remainingRefreshesToSucceed = PROCESSING_REFRESHES;
   }
 
-  const amountCents = Math.round((input.request.money?.amount ?? 0) * 100);
+  const amountCents = Math.round((safeInput.request.money?.amount ?? 0) * 100);
   const clientSecret = `${intentId}_secret_${generateId('sec')}`;
   const state: FakeIntentState = {
     intentId,
     scenarioId: behavior,
-    providerId: input.providerId,
+    providerId: safeInput.providerId,
     createdAt: Date.now(),
     stepCount: 0,
     currentStatus,
     nextActionKind,
     remainingRefreshesToSucceed,
-    correlationId: input.request.orderId.value,
+    correlationId: safeInput.request.orderId.value,
     amount: amountCents,
-    currency: (input.request.money?.currency ?? 'MXN').toLowerCase(),
+    currency: (safeInput.request.money?.currency ?? 'MXN').toLowerCase(),
     clientSecret,
   };
 

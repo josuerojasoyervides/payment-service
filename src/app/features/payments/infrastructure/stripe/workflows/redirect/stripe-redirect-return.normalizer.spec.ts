@@ -29,4 +29,9 @@ describe('StripeRedirectReturnNormalizer', () => {
     });
     expect(result).toEqual({ providerId: PAYMENT_PROVIDER_IDS.stripe, referenceId: 'pi_new' });
   });
+
+  it('returns null for invalid payloads', () => {
+    const result = normalizer.normalize({} as never);
+    expect(result).toBeNull();
+  });
 });

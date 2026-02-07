@@ -1,8 +1,10 @@
 import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import {
   createFlowContext,
+  ensureFlowContextUrls,
   FLOW_CONTEXT_TTL_MS,
   mergeProviderRefs,
+  resolvePaymentsReturnUrls,
   updateFlowContextProviderRefs,
 } from '@payments/application/orchestration/flow/payment-flow/context/payment-flow.context';
 import type { PaymentFlowContext } from '@payments/domain/subdomains/payment/entities/payment-flow-context.types';
@@ -86,5 +88,22 @@ describe('payment-flow.context', () => {
 
     expect(updated?.providerRefs?.['stripe']?.intentId).toBe('pi_old');
     expect(updated?.providerRefs?.['stripe']?.orderId).toBe('order_new');
+  });
+
+  it('resolves default return/cancel URLs from a base URL', () => {
+    const urls = resolvePaymentsReturnUrls('https://example.com');
+
+    expect(urls).toEqual({
+      returnUrl: 'https://example.com/payments/return',
+      cancelUrl: 'https://example.com/payments/cancel',
+    });
+  });
+
+  it('fills missing return/cancel URLs in a flow context', () => {
+    const resolved = ensureFlowContextUrls({ isTest: true }, 'https://example.com');
+
+    expect(resolved?.returnUrl).toBe('https://example.com/payments/return');
+    expect(resolved?.cancelUrl).toBe('https://example.com/payments/cancel');
+    expect(resolved?.isTest).toBe(true);
   });
 });

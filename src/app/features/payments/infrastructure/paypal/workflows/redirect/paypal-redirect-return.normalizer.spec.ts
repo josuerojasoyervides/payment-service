@@ -22,4 +22,9 @@ describe('PaypalRedirectReturnNormalizer', () => {
     const result = normalizer.normalize({ query: { token: ['first', 'last'] } });
     expect(result).toEqual({ providerId: PAYMENT_PROVIDER_IDS.paypal, referenceId: 'last' });
   });
+
+  it('returns null for invalid payloads', () => {
+    const result = normalizer.normalize({} as never);
+    expect(result).toBeNull();
+  });
 });

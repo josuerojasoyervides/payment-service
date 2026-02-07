@@ -15,6 +15,8 @@ import type { CreatePaymentRequest } from '@app/features/payments/domain/subdoma
 import { FlowId } from '@payments/domain/common/primitives/ids/flow-id.vo';
 
 export const FLOW_CONTEXT_TTL_MS = 30 * 60 * 1000;
+export const PAYMENTS_RETURN_PATH = '/payments/return';
+export const PAYMENTS_CANCEL_PATH = '/payments/cancel';
 
 export type FlowIdGenerator = (nowMs: number) => string;
 
@@ -22,6 +24,31 @@ export const defaultFlowIdGenerator: FlowIdGenerator = (nowMs) => {
   const built = FlowId.build(nowMs, createRandomSuffix());
   return built.ok ? built.value.value : `flow_${nowMs.toString(36)}_${createRandomSuffix()}`;
 };
+
+export function resolvePaymentsReturnUrls(
+  baseUrl?: string | null,
+): { returnUrl: string; cancelUrl: string } | null {
+  const origin = baseUrl ?? getBrowserOrigin();
+  if (!origin) return null;
+  return {
+    returnUrl: `${origin}${PAYMENTS_RETURN_PATH}`,
+    cancelUrl: `${origin}${PAYMENTS_CANCEL_PATH}`,
+  };
+}
+
+export function ensureFlowContextUrls(
+  context?: PaymentFlowContext | null,
+  baseUrl?: string | null,
+): PaymentFlowContext | null {
+  const resolved = resolvePaymentsReturnUrls(baseUrl);
+  if (!resolved) return context ?? null;
+  const base = context ?? {};
+  return {
+    ...base,
+    returnUrl: base.returnUrl ?? resolved.returnUrl,
+    cancelUrl: base.cancelUrl ?? resolved.cancelUrl,
+  };
+}
 
 /**
  * Builds a flow context with stable ids, timestamps, and provider references.
@@ -143,4 +170,11 @@ function createRandomSuffix(): string {
   const bytes = new Uint8Array(8);
   globalThis.crypto.getRandomValues(bytes);
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function getBrowserOrigin(): string | null {
+  if (typeof globalThis === 'undefined') return null;
+  const location = (globalThis as { location?: Location }).location;
+  if (!location?.origin) return null;
+  return location.origin;
 }
