@@ -80,7 +80,7 @@ export class PaypalRedirectRequestBuilder extends BasePaymentRequestBuilder {
 
   protected override buildUnsafe(): CreatePaymentRequest {
     /**
-     * TODO: PaypalRedirectRequestBuilder - confirm this \"legit hack\".
+     * TODO: PaypalRedirectRequestBuilder - this isn't a hack, but should be it?
      * This builder makes it explicit that PayPal does not have a card method,
      * it uses card only as a compatibility label.
      */

@@ -1,6 +1,6 @@
 import type { PaymentErrorCode } from '@app/features/payments/domain/subdomains/payment/entities/payment-error.types';
 
-export const ERROR_CODE_MAP: Record<string, PaymentErrorCode> = {
+export const STRIPE_ERROR_CODE_MAP = {
   card_declined: 'card_declined',
   insufficient_funds: 'insufficient_funds',
   expired_card: 'expired_card',
@@ -10,4 +10,4 @@ export const ERROR_CODE_MAP: Record<string, PaymentErrorCode> = {
   invalid_expiry_month: 'invalid_request',
   invalid_expiry_year: 'invalid_request',
   authentication_required: 'requires_action',
-} as const;
+} as const satisfies Record<string, PaymentErrorCode>;

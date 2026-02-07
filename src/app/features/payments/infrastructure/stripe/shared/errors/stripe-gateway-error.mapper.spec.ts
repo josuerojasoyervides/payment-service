@@ -1,4 +1,4 @@
-import { mapStripeGatewayError } from '@app/features/payments/infrastructure/stripe/shared/errors/mappers/stripe-gateway-error.mapper';
+import { mapStripeGatewayError } from '@app/features/payments/infrastructure/stripe/shared/errors/stripe-gateway-error.mapper';
 
 describe('mapStripeGatewayError', () => {
   it('sanitizes unknown errors (no secrets in raw)', () => {

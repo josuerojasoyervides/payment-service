@@ -1,7 +1,7 @@
+import { SPEI_RAW_KEYS } from '@app/features/payments/infrastructure/stripe/shared/constants/raw-keys.constants';
 import { createOrderId } from '@payments/application/api/testing/vo-test-helpers';
 import type { CreatePaymentRequest } from '@payments/domain/subdomains/payment/messages/payment-request.command';
 import { createFakeSpeiSource } from '@payments/infrastructure/fake/shared/helpers/create-fake-spei-source.helper';
-import { SPEI_RAW_KEYS } from '@payments/infrastructure/stripe/shared/constants/spei-raw-keys.constants';
 
 describe('createFakeSpeiSource', () => {
   it('includes bank code and clabe in fake SPEI source', () => {

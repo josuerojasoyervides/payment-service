@@ -1,7 +1,7 @@
 import type { PaymentIntent } from '@app/features/payments/domain/subdomains/payment/entities/payment-intent.types';
 import type { StripeSpeiSourceDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
+import { SPEI_RAW_KEYS } from '@app/features/payments/infrastructure/stripe/shared/constants/raw-keys.constants';
 import { PaymentIntentId } from '@payments/domain/common/primitives/ids/payment-intent-id.vo';
-import { SPEI_RAW_KEYS } from '@payments/infrastructure/stripe/shared/constants/spei-raw-keys.constants';
 import { PAYMENT_PROVIDER_IDS } from '@payments/shared/constants/payment-provider-ids';
 
 function toPaymentIntentIdOrThrow(raw: string): PaymentIntentId {

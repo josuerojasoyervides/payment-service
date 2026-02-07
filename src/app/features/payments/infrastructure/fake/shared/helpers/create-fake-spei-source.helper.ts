@@ -2,7 +2,7 @@ import type { CreatePaymentRequest } from '@app/features/payments/domain/subdoma
 import { generateId } from '@app/features/payments/infrastructure/fake/shared/helpers/get-id.helper';
 import { hashString } from '@app/features/payments/infrastructure/fake/shared/helpers/hash-string.helper';
 import type { StripeSpeiSourceDto } from '@app/features/payments/infrastructure/stripe/core/dto/stripe.dto';
-import { SPEI_RAW_KEYS } from '@payments/infrastructure/stripe/shared/constants/spei-raw-keys.constants';
+import { SPEI_RAW_KEYS } from '@app/features/payments/infrastructure/stripe/shared/constants/raw-keys.constants';
 
 export function createFakeSpeiSource(req: CreatePaymentRequest): StripeSpeiSourceDto {
   const sourceId = generateId('src');
